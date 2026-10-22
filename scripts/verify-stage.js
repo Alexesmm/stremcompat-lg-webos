@@ -31,13 +31,16 @@ var launch = read('service/launch.js');
 var server = read('service/tvserver.js');
 var shell = read('service/beta.html');
 var application = read('service/beta-app.js');
+// Git may check out text with CRLF on Windows runners. Normalize only for
+// sequence assertions so the validation is independent of checkout policy.
+var normalizedApplication = application.replace(/\r\n?/g, '\n');
 var launcher = read('app/index.html');
 if (launch.indexOf('APP_PORT = ' + profile.port) < 0 || server.indexOf('PORT = ' + profile.port) < 0 || launcher.indexOf('127.0.0.1:' + profile.port) < 0) throw new Error('Local port mismatch.');
 if (launcher.indexOf('/beta?v=' + profile.version) < 0 || shell.indexOf('/beta-app.js?v=' + profile.version) < 0 || server.indexOf("'Cache-Control': 'no-store, max-age=0'") < 0) throw new Error('Versioned shell cache protection missing.');
 if (launch.indexOf("APP_VERSION = '" + profile.version + "'") < 0 || server.indexOf("APP_VERSION = '" + profile.version + "'") < 0) throw new Error('Runtime version mismatch.');
 if (launch.indexOf("new Service('" + profile.serviceId + "')") < 0 || launcher.indexOf('luna://' + profile.serviceId + '/start') < 0) throw new Error('Service ID mismatch.');
 if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
-if (application.indexOf("window.__STREMIO_PHASE__('B_CALL');\nboot();") < 0 || application.indexOf("addEventListener('DOMContentLoaded',boot)") >= 0) throw new Error('Synchronous legacy boot missing.');
+if (normalizedApplication.indexOf("window.__STREMIO_PHASE__('B_CALL');\nboot();") < 0 || normalizedApplication.indexOf("addEventListener('DOMContentLoaded',boot)") >= 0) throw new Error('Synchronous legacy boot missing.');
 if (application.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
 if (application.indexOf("'/stremioapi?path='") < 0 || server.indexOf("p === '/stremioapi'") < 0 || server.indexOf("'/api/login': true") < 0) throw new Error('Legacy-safe Stremio account bridge missing.');
 if (server.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || server.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Embedded UI placeholders were not replaced.');
