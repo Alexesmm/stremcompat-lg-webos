@@ -713,7 +713,7 @@ function playerPage(stream, ctx) {
 // one shared account library (lib_<hash>_): progress/watched is pushed to api.strem.io
 'var LIBKEY=libPrefix()+ID;' +
 // POST helper + push the library item to the account (same datastorePut Stremio uses)
-'function xpost(u,body){try{var x=new XMLHttpRequest();x.open("POST",u,true);x.setRequestHeader("Content-Type","application/json");x.send(JSON.stringify(body));}catch(e){}}' +
+'function xpost(u,body){try{if(u.indexOf("https://api.strem.io/api/")===0)u="/stremioapi?path="+encodeURIComponent(u.slice("https://api.strem.io".length));var x=new XMLHttpRequest();x.open("POST",u,true);x.setRequestHeader("Content-Type","application/json");x.send(JSON.stringify(body));}catch(e){}}' +
 'function authKeyLS(){try{return JSON.parse(localStorage.getItem("authKey")||"null");}catch(e){return null;}}' +
 'var lastPush=0;' +
 'function pushLib(force){var ak=authKeyLS();if(!ak)return;var it=readLib();if(!it||!it._id)return;var n=Date.now();if(!force&&n-lastPush<60000)return;lastPush=n;xpost("https://api.strem.io/api/datastorePut",{authKey:ak,collection:"libraryItem",changes:[it]});}' +
@@ -1319,6 +1319,43 @@ function postJsonUpstream(host, path, headers, body, cb) {
   req.setTimeout(10000, function () { try { req.abort(); } catch (e) {} });
   req.end(body);
 }
+function postStremioApi(apiPath, req, res) {
+  var allowed = {
+    '/api/login': true,
+    '/api/getUser': true,
+    '/api/logout': true,
+    '/api/datastoreMeta': true,
+    '/api/datastoreGet': true,
+    '/api/datastorePut': true,
+    '/api/addonCollectionGet': true
+  };
+  if (!allowed[apiPath]) {
+    res.writeHead(403, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end('{"error":"api_path_not_allowed"}');
+    return;
+  }
+  readJsonBody(req, 2097152, function (body) {
+    if (!body) {
+      res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end('{"error":"invalid_json"}');
+      return;
+    }
+    var raw = JSON.stringify(body);
+    postJsonUpstream('api.strem.io', apiPath, {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(raw),
+      'User-Agent': 'Stremio-UJ3/' + APP_VERSION,
+      'Accept': 'application/json'
+    }, raw, function (json) {
+      if (!json) {
+        res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end('{"error":"stremio_api_unavailable"}');
+        return;
+      }
+      sendJson(res, json);
+    });
+  });
+}
 function ytInnertube(vid, cb) {
   var body = JSON.stringify({
     videoId: vid,
@@ -1558,6 +1595,8 @@ http.createServer(function (req, res) {
     // redirect here instead of guessing on a timer (which races a cold node start).
     res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
     res.end('ok');
+  } else if (p === '/stremioapi' && req.method === 'POST') {
+    postStremioApi(String(q.path || ''), req, res);
   } else if (p === '/streamref' && req.method === 'POST') {
     readJsonBody(req, 16384, function (body) {
       var ref = body && storeStreamRef(body);

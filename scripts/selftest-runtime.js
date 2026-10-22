@@ -73,6 +73,13 @@ async function main() {
     assert.strictEqual(application.status, 200);
     assert.ok(/^application\/javascript/.test(application.headers['content-type'] || ''));
     assert.ok(application.text.indexOf("window.__STREMIO_PHASE__('M0')") >= 0);
+    assert.ok(application.text.indexOf("'/stremioapi?path='") >= 0);
+
+    var blockedApiPayload = JSON.stringify({ test: true });
+    var blockedApi = await request({ hostname: '127.0.0.1', port: appPort, path: '/stremioapi?path=' + encodeURIComponent('/api/notAllowed'), method: 'POST', headers: {
+      'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(blockedApiPayload)
+    } }, blockedApiPayload);
+    assert.strictEqual(blockedApi.status, 403);
 
     var addon = await request({ hostname: '127.0.0.1', port: appPort, path: '/addon?u=' + encodeURIComponent('http://127.0.0.1:9191/addon') });
     assert.strictEqual(JSON.parse(addon.text).ok, true);

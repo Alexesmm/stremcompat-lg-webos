@@ -10,7 +10,7 @@ An unofficial, remote-friendly Stremio client for older LG TVs. It bundles an AR
 |---|---|---|---|---|
 | `um4-armv7` 1.2.2 | Stable | Confirmed on LG 50UM7500PSB, firmware 05.40.97; other ARMv7 webOS 4.x TVs may work | `io.strem.tv` | Chromium 53; heavy 4K/remux/transcoding can exceed the TV's CPU or RAM |
 | `uj3-armv7` 0.9.3 | Experimental | Test target: LG 49UJ6565-SB, webOS 3.9.3; similar 2016–2017 UJ/LJ/SJ ARMv7 models may work | `io.strem.tv.legacy3` | Chromium 38, smaller caches, lower source caps, older MSE/codec support |
-| `uj3-native-armv7` 1.0.0 | Dedicated test | LG 49UJ6565-SB, webOS 3.9.3 | `io.strem.tv.uj3native` | Separate port and service; Chromium 38 UI embedded in the server to survive missing service files |
+| `uj3-native-armv7` 1.0.1 | Dedicated test | LG 49UJ6565-SB, webOS 3.9.3 | `io.strem.tv.uj3native` | Separate port and service; embedded Chromium 38 UI; account API is bridged through the local Node 18 runtime to avoid old-TV TLS/CORS failures |
 
 Do not install these ARMv7 packages on ARM64-only TVs or webOS 1.x/2.x. A TV also needs the 32-bit ARM loader at `/lib/ld-linux.so.3`. Models from the same product family can still use different SoCs, so a family name alone is not a guarantee. Newer supported TVs should normally use the official Stremio app.
 

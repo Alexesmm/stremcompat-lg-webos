@@ -39,6 +39,7 @@ if (launch.indexOf("new Service('" + profile.serviceId + "')") < 0 || launcher.i
 if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
 if (application.indexOf("window.__STREMIO_PHASE__('B_CALL');\nboot();") < 0 || application.indexOf("addEventListener('DOMContentLoaded',boot)") >= 0) throw new Error('Synchronous legacy boot missing.');
 if (application.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
+if (application.indexOf("'/stremioapi?path='") < 0 || server.indexOf("p === '/stremioapi'") < 0 || server.indexOf("'/api/login': true") < 0) throw new Error('Legacy-safe Stremio account bridge missing.');
 if (server.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || server.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Embedded UI placeholders were not replaced.');
 function embedded(name) {
   var match = server.match(new RegExp("var " + name + " = '([^']+)'"));

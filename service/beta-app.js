@@ -24,7 +24,8 @@ function xhrJson(u,cb,tmo){var done=false;try{var x=new XMLHttpRequest();x.open(
   x.onreadystatechange=function(){if(x.readyState===4&&!done){done=true;var j=null;try{j=JSON.parse(x.responseText);}catch(e){}cb(j);}};
   x.send();setTimeout(function(){if(!done){done=true;try{x.abort();}catch(e){}cb(null);}},tmo||14000);
 }catch(e){cb(null);}}
-function postJson(u,body,cb,tmo){var done=false;try{var x=new XMLHttpRequest();x.open('POST',u,true);
+function apiPostUrl(u){var p=API+'/api/';return String(u||'').indexOf(p)===0?('/stremioapi?path='+encodeURIComponent(String(u).slice(API.length))):u;}
+function postJson(u,body,cb,tmo){var done=false;try{var x=new XMLHttpRequest();x.open('POST',apiPostUrl(u),true);
   x.setRequestHeader('Content-Type','application/json');
   x.onreadystatechange=function(){if(x.readyState===4&&!done){done=true;var j=null;try{j=JSON.parse(x.responseText);}catch(e){}cb(j);}};
   x.send(JSON.stringify(body));setTimeout(function(){if(!done){done=true;try{x.abort();}catch(e){}cb(null);}},tmo||14000);
