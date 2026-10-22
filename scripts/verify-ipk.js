@@ -68,5 +68,12 @@ var packedApplication = find(entries, /\/beta-app\.js$/).data.toString('utf8');
 if (packedLaunch.indexOf('APP_PORT = ' + profile.port) < 0 || packedServer.indexOf('PORT = ' + profile.port) < 0) throw new Error('Porta do perfil ausente no IPK.');
 if (packedServer.indexOf("p === '/streamref'") < 0 || packedServer.indexOf('rewriteHls') < 0) throw new Error('Proxy seguro/HLS ausente no IPK.');
 if (packedApplication.indexOf("postJson('/streamref'") < 0 || packedApplication.indexOf('compact:function()') < 0) throw new Error('Shell otimizado ausente no IPK.');
+if (packedServer.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || packedServer.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Assets incorporados nao foram gerados.');
+function embedded(name) {
+  var match = packedServer.match(new RegExp("var " + name + " = '([^']+)'"));
+  if (!match) throw new Error('Asset incorporado ausente: ' + name);
+  return Buffer.from(match[1], 'base64').toString('utf8');
+}
+if (embedded('EMBEDDED_BETA_HTML_B64') !== packedShell || embedded('EMBEDDED_BETA_APP_B64') !== packedApplication) throw new Error('Assets incorporados diferem dos arquivos empacotados.');
 
 console.log('OK: IPK ' + profile.profile + ' ' + profile.version + ', manifests, shell, servidor e executaveis ARM presentes.');

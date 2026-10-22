@@ -7,7 +7,10 @@ var http = require('http');
 var os = require('os');
 var path = require('path');
 
-var root = path.resolve(__dirname, '..');
+var root = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(__dirname, '..');
+var appPort = parseInt(process.argv[3], 10) || 8082;
+var appVersion = process.argv[4] || '1.2.2';
+var forceEmbedded = process.argv[5] === 'embedded';
 var childLogGlobal = '';
 
 function request(options, body) {
@@ -28,7 +31,7 @@ function request(options, body) {
 }
 
 function waitForHealth(attempt) {
-  return request({ hostname: '127.0.0.1', port: 8082, path: '/health' }).catch(function () {
+  return request({ hostname: '127.0.0.1', port: appPort, path: '/health' }).catch(function () {
     if (attempt > 120) throw new Error('tvserver did not become ready');
     return new Promise(function (resolve) { setTimeout(resolve, 100); }).then(function () { return waitForHealth(attempt + 1); });
   });
@@ -53,7 +56,7 @@ async function main() {
 
   var testLog = path.join(os.tmpdir(), 'stremio-lg-selftest-' + process.pid + '.log');
   var child = childProcess.spawn(process.execPath, [path.join(root, 'service', 'tvserver.js')], {
-    cwd: root, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TVSERVER_LOG: testLog })
+    cwd: root, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TVSERVER_LOG: testLog, TVSERVER_FORCE_EMBEDDED_UI: forceEmbedded ? '1' : '0' })
   });
   var childLog = '';
   child.stdout.on('data', function (d) { childLog += d.toString(); childLogGlobal = childLog; });
@@ -61,27 +64,30 @@ async function main() {
 
   try {
     var health = await waitForHealth(0);
-    assert.strictEqual(JSON.parse(health.text).version, '1.2.2');
+    assert.strictEqual(JSON.parse(health.text).version, appVersion);
 
-    var application = await request({ hostname: '127.0.0.1', port: 8082, path: '/beta-app.js?v=1.2.2' });
+    var shell = await request({ hostname: '127.0.0.1', port: appPort, path: '/beta?v=' + appVersion });
+    assert.strictEqual(shell.status, 200);
+    assert.ok(shell.text.indexOf('/beta-app.js?v=' + appVersion) >= 0);
+    var application = await request({ hostname: '127.0.0.1', port: appPort, path: '/beta-app.js?v=' + appVersion });
     assert.strictEqual(application.status, 200);
     assert.ok(/^application\/javascript/.test(application.headers['content-type'] || ''));
     assert.ok(application.text.indexOf("window.__STREMIO_PHASE__('M0')") >= 0);
 
-    var addon = await request({ hostname: '127.0.0.1', port: 8082, path: '/addon?u=' + encodeURIComponent('http://127.0.0.1:9191/addon') });
+    var addon = await request({ hostname: '127.0.0.1', port: appPort, path: '/addon?u=' + encodeURIComponent('http://127.0.0.1:9191/addon') });
     assert.strictEqual(JSON.parse(addon.text).ok, true);
 
     var payload = JSON.stringify({
       url: 'http://127.0.0.1:9191/video', notWebReady: true,
       headers: { Authorization: 'Bearer test-token', Referer: 'https://addon.example/', 'X-Blocked': 'no' }
     });
-    var made = await request({ hostname: '127.0.0.1', port: 8082, path: '/streamref', method: 'POST', headers: {
+    var made = await request({ hostname: '127.0.0.1', port: appPort, path: '/streamref', method: 'POST', headers: {
       'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload)
     } }, payload);
     var ref = JSON.parse(made.text).ref;
     assert.match(ref, /^[0-9a-f]{24}$/);
 
-    var proxied = await request({ hostname: '127.0.0.1', port: 8082, path: '/proxy?ref=' + ref, headers: { Range: 'bytes=0-99' } });
+    var proxied = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + ref, headers: { Range: 'bytes=0-99' } });
     var echoed = JSON.parse(proxied.text);
     assert.strictEqual(echoed.auth, 'Bearer test-token');
     assert.strictEqual(echoed.referer, 'https://addon.example/');
@@ -89,17 +95,17 @@ async function main() {
     assert.strictEqual(echoed.blocked, '');
 
     var hlsPayload = JSON.stringify({ url: 'http://127.0.0.1:9191/playlist.m3u8', headers: { Authorization: 'Bearer hls-token' } });
-    var hlsMade = await request({ hostname: '127.0.0.1', port: 8082, path: '/streamref', method: 'POST', headers: {
+    var hlsMade = await request({ hostname: '127.0.0.1', port: appPort, path: '/streamref', method: 'POST', headers: {
       'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(hlsPayload)
     } }, hlsPayload);
     var hlsRef = JSON.parse(hlsMade.text).ref;
-    var playlist = await request({ hostname: '127.0.0.1', port: 8082, path: '/proxy?ref=' + hlsRef });
+    var playlist = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + hlsRef });
     var segmentUrl = playlist.text.split('\n').filter(function (line) { return /^http:/.test(line); })[0];
     assert.ok(segmentUrl && segmentUrl.indexOf('/proxy?ref=') >= 0, 'relative HLS segment was not rewritten');
     var parsedSegment = new URL(segmentUrl);
     var segment = await request({ hostname: parsedSegment.hostname, port: parsedSegment.port, path: parsedSegment.pathname + parsedSegment.search });
     assert.strictEqual(JSON.parse(segment.text).auth, 'Bearer hls-token');
-    console.log('OK: health, legacy application script, addon bridge, stream references, proxy headers and relative HLS.');
+    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers and relative HLS.');
   } finally {
     try { child.kill(); } catch (e) {}
     await new Promise(function (resolve) { upstream.close(resolve); });

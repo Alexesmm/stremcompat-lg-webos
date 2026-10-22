@@ -39,6 +39,13 @@ if (launch.indexOf("new Service('" + profile.serviceId + "')") < 0 || launcher.i
 if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
 if (application.indexOf("window.__STREMIO_PHASE__('B_CALL');\nboot();") < 0 || application.indexOf("addEventListener('DOMContentLoaded',boot)") >= 0) throw new Error('Synchronous legacy boot missing.');
 if (application.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
+if (server.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || server.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Embedded UI placeholders were not replaced.');
+function embedded(name) {
+  var match = server.match(new RegExp("var " + name + " = '([^']+)'"));
+  if (!match) throw new Error('Missing embedded asset: ' + name);
+  return Buffer.from(match[1], 'base64').toString('utf8');
+}
+if (embedded('EMBEDDED_BETA_HTML_B64') !== shell || embedded('EMBEDDED_BETA_APP_B64') !== application) throw new Error('Embedded UI does not match staged files.');
 
 var verifier = path.join(__dirname, 'verify-frontend.js');
 child.execFileSync(process.execPath, [verifier, path.join(stage, 'service'), profile.ecmaTarget], { stdio: 'inherit' });

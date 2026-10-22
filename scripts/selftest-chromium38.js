@@ -8,6 +8,8 @@ var os = require('os');
 var path = require('path');
 
 var root = path.resolve(__dirname, '..');
+var serviceRoot = process.argv[2] ? path.resolve(process.argv[2]) : root;
+var appPort = parseInt(process.argv[3], 10) || 8082;
 var chrome = path.join(root, '.cache', 'chromium38', 'runtime', 'chrome-win32', 'chrome.exe');
 var profile = fs.mkdtempSync(path.join(os.tmpdir(), 'stremio-chrome38-'));
 if (!fs.existsSync(chrome)) throw new Error('Chromium 38 runtime is missing: ' + chrome);
@@ -30,7 +32,7 @@ function waitJson(port, pathname, left) {
   });
 }
 function waitHealth(left) {
-  return getJson(8082, '/health').catch(function (error) {
+  return getJson(appPort, '/health').catch(function (error) {
     if (!left) throw error;
     return delay(100).then(function () { return waitHealth(left - 1); });
   });
@@ -51,14 +53,14 @@ function devtools(url) {
 }
 
 async function main() {
-  var server = childProcess.spawn(process.execPath, [path.join(root, 'service', 'tvserver.js')], { cwd: root, windowsHide: true, stdio: 'ignore' });
+  var server = childProcess.spawn(process.execPath, [path.join(serviceRoot, 'service', 'tvserver.js')], { cwd: serviceRoot, windowsHide: true, stdio: 'ignore' });
   var browser;
   try {
     await waitHealth(100);
     browser = childProcess.spawn(chrome, [
       '--remote-debugging-port=9223', '--user-data-dir=' + profile, '--no-first-run',
       '--disable-default-apps', '--disable-extensions', '--disable-sync', '--disable-gpu',
-      '--no-sandbox', '--window-position=-32000,-32000', 'http://127.0.0.1:8082/beta?engine=38'
+      '--no-sandbox', '--window-position=-32000,-32000', 'http://127.0.0.1:' + appPort + '/beta?engine=38'
     ], { cwd: path.dirname(chrome), windowsHide: true, stdio: 'ignore' });
     var pages = await waitJson(9223, '/json', 150);
     var page = pages.filter(function (item) { return item.type === 'page' && item.url.indexOf('/beta') >= 0; })[0];

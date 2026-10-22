@@ -81,6 +81,15 @@ $shell = [System.IO.File]::ReadAllText($shellPath)
 $shell = [regex]::Replace($shell, "var TV_PROFILE=\{id:'[^']+'.*?\};", $profileJs, 1)
 [System.IO.File]::WriteAllText($shellPath, $shell, (New-Object System.Text.UTF8Encoding($false)))
 
+$shellHtmlPath = Join-Path $stageService 'beta.html'
+$serverPath = Join-Path $stageService 'tvserver.js'
+$embeddedHtml = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($shellHtmlPath))
+$embeddedApp = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($shellPath))
+$serverText = [System.IO.File]::ReadAllText($serverPath)
+$serverText = $serverText.Replace('__EMBEDDED_BETA_HTML_B64__', $embeddedHtml)
+$serverText = $serverText.Replace('__EMBEDDED_BETA_APP_B64__', $embeddedApp)
+[System.IO.File]::WriteAllText($serverPath, $serverText, (New-Object System.Text.UTF8Encoding($false)))
+
 & node.exe (Join-Path $PSScriptRoot 'verify-stage.js') $buildRoot $profileFile
 if ($LASTEXITCODE -ne 0) { throw 'Profile staging validation failed.' }
 

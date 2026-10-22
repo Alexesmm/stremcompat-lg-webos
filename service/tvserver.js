@@ -42,6 +42,30 @@ var SHELL_URL = ORIGIN + '/shell-v4.4/';
 var APP_VERSION = '1.2.2';
 var PORT = 8082; // versioned away from 1.2.0/1.2.1's :8080 stale detached runtime
 var SERVER_PORT = 11470;
+/* Replaced with the profile-specific, verified assets during packaging. Keeping
+   an embedded copy makes the low-storage webOS 3 build independent of service
+   working-directory and package-file lookup quirks. */
+var EMBEDDED_BETA_HTML_B64 = '__EMBEDDED_BETA_HTML_B64__';
+var EMBEDDED_BETA_APP_B64 = '__EMBEDDED_BETA_APP_B64__';
+
+function readUiAsset(name, embedded, cb) {
+  var candidates = [path.join(DIR, name)];
+  if (process.argv[1]) candidates.push(path.join(path.dirname(process.argv[1]), name));
+  candidates.push(path.join(process.cwd(), name));
+  var seen = {}, index = process.env.TVSERVER_FORCE_EMBEDDED_UI === '1' ? candidates.length : 0, lastError = null;
+  function next() {
+    if (index >= candidates.length) {
+      if (embedded && embedded.indexOf('__EMBEDDED_') !== 0) {
+        try { dbg('[ui] serving embedded fallback for ' + name + (lastError ? ': ' + lastError.message : ''));return cb(null, Buffer.from(embedded, 'base64')); } catch (e) { lastError = e; }
+      }
+      return cb(lastError || new Error(name + ' unavailable'));
+    }
+    var file = candidates[index++];
+    if (seen[file]) return next();seen[file] = true;
+    fs.readFile(file, function (error, data) { if (!error && data && data.length) return cb(null, data);lastError = error || new Error('empty ' + file);next(); });
+  }
+  next();
+}
 
 // ---------- start the streaming server ----------
 function portUp(port, cb) {
@@ -1555,14 +1579,14 @@ http.createServer(function (req, res) {
     // Read per-request: tiny file, always fresh after an scp, no restart needed.
     // NO waitForServer here: unlike the v4 shell, beta doesn't need :11470 at boot
     // (only torrent playback does, and server.js starts in parallel) — faster cold start.
-    fs.readFile(path.join(DIR, 'beta.html'), function (err, buf) {
-      if (err) { res.writeHead(404); res.end('beta shell missing'); return; }
+    readUiAsset('beta.html', EMBEDDED_BETA_HTML_B64, function (err, buf) {
+      if (err) { dbg('[ui] beta.html failed: ' + err.message);res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });res.end('UJ3_ASSET HTML ' + err.message);return; }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, max-age=0' });
       res.end(buf);
     });
   } else if (p === '/beta-app.js') {
-    fs.readFile(path.join(DIR, 'beta-app.js'), function (err, buf) {
-      if (err) { res.writeHead(404); res.end('application script missing'); return; }
+    readUiAsset('beta-app.js', EMBEDDED_BETA_APP_B64, function (err, buf) {
+      if (err) { dbg('[ui] beta-app.js failed: ' + err.message);res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });res.end('UJ3_ASSET SCRIPT ' + err.message);return; }
       res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store, max-age=0' });
       res.end(buf);
     });
