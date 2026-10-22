@@ -24,6 +24,31 @@ The older `uj3-armv7` 0.9.3 profile is retained only as development history. It 
 
 Do not use these packages on ARM64-only televisions or webOS 1.x/2.x. Televisions using webOS 5 or newer should normally use the official Stremio application when it is available.
 
+## Expected compatibility by television family
+
+The two televisions in the Downloads table are the only physically confirmed models so far. The families below are **compatibility candidates**, not a claim that every regional or screen-size variant has been tested. LG can change processors, memory and loaders inside a model family, so the webOS version is the first filter and the ARM architecture is the second.
+
+| Build | Expected webOS generation | Candidate LG families and examples |
+|---|---|---|
+| `uj3-native-armv7` | webOS 3.0, generally 2016 models | OLED B6, C6, E6 and G6; LCD families UH95, UH85, UH77, UH76, UH65, UH63, UH61, UH60 and LH60 |
+| `uj3-native-armv7` | webOS 3.5, generally 2017 models | OLED B7, C7, E7, G7 and W7; LCD families SJ95, SJ85, SJ80, UJ75, UJ70, UJ67, UJ65, UJ63, UJ62, LJ55 and LJ54 |
+| `um4-armv7` | webOS 4.0, generally 2018 models | OLED B8, C8, E8, W8 and Z8; LCD families SK95, SK90, SK85, SK80, UK77, UK75, UK65, UK63, UK62, UK61, UK60, LK64, LK61, LK57 and LK54 |
+| `um4-armv7` | webOS 4.5, generally 2019 models | OLED B9, C9, E9, W9 and Z9; LCD families SM99, SM95, SM90, SM86, SM81, UM80, UM76, UM75, UM74, UM73, UM72, UM71, UM70, UM69, LM63, LM62, LM57 and LM50 |
+
+Examples such as `49UJ6565-SB`, `55UK6300PUB` and `50UM7500PSB` contain a screen size, family and regional suffix. A matching family prefix is useful evidence, but it does not prove that the CPU and system loader are identical. The definitive check is the information reported by the television itself under **Settings > General > About This TV > webOS TV Version**, followed by a real installation and playback test.
+
+Before trying a candidate model, check all of the following:
+
+1. The television runs webOS 3.x for UJ3 or webOS 4.x for UM4. A firmware number such as `05.40.97` is not the webOS platform version.
+2. LG Developer Mode can be enabled and the television can be reached by webOS Dev Manager.
+3. The television provides a 32-bit ARMv7 userland and `/lib/ld-linux.so.3`. Some variants can only prove this when the bundled runtime starts.
+4. At least approximately 92 MiB of internal storage is available after old test packages are removed.
+5. Installation, login, Home catalogs and a moderate H.264/AAC stream are all tested before the model is reported as confirmed.
+
+The family mapping above follows LG's published platform generations: [webOS 3.x uses Chromium 38 and covers the 2016-2017 platform releases](https://webostv.developer.lge.com/develop/specifications/web-api-and-web-engine), while [webOS 4.0 and 4.5 correspond to LG's 2018 and 2019 model families](https://www.lg.com/us/support/help-library/how-to-use-airplay-what-lg-tvs-support-airplay-2-CT10000020-20151097893431). LG's own regional model lists show the representative [2016-2019 OLED and LCD family prefixes](https://www.lg.com/mx/acerca-de-lg/press-and-media/lg-anuncia-incorporacion-de-hbo/). Regional lineups can differ.
+
+When reporting a successful or failed test, include the complete model code and regional suffix, webOS TV version, firmware version, package filename, available storage, startup result and whether login, catalogs and playback worked. This evidence is required before moving a model from candidate to confirmed.
+
 ## Why separate builds are required
 
 LG changed the browser engine and available runtime across webOS generations:
@@ -87,6 +112,32 @@ The confirmed UJ3 package was tested with the official Chromium 38 snapshot. Sta
 - Forwarding of required authorization, referer and range headers.
 - Audio-track selection, subtitles, resume and watched progress.
 - Low-memory behavior tuned separately per profile.
+
+## Performance profile and image-quality trade-offs
+
+StremCompat is intentionally optimized for televisions with old Chromium engines, slow CPUs and limited free memory. It does not attempt to render the same number of full-resolution interface assets as a current streaming box. This is what allows the UI, account data, addons and native player to coexist more reliably on the target televisions.
+
+| Limit | UM4 for webOS 4.x | UJ3 for webOS 3.x |
+|---|---:|---:|
+| Browsing backdrop width | 960 pixels | 640 pixels |
+| Decoded backdrop memory, approximately | 2.0 MiB at 960x540 RGBA | 0.9 MiB at 640x360 RGBA |
+| Backdrops retained in the local cache | 24 | 6 |
+| Simultaneous backdrop resize workers | 2 | 1 |
+| Sources retained per item | 60 | 30 |
+| Library items retained in memory | 60 | 30 |
+| Catalog items retained per row | 16 | 10 |
+
+For comparison, one decoded 1920x1080 RGBA background can occupy about 8 MiB before browser and GPU overhead. Repeated full-resolution backgrounds caused memory pressure and sluggish focus movement on the target hardware. Therefore:
+
+- Backgrounds and some catalog artwork can look softer than they do in a modern desktop or official current-generation application, especially when viewed close to a 4K panel.
+- The UM4 edition keeps higher-resolution artwork, a larger cache and more workers because the confirmed 50UM7500PSB handles that profile.
+- The UJ3 edition deliberately prefers stability over backdrop sharpness. It uses smaller artwork, fewer cached images, fewer catalog entries and a simpler low-memory transition path.
+- Only the focused item's backdrop and logo are warmed ahead of time. Neighboring full-screen backgrounds are not all decoded while the user scrolls.
+- Metadata, library and source lists are capped to prevent a large account or addon response from exhausting the television's memory.
+- Account, addon and artwork requests are bridged through the bundled Node.js runtime to avoid legacy browser TLS and CORS failures.
+- Video playback still uses the source selected by the user through the television's hardware-backed HTML5 media pipeline. The backdrop limits affect **interface artwork only**; they do not reduce a 1080p or 4K video's resolution.
+
+This tuning cannot add codec support or processing power that the firmware does not have. A visually lighter interface can improve navigation, but unsupported audio, containers, DRM, unusually high bitrates and very large remux files can still fail during playback.
 
 ## Installation
 
