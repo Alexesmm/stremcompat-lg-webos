@@ -2,6 +2,7 @@
   "profile": "uj3-native-armv7",
   "channel": "experimental",
   "appId": "io.strem.tv.uj3native",
+  "title": "Stremio UJ3",
   "serviceId": "io.strem.tv.uj3native.server",
   "version": "1.0.0",
   "port": 8093,

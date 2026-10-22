@@ -32,6 +32,7 @@ $appInfoPath = Join-Path $stageApp 'appinfo.json'
 $appInfo = Get-Content -LiteralPath $appInfoPath -Raw | ConvertFrom-Json
 $appInfo.id = $config.appId
 $appInfo.version = $config.version
+if ($config.PSObject.Properties.Name -contains 'title') { $appInfo.title = [string]$config.title }
 [System.IO.File]::WriteAllText($appInfoPath, ($appInfo | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
 
 $appServicesPath = Join-Path $stageApp 'services.json'
