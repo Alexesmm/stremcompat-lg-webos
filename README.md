@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/v1.0.0"><img alt="Release v1.0.0" src="https://img.shields.io/badge/release-v1.0.0-8d5bd4"></a>
+  <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Alexesmm/stremcompat-lg-webos?display_name=tag&color=8d5bd4"></a>
   <img alt="LG webOS 3.x and 4.x" src="https://img.shields.io/badge/LG%20webOS-3.x%20%7C%204.x-8d5bd4">
   <img alt="ARMv7" src="https://img.shields.io/badge/architecture-ARMv7-6f45b5">
   <img alt="No root required" src="https://img.shields.io/badge/root-not%20required-2ea44f">
