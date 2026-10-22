@@ -1,6 +1,6 @@
 # StremCompat for LG webOS
 
-An unofficial, remote-friendly Stremio client for older LG televisions that are not supported by the current LG Content Store application.
+An unofficial, remote-friendly Stremio client for older LG televisions that are not supported by the current LG Content Store application. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access, Homebrew Channel or a permanent system modification.
 
 The project provides separate builds for different webOS generations. It combines a lightweight television interface, a bundled ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account synchronization and a native HTML5 video player.
 
@@ -141,6 +141,8 @@ This tuning cannot add codec support or processing power that the firmware does 
 
 ## Installation
 
+Root access is not required. Installation uses LG's standard Developer Mode workflow already described below; the television does not need to be rooted or modified with Homebrew Channel. Because this is a Developer Mode installation, the app remains subject to LG's Developer Mode timer and must be renewed before it expires.
+
 1. Install and open LG's Developer Mode application on the television.
 2. Sign in, enable Developer Mode and enable Key Server.
 3. Add the television in webOS Dev Manager.
@@ -249,8 +251,25 @@ git push origin v1.0.0
 
 Users do not need to create a Release. They only download the matching IPK from the Releases page.
 
+## What StremCompat adds
+
+StremCompat is an independent compatibility and integration project for running a modern Stremio experience on older LG webOS televisions. It is not merely a renamed or repackaged copy of one upstream project. Its purpose is to turn several useful pieces of prior community work into television-specific ports that can actually boot, sign in, load addons and play media within the limits of legacy LG hardware.
+
+The project adds and maintains:
+
+- Separate, reproducible builds for incompatible webOS generations instead of one package with assumed universal support.
+- A bundled and verified ARMv7 runtime with generation-specific launch services, identities and local ports.
+- An ES5/Chromium 38 adaptation for webOS 3.x, including startup diagnostics and an embedded interface fallback.
+- Account, addon, metadata, artwork, protected-stream and HLS bridges that avoid legacy browser TLS and CORS limitations.
+- A remote-control television interface with source quality filters, duplicate removal and seeder-aware sorting.
+- Native hardware-backed television playback with subtitles, audio-track selection, resume and watched-state synchronization.
+- Different memory, artwork and catalog profiles for webOS 3.x and 4.x televisions.
+- Automated package checks plus documented physical-device validation and compatibility reporting.
+
+That integration, legacy-browser engineering, device profiling, packaging and testing are the reason StremCompat exists. The upstream projects remain important foundations and are credited below; StremCompat is the maintained compatibility layer that connects and adapts them for specific older LG televisions.
+
 ## Credits and licensing
 
-StremCompat is a community compatibility project built from earlier webOS work and third-party runtime components. The packaged-app bootstrap was adapted from [kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos), which in turn states that its television interface was built from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The local runtime layer was adapted from [StremioBrew](https://github.com/simussu9-wq/stremiobrew). Stremio, Node.js, FFmpeg and LG webOS tooling are also used or interoperated with.
+StremCompat builds on earlier community research and third-party runtime components. The packaged-app bootstrap began from [kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos), which in turn states that its television interface was built from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The bundled local runtime approach was adapted from [StremioBrew](https://github.com/simussu9-wq/stremiobrew). Stremio, Node.js, FFmpeg and LG webOS tooling are also used or interoperated with.
 
 See [NOTICE.md](NOTICE.md) for the project lineage and the current redistribution caveats, and [THIRD_PARTY.md](THIRD_PARTY.md) for component-level provenance. No repository-wide open-source license is currently asserted while inherited source without a published license remains in the tree. Third-party names, trademarks, binaries and source code remain subject to their respective licenses and terms.
