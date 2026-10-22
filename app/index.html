@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stremio</title>
+<style>
+html,body{width:100%;height:100%;overflow:hidden}
+body{margin:0;background:#08070d;color:#fff;font-family:Arial,sans-serif}
+.backdrop{position:fixed;inset:0;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 65% 18%,rgba(97,57,196,.28),transparent 48%),linear-gradient(145deg,#151024 0%,#08070d 62%)}
+.shade{position:fixed;inset:0;top:0;left:0;right:0;bottom:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 52%)}
+.stage{position:fixed;left:110px;right:110px;top:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+.brand{width:650px}
+.mark{width:112px;height:112px;border-radius:30px;background:linear-gradient(135deg,#a780ff,#6b3df1);box-shadow:0 22px 70px rgba(108,61,241,.38);position:relative;margin-bottom:34px}
+.mark:after{content:"";position:absolute;left:43px;top:30px;width:0;height:0;border-top:26px solid transparent;border-bottom:26px solid transparent;border-left:38px solid #fff}
+h1{font-size:72px;line-height:1;margin:0 0 18px;font-weight:800;letter-spacing:-2px}
+.lead{font-size:28px;line-height:1.45;color:rgba(255,255,255,.72);max-width:580px}
+.boot{position:absolute;left:0;bottom:105px;width:560px}
+.status{font-size:22px;color:rgba(255,255,255,.82);margin-bottom:16px}
+.track{height:5px;background:rgba(255,255,255,.11);border-radius:5px;overflow:hidden}
+.fill{height:100%;width:8%;border-radius:5px;background:linear-gradient(90deg,#8c5cff,#c4a8ff);transition:width .5s ease}
+.hint{font-size:16px;color:rgba(255,255,255,.36);margin-top:14px}
+.error{margin-top:28px;display:none}
+button{font-size:21px;font-weight:700;padding:16px 30px;color:#0b0910;background:#fff;border:0;border-radius:12px}
+.code{font-size:15px;color:rgba(255,255,255,.4);margin:15px 0}
+</style>
+</head>
+<body>
+<div class="backdrop"></div><div class="shade"></div>
+<div class="stage"><div class="brand">
+  <div class="mark"></div>
+  <h1>Stremio</h1>
+  <div class="lead">Filmes, séries e todos os seus addons em uma experiência feita para a tela grande.</div>
+  <div class="boot">
+    <div id="status" class="status">Iniciando o sistema de reprodução…</div>
+    <div class="track"><div id="fill" class="fill"></div></div>
+    <div id="hint" class="hint">Na primeira abertura, o runtime pode levar alguns segundos.</div>
+    <div id="error" class="error">
+      <button onclick="location.reload()">Tentar novamente</button>
+      <div class="code">Código: RUNTIME_START_TIMEOUT</div>
+    </div>
+  </div>
+</div></div>
+<script>
+var finished = false;
+var startedAt = Date.now();
+var serviceAnswered = false;
+
+function setProgress(value, text) {
+    document.getElementById('fill').style.width = value + '%';
+    if (text) document.getElementById('status').innerHTML = text;
+}
+
+function openApp() {
+    if (finished) return;
+    finished = true;
+    setProgress(100, 'Tudo pronto. Abrindo…');
+    setTimeout(function () { location.replace('http://127.0.0.1:8082/beta?v=1.2.2'); }, 250);
+}
+
+function ping() {
+    if (finished) return;
+    try {
+        var request = new XMLHttpRequest();
+        request.open('GET', 'http://127.0.0.1:8082/health?t=' + Date.now(), true);
+        request.timeout = 1500;
+        request.onreadystatechange = function () {
+            if (request.readyState === 4 && request.status === 200) {
+                try { var health = JSON.parse(request.responseText);if (health.version === '1.2.2') openApp(); } catch (ignore) {}
+            }
+        };
+        request.onerror = function () {};
+        request.ontimeout = function () {};
+        request.send();
+    } catch (ignore) {}
+
+    var elapsed = Date.now() - startedAt;
+    if (elapsed > 90000) {
+        document.getElementById('status').innerHTML = 'O runtime não respondeu. Reinicie a TV e reinstale a versão 1.2.2.';
+        document.getElementById('hint').innerHTML = 'O pacote agora usa Node 18 ARMv7 interno; este erro não indica edição ARM incorreta.';
+        document.getElementById('error').style.display = 'block';
+        return;
+    }
+    if (elapsed > 20000) setProgress(72, 'Finalizando os serviços de mídia…');
+    else if (elapsed > 7000) setProgress(48, 'Carregando o player otimizado…');
+    else if (elapsed > 2000) setProgress(26, 'Preparando sua experiência…');
+    setTimeout(ping, 400);
+}
+
+try {
+    var bridge = new PalmServiceBridge();
+    bridge.onservicecallback = function (response) {
+        serviceAnswered = true;
+        try {
+            var data = JSON.parse(response);
+            if (data.ready) openApp();
+        } catch (ignore) {}
+    };
+    bridge.call('luna://io.strem.tv.server/start', '{}');
+} catch (ignore) {}
+
+ping();
+</script>
+</body>
+</html>

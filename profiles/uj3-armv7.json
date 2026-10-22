@@ -1,0 +1,17 @@
+{
+  "profile": "uj3-armv7",
+  "channel": "experimental",
+  "appId": "io.strem.tv.legacy3",
+  "serviceId": "io.strem.tv.legacy3.server",
+  "version": "0.9.0",
+  "port": 8083,
+  "ecmaTarget": "chrome38",
+  "targetLabel": "LG 49UJ6565-SB / webOS 3.9.3",
+  "lowMemory": true,
+  "sourceCap": 36,
+  "libraryCap": 36,
+  "catalogCap": 12,
+  "backdropWidth": 720,
+  "backdropCache": 8,
+  "backdropWorkers": 1
+}

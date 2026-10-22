@@ -1,0 +1,9 @@
+*.ipk
+service/server.js
+service/bin/
+.cache/
+.build/
+dist/
+node_modules/
+/public-repo/
+service/*.log

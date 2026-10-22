@@ -1,0 +1,33 @@
+name: Build and release profiles
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  packages:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run runtime
+      - run: npm test
+      - run: npm run package:all
+      - uses: actions/upload-artifact@v4
+        with:
+          name: webos-ipks
+          path: dist/*.ipk
+      - name: Publish tag assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.ipk
+          generate_release_notes: true

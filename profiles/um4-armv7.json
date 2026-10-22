@@ -1,0 +1,17 @@
+{
+  "profile": "um4-armv7",
+  "channel": "stable",
+  "appId": "io.strem.tv",
+  "serviceId": "io.strem.tv.server",
+  "version": "1.2.2",
+  "port": 8082,
+  "ecmaTarget": "chrome53",
+  "targetLabel": "LG 50UM7500PSB / webOS 4.x",
+  "lowMemory": false,
+  "sourceCap": 60,
+  "libraryCap": 60,
+  "catalogCap": 16,
+  "backdropWidth": 960,
+  "backdropCache": 24,
+  "backdropWorkers": 2
+}
