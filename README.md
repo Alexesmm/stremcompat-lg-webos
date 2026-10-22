@@ -9,7 +9,7 @@ An unofficial, remote-friendly Stremio client for older LG TVs. It bundles an AR
 | Profile | Status | Intended devices | App ID | Main limitations |
 |---|---|---|---|---|
 | `um4-armv7` 1.2.2 | Stable | Confirmed on LG 50UM7500PSB, firmware 05.40.97; other ARMv7 webOS 4.x TVs may work | `io.strem.tv` | Chromium 53; heavy 4K/remux/transcoding can exceed the TV's CPU or RAM |
-| `uj3-armv7` 0.9.0 | Experimental | Test target: LG 49UJ6565-SB, webOS 3.9.3; similar 2016–2017 UJ/LJ/SJ ARMv7 models may work | `io.strem.tv.legacy3` | Chromium 38, smaller caches, lower source caps, older MSE/codec support |
+| `uj3-armv7` 0.9.1 | Experimental | Test target: LG 49UJ6565-SB, webOS 3.9.3; similar 2016–2017 UJ/LJ/SJ ARMv7 models may work | `io.strem.tv.legacy3` | Chromium 38, smaller caches, lower source caps, older MSE/codec support |
 
 Do not install these ARMv7 packages on ARM64-only TVs or webOS 1.x/2.x. A TV also needs the 32-bit ARM loader at `/lib/ld-linux.so.3`. Models from the same product family can still use different SoCs, so a family name alone is not a guarantee. Newer supported TVs should normally use the official Stremio app.
 
@@ -19,7 +19,7 @@ Do not install these ARMv7 packages on ARM64-only TVs or webOS 1.x/2.x. A TV als
 2. In webOS Dev Manager, add the TV and install the matching `.ipk` from Releases.
 3. On first start, allow up to 60 seconds. Normal starts are usually faster.
 
-The UJ build has a different app/service ID and port, so it does not overwrite the UM build. If startup fails, it shows an `UJ3_BOOT` diagnostic on screen instead of pulsing forever. Developer Mode expires and may remove sideloaded apps; renew it before expiry.
+The UJ build has a different app/service ID and port, so it does not overwrite the UM build. Version 0.9.1 loads the Chromium 38 application separately and reports its last startup phase with an `UJ3_BOOT` code instead of pulsing forever. Developer Mode expires and may remove sideloaded apps; renew it before expiry.
 
 ## Features and limits
 

@@ -63,6 +63,11 @@ async function main() {
     var health = await waitForHealth(0);
     assert.strictEqual(JSON.parse(health.text).version, '1.2.2');
 
+    var application = await request({ hostname: '127.0.0.1', port: 8082, path: '/beta-app.js?v=1.2.2' });
+    assert.strictEqual(application.status, 200);
+    assert.ok(/^application\/javascript/.test(application.headers['content-type'] || ''));
+    assert.ok(application.text.indexOf("window.__STREMIO_PHASE__('M0')") >= 0);
+
     var addon = await request({ hostname: '127.0.0.1', port: 8082, path: '/addon?u=' + encodeURIComponent('http://127.0.0.1:9191/addon') });
     assert.strictEqual(JSON.parse(addon.text).ok, true);
 
@@ -94,7 +99,7 @@ async function main() {
     var parsedSegment = new URL(segmentUrl);
     var segment = await request({ hostname: parsedSegment.hostname, port: parsedSegment.port, path: parsedSegment.pathname + parsedSegment.search });
     assert.strictEqual(JSON.parse(segment.text).auth, 'Bearer hls-token');
-    console.log('OK: health, addon bridge, stream references, proxy headers and relative HLS.');
+    console.log('OK: health, legacy application script, addon bridge, stream references, proxy headers and relative HLS.');
   } finally {
     try { child.kill(); } catch (e) {}
     await new Promise(function (resolve) { upstream.close(resolve); });

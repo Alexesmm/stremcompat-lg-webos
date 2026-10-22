@@ -37,5 +37,7 @@ function validate(name, source) {
     }
 });
 
+validate('beta-app.js', fs.readFileSync(path.resolve(root, 'beta-app.js'), 'utf8'));
+
 if (failed) process.exit(1);
 console.log('OK: shell validado no nivel de sintaxe do ' + target + '.');

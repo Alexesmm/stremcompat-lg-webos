@@ -58,14 +58,15 @@ if (JSON.parse(serviceInfo.data.toString('utf8')).version !== profile.version) t
   if (!entry) throw new Error(name + ' ausente no IPK.');
   if ((entry.mode & 73) !== 73) throw new Error(name + ' nao esta executavel: ' + entry.mode.toString(8));
 });
-['launch.js', 'tvserver.js', 'beta.html'].forEach(function (name) {
+['launch.js', 'tvserver.js', 'beta.html', 'beta-app.js'].forEach(function (name) {
   if (!find(entries, new RegExp('/' + name.replace('.', '\\.') + '$'))) throw new Error(name + ' ausente no IPK.');
 });
 var packedLaunch = find(entries, /\/launch\.js$/).data.toString('utf8');
 var packedServer = find(entries, /\/tvserver\.js$/).data.toString('utf8');
 var packedShell = find(entries, /\/beta\.html$/).data.toString('utf8');
+var packedApplication = find(entries, /\/beta-app\.js$/).data.toString('utf8');
 if (packedLaunch.indexOf('APP_PORT = ' + profile.port) < 0 || packedServer.indexOf('PORT = ' + profile.port) < 0) throw new Error('Porta do perfil ausente no IPK.');
 if (packedServer.indexOf("p === '/streamref'") < 0 || packedServer.indexOf('rewriteHls') < 0) throw new Error('Proxy seguro/HLS ausente no IPK.');
-if (packedShell.indexOf("postJson('/streamref'") < 0 || packedShell.indexOf('compact:function()') < 0) throw new Error('Shell otimizado ausente no IPK.');
+if (packedApplication.indexOf("postJson('/streamref'") < 0 || packedApplication.indexOf('compact:function()') < 0) throw new Error('Shell otimizado ausente no IPK.');
 
 console.log('OK: IPK ' + profile.profile + ' ' + profile.version + ', manifests, shell, servidor e executaveis ARM presentes.');

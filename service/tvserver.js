@@ -1560,6 +1560,12 @@ http.createServer(function (req, res) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, max-age=0' });
       res.end(buf);
     });
+  } else if (p === '/beta-app.js') {
+    fs.readFile(path.join(DIR, 'beta-app.js'), function (err, buf) {
+      if (err) { res.writeHead(404); res.end('application script missing'); return; }
+      res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store, max-age=0' });
+      res.end(buf);
+    });
   } else if (p === '/play') {
     var stream = getStreamRef(q.ref || '') || decodeStreamToken(q.token || '');
     if (!stream && q.u) stream = { url: q.u }; // beta shell passes the stream URL directly

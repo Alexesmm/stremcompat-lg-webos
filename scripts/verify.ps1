@@ -9,7 +9,7 @@ if ($serviceInfo.name -ne 'io.strem.tv.server' -or $serviceInfo.version -ne $app
 
 $required = @(
     'app\index.html', 'app\icon.png', 'app\splash.png', 'app\services.json',
-    'service\launch.js', 'service\tvserver.js', 'service\beta.html',
+    'service\launch.js', 'service\tvserver.js', 'service\beta.html', 'service\beta-app.js',
     'service\server.js', 'service\services.json', 'service\stremio-logo.png',
     'service\bin\node18', 'service\bin\ffmpeg', 'service\bin\ffprobe',
     'service\bin\lib\libcrypto.so.3', 'service\bin\lib\libssl.so.3',
@@ -54,9 +54,10 @@ if ((Get-Content -LiteralPath (Join-Path $projectRoot 'service\tvserver.js') -Ra
 $launchSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\launch.js') -Raw
 $serverSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\tvserver.js') -Raw
 $shellSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\beta.html') -Raw
+$applicationSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\beta-app.js') -Raw
 $appSource = Get-Content -LiteralPath (Join-Path $projectRoot 'app\index.html') -Raw
 if ($launchSource -notmatch "APP_PORT = 8082" -or $serverSource -notmatch "PORT = 8082" -or $appSource -notmatch "127\.0\.0\.1:8082") { throw 'Porta local 8082 inconsistente.' }
 if ($serverSource -notmatch "APP_VERSION = '1\.2\.2'" -or $launchSource -notmatch "APP_VERSION = '1\.2\.2'") { throw 'Health/versionamento do runtime inconsistente.' }
-if ($serverSource -notmatch "p === '/streamref'" -or $serverSource -notmatch "p === '/addon'" -or $shellSource -notmatch "postJson\('/streamref'") { throw 'Ponte segura de addons/player ausente.' }
+if ($serverSource -notmatch "p === '/streamref'" -or $serverSource -notmatch "p === '/addon'" -or $applicationSource -notmatch "postJson\('/streamref'") { throw 'Ponte segura de addons/player ausente.' }
 
 Write-Host 'OK: shell, manifests, bootstrap ES5, runtime Node 18 e binarios ARMv7 validados.'

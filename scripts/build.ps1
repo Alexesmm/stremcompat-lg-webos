@@ -55,7 +55,8 @@ $textFiles = @(
     (Join-Path $stageApp 'index.html'),
     (Join-Path $stageService 'launch.js'),
     (Join-Path $stageService 'tvserver.js'),
-    (Join-Path $stageService 'beta.html')
+    (Join-Path $stageService 'beta.html'),
+    (Join-Path $stageService 'beta-app.js')
 )
 foreach ($file in $textFiles) {
     $text = [System.IO.File]::ReadAllText($file)
@@ -75,7 +76,7 @@ foreach ($file in $textFiles) {
 
 $lowMemory = if ($config.lowMemory) { 'true' } else { 'false' }
 $profileJs = "var TV_PROFILE={id:'$($config.profile)',lowMemory:$lowMemory,sourceCap:$($config.sourceCap),libraryCap:$($config.libraryCap),catalogCap:$($config.catalogCap)};"
-$shellPath = Join-Path $stageService 'beta.html'
+$shellPath = Join-Path $stageService 'beta-app.js'
 $shell = [System.IO.File]::ReadAllText($shellPath)
 $shell = [regex]::Replace($shell, "var TV_PROFILE=\{id:'[^']+'.*?\};", $profileJs, 1)
 [System.IO.File]::WriteAllText($shellPath, $shell, (New-Object System.Text.UTF8Encoding($false)))

@@ -18,7 +18,7 @@ function must(rel) {
 [
   'app/appinfo.json', 'app/index.html', 'app/services.json',
   'service/package.json', 'service/services.json', 'service/launch.js',
-  'service/tvserver.js', 'service/beta.html', 'service/bin/node18',
+  'service/tvserver.js', 'service/beta.html', 'service/beta-app.js', 'service/bin/node18',
   'service/bin/ffmpeg', 'service/bin/ffprobe'
 ].forEach(must);
 
@@ -30,13 +30,14 @@ if (service.name !== profile.serviceId || service.version !== profile.version) t
 var launch = read('service/launch.js');
 var server = read('service/tvserver.js');
 var shell = read('service/beta.html');
+var application = read('service/beta-app.js');
 var launcher = read('app/index.html');
 if (launch.indexOf('APP_PORT = ' + profile.port) < 0 || server.indexOf('PORT = ' + profile.port) < 0 || launcher.indexOf('127.0.0.1:' + profile.port) < 0) throw new Error('Local port mismatch.');
-if (launcher.indexOf('/beta?v=' + profile.version) < 0 || server.indexOf("'Cache-Control': 'no-store, max-age=0'") < 0) throw new Error('Versioned shell cache protection missing.');
+if (launcher.indexOf('/beta?v=' + profile.version) < 0 || shell.indexOf('/beta-app.js?v=' + profile.version) < 0 || server.indexOf("'Cache-Control': 'no-store, max-age=0'") < 0) throw new Error('Versioned shell cache protection missing.');
 if (launch.indexOf("APP_VERSION = '" + profile.version + "'") < 0 || server.indexOf("APP_VERSION = '" + profile.version + "'") < 0) throw new Error('Runtime version mismatch.');
 if (launch.indexOf("new Service('" + profile.serviceId + "')") < 0 || launcher.indexOf('luna://' + profile.serviceId + '/start') < 0) throw new Error('Service ID mismatch.');
-if (shell.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
-if (shell.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
+if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
+if (application.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
 
 var verifier = path.join(__dirname, 'verify-frontend.js');
 child.execFileSync(process.execPath, [verifier, path.join(stage, 'service'), profile.ecmaTarget], { stdio: 'inherit' });
