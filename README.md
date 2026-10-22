@@ -1,10 +1,47 @@
 # StremCompat for LG webOS
 
-An unofficial, remote-friendly Stremio client for older LG televisions that are not supported by the current LG Content Store application. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access, Homebrew Channel or a permanent system modification.
+<p align="center">
+  <img src="docs/assets/stremcompat-hero-en.png" alt="StremCompat running on an older LG webOS television" width="1200">
+</p>
 
-The project provides separate builds for different webOS generations. It combines a lightweight television interface, a bundled ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account synchronization and a native HTML5 video player.
+<p align="center">
+  <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Alexesmm/stremcompat-lg-webos?display_name=tag&color=8d5bd4"></a>
+  <img alt="LG webOS 3.x and 4.x" src="https://img.shields.io/badge/LG%20webOS-3.x%20%7C%204.x-8d5bd4">
+  <img alt="ARMv7" src="https://img.shields.io/badge/architecture-ARMv7-6f45b5">
+  <img alt="No root required" src="https://img.shields.io/badge/root-not%20required-2ea44f">
+  <img alt="Unofficial community project" src="https://img.shields.io/badge/project-unofficial%20community-ea345e">
+</p>
+
+## About
+
+StremCompat is an unofficial, remote-friendly Stremio compatibility client for older LG televisions that are not supported by the current LG Content Store application. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access, Homebrew Channel or a permanent system modification.
+
+The project provides separately optimized builds for incompatible webOS generations. It combines a lightweight television interface, a verified ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account and addon synchronization, source filtering and native hardware-backed HTML5 playback.
+
+The goal is not to claim universal support. It is to provide reproducible, testable ports for legacy LG hardware and clearly distinguish physically confirmed televisions from compatibility candidates.
 
 This project is not affiliated with or endorsed by Stremio or LG Electronics. Use only addons and media sources that you are authorized to access.
+
+**Project topics:** `stremio` · `webos` · `lg-tv` · `webos-tv` · `armv7` · `smart-tv` · `legacy-hardware` · `ffmpeg` · `nodejs` · `webos-dev-manager`
+
+## Table of contents
+
+1. [About](#about)
+2. [Downloads](#downloads)
+3. [Expected compatibility by television family](#expected-compatibility-by-television-family)
+4. [Why separate builds are required](#why-separate-builds-are-required)
+5. [Architecture](#architecture)
+6. [webOS 3 adaptation](#webos-3-adaptation)
+7. [Features](#features)
+8. [Performance profile and image-quality trade-offs](#performance-profile-and-image-quality-trade-offs)
+9. [Installation](#installation)
+10. [Choosing and adapting a build](#choosing-a-build-for-another-television)
+11. [Verification performed by the build](#verification-performed-by-the-build)
+12. [Playback limits](#playback-limits)
+13. [Troubleshooting](#troubleshooting)
+14. [Releases](#releases)
+15. [What StremCompat adds](#what-stremcompat-adds)
+16. [Credits and licensing](#credits-and-licensing)
 
 ## Downloads
 
