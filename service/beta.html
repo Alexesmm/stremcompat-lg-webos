@@ -283,6 +283,7 @@ body.trailer #dWrap{opacity:.14}
    bundle must still produce a readable error on old TV engines. */
 (function(){
   window.__STREMIO_BOOT_DONE__=false;
+  window.__STREMIO_BOOT_FAILED__=false;
   window.__STREMIO_BOOT_PHASE__='G0';
   var phase=document.createElement('div');
   phase.id='bootPhase';
@@ -290,10 +291,15 @@ body.trailer #dWrap{opacity:.14}
   phase.innerHTML='Starting G0';
   document.getElementById('boot').appendChild(phase);
   window.__STREMIO_PHASE__=function(code){
+    if(window.__STREMIO_BOOT_FAILED__)return;
     window.__STREMIO_BOOT_PHASE__=String(code||'UNKNOWN');
     var p=document.getElementById('bootPhase');if(p)p.innerHTML='Starting '+window.__STREMIO_BOOT_PHASE__;
   };
+  window.__STREMIO_SCRIPT_LOADED__=function(){
+    if(window.__STREMIO_BOOT_PHASE__==='G0')window.__STREMIO_PHASE__('SCRIPT_LOADED_NO_ENTRY');
+  };
   window.__STREMIO_BOOT_ERROR__=function(message,line){
+    window.__STREMIO_BOOT_FAILED__=true;
     var b=document.getElementById('boot');if(!b)return;
     b.style.background='#08070d';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
     b.style.textAlign='center';b.style.paddingTop='28vh';b.style.boxSizing='border-box';
@@ -303,10 +309,10 @@ body.trailer #dWrap{opacity:.14}
   };
   window.onerror=function(message,source,line){window.__STREMIO_BOOT_ERROR__(message,line);return false;};
   setTimeout(function(){
-    if(!window.__STREMIO_BOOT_DONE__)window.__STREMIO_BOOT_ERROR__('Startup timed out before the home or login screen was ready.','T25');
+    if(!window.__STREMIO_BOOT_DONE__&&!window.__STREMIO_BOOT_FAILED__)window.__STREMIO_BOOT_ERROR__('Startup timed out before the home or login screen was ready.','T25');
   },25000);
 })();
 </script>
-<script src="/beta-app.js?v=1.2.2" onload="window.__STREMIO_PHASE__('SCRIPT_LOADED')" onerror="window.__STREMIO_BOOT_ERROR__('Application script could not be loaded or parsed.','SCRIPT_LOAD')"></script>
+<script src="/beta-app.js?v=1.2.2" onload="window.__STREMIO_SCRIPT_LOADED__()" onerror="window.__STREMIO_BOOT_ERROR__('Application script could not be loaded or parsed.','SCRIPT_LOAD')"></script>
 </body>
 </html>

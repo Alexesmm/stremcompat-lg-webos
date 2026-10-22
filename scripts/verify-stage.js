@@ -37,6 +37,7 @@ if (launcher.indexOf('/beta?v=' + profile.version) < 0 || shell.indexOf('/beta-a
 if (launch.indexOf("APP_VERSION = '" + profile.version + "'") < 0 || server.indexOf("APP_VERSION = '" + profile.version + "'") < 0) throw new Error('Runtime version mismatch.');
 if (launch.indexOf("new Service('" + profile.serviceId + "')") < 0 || launcher.indexOf('luna://' + profile.serviceId + '/start') < 0) throw new Error('Service ID mismatch.');
 if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
+if (application.indexOf("window.__STREMIO_PHASE__('B_CALL');\nboot();") < 0 || application.indexOf("addEventListener('DOMContentLoaded',boot)") >= 0) throw new Error('Synchronous legacy boot missing.');
 if (application.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
 
 var verifier = path.join(__dirname, 'verify-frontend.js');

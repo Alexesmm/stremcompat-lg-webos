@@ -25,6 +25,7 @@ function lsJson(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function lsRaw(k,d){try{var v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}}
 function lsRawSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function storageKeys(){var out=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k!=null)out.push(k);}}catch(e){}return out;}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtTime(sec){sec=Math.max(0,sec|0);var h=(sec/3600)|0,m=((sec%3600)/60)|0,s=sec%60;function p(n){return (n<10?'0':'')+n;}return (h?h+':'+p(m):m)+':'+p(s);}
 var toastT=null;function toast(m){var t=$('toast');t.textContent=m;t.style.opacity='1';if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){t.style.opacity='0';},2800);}
@@ -43,9 +44,10 @@ function authKey(){return lsJson('authKey');}
    the official apps: items live under lib_<first4 of user._id>_<id> (shared with the
    classic shell on this origin), pulled on boot and pushed on every change. */
 function libPrefix(){var u=user();if(u&&u._id)return 'lib_'+u._id.slice(0,4)+'_';
-  for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf('lib_')===0){var j=k.indexOf('_',4);if(j>0)return k.slice(0,j+1);}}return 'lib_local_';}
+  var keys=storageKeys();for(var i=0;i<keys.length;i++){var k=keys[i];if(k.indexOf('lib_')===0){var j=k.indexOf('_',4);if(j>0)return k.slice(0,j+1);}}return 'lib_local_';}
 var PRE=libPrefix();
-function allLib(){var out=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+window.__STREMIO_PHASE__('M1');
+function allLib(){var out=[],keys=storageKeys();for(var i=0;i<keys.length;i++){var k=keys[i];
   if(k.indexOf(PRE)!==0)continue;var it=lsJson(k);if(it&&it._id)out.push(it);}return out;}
 function cwItems(){var out=[],lib=allLib();
   for(var i=0;i<lib.length;i++){var it=lib[i],s=it.state||{};
@@ -309,6 +311,7 @@ function goBackScr(){
 
 var chips=[$('chipSearch'),$('chipHome'),$('chipDisc'),$('chipLib'),$('chipSet')];
 var chipTarget=['search','home','disc','lib','set'];
+window.__STREMIO_PHASE__('M2');
 function paintChips(){for(var i=0;i<chips.length;i++){
   var t=chipTarget[i];
   var cur=(t===SCR)||(t==='home'&&(SCR==='detail'||SCR==='sim'));
@@ -1151,6 +1154,7 @@ function currentFocusedItem(){
 /* long-press OK on ANY card opens the side menu; a short tap does its normal action.
    webOS repeats keydown while held, so we act on keyup (short) or after 2 repeats (menu). */
 var okHold={down:false,rep:0,menu:false,item:null},menuGuard=false;
+window.__STREMIO_PHASE__('M3');
 document.addEventListener('keydown',function(e){
   var k=e.keyCode;
   idleTouch();
@@ -1194,6 +1198,7 @@ window.addEventListener('popstate',function(){
 function tickClock(){var d=new Date();var h=d.getHours(),m=d.getMinutes();
   $('clock').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;setTimeout(tickClock,15000);}
 tickClock();
+window.__STREMIO_PHASE__('M4');
 
 /* ================= boot ================= */
 function boot(){
@@ -1213,7 +1218,10 @@ function boot(){
   setTimeout(function(){syncAddons(function(changed){if(changed){toast('Addons updated');buildHomeRows(true);}});},900);
   }catch(error){window.__STREMIO_BOOT_ERROR__(error&&error.message||String(error),'BOOT');}
 }
-if(document.readyState!=='loading')boot();
-else{window.__STREMIO_PHASE__('D0');document.addEventListener('DOMContentLoaded',boot);}
+/* This script is the last parser-blocking element in body, so every UI node already
+   exists. Boot synchronously: old webOS WebAppManager builds can miss a late
+   DOMContentLoaded listener after navigating from the packaged bootstrap to localhost. */
+window.__STREMIO_PHASE__('B_CALL');
+boot();
 })();
 }catch(error){window.__STREMIO_BOOT_ERROR__(error&&error.message||String(error),'TOP');}

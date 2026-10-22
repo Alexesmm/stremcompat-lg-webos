@@ -11,7 +11,7 @@
     "package:um4": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7",
     "package:uj3": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-armv7",
     "package:all": "npm run package:um4 && npm run package:uj3",
-    "test": "node ./scripts/selftest-runtime.js",
+    "test": "node ./scripts/selftest-frontend.js && node ./scripts/selftest-runtime.js",
     "verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
   },
   "devDependencies": {

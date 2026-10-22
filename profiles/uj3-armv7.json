@@ -3,7 +3,7 @@
   "channel": "experimental",
   "appId": "io.strem.tv.legacy3",
   "serviceId": "io.strem.tv.legacy3.server",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "port": 8083,
   "ecmaTarget": "chrome38",
   "targetLabel": "LG 49UJ6565-SB / webOS 3.9.3",
