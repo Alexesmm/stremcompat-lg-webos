@@ -1,6 +1,6 @@
 {
   "profile": "uj3-native-armv7",
-  "channel": "experimental",
+  "channel": "stable",
   "appId": "io.strem.tv.uj3native",
   "title": "Stremio UJ3",
   "serviceId": "io.strem.tv.uj3native.server",

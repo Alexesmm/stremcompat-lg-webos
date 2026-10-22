@@ -2,7 +2,7 @@
   "name": "stremio-webos-legacy",
   "version": "1.2.2",
   "private": true,
-  "description": "Stremio community port tuned for LG 50UM7500PSB on webOS 4.x",
+  "description": "Stremio community compatibility ports for legacy LG webOS 3.x and 4.x televisions",
   "scripts": {
     "runtime": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-runtime.ps1",
     "build": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7 -SkipPackage",
@@ -12,7 +12,7 @@
     "package:um4": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7",
     "package:uj3": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-armv7",
     "package:uj3-native": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7",
-    "package:all": "npm run package:um4 && npm run package:uj3",
+    "package:all": "npm run package:um4 && npm run package:uj3-native",
     "test": "node ./scripts/selftest-frontend.js && node ./scripts/selftest-runtime.js",
     "test:chrome38": "node ./scripts/selftest-chromium38.js",
     "verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
