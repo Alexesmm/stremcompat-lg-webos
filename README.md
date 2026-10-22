@@ -8,7 +8,7 @@ This project is not affiliated with or endorsed by Stremio or LG Electronics. Us
 
 ## Downloads
 
-Use the IPK that matches the television generation. StremCompat 1.0.0 publishes the two confirmed ports as separate, clearly named assets on the [Releases page](https://github.com/Alexesmm/stremio-universal-lg-tv-ports/releases).
+Use the IPK that matches the television generation. StremCompat 1.0.0 publishes the two confirmed ports as separate, clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
 
 | Build | Status | Confirmed television | Platform | App name and ID |
 |---|---|---|---|---|
@@ -200,6 +200,6 @@ Users do not need to create a Release. They only download the matching IPK from 
 
 ## Credits and licensing
 
-The implementation is based on and interoperates with Stremio, the Stremio streaming server, StremioBrew, the original community webOS port, Node.js, FFmpeg and LG webOS tooling. Exact upstream references and runtime provenance are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+StremCompat is a community compatibility project built from earlier webOS work and third-party runtime components. The packaged-app bootstrap was adapted from [kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos), which in turn states that its television interface was built from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The local runtime layer was adapted from [StremioBrew](https://github.com/simussu9-wq/stremiobrew). Stremio, Node.js, FFmpeg and LG webOS tooling are also used or interoperated with.
 
-Third-party names, trademarks, binaries and source code remain subject to their respective licenses and terms. This repository does not grant additional rights to those components.
+See [NOTICE.md](NOTICE.md) for the project lineage and the current redistribution caveats, and [THIRD_PARTY.md](THIRD_PARTY.md) for component-level provenance. No repository-wide open-source license is currently asserted while inherited source without a published license remains in the tree. Third-party names, trademarks, binaries and source code remain subject to their respective licenses and terms.
