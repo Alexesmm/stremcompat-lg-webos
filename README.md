@@ -1,4 +1,4 @@
-# Stremio Legacy for LG webOS
+# StremCompat for LG webOS
 
 An unofficial, remote-friendly Stremio client for older LG televisions that are not supported by the current LG Content Store application.
 
@@ -8,12 +8,17 @@ This project is not affiliated with or endorsed by Stremio or LG Electronics. Us
 
 ## Downloads
 
-Use the IPK that matches the television generation. The two recommended builds are published together on the [Releases page](https://github.com/Alexesmm/stremio-universal-lg-tv-ports/releases).
+Use the IPK that matches the television generation. StremCompat 1.0.0 publishes the two confirmed ports as separate, clearly named assets on the [Releases page](https://github.com/Alexesmm/stremio-universal-lg-tv-ports/releases).
 
 | Build | Status | Confirmed television | Platform | App name and ID |
 |---|---|---|---|---|
 | `um4-armv7` 1.2.2 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio, `io.strem.tv` |
 | `uj3-native-armv7` 1.0.1 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3, `io.strem.tv.uj3native` |
+
+Release assets:
+
+- `StremCompat-webOS4-UM4-armv7-1.2.2.ipk`
+- `StremCompat-webOS3-UJ3-armv7-1.0.1.ipk`
 
 The older `uj3-armv7` 0.9.3 profile is retained only as development history. It was replaced by `uj3-native-armv7` and is not a recommended release.
 
@@ -127,7 +132,7 @@ npm run package:um4
 npm run package:uj3-native
 ```
 
-The first runtime preparation downloads a pinned StremioBrew package, verifies SHA-256 `36c81015d851bfd4b12c40372edbe7b51fb67fe1d8cec828d0aeFA6CE8343DF7` case-insensitively, and extracts the required ARMv7 runtime files. Runtime binaries are not committed to this repository.
+The first runtime preparation downloads a pinned StremioBrew package, verifies SHA-256 `36c81015d851bfd4b12c40372edbe7b51fb67fe1d8cec828d0aeFA6CE8343DF7` case-insensitively, and extracts the required ARMv7 runtime files. Runtime binaries are not committed to this repository. The original upstream file was removed after version 2.0.0 replaced that architecture, so an unchanged checksum-verified copy is retained in the `runtime-v1.0.0` build-dependency prerelease. It is not a TV application download.
 
 To add another profile:
 
@@ -182,13 +187,13 @@ The application cannot expand the codecs or processing power available in the te
 
 ## Releases
 
-Confirmed builds are released as a versioned bundle. Tags use the date format `vYYYY.MM.DD`. The GitHub Actions release workflow builds both recommended IPKs, verifies them and attaches them to the matching GitHub Release.
+Confirmed builds are released together under the StremCompat project version. Tags follow Semantic Versioning, such as `v1.0.0`. Each television port keeps its own internal version in the asset filename because the two ports can evolve independently. The GitHub Actions release workflow builds both recommended IPKs, verifies them, gives them descriptive filenames and attaches them to the matching GitHub Release.
 
 Maintainer example:
 
 ```powershell
-git tag v2026.10.22
-git push origin v2026.10.22
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 Users do not need to create a Release. They only download the matching IPK from the Releases page.

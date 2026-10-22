@@ -5,7 +5,7 @@ $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $serviceDir = Join-Path $projectRoot 'service'
 $cacheDir = Join-Path $projectRoot '.cache'
 $sourceIpk = Join-Path $cacheDir 'stremiobrew-1.0.0.ipk'
-$sourceUrl = 'https://raw.githubusercontent.com/simussu9-wq/stremiobrew/main/io.strem.tv.beta_1.0.0_all.ipk'
+$sourceUrl = 'https://github.com/Alexesmm/stremio-universal-lg-tv-ports/releases/download/runtime-v1.0.0/stremiobrew-1.0.0.ipk'
 $expectedSha256 = '36C81015D851BFD4B12C40372EDBE7B51FB67FE1D8CEC828D0AEFA6CE8343DF7'
 $required = @(
     (Join-Path $serviceDir 'server.js'),
@@ -22,7 +22,15 @@ if (-not $Force) {
 New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
 if (-not (Test-Path -LiteralPath $sourceIpk -PathType Leaf) -or $Force) {
     Write-Host 'Downloading pinned StremioBrew runtime package...'
-    Invoke-WebRequest -UseBasicParsing -Uri $sourceUrl -OutFile $sourceIpk
+    try {
+        Invoke-WebRequest -UseBasicParsing -Uri $sourceUrl -OutFile $sourceIpk
+    } catch {
+        $gh = Get-Command gh -ErrorAction SilentlyContinue
+        if (-not $gh) { throw }
+        Write-Host 'Direct download unavailable; using authenticated GitHub CLI fallback...'
+        & gh release download runtime-v1.0.0 --repo Alexesmm/stremio-universal-lg-tv-ports --pattern 'stremiobrew-1.0.0.ipk' --dir $cacheDir --clobber
+        if ($LASTEXITCODE -ne 0) { throw 'GitHub CLI runtime download failed.' }
+    }
 }
 
 $sha = [System.Security.Cryptography.SHA256]::Create()
