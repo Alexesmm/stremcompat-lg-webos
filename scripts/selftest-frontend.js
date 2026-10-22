@@ -21,10 +21,11 @@ function element(id) {
   return el;
 }
 
-function run(storage, expectedScreen) {
+function run(storage, expectedScreen, missingIds) {
   var elements = {};
   var body = element('body');
-  function get(id) { if (!elements[id]) elements[id] = element(id);return elements[id]; }
+  missingIds = missingIds || {};
+  function get(id) { if (missingIds[id]) return null;if (!elements[id]) elements[id] = element(id);return elements[id]; }
   var document = {
     body: body, activeElement: null,
     getElementById: get,
@@ -83,4 +84,5 @@ function accountStorage() {
 run(emptyStorage(), 'scrLogin');
 run(unavailableStorage(), 'scrLogin');
 run(accountStorage(), 'scrBoard');
-console.log('OK: Chromium 38 startup reaches login or home with empty, unavailable or populated localStorage.');
+run(emptyStorage(), 'scrLogin', { lgEmail: true, lgPass: true });
+console.log('OK: Chromium 38 startup reaches login or home with storage failures and degraded input elements.');

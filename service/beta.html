@@ -300,6 +300,8 @@ body.trailer #dWrap{opacity:.14}
   };
   window.__STREMIO_BOOT_ERROR__=function(message,line){
     window.__STREMIO_BOOT_FAILED__=true;
+    window.__STREMIO_BOOT_MESSAGE__=String(message||'Unknown startup error');
+    window.__STREMIO_BOOT_LINE__=String(line||'');
     var b=document.getElementById('boot');if(!b)return;
     b.style.background='#08070d';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
     b.style.textAlign='center';b.style.paddingTop='28vh';b.style.boxSizing='border-box';

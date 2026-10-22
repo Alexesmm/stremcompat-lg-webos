@@ -10,15 +10,36 @@ var failed = false;
 
 function validate(name, source) {
     try {
-        acorn.parse(source, {
+        var ast = acorn.parse(source, {
             ecmaVersion: ecmaVersion,
             allowHashBang: true,
+            locations: true,
             sourceType: 'script'
         });
+        if (target === 'chrome38') validateLegacyFunctionPlacement(name, ast);
     } catch (error) {
         failed = true;
         console.error(name + ': incompativel com ' + target + ': ' + error.message);
     }
+}
+
+function validateLegacyFunctionPlacement(name, ast) {
+    function walk(node, parent, grandparent) {
+        if (!node || typeof node !== 'object') return;
+        if (node.type === 'FunctionDeclaration') {
+            var directProgram = parent && parent.type === 'Program';
+            var directFunction = parent && parent.type === 'BlockStatement' && grandparent &&
+                (grandparent.type === 'FunctionDeclaration' || grandparent.type === 'FunctionExpression');
+            if (!directProgram && !directFunction) throw new Error('block-level function declaration at line ' + node.loc.start.line + ' is rejected by strict Chromium 38');
+        }
+        Object.keys(node).forEach(function (key) {
+            if (key === 'loc' || key === 'start' || key === 'end') return;
+            var value = node[key];
+            if (Array.isArray(value)) value.forEach(function (child) { if (child && child.type) walk(child, node, parent); });
+            else if (value && value.type) walk(value, node, parent);
+        });
+    }
+    walk(ast, null, null);
 }
 
 ['beta.html', path.join('..', 'app', 'index.html')].forEach(function (relative) {

@@ -8,6 +8,14 @@ var CIN='https://v3-cinemeta.strem.io';
 var API='https://api.strem.io';
 var TV_PROFILE={id:'um4-armv7',lowMemory:false,sourceCap:60,libraryCap:60,catalogCap:16};
 function $(id){return document.getElementById(id);}
+function on(target,name,handler,capture){
+  if(!target)return false;
+  try{
+    if(typeof target.addEventListener==='function'){target.addEventListener(name,handler,!!capture);return true;}
+    if(typeof target.attachEvent==='function'){target.attachEvent('on'+name,function(){handler(window.event);});return true;}
+    target['on'+name]=handler;return true;
+  }catch(e){try{target['on'+name]=handler;return true;}catch(ignore){return false;}}
+}
 function bodyHas(name){return (' '+document.body.className+' ').indexOf(' '+name+' ')>=0;}
 function bodyAdd(name){if(!bodyHas(name))document.body.className+=(document.body.className?' ':'')+name;}
 function bodyRemove(name){document.body.className=(' '+document.body.className+' ').replace(new RegExp(' '+name+' ','g'),' ').replace(/^\s+|\s+$/g,'');}
@@ -920,8 +928,9 @@ key:function(k){
 /* ================= SEARCH ================= */
 var search={zone:'input',rows:[],rowIdx:0,q:'',
 wire:function(){var self=this;
-  if(!$('sBox')._wired){$('sBox')._wired=true;
-    $('sBox').addEventListener('keydown',function(e){
+  var box=$('sBox');if(!box)return;
+  if(!box._wired){box._wired=true;
+    on(box,'keydown',function(e){
       if(e.keyCode===13){e.preventDefault();e.stopPropagation();$('sBox').blur();self.run($('sBox').value);}
       else if(e.keyCode===40){e.preventDefault();e.stopPropagation();$('sBox').blur();if(self.rows.length){self.zone='rows';self.paint();}}
       else if(e.keyCode===461||e.keyCode===27){e.preventDefault();e.stopPropagation();$('sBox').blur();self.paint();}
@@ -1052,13 +1061,13 @@ key:function(k){
 /* ================= LOGIN (standalone: QR + email) ================= */
 var login={zone:'email',poll:null,started:false,
 enter:function(){
-  var self=this;
-  if(!$('lgEmail')._wired){$('lgEmail')._wired=true;
-    function wire(el,next){el.addEventListener('keydown',function(e){
+  var self=this,email=$('lgEmail'),pass=$('lgPass');
+  if(email&&!email._wired){email._wired=true;
+    var wire=function(el,next){if(!el)return;on(el,'keydown',function(e){
       if(e.keyCode===13||e.keyCode===40){e.preventDefault();e.stopPropagation();el.blur();self.zone=next;self.paint();}
       else if(e.keyCode===461||e.keyCode===27){e.preventDefault();e.stopPropagation();el.blur();self.paint();}
-    },true);}
-    wire($('lgEmail'),'pass');wire($('lgPass'),'btn');}
+    },true);};
+    wire(email,'pass');wire(pass,'btn');}
   this.paint();this.startQr();},
 startQr:function(){
   if(this.started)return;this.started=true;var self=this;
@@ -1073,7 +1082,8 @@ startQr:function(){
     },2500);
   });},
 doEmail:function(){
-  var em=$('lgEmail').value,pw=$('lgPass').value;
+  var email=$('lgEmail'),pass=$('lgPass');if(!email||!pass){$('lgErr').textContent='Use o código de acesso pelo celular';return;}
+  var em=email.value,pw=pass.value;
   if(!em||!pw){$('lgErr').textContent='Digite e-mail e senha';return;}
   $('lgErr').textContent='';toast('Entrando…');var self=this;
   postJson(API+'/api/login',{email:em,password:pw},function(r){
@@ -1090,15 +1100,16 @@ finish:function(ak){
     setTimeout(function(){location.reload();},4000);
   });},
 paint:function(){
-  $('lgEmail').className='lgin'+(this.zone==='email'?' f':'');
-  $('lgPass').className='lgin'+(this.zone==='pass'?' f':'');
-  $('lgBtn').className=(this.zone==='btn'?'f':'');},
+  var email=$('lgEmail'),pass=$('lgPass'),button=$('lgBtn');
+  if(email)email.className='lgin'+(this.zone==='email'?' f':'');
+  if(pass)pass.className='lgin'+(this.zone==='pass'?' f':'');
+  if(button)button.className=(this.zone==='btn'?'f':'');},
 key:function(k){
   if(k===40){this.zone=this.zone==='email'?'pass':(this.zone==='pass'?'btn':'btn');this.paint();}
   else if(k===38){this.zone=this.zone==='btn'?'pass':(this.zone==='pass'?'email':'email');this.paint();}
   else if(k===13){
-    if(this.zone==='email'){$('lgEmail').focus();}
-    else if(this.zone==='pass'){$('lgPass').focus();}
+    if(this.zone==='email'){var email=$('lgEmail');if(email&&email.focus)email.focus();}
+    else if(this.zone==='pass'){var pass=$('lgPass');if(pass&&pass.focus)pass.focus();}
     else this.doEmail();}
   return true;}
 };
@@ -1130,9 +1141,9 @@ function startIdleTrailer(){
       /* Keep previews unobtrusive and cheap; the user can still open a full trailer. */
       el.muted=true;el.volume=0;
       /* once playing, fade the foreground fully away (adds the .trailer class) */
-      el.addEventListener('playing',function(){if(bgv===el){el.className='on';if(bodyHas('idle'))bodyAdd('trailer');}});
-      el.addEventListener('ended',function(){if(bgv===el)stopIdleTrailer();});
-      el.addEventListener('error',function(){if(bgv===el)stopIdleTrailer();});
+      on(el,'playing',function(){if(bgv===el){el.className='on';if(bodyHas('idle'))bodyAdd('trailer');}});
+      on(el,'ended',function(){if(bgv===el)stopIdleTrailer();});
+      on(el,'error',function(){if(bgv===el)stopIdleTrailer();});
       el.src=j.url;
       var shade=$('bgshade');shade.parentNode.insertBefore(el,shade);
       bgv=el;
@@ -1155,7 +1166,7 @@ function currentFocusedItem(){
    webOS repeats keydown while held, so we act on keyup (short) or after 2 repeats (menu). */
 var okHold={down:false,rep:0,menu:false,item:null},menuGuard=false;
 window.__STREMIO_PHASE__('M3');
-document.addEventListener('keydown',function(e){
+on(document,'keydown',function(e){
   var k=e.keyCode;
   idleTouch();
   var a=document.activeElement;
@@ -1182,7 +1193,7 @@ document.addEventListener('keydown',function(e){
   else if(SCR==='login')login.key(k);
   else if(SCR==='sim')similar.key(k);
 },true);
-document.addEventListener('keyup',function(e){
+on(document,'keyup',function(e){
   if(e.keyCode!==13)return;
   menuGuard=false;
   var h=okHold;okHold={down:false,rep:0,menu:false,item:null};
@@ -1191,7 +1202,7 @@ document.addEventListener('keyup',function(e){
     else openItem(h.item);}
 },true);
 try{history.pushState({tv:1},'');}catch(e){}
-window.addEventListener('popstate',function(){
+on(window,'popstate',function(){
   try{history.pushState({tv:1},'');}catch(e){}
   goBackScr();});
 
