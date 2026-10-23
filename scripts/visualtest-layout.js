@@ -130,6 +130,11 @@ async function main() {
     await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
     await delay(1800);
+    for (var catalogWait = 0; catalogWait < 25; catalogWait++) {
+      var readyRows = await protocol.call('Runtime.evaluate', { expression: "(function(){var r=document.querySelectorAll('#rows>.row'),n=0;for(var i=0;i<r.length;i++)if(getComputedStyle(r[i]).display!=='none')n++;return n;})()", returnByValue: true });
+      if (readyRows.result.value >= 12) break;
+      await delay(160);
+    }
     var authenticated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({bodyClass:document.body.className,topnavDisplay:getComputedStyle(document.getElementById('topnav')).display,home:document.getElementById('scrBoard').className,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,message:window.__STREMIO_BOOT_MESSAGE__||'',line:window.__STREMIO_BOOT_LINE__||'',phase:window.__STREMIO_BOOT_PHASE__||''})", returnByValue: true });
     var authenticatedState = JSON.parse(authenticated.result.value);
     assert.strictEqual(authenticatedState.failed, false, 'Authenticated frontend reported a boot failure: ' + JSON.stringify(authenticatedState));
@@ -153,6 +158,14 @@ async function main() {
     assert.ok(nextBoardState.card && nextBoardState.card.top >= nextBoardState.clip.top && nextBoardState.card.bottom <= height, 'Next catalog card is clipped at ' + width + 'x' + height + '.');
     var boardShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
     fs.writeFileSync(output.replace(/\.png$/i, '-board.png'), Buffer.from(boardShot.data, 'base64'));
+    var sourcesExpression = "(function(){var panel=document.getElementById('streams'),inner=document.getElementById('stInner');panel.style.display='block';document.getElementById('stSub').textContent='Compatibility test';document.getElementById('stChips').innerHTML='<span class=\"stchip cur\">All</span><span class=\"stchip\">1080p</span><span class=\"stchip\">720p</span>';inner.innerHTML='';for(var i=0;i<6;i++){var d=document.createElement('div');d.className='st'+(i===2?' f':'');d.innerHTML='<div class=\"a\">1080p · '+(30-i)+' seeders · Test addon</div>'+(i===2?'<div class=\"compat\">Check compatibility: DTS · HEVC 10-bit</div>':'')+'<div class=\"b\">Example source '+i+'</div>';inner.appendChild(d);}var pr=panel.getBoundingClientRect(),fr=inner.children[2].getBoundingClientRect(),cr=inner.children[2].querySelector('.compat').getBoundingClientRect();return JSON.stringify({panel:{left:pr.left,top:pr.top,right:pr.right,bottom:pr.bottom},focused:{top:fr.top,bottom:fr.bottom},compat:{top:cr.top,bottom:cr.bottom,font:getComputedStyle(inner.children[2].querySelector('.compat')).fontSize}});})()";
+    var sourcesEval = await protocol.call('Runtime.evaluate', { expression: sourcesExpression, returnByValue: true });
+    var sourcesState = JSON.parse(sourcesEval.result.value);
+    assert.ok(sourcesState.panel.left >= 0 && sourcesState.panel.top >= 0 && sourcesState.panel.right <= width && sourcesState.panel.bottom <= height, 'Sources panel is clipped.');
+    assert.ok(sourcesState.focused.top >= sourcesState.panel.top && sourcesState.focused.bottom <= height, 'Focused source is clipped.');
+    assert.ok(sourcesState.compat.bottom > sourcesState.compat.top, 'Compatibility warning is not visible.');
+    var sourcesShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
+    fs.writeFileSync(output.replace(/\.png$/i, '-sources.png'), Buffer.from(sourcesShot.data, 'base64'));
     await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(38);key(38);key(39);key(39);key(39);key(40);})()" });
     await delay(150);
     var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl');return JSON.stringify({screen:document.getElementById('scrSet').className,firstLabel:labels.length?labels[0].textContent:'',firstValue:values.length?values[0].textContent:''});})()", returnByValue: true });

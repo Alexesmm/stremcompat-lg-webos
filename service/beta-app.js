@@ -6,7 +6,7 @@ window.__STREMIO_PHASE__('M0');
 /* ================= utils ================= */
 var CIN='https://v3-cinemeta.strem.io';
 var API='https://api.strem.io';
-var TV_PROFILE={id:'um4-armv7',lowMemory:false,sourceCap:60,libraryCap:60,catalogCap:16,catalogRowsCap:24};
+var TV_PROFILE={id:'um4-armv7',serviceId:'io.strem.tv.server',lowMemory:false,sourceCap:60,libraryCap:60,catalogCap:16,catalogRowsCap:24};
 function $(id){return document.getElementById(id);}
 function viewportWidth(){var d=document.documentElement;return Math.max(640,(d&&d.clientWidth)||window.innerWidth||1920);}
 function on(target,name,handler,capture){
@@ -52,7 +52,7 @@ var UI_TEXT={
     removeLibrary:'Remove from Library',addLibrary:'Add to Library',removedLibrary:'Removed from Library',addedLibrary:'Added to Library',inLibrary:'In Library',libraryButton:'+ Library',
     similar:'Similar',similarTo:'More like {0}',findingSimilar:'Finding similar titles…',nothingFound:'Nothing found.',couldNotLoad:'Could not load title',
     cast:'Cast',director:'Director',writers:'Writers',country:'Country',awards:'Awards',specials:'Specials',season:'Season {0}',episode:'Episode {0}',seasonEpisode:'Season {0} · Episode {1}',
-    sources:'Sources',findingSources:'Finding sources…',noSources:'No sources found.',noSourcesQuality:'No sources in this quality.',lastSource:'Last source',continuePlayback:'Continue playback',sameSource:'The same source used previously',seeders:'seeders',
+    sources:'Sources',findingSources:'Finding sources…',noSources:'No sources found.',noSourcesQuality:'No sources in this quality.',lastSource:'Last source',continuePlayback:'Continue playback',sameSource:'The same source used previously',seeders:'seeders',compatibilityCheck:'Check compatibility: {0}',runtimeRestoring:'Restoring the local service…',runtimeUnavailable:'Could not restore the local service',
     interfaceGroup:'Interface',interfaceLanguage:'Interface language',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Language: {0}  ‹ ›',
     subtitlesGroup:'Subtitles',subtitleSize:'Subtitle size',defaultLanguage:'Default language',subtitleColor:'Subtitle color',subtitleOutline:'Subtitle outline',subtitleBackground:'Subtitle background',embeddedSubtitles:'Embedded subtitles',
     audioGroup:'Audio',autoAudio:'Select audio automatically',defaultAudio:'Default audio language',playbackGroup:'Playback',seekInterval:'Seek interval',nextEpisode:'Play next episode',backgroundTrailers:'Background trailers',scrubPreview:'Seek preview',addonsGroup:'Addons',syncAddons:'Sync addons now',accountGroup:'Account',signOut:'Sign out',
@@ -73,7 +73,7 @@ var UI_TEXT={
     removeLibrary:'Remover da Biblioteca',addLibrary:'Adicionar à Biblioteca',removedLibrary:'Removido da Biblioteca',addedLibrary:'Adicionado à Biblioteca',inLibrary:'Na Biblioteca',libraryButton:'+ Biblioteca',
     similar:'Parecidos',similarTo:'Parecidos com {0}',findingSimilar:'Buscando títulos parecidos…',nothingFound:'Nada encontrado.',couldNotLoad:'Não foi possível carregar o título',
     cast:'Elenco',director:'Direção',writers:'Roteiro',country:'País',awards:'Prêmios',specials:'Especiais',season:'Temporada {0}',episode:'Episódio {0}',seasonEpisode:'Temporada {0} · Episódio {1}',
-    sources:'Fontes',findingSources:'Buscando fontes…',noSources:'Nenhuma fonte encontrada.',noSourcesQuality:'Nenhuma fonte nesta qualidade.',lastSource:'Última fonte',continuePlayback:'Continuar reprodução',sameSource:'A mesma fonte usada anteriormente',seeders:'seeders',
+    sources:'Fontes',findingSources:'Buscando fontes…',noSources:'Nenhuma fonte encontrada.',noSourcesQuality:'Nenhuma fonte nesta qualidade.',lastSource:'Última fonte',continuePlayback:'Continuar reprodução',sameSource:'A mesma fonte usada anteriormente',seeders:'seeders',compatibilityCheck:'Verifique a compatibilidade: {0}',runtimeRestoring:'Restaurando o serviço local…',runtimeUnavailable:'Não foi possível restaurar o serviço local',
     interfaceGroup:'Interface',interfaceLanguage:'Idioma da interface',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Idioma: {0}  ‹ ›',
     subtitlesGroup:'Legendas',subtitleSize:'Tamanho da legenda',defaultLanguage:'Idioma padrão',subtitleColor:'Cor da legenda',subtitleOutline:'Contorno da legenda',subtitleBackground:'Fundo da legenda',embeddedSubtitles:'Legendas incorporadas',
     audioGroup:'Áudio',autoAudio:'Selecionar áudio automaticamente',defaultAudio:'Idioma de áudio padrão',playbackGroup:'Reprodução',seekInterval:'Intervalo de avanço',nextEpisode:'Reproduzir próximo episódio',backgroundTrailers:'Trailers em segundo plano',scrubPreview:'Prévia ao avançar',addonsGroup:'Addons',syncAddons:'Sincronizar addons agora',accountGroup:'Conta',signOut:'Sair',
@@ -111,6 +111,23 @@ if($('lgStat'))$('lgStat').textContent=tx('generatingCode');
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtTime(sec){sec=Math.max(0,sec|0);var h=(sec/3600)|0,m=((sec%3600)/60)|0,s=sec%60;function p(n){return (n<10?'0':'')+n;}return (h?h+':'+p(m):m)+':'+p(s);}
 var toastT=null;function toast(m){var t=$('toast');t.textContent=m;t.style.opacity='1';if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){t.style.opacity='0';},2800);}
+function clientDiag(event,data){
+  try{var q=['ev='+encodeURIComponent(String(event||'shell')),'screen='+encodeURIComponent(String(SCR||''))];data=data||{};
+    for(var k in data)if(Object.prototype.hasOwnProperty.call(data,k)&&data[k]!=null)q.push(encodeURIComponent(k)+'='+encodeURIComponent(String(data[k]).slice(0,160)));
+    var im=new Image();im.src='/log?'+q.join('&')+'&_='+(Date.now());}catch(e){}
+}
+var runtimeRecovering=false;
+function runtimePing(cb){var done=false;function finish(ok){if(done)return;done=true;cb(ok);}
+  try{var x=new XMLHttpRequest();x.open('GET','/health?resume='+(Date.now()),true);x.onreadystatechange=function(){if(x.readyState===4)finish(x.status>=200&&x.status<300);};x.timeout=900;x.ontimeout=function(){finish(false);};x.onerror=function(){finish(false);};x.send();setTimeout(function(){finish(false);},1100);}catch(e){finish(false);}}
+function runtimeStart(cb){var done=false,bridge=null;function finish(ok){if(done)return;done=true;bridge=null;cb(ok);}
+  try{if(typeof PalmServiceBridge==='undefined'){finish(false);return;}bridge=new PalmServiceBridge();bridge.onservicecallback=function(){finish(true);};bridge.call('luna://'+TV_PROFILE.serviceId+'/start','{}');setTimeout(function(){finish(false);},2600);}catch(e){finish(false);}}
+function runtimeRecover(){if(runtimeRecovering)return;runtimeRecovering=true;runtimePing(function(up){
+  if(up){runtimeRecovering=false;clientDiag('resume_ok',{});return;}
+  toast(tx('runtimeRestoring'));clientDiag('resume_restart',{});runtimeStart(function(){var tries=0;
+    function check(){runtimePing(function(ok){if(ok){clientDiag('resume_recovered',{tries:tries});location.reload();return;}tries++;if(tries<20){setTimeout(check,500);return;}runtimeRecovering=false;toast(tx('runtimeUnavailable'));clientDiag('resume_failed',{tries:tries});});}
+    check();});
+});}
+window.__STREMIO_RESUME_CHECK__=runtimeRecover;
 function isImdb(id){return String(id||'').indexOf('tt')===0;}
 function posterOf(it){if(it.poster)return it.poster;return isImdb(it.id)?('https://images.metahub.space/poster/small/'+it.id+'/img'):'';}
 var ICON={play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',info:'<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>',similar:'<svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>',trailer:'<svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg>',check:'<svg viewBox="0 0 24 24"><path d="M9 16.17l-3.88-3.88L3.7 13.7 9 19 21 7l-1.41-1.42z"/></svg>',plus:'<svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>'};
@@ -229,6 +246,20 @@ function streamSeeders(s){var t=streamText(s),m;
   m=t.match(/(\d+)\s*(?:seeders?|seeds?)/i);if(m)return parseInt(m[1],10)||0;
   m=t.match(/(?:\uD83D\uDC65|\uD83D\uDC64)\s*(\d+)/);if(m)return parseInt(m[1],10)||0;
   return -1;}
+/* Filename/title hints are advisory: addons do not expose a reliable codec schema.
+   Only AV1 and Dolby Vision without an advertised HDR fallback affect ordering;
+   audio and 10-bit hints remain visible without hiding a potentially playable source. */
+function streamCompatibility(s){var t=streamText(s).toLowerCase(),labels=[],rank=0;
+  function add(label){for(var i=0;i<labels.length;i++)if(labels[i]===label)return;labels.push(label);}
+  if(/\b(av1|av01)\b/.test(t)){add('AV1');rank=3;}
+  var dv=/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(t);
+  if(dv){add('Dolby Vision');if(!/(hdr10\+?|\bhdr\b)/.test(t))rank=Math.max(rank,2);}
+  if(/\b(hevc|h[ ._-]?265|x265)\b/.test(t)&&/\b(10[ ._-]?bit|main[ ._-]?10)\b/.test(t))add('HEVC 10-bit');
+  if(/\b(true[ ._-]?hd)\b/.test(t))add('TrueHD');
+  else if(/\b(dts[ ._-]?hd|dts)\b/.test(t))add('DTS');
+  if(/\b(e[ ._-]?ac[ ._-]?3|eac3|ddp|dd\+)\b/.test(t))add('E-AC-3');
+  return {labels:labels,rank:rank};}
+window.__STREMIO_STREAM_COMPAT__=streamCompatibility;
 function fetchStreams(type,vid,onPart,onDone){
   var list=streamAddons(type);var pending=list.length;var total=0;
   if(!pending){onDone(0);return;}
@@ -238,9 +269,10 @@ function fetchStreams(type,vid,onPart,onDone){
       for(var k=0;k<st.length;k++){var s=st[k];var url=s.url,h=s.behaviorHints||{};
         if(!url&&s.infoHash)url='http://127.0.0.1:11470/'+s.infoHash+'/'+(s.fileIdx||0);
         if(!url)continue;
-        out.push({addon:ad.name,name:s.name||'',title:s.title||s.description||'',url:url,
+        var item={addon:ad.name,name:s.name||'',title:s.title||s.description||'',url:url,
           quality:streamQuality(s),seeders:streamSeeders(s),filename:h.filename||'',
-          notWebReady:!!h.notWebReady,headers:(h.proxyHeaders&&h.proxyHeaders.request)||null});}
+          notWebReady:!!h.notWebReady,headers:(h.proxyHeaders&&h.proxyHeaders.request)||null};
+        var compat=streamCompatibility(item);item.compatLabels=compat.labels;item.compatRank=compat.rank;out.push(item);}
       total+=out.length;if(out.length)onPart(out,idx,ad.name);
       pending--;if(pending<=0)onDone(total);
     },45000); /* slow debrid addons can take 20-30s; phone/PC wait too — 15s was dropping them */
@@ -249,11 +281,12 @@ function fetchStreams(type,vid,onPart,onDone){
 /* ================= playback ================= */
 function playUrl(source,type,id,vid,backHash){
   var s=typeof source==='string'?{url:source}:source;if(!s||!s.url)return;
+  clientDiag('source_selected',{quality:s.quality||'',compat:(s.compatLabels||[]).join(','),seeders:s.seeders==null?'':s.seeders});
   var tail='&type='+encodeURIComponent(type)+'&id='+encodeURIComponent(id)+'&vid='+encodeURIComponent(vid)+'&back='+encodeURIComponent(backHash);
   /* Keep signed cookies/authorization out of browser history and localStorage. The
      Node service stores a small, sanitized stream reference and returns only its id. */
   postJson('/streamref',{url:s.url,name:s.name||'',title:s.title||'',filename:s.filename||'',
-    notWebReady:!!s.notWebReady,headers:s.headers||null},function(j){
+    quality:s.quality||'',compat:(s.compatLabels||[]).join(','),notWebReady:!!s.notWebReady,headers:s.headers||null},function(j){
       if(j&&j.ref)location.assign('/play?ref='+encodeURIComponent(j.ref)+tail);
       else location.assign('/play?u='+encodeURIComponent(s.url)+tail);
     },2500);}
@@ -454,6 +487,7 @@ function makeBoard(loader){
     var next=this.findRow(this.rowIdx,1);if(next<0)next=this.findRow(this.rowIdx-1,-1);
     if(next>=0)this.rowIdx=next;return next;},
   paint:function(all){ /* O(2 rows) per move — full repaint only when asked */
+    if(this.rowIdx>=this.rows.length)this.rowIdx=Math.max(0,this.rows.length-1);
     var focusOn=(curBoard()===this)&&!topNav.active;
     var settled=this.settleRow();var act=focusOn&&settled>=0?this.rowIdx:-1;
     if(all||this._act==null){for(var r=0;r<this.rows.length;r++)this.paintRow(r,r===act);}
@@ -570,7 +604,7 @@ function buildRow(title,items,wide,label,eager){
 
 /* generic catalog-backed board loader (rows fill in asynchronously, cache-first) */
 function loadCatalogRows(board,defs,includeCW,keepFocus){
-  var oldRow=board.rowIdx,oldCols=[];
+  var oldRow=board.rowIdx,oldCols=[],loadGen=(board._loadGen||0)+1;board._loadGen=loadGen;
   if(keepFocus)for(var i0=0;i0<board.rows.length;i0++)oldCols.push(board.rows[i0].col);
   board.rows=[];
   function reveal(row,delay){if(keepFocus){row.el.className='row in';return;}setTimeout(function(){row.el.className='row in';},delay);}
@@ -583,6 +617,7 @@ function loadCatalogRows(board,defs,includeCW,keepFocus){
   for(var d=0;d<defs.length;d++)(function(def,di){
     var row=buildRow(def.title,[],false);board.rows.push(row);row.el.style.display='none';
     getCatalogUrl(def.url,def.key,def.type,function(items){
+      if(board._loadGen!==loadGen)return; /* ignore callbacks from a superseded rebuild */
       row.items=items;row.cardsEl.innerHTML='';row.cardEls=[];
       for(var i=0;i<items.length;i++){var cd=makeCard(items[i],false,false,false);row.cardsEl.appendChild(cd);row.cardEls.push(cd);}
       row.el.style.display=items.length?'':'none';
@@ -939,7 +974,7 @@ show:function(type,id,vid,title){
   $('stInner').innerHTML='<div class="stmsg">'+tx('findingSources')+'</div>';
   var q=resumeSearch(id,vid);
   var self=this;
-  if(q){this.push([{addon:tx('lastSource'),name:tx('continuePlayback'),title:tx('sameSource'),stored:q,quality:'Recent',seeders:999999}],0,tx('lastSource'));}
+  if(q){this.push([{addon:tx('lastSource'),name:tx('continuePlayback'),title:tx('sameSource'),stored:q,quality:'Recent',seeders:999999,compatLabels:[],compatRank:0}],0,tx('lastSource'));}
   fetchStreams(type,vid,function(part,gi,gn){self.push(part,gi+1,gn);},function(total){
     if(!self.items.length)$('stInner').innerHTML='<div class="stmsg">'+tx('noSources')+'</div>';});
 },
@@ -963,7 +998,7 @@ compact:function(){
   for(i=0;i<unique.length;i++){s=unique[i];k=s.quality||'Other';if(!buckets[k])buckets[k]=[];buckets[k].push(s);}
   this.pool=[];
   for(k in buckets)if(Object.prototype.hasOwnProperty.call(buckets,k)){
-    buckets[k].sort(function(a,b){var as=a.seeders==null?-1:a.seeders,bs=b.seeders==null?-1:b.seeders;
+    buckets[k].sort(function(a,b){var ar=a.compatRank||0,br=b.compatRank||0;if(ar!==br)return ar-br;var as=a.seeders==null?-1:a.seeders,bs=b.seeders==null?-1:b.seeders;
       if(as!==bs)return bs-as;return (a._seq||0)-(b._seq||0);});
     var lim=limits[k]||50;if(buckets[k].length>lim)this.trimmed[k]=true;
     for(i=0;i<buckets[k].length&&i<lim;i++)this.pool.push(buckets[k][i]);}},
@@ -981,12 +1016,14 @@ rebuild:function(){
   flat=flat.filter(function(s){return self.filter==='All'||s.quality===self.filter;});
   flat.sort(function(a,b){
     if(a.stored&&!b.stored)return -1;if(b.stored&&!a.stored)return 1;
+    var ar=a.compatRank||0,br=b.compatRank||0;if(ar!==br)return ar-br;
     var as=a.seeders==null?-1:a.seeders,bs=b.seeders==null?-1:b.seeders;
     if(as!==bs)return bs-as;return (a._seq||0)-(b._seq||0);});
   var host=$('stInner');host.innerHTML='';this.items=[];this.els=[];
   for(var i=0;i<flat.length&&i<160;i++){var s=flat[i],d=document.createElement('div');d.className='st';
     var a=document.createElement('div');a.className='a';
     a.textContent=s.stored?tx('continuePlayback'):(qualityLabel(s.quality||'Other')+(s.seeders>=0?('  ·  '+s.seeders+' '+tx('seeders')):'')+'  ·  '+(s.addon||'Addon'));d.appendChild(a);
+    if(s.compatLabels&&s.compatLabels.length){var c=document.createElement('div');c.className='compat';c.textContent=tx('compatibilityCheck',s.compatLabels.join(' · '));d.appendChild(c);}
     var b=document.createElement('div');b.className='b';b.textContent=String(s.title||s.name||'').replace(/\n/g,'  ');d.appendChild(b);
     host.appendChild(d);this.items.push(s);this.els.push(d);}
   if(!this.items.length)host.innerHTML='<div class="stmsg">'+tx('noSourcesQuality')+'</div>';
@@ -1307,6 +1344,16 @@ function tickClock(){var d=new Date();var h=d.getHours(),m=d.getMinutes();
   $('clock').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;setTimeout(tickClock,15000);}
 tickClock();
 window.__STREMIO_PHASE__('M4');
+
+/* QuickStart+ can leave the webview alive while webOS stops its local service.
+   Verify and recover the service only when the app becomes visible again. */
+(function(){var prop='',event='',hiddenAt=0;
+  if('hidden' in document){prop='hidden';event='visibilitychange';}
+  else if('webkitHidden' in document){prop='webkitHidden';event='webkitvisibilitychange';}
+  if(!event)return;
+  on(document,event,function(){if(document[prop]){hiddenAt=Date.now();try{stopIdleTrailer();}catch(e){}clientDiag('app_hidden',{});}
+    else if(hiddenAt){clientDiag('app_visible',{awaySec:Math.max(0,((Date.now()-hiddenAt)/1000)|0)});hiddenAt=0;setTimeout(runtimeRecover,120);}},true);
+})();
 
 /* ================= boot ================= */
 function boot(){

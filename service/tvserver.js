@@ -40,6 +40,7 @@ try { LOGO_PNG = fs.readFileSync(path.join(DIR, 'stremio-logo.png')); } catch (e
 var ORIGIN = 'https://app.strem.io';
 var SHELL_URL = ORIGIN + '/shell-v4.4/';
 var APP_VERSION = '1.2.5';
+var SERVICE_ID = 'io.strem.tv.server';
 var PORT = 8082; // versioned away from 1.2.0/1.2.1's :8080 stale detached runtime
 var SERVER_PORT = 11470;
 /* Replaced with the profile-specific, verified assets during packaging. Keeping
@@ -531,6 +532,7 @@ function storeStreamRef(raw) {
     url: streamUrl, name: safeText(raw.name, 300), title: safeText(raw.title, 700),
     description: safeText(raw.description, 700),
     behaviorHints: { filename: safeText(raw.filename, 500) },
+    quality: safeText(raw.quality, 40), compat: safeText(raw.compat, 160),
     headers: safeProxyHeaders(raw.headers), notWebReady: !!raw.notWebReady, at: Date.now()
   };
   streamRefOrder.push(ref);
@@ -694,7 +696,7 @@ function playerPage(stream, ctx) {
 '<div id="row"><div id="ctr"><div class="pbtn" id="b_rw"><svg viewBox="0 0 24 24" width="42" height="42"><path d="M12 6v12l-9-6 9-6zM22 6v12l-9-6 9-6z"/></svg></div><div class="pbtn big" id="b_pp"><i class=ic-pause></i></div><div class="pbtn" id="b_ff"><svg viewBox="0 0 24 24" width="42" height="42"><path d="M2 6l9 6-9 6V6zM12 6l9 6-9 6V6z"/></svg></div></div><div id="rgt"><div class="pbtn wide" id="b_next" style="display:none">Next episode</div><div class="pbtn" id="b_set"><svg viewBox="0 0 24 24" width="42" height="42"><path d="M19.14 12.94a7.5 7.5 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.61-.22l-2.39.96a7.3 7.3 0 00-1.62-.94l-.36-2.54A.5.5 0 0013.5 2h-3a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 00-.61.22L2.7 8.84a.5.5 0 00.12.64l2.03 1.58a7.5 7.5 0 000 1.88L2.82 14.5a.5.5 0 00-.12.64l1.92 3.32a.5.5 0 00.61.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54a.5.5 0 00.5.42h3a.5.5 0 00.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96a.5.5 0 00.61-.22l1.92-3.32a.5.5 0 00-.12-.64zM12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z"/></svg></div></div></div></div>' +
 '<div id="menu"></div>' +
 '<script>(function(){' +
-'var URL=' + JSON.stringify(streamUrl) + ',TITLE=' + JSON.stringify(title) + ',TYPE=' + JSON.stringify(ctx.type || '') + ',ID=' + JSON.stringify(ctx.id || '') + ',VID=' + JSON.stringify(ctx.vid || '') + ',LOGO=' + JSON.stringify(meta.logo || '') + ',BG=' + JSON.stringify(meta.background || '') + ',POSTER=' + JSON.stringify(meta.poster || '') + ',SE=' + JSON.stringify(seLine) + ',NEXTVID=' + JSON.stringify(nextVid) + ',NEXTHREF=' + JSON.stringify(nextHref) + ',BACK=' + JSON.stringify(ctx.back || '') + ',NEXTTITLE=' + JSON.stringify(ctx.nextTitle || '') + ',NEXTTHUMB=' + JSON.stringify(ctx.nextThumb || '') + ',SNAME=' + JSON.stringify(String((stream.name || '') + ' ' + (stream.title || stream.description || '')).slice(0, 400)) + ',CERT=' + JSON.stringify((ctx.meta && ctx.meta.cert) || '') + ';' +
+'var URL=' + JSON.stringify(streamUrl) + ',TITLE=' + JSON.stringify(title) + ',TYPE=' + JSON.stringify(ctx.type || '') + ',ID=' + JSON.stringify(ctx.id || '') + ',VID=' + JSON.stringify(ctx.vid || '') + ',LOGO=' + JSON.stringify(meta.logo || '') + ',BG=' + JSON.stringify(meta.background || '') + ',POSTER=' + JSON.stringify(meta.poster || '') + ',SE=' + JSON.stringify(seLine) + ',NEXTVID=' + JSON.stringify(nextVid) + ',NEXTHREF=' + JSON.stringify(nextHref) + ',BACK=' + JSON.stringify(ctx.back || '') + ',NEXTTITLE=' + JSON.stringify(ctx.nextTitle || '') + ',NEXTTHUMB=' + JSON.stringify(ctx.nextThumb || '') + ',SNAME=' + JSON.stringify(String((stream.name || '') + ' ' + (stream.title || stream.description || '')).slice(0, 400)) + ',CERT=' + JSON.stringify((ctx.meta && ctx.meta.cert) || '') + ',COMPAT=' + JSON.stringify(stream.compat || '') + ',SERVICE_ID=' + JSON.stringify(SERVICE_ID) + ',APP_PORT=' + JSON.stringify(PORT) + ';' +
 'var v=document.getElementById("v"),bar=document.getElementById("bar"),fill=document.getElementById("fill"),' +
 'timeEl=document.getElementById("time"),menu=document.getElementById("menu"),subEl=document.getElementById("sub"),' +
 'load=document.getElementById("load"),lname=document.getElementById("lname");' +
@@ -795,7 +797,7 @@ function playerPage(stream, ctx) {
 'function paintBtns(){for(var i=0;i<btns.length;i++)btns[i].className=btns[i]._base+(mode==="controls"&&i===bIdx?" f":"");}' +
 'function hideLoad(){load.style.display="none";}' +
 'v.addEventListener("playing",hideLoad);v.addEventListener("loadeddata",function(){setTimeout(hideLoad,300);});' +
-'v.addEventListener("error",function(){lname.textContent="Playback error";});' +
+'v.addEventListener("error",function(){lname.textContent="Playback error";diag("media_error",{code:v.error?v.error.code:0,ready:v.readyState,network:v.networkState,compat:COMPAT});});' +
 // buffering: dim the frozen frame and breathe the art (the same look as initial load)
 'var bufEl=document.getElementById("buf");' +
 'function showBuf(){if(load.style.display==="none"&&!v.paused){bufEl.style.display="-webkit-flex";bufEl.style.display="flex";}}' +
@@ -809,6 +811,11 @@ function playerPage(stream, ctx) {
 'function tog(){if(v.paused)v.play();else v.pause();showBar();}' +
 'var seekEl=document.getElementById("seekind"),knob=document.getElementById("knob"),seekBar=document.getElementById("seek"),seekHideT=null,seekTarget=-1,seekTimer=null;' +
 'var toastEl=document.getElementById("toast"),toastT=null;function showToast(m){if(!toastEl)return;toastEl.textContent=m;toastEl.style.opacity="1";if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){toastEl.style.opacity="0";},3200);}' +
+'function diag(ev,data){try{var q=["ev="+encodeURIComponent(ev),"ready="+v.readyState,"network="+v.networkState,"t="+(v.currentTime|0)];data=data||{};for(var k in data)if(Object.prototype.hasOwnProperty.call(data,k)&&data[k]!=null)q.push(encodeURIComponent(k)+"="+encodeURIComponent(String(data[k]).slice(0,160)));var im=new Image();im.src="http://127.0.0.1:"+APP_PORT+"/log?"+q.join("&")+"&_="+Date.now();}catch(e){}}' +
+'function health(cb){var done=false;function end(ok){if(done)return;done=true;cb(ok);}try{var x=new XMLHttpRequest();x.open("GET","http://127.0.0.1:"+APP_PORT+"/health?player="+Date.now(),true);x.onreadystatechange=function(){if(x.readyState===4)end(x.status>=200&&x.status<300);};x.timeout=900;x.ontimeout=function(){end(false);};x.onerror=function(){end(false);};x.send();setTimeout(function(){end(false);},1100);}catch(e){end(false);}}' +
+'function startRuntime(cb){var done=false,b=null;function end(ok){if(done)return;done=true;b=null;cb(ok);}try{if(typeof PalmServiceBridge==="undefined"){end(false);return;}b=new PalmServiceBridge();b.onservicecallback=function(){end(true);};b.call("luna://"+SERVICE_ID+"/start","{}");setTimeout(function(){end(false);},2600);}catch(e){end(false);}}' +
+'var wasPlayingBeforeHide=false,resumeRecovering=false;function recoverPlayerRuntime(){if(resumeRecovering)return;resumeRecovering=true;health(function(up){if(up){resumeRecovering=false;showToast("Playback paused while the TV was inactive");diag("player_resume_ok",{});return;}showToast("Restoring the local service\u2026");diag("player_resume_restart",{});startRuntime(function(){var tries=0;function check(){health(function(ok){if(ok){diag("player_resume_recovered",{tries:tries});location.replace("http://127.0.0.1:"+APP_PORT+"/"+(BACK||"beta"));return;}tries++;if(tries<20){setTimeout(check,500);return;}resumeRecovering=false;showToast("Could not restore the local service");diag("player_resume_failed",{tries:tries});});}check();});});}' +
+'(function(){var prop="",event="",hiddenAt=0;if("hidden" in document){prop="hidden";event="visibilitychange";}else if("webkitHidden" in document){prop="webkitHidden";event="webkitvisibilitychange";}if(!event)return;document.addEventListener(event,function(){if(document[prop]){hiddenAt=Date.now();wasPlayingBeforeHide=!v.paused;try{saveProgress();if(wasPlayingBeforeHide)v.pause();else pushLib(true);}catch(e){}diag("player_hidden",{playing:wasPlayingBeforeHide?1:0});}else if(hiddenAt){diag("player_visible",{awaySec:Math.max(0,((Date.now()-hiddenAt)/1000)|0)});hiddenAt=0;setTimeout(recoverPlayerRuntime,120);}},true);})();' +
 // seeks accumulate while you keep pressing (+10, +20, ...) and only commit ~0.5s after
 // you stop, so the bar/knob glide to the target and we buffer once instead of every press.
 'function fmtDelta(d){var a=Math.abs(d),s=(d>=0?"+":"-");if(a>=60){var m=(a/60)|0,x=a%60;return s+m+"m"+(x?(" "+x+"s"):"");}return s+a+"s";}' +
@@ -1589,7 +1596,9 @@ http.createServer(function (req, res) {
   var p = req.url.split('?')[0];
   var q = urlmod.parse(req.url, true).query;
   if (p === '/health') {
-    sendJson(res, { ok: true, version: APP_VERSION, port: PORT, runtime: process.version });
+    var hm = process.memoryUsage();
+    sendJson(res, { ok: true, version: APP_VERSION, port: PORT, runtime: process.version,
+      memory: { rssMiB: Math.round(hm.rss / 1048576), heapMiB: Math.round(hm.heapUsed / 1048576) } });
   } else if (p === '/ping') {
     // Instant readiness probe for the app launcher — proves :8082 is bound so it can
     // redirect here instead of guessing on a timer (which races a cold node start).
@@ -1608,7 +1617,11 @@ http.createServer(function (req, res) {
       else sendJson(res, j);
     });
   } else if (p === '/log') {
-    console.log('[clientlog] ' + JSON.stringify(q));
+    var allowedLog = ['ev', 'screen', 'quality', 'compat', 'seeders', 'code', 'ready', 'network', 't', 'playing', 'awaySec', 'tries'];
+    var entry = {}, lm = process.memoryUsage();
+    allowedLog.forEach(function (key) { if (q[key] != null) entry[key] = safeText(q[key], 160); });
+    entry.rssMiB = Math.round(lm.rss / 1048576);entry.heapMiB = Math.round(lm.heapUsed / 1048576);
+    dbg('[clientlog] ' + JSON.stringify(entry));
     res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
     res.end('ok');
   } else if (p === '/' || p === '/index.html') {

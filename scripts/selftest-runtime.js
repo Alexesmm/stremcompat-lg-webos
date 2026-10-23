@@ -64,7 +64,16 @@ async function main() {
 
   try {
     var health = await waitForHealth(0);
-    assert.strictEqual(JSON.parse(health.text).version, appVersion);
+    var healthJson = JSON.parse(health.text);
+    assert.strictEqual(healthJson.version, appVersion);
+    assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
+
+    var logged = await request({ hostname: '127.0.0.1', port: appPort, path: '/log?ev=selftest&compat=AV1&ignored=secret' });
+    assert.strictEqual(logged.status, 200);
+    var persistedLog = fs.readFileSync(testLog, 'utf8');
+    assert.ok(persistedLog.indexOf('"ev":"selftest"') >= 0, 'client diagnostic was not persisted');
+    assert.ok(persistedLog.indexOf('"compat":"AV1"') >= 0, 'codec hint was not persisted');
+    assert.ok(persistedLog.indexOf('secret') < 0, 'unapproved diagnostic field was persisted');
 
     var shell = await request({ hostname: '127.0.0.1', port: appPort, path: '/beta?v=' + appVersion });
     assert.strictEqual(shell.status, 200);
@@ -85,7 +94,7 @@ async function main() {
     assert.strictEqual(JSON.parse(addon.text).ok, true);
 
     var payload = JSON.stringify({
-      url: 'http://127.0.0.1:9191/video', notWebReady: true,
+      url: 'http://127.0.0.1:9191/video', notWebReady: true, quality: '1080p', compat: 'DTS',
       headers: { Authorization: 'Bearer test-token', Referer: 'https://addon.example/', 'X-Blocked': 'no' }
     });
     var made = await request({ hostname: '127.0.0.1', port: appPort, path: '/streamref', method: 'POST', headers: {
@@ -93,6 +102,12 @@ async function main() {
     } }, payload);
     var ref = JSON.parse(made.text).ref;
     assert.match(ref, /^[0-9a-f]{24}$/);
+
+    var player = await request({ hostname: '127.0.0.1', port: appPort, path: '/play?ref=' + ref + '&back=beta' });
+    assert.strictEqual(player.status, 200);
+    assert.ok(player.text.indexOf('COMPAT="DTS"') >= 0, 'player did not receive the sanitized compatibility hint');
+    assert.ok(player.text.indexOf('webkitvisibilitychange') >= 0, 'player lifecycle recovery is missing');
+    assert.ok(player.text.indexOf('PalmServiceBridge') >= 0, 'player runtime restart bridge is missing');
 
     var proxied = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + ref, headers: { Range: 'bytes=0-99' } });
     var echoed = JSON.parse(proxied.text);
