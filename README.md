@@ -18,7 +18,7 @@
 
 StremCompat is an unofficial, remote-friendly Stremio compatibility client for older LG televisions that are not supported by the current LG Content Store application. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access, Homebrew Channel or a permanent system modification.
 
-The project provides separately optimized builds for incompatible webOS generations and for both webOS-supported application graphics modes, 1920x1080 and 1280x720. It combines a lightweight television interface, a verified ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account and addon synchronization, source filtering and native hardware-backed HTML5 playback.
+The project provides separately optimized builds for incompatible webOS generations and for both webOS-supported application graphics modes, 1920x1080 and 1280x720. The 1280x720 editions are the 720p/HD interface builds and also cover LG televisions with physical 1366x768 panels. StremCompat combines a lightweight television interface, a verified ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account and addon synchronization, source filtering and native hardware-backed HTML5 playback.
 
 The goal is not to claim universal support. It is to provide reproducible, testable ports for legacy LG hardware and clearly distinguish physically confirmed televisions from compatibility candidates.
 
@@ -53,9 +53,9 @@ Use the IPK that matches both the television generation and the application grap
 | Build | Graphics mode | Status | Confirmed television | Platform | Application shown on TV |
 |---|---:|---|---|---|---|
 | `um4-armv7` 1.2.3 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
-| `um4-armv7-hd` 1.2.3 | 1280x720 | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
+| `um4-armv7-hd` 1.2.3 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
 | `uj3-native-armv7` 1.0.2 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
-| `uj3-native-armv7-hd` 1.0.2 | 1280x720 | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
+| `uj3-native-armv7-hd` 1.0.2 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
 
 Release assets:
 
@@ -67,8 +67,8 @@ Release assets:
 First choose UJ3 for webOS 3.x or UM4 for webOS 4.x. Then choose the graphics mode:
 
 - Use `graphics-1920x1080` on a television where the existing StremCompat interface already fills the screen correctly.
-- Use `graphics-1280x720` when the interface occupies only the upper-left portion of the screen, or when the television supports only 1280x720 web applications.
-- A physical 1366x768 panel must use the `graphics-1280x720` package. `1366x768` is not a supported webOS application resolution.
+- Use `graphics-1280x720` as the general 720p/HD interface edition. It is intended for physical 1280x720 and 1366x768 panels, televisions that support only 1280x720 web applications, and cases where the 1920 package occupies only the upper-left portion of the screen.
+- A physical 1366x768 panel must use the `graphics-1280x720` package because webOS scales the 1280x720 application surface to that panel. `1366x768` itself is not a supported webOS application resolution.
 - The graphics mode affects the interface only. It does not limit native video playback to 720p.
 
 LG officially supports `1920x1080` and `1280x720` as web-application graphics resolutions and recommends separate packages where both modes are needed. See [LG Supported App Resolution](https://webostv.developer.lge.com/develop/specifications/app-resolution) and the [`appinfo.json` resolution reference](https://webostv.developer.lge.com/develop/references/appinfo-json).
