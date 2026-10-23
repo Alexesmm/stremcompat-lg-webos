@@ -25,6 +25,8 @@ function must(rel) {
 var app = JSON.parse(read('app/appinfo.json'));
 var service = JSON.parse(read('service/package.json'));
 if (app.id !== profile.appId || app.version !== profile.version) throw new Error('App manifest does not match profile.');
+if (app.resolution !== profile.graphicsResolution) throw new Error('App graphics resolution does not match profile.');
+if (['1920x1080', '1280x720'].indexOf(app.resolution) < 0) throw new Error('Unsupported webOS graphics resolution.');
 if (service.name !== profile.serviceId || service.version !== profile.version) throw new Error('Service manifest does not match profile.');
 
 var launch = read('service/launch.js');
@@ -40,6 +42,7 @@ if (launcher.indexOf('/beta?v=' + profile.version) < 0 || shell.indexOf('/beta-a
 if (launch.indexOf("APP_VERSION = '" + profile.version + "'") < 0 || server.indexOf("APP_VERSION = '" + profile.version + "'") < 0) throw new Error('Runtime version mismatch.');
 if (launch.indexOf("new Service('" + profile.serviceId + "')") < 0 || launcher.indexOf('luna://' + profile.serviceId + '/start') < 0) throw new Error('Service ID mismatch.');
 if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
+if (application.indexOf('function viewportWidth()') < 0 || application.indexOf('(viewportWidth()-96)') < 0) throw new Error('Resolution-aware row layout missing.');
 if (normalizedApplication.indexOf("window.__STREMIO_PHASE__('B_CALL');\nboot();") < 0 || normalizedApplication.indexOf("addEventListener('DOMContentLoaded',boot)") >= 0) throw new Error('Synchronous legacy boot missing.');
 if (application.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
 if (application.indexOf("'/stremioapi?path='") < 0 || server.indexOf("p === '/stremioapi'") < 0 || server.indexOf("'/api/login': true") < 0) throw new Error('Legacy-safe Stremio account bridge missing.');

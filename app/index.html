@@ -55,7 +55,7 @@ function openApp() {
     if (finished) return;
     finished = true;
     setProgress(100, 'Tudo pronto. Abrindo…');
-    setTimeout(function () { location.replace('http://127.0.0.1:8082/beta?v=1.2.2'); }, 250);
+    setTimeout(function () { location.replace('http://127.0.0.1:8082/beta?v=1.2.3'); }, 250);
 }
 
 function ping() {
@@ -66,7 +66,7 @@ function ping() {
         request.timeout = 1500;
         request.onreadystatechange = function () {
             if (request.readyState === 4 && request.status === 200) {
-                try { var health = JSON.parse(request.responseText);if (health.version === '1.2.2') openApp(); } catch (ignore) {}
+                try { var health = JSON.parse(request.responseText);if (health.version === '1.2.3') openApp(); } catch (ignore) {}
             }
         };
         request.onerror = function () {};
@@ -76,7 +76,7 @@ function ping() {
 
     var elapsed = Date.now() - startedAt;
     if (elapsed > 90000) {
-        document.getElementById('status').innerHTML = 'O runtime não respondeu. Reinicie a TV e reinstale a versão 1.2.2.';
+        document.getElementById('status').innerHTML = 'O runtime não respondeu. Reinicie a TV e reinstale a versão 1.2.3.';
         document.getElementById('hint').innerHTML = 'O pacote agora usa Node 18 ARMv7 interno; este erro não indica edição ARM incorreta.';
         document.getElementById('error').style.display = 'block';
         return;

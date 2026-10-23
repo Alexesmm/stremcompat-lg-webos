@@ -8,15 +8,17 @@
   <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Alexesmm/stremcompat-lg-webos?display_name=tag&color=8d5bd4"></a>
   <img alt="LG webOS 3.x and 4.x" src="https://img.shields.io/badge/LG%20webOS-3.x%20%7C%204.x-8d5bd4">
   <img alt="ARMv7" src="https://img.shields.io/badge/architecture-ARMv7-6f45b5">
+  <img alt="1280x720 and 1920x1080 graphics" src="https://img.shields.io/badge/UI-1280x720%20%7C%201920x1080-6f45b5">
   <img alt="No root required" src="https://img.shields.io/badge/root-not%20required-2ea44f">
   <img alt="Unofficial community project" src="https://img.shields.io/badge/project-unofficial%20community-ea345e">
+  <a href="https://github.com/Alexesmm/stremcompat-lg-webos/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/community-Discussions-2ea44f"></a>
 </p>
 
 ## About
 
 StremCompat is an unofficial, remote-friendly Stremio compatibility client for older LG televisions that are not supported by the current LG Content Store application. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access, Homebrew Channel or a permanent system modification.
 
-The project provides separately optimized builds for incompatible webOS generations. It combines a lightweight television interface, a verified ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account and addon synchronization, source filtering and native hardware-backed HTML5 playback.
+The project provides separately optimized builds for incompatible webOS generations and for both webOS-supported application graphics modes, 1920x1080 and 1280x720. It combines a lightweight television interface, a verified ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account and addon synchronization, source filtering and native hardware-backed HTML5 playback.
 
 The goal is not to claim universal support. It is to provide reproducible, testable ports for legacy LG hardware and clearly distinguish physically confirmed televisions from compatibility candidates.
 
@@ -34,28 +36,42 @@ This project is not affiliated with or endorsed by Stremio or LG Electronics. Us
 6. [webOS 3 adaptation](#webos-3-adaptation)
 7. [Features](#features)
 8. [Performance profile and image-quality trade-offs](#performance-profile-and-image-quality-trade-offs)
-9. [Installation](#installation)
-10. [Choosing and adapting a build](#choosing-a-build-for-another-television)
-11. [Verification performed by the build](#verification-performed-by-the-build)
-12. [Playback limits](#playback-limits)
-13. [Troubleshooting](#troubleshooting)
-14. [Releases](#releases)
-15. [What StremCompat adds](#what-stremcompat-adds)
-16. [Credits and licensing](#credits-and-licensing)
+9. [Feedback and compatibility reports](#feedback-and-compatibility-reports)
+10. [Installation](#installation)
+11. [Choosing and adapting a build](#choosing-a-build-for-another-television)
+12. [Verification performed by the build](#verification-performed-by-the-build)
+13. [Playback limits](#playback-limits)
+14. [Troubleshooting](#troubleshooting)
+15. [Releases](#releases)
+16. [What StremCompat adds](#what-stremcompat-adds)
+17. [Credits and licensing](#credits-and-licensing)
 
 ## Downloads
 
-Use the IPK that matches the television generation. StremCompat 1.0.0 publishes the two confirmed ports as separate, clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
+Use the IPK that matches both the television generation and the application graphics mode. StremCompat 1.0.1 publishes four clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
 
-| Build | Status | Confirmed television | Platform | App name and ID |
-|---|---|---|---|---|
-| `um4-armv7` 1.2.2 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio, `io.strem.tv` |
-| `uj3-native-armv7` 1.0.1 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3, `io.strem.tv.uj3native` |
+| Build | Graphics mode | Status | Confirmed television | Platform | Application shown on TV |
+|---|---:|---|---|---|---|
+| `um4-armv7` 1.2.3 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
+| `um4-armv7-hd` 1.2.3 | 1280x720 | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
+| `uj3-native-armv7` 1.0.2 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
+| `uj3-native-armv7-hd` 1.0.2 | 1280x720 | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
 
 Release assets:
 
-- `StremCompat-webOS4-UM4-armv7-1.2.2.ipk`
-- `StremCompat-webOS3-UJ3-armv7-1.0.1.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.3.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.3.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.2.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.2.ipk`
+
+First choose UJ3 for webOS 3.x or UM4 for webOS 4.x. Then choose the graphics mode:
+
+- Use `graphics-1920x1080` on a television where the existing StremCompat interface already fills the screen correctly.
+- Use `graphics-1280x720` when the interface occupies only the upper-left portion of the screen, or when the television supports only 1280x720 web applications.
+- A physical 1366x768 panel must use the `graphics-1280x720` package. `1366x768` is not a supported webOS application resolution.
+- The graphics mode affects the interface only. It does not limit native video playback to 720p.
+
+LG officially supports `1920x1080` and `1280x720` as web-application graphics resolutions and recommends separate packages where both modes are needed. See [LG Supported App Resolution](https://webostv.developer.lge.com/develop/specifications/app-resolution) and the [`appinfo.json` resolution reference](https://webostv.developer.lge.com/develop/references/appinfo-json).
 
 The older `uj3-armv7` 0.9.3 profile is retained only as development history. It was replaced by `uj3-native-armv7` and is not a recommended release.
 
@@ -67,10 +83,10 @@ The two televisions in the Downloads table are the only physically confirmed mod
 
 | Build | Expected webOS generation | Candidate LG families and examples |
 |---|---|---|
-| `uj3-native-armv7` | webOS 3.0, generally 2016 models | OLED B6, C6, E6 and G6; LCD families UH95, UH85, UH77, UH76, UH65, UH63, UH61, UH60 and LH60 |
-| `uj3-native-armv7` | webOS 3.5, generally 2017 models | OLED B7, C7, E7, G7 and W7; LCD families SJ95, SJ85, SJ80, UJ75, UJ70, UJ67, UJ65, UJ63, UJ62, LJ55 and LJ54 |
-| `um4-armv7` | webOS 4.0, generally 2018 models | OLED B8, C8, E8, W8 and Z8; LCD families SK95, SK90, SK85, SK80, UK77, UK75, UK65, UK63, UK62, UK61, UK60, LK64, LK61, LK57 and LK54 |
-| `um4-armv7` | webOS 4.5, generally 2019 models | OLED B9, C9, E9, W9 and Z9; LCD families SM99, SM95, SM90, SM86, SM81, UM80, UM76, UM75, UM74, UM73, UM72, UM71, UM70, UM69, LM63, LM62, LM57 and LM50 |
+| UJ3 1920x1080 or 1280x720 | webOS 3.0, generally 2016 models | OLED B6, C6, E6 and G6; LCD families UH95, UH85, UH77, UH76, UH65, UH63, UH61, UH60 and LH60 |
+| UJ3 1920x1080 or 1280x720 | webOS 3.5, generally 2017 models | OLED B7, C7, E7, G7 and W7; LCD families SJ95, SJ85, SJ80, UJ75, UJ70, UJ67, UJ65, UJ63, UJ62, LJ55 and LJ54 |
+| UM4 1920x1080 or 1280x720 | webOS 4.0, generally 2018 models | OLED B8, C8, E8, W8 and Z8; LCD families SK95, SK90, SK85, SK80, UK77, UK75, UK65, UK63, UK62, UK61, UK60, LK64, LK61, LK57 and LK54 |
+| UM4 1920x1080 or 1280x720 | webOS 4.5, generally 2019 models | OLED B9, C9, E9, W9 and Z9; LCD families SM99, SM95, SM90, SM86, SM81, UM80, UM76, UM75, UM74, UM73, UM72, UM71, UM70, UM69, LM63, LM62, LM57 and LM50 |
 
 Examples such as `49UJ6565-SB`, `55UK6300PUB` and `50UM7500PSB` contain a screen size, family and regional suffix. A matching family prefix is useful evidence, but it does not prove that the CPU and system loader are identical. The definitive check is the information reported by the television itself under **Settings > General > About This TV > webOS TV Version**, followed by a real installation and playback test.
 
@@ -98,6 +114,8 @@ LG changed the browser engine and available runtime across webOS generations:
 
 Chromium 38 rejects JavaScript syntax and browser APIs that work on newer televisions. Old TV certificate stores can also reject otherwise valid HTTPS services. A single modern web application therefore cannot be assumed to work across all LG generations.
 
+Graphics resolution is a separate compatibility decision. The value is declared in the package manifest before the application starts, so responsive CSS alone cannot correct a package launched with the wrong webOS graphics mode. StremCompat therefore shares one resolution-aware interface implementation while publishing separate `1920x1080` and `1280x720` manifests for each supported webOS generation.
+
 Official references:
 
 - [LG web engine versions](https://webostv.developer.lge.com/develop/specifications/web-api-and-web-engine)
@@ -117,7 +135,7 @@ The installed package contains two webOS components:
 5. The TV interface, account bridge, addon requests, stream headers, HLS rewriting, subtitles and playback helpers are served from that local origin.
 6. The browser uses the television's hardware-backed HTML5 media pipeline for playback.
 
-The UM4 build uses port `8082`. The dedicated UJ3 build uses a separate app ID, service ID and port `8093`, so it does not share a stale process with another edition.
+The UM4 1920x1080 and 1280x720 builds use ports `8082` and `8084`. The UJ3 1920x1080 and 1280x720 builds use ports `8093` and `8094`. Each edition has its own app and service identity, so a test build cannot attach to a stale process from another edition.
 
 ## webOS 3 adaptation
 
@@ -176,6 +194,21 @@ For comparison, one decoded 1920x1080 RGBA background can occupy about 8 MiB bef
 
 This tuning cannot add codec support or processing power that the firmware does not have. A visually lighter interface can improve navigation, but unsupported audio, containers, DRM, unusually high bitrates and very large remux files can still fail during playback.
 
+## Feedback and compatibility reports
+
+Use [GitHub Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions) for installation questions, compatibility results and general feedback. Use [GitHub Issues](https://github.com/Alexesmm/stremcompat-lg-webos/issues) for reproducible defects that require a code change.
+
+Include the following information in every television report:
+
+- Complete television model and regional suffix.
+- Full webOS TV version and firmware version.
+- Exact IPK filename, including `graphics-1920x1080` or `graphics-1280x720`.
+- Available internal storage.
+- Whether startup, login, catalogs, remote navigation and playback worked.
+- A photograph and the complete error code when the interface is clipped or startup fails.
+
+Do not publish passwords, authentication tokens or active pairing QR codes. The 1280x720 packages are locally validated but remain candidate builds until results are received from physical televisions.
+
 ## Installation
 
 Root access is not required. Installation uses LG's standard Developer Mode workflow already described below; the television does not need to be rooted or modified with Homebrew Channel. Because this is a Developer Mode installation, the app remains subject to LG's Developer Mode timer and must be renewed before it expires.
@@ -183,7 +216,7 @@ Root access is not required. Installation uses LG's standard Developer Mode work
 1. Install and open LG's Developer Mode application on the television.
 2. Sign in, enable Developer Mode and enable Key Server.
 3. Add the television in webOS Dev Manager.
-4. Download the matching IPK from Releases.
+4. Download the IPK matching both the webOS generation and graphics mode from Releases.
 5. Install the IPK and open the corresponding application name.
 
 The compressed IPK is approximately 46 MiB. The installed package uses approximately 92 MiB because the runtime and media tools are compressed inside the IPK. Remove obsolete test editions if the television has limited internal storage.
@@ -194,10 +227,12 @@ Developer Mode installations expire with the Developer Mode timer and may be rem
 
 ## Choosing a build for another television
 
-Use the webOS TV version shown in the television information screen, not the firmware number by itself.
+Use the webOS TV version shown in the television information screen, not the firmware number by itself. Then select the graphics mode separately.
 
 - Choose UJ3 for a 2016-2017 ARMv7 television running webOS 3.x and Chromium 38.
 - Choose UM4 for an ARMv7 television running webOS 4.x and Chromium 53.
+- Choose 1920x1080 graphics when the interface fills the screen correctly; choose 1280x720 graphics when a 1920 package is confined to the upper-left portion of the display.
+- For a 1366x768 television panel, choose the 1280x720 graphics package.
 - Do not assume that every model in a marketing family has the same processor.
 - The bundled runtime requires a 32-bit ARMv7 CPU and the soft-float loader at `/lib/ld-linux.so.3`.
 - A model that is ARM64-only, x86 or missing that loader needs a different runtime build.
@@ -219,7 +254,9 @@ Install dependencies and build the confirmed profiles:
 npm ci
 npm run runtime
 npm run package:um4
+npm run package:um4-hd
 npm run package:uj3-native
+npm run package:uj3-native-hd
 ```
 
 The first runtime preparation downloads a pinned StremioBrew package, verifies SHA-256 `36c81015d851bfd4b12c40372edbe7b51fb67fe1d8cec828d0aeFA6CE8343DF7` case-insensitively, and extracts the required ARMv7 runtime files. Runtime binaries are not committed to this repository. The original upstream file was removed after version 2.0.0 replaced that architecture, so an unchanged checksum-verified copy is retained in the `runtime-v1.0.0` build-dependency prerelease. It is not a TV application download.
@@ -228,16 +265,17 @@ To add another profile:
 
 1. Copy the closest JSON file from `profiles/`.
 2. Give the profile a unique `profile`, `appId`, `serviceId` and localhost `port`.
-3. Set `ecmaTarget` to `chrome38` for webOS 3.x or `chrome53` for webOS 4.x.
-4. Keep `lowMemory` enabled for older televisions.
-5. Reduce `sourceCap`, `libraryCap`, `catalogCap`, backdrop width, cache and workers for weak hardware.
-6. Build with the new profile name:
+3. Set `graphicsResolution` to either `1920x1080` or `1280x720`. Do not use the physical panel resolution `1366x768` in the manifest.
+4. Set `ecmaTarget` to `chrome38` for webOS 3.x or `chrome53` for webOS 4.x.
+5. Keep `lowMemory` enabled for older televisions.
+6. Reduce `sourceCap`, `libraryCap`, `catalogCap`, backdrop width, cache and workers for weak hardware.
+7. Build with the new profile name:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -Profile your-profile
 ```
 
-7. Test the resulting IPK on the physical television before declaring it compatible.
+8. Test the resulting IPK on the physical television before declaring it compatible.
 
 ## Verification performed by the build
 
@@ -247,6 +285,8 @@ The build fails when it detects an incompatible or incomplete package. It checks
 - Browser syntax for the selected Chromium target.
 - Chromium 38 strict-mode function placement.
 - Application and service IDs, versions and local ports.
+- Supported `1920x1080` or `1280x720` graphics resolution in the staged manifest and final IPK.
+- Resolution-aware card-row calculations at both viewport widths.
 - Embedded UI byte equality with the packaged UI files.
 - ARM32 little-endian ELF headers.
 - Executable permissions for Node.js, FFmpeg and FFprobe inside the IPK.
@@ -254,6 +294,8 @@ The build fails when it detects an incompatible or incomplete package. It checks
 - Package manifests and final IPK contents.
 
 Additional local tests exercise startup, remote focus, login/Home transitions, storage failures, addon requests, protected headers and relative HLS rewriting. The Chromium 38 integration test requires the official legacy Chromium snapshot in the local test cache.
+
+`npm run test:visual:layouts` builds all four profiles, opens each staged interface in a local browser at its declared viewport, verifies that the login layout is inside the screen and saves screenshots under `.build/visual-tests/`. This is a local layout check, not a substitute for physical-TV confirmation.
 
 ## Playback limits
 
@@ -269,6 +311,7 @@ The application cannot expand the codecs or processing power available in the te
 ## Troubleshooting
 
 - Confirm that the correct application was opened. The dedicated webOS 3 edition is named `Stremio UJ3`.
+- If the whole application occupies only the upper-left portion of the television, install the matching `graphics-1280x720` package instead of changing the TV picture settings.
 - Remove superseded test editions if storage is low.
 - Verify that Developer Mode is still active.
 - If an error screen appears, record the complete `UJ3_BOOT` or `UJ3_ASSET` message before reinstalling.
@@ -277,13 +320,13 @@ The application cannot expand the codecs or processing power available in the te
 
 ## Releases
 
-Confirmed builds are released together under the StremCompat project version. Tags follow Semantic Versioning, such as `v1.0.0`. Each television port keeps its own internal version in the asset filename because the two ports can evolve independently. The GitHub Actions release workflow builds both recommended IPKs, verifies them, gives them descriptive filenames and attaches them to the matching GitHub Release.
+Builds are released together under the StremCompat project version. Tags follow Semantic Versioning, such as `v1.0.1`. Each television port keeps its own internal version in the asset filename because the ports can evolve independently. The GitHub Actions release workflow builds all four generation-and-resolution combinations, verifies them, gives them descriptive filenames and attaches them to the matching GitHub Release.
 
 Maintainer example:
 
 ```powershell
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.1
+git push origin v1.0.1
 ```
 
 Users do not need to create a Release. They only download the matching IPK from the Releases page.

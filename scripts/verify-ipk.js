@@ -50,7 +50,9 @@ if (find(entries, /\.log$/)) throw new Error('Arquivo de log de desenvolvimento 
 var appInfo = find(entries, new RegExp('/applications/' + profile.appId.replace(/\./g, '\\.') + '/appinfo\\.json$'));
 var serviceInfo = find(entries, new RegExp('/services/' + profile.serviceId.replace(/\./g, '\\.') + '/package\\.json$'));
 if (!appInfo || !serviceInfo) throw new Error('Manifestos empacotados ausentes.');
-if (JSON.parse(appInfo.data.toString('utf8')).version !== profile.version) throw new Error('Versao do app empacotado incorreta.');
+var packedAppInfo = JSON.parse(appInfo.data.toString('utf8'));
+if (packedAppInfo.version !== profile.version) throw new Error('Versao do app empacotado incorreta.');
+if (packedAppInfo.resolution !== profile.graphicsResolution) throw new Error('Resolucao grafica do app empacotado incorreta.');
 if (JSON.parse(serviceInfo.data.toString('utf8')).version !== profile.version) throw new Error('Versao do servico empacotado incorreta.');
 
 ['node18', 'ffmpeg', 'ffprobe'].forEach(function (name) {
@@ -68,6 +70,7 @@ var packedApplication = find(entries, /\/beta-app\.js$/).data.toString('utf8');
 if (packedLaunch.indexOf('APP_PORT = ' + profile.port) < 0 || packedServer.indexOf('PORT = ' + profile.port) < 0) throw new Error('Porta do perfil ausente no IPK.');
 if (packedServer.indexOf("p === '/streamref'") < 0 || packedServer.indexOf('rewriteHls') < 0) throw new Error('Proxy seguro/HLS ausente no IPK.');
 if (packedApplication.indexOf("postJson('/streamref'") < 0 || packedApplication.indexOf('compact:function()') < 0) throw new Error('Shell otimizado ausente no IPK.');
+if (packedApplication.indexOf('function viewportWidth()') < 0 || packedApplication.indexOf('(viewportWidth()-96)') < 0) throw new Error('Layout responsivo ausente no IPK.');
 if (packedApplication.indexOf("'/stremioapi?path='") < 0 || packedServer.indexOf("p === '/stremioapi'") < 0 || packedServer.indexOf("'/api/login': true") < 0) throw new Error('Bridge de conta Stremio ausente no IPK.');
 if (packedServer.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || packedServer.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Assets incorporados nao foram gerados.');
 function embedded(name) {

@@ -26,8 +26,10 @@ jobs:
       - name: Prepare clear release filenames
         shell: pwsh
         run: |
-          Move-Item -LiteralPath 'dist/io.strem.tv_1.2.2_all.ipk' -Destination 'dist/StremCompat-webOS4-UM4-armv7-1.2.2.ipk'
-          Move-Item -LiteralPath 'dist/io.strem.tv.uj3native_1.0.1_all.ipk' -Destination 'dist/StremCompat-webOS3-UJ3-armv7-1.0.1.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv_1.2.3_all.ipk' -Destination 'dist/StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.3.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv.hd_1.2.3_all.ipk' -Destination 'dist/StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.3.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv.uj3native_1.0.2_all.ipk' -Destination 'dist/StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.2.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv.uj3native.hd_1.0.2_all.ipk' -Destination 'dist/StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.2.ipk'
       - uses: actions/upload-artifact@v4
         with:
           name: webos-ipks
@@ -36,6 +38,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          name: StremCompat for LG webOS v1.0.0
-          body_path: docs/releases/v1.0.0.md
+          name: StremCompat for LG webOS ${{ github.ref_name }}
+          body_path: docs/releases/${{ github.ref_name }}.md
           files: dist/*.ipk

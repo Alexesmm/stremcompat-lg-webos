@@ -8,6 +8,7 @@ var CIN='https://v3-cinemeta.strem.io';
 var API='https://api.strem.io';
 var TV_PROFILE={id:'um4-armv7',lowMemory:false,sourceCap:60,libraryCap:60,catalogCap:16};
 function $(id){return document.getElementById(id);}
+function viewportWidth(){var d=document.documentElement;return Math.max(640,(d&&d.clientWidth)||window.innerWidth||1920);}
 function on(target,name,handler,capture){
   if(!target)return false;
   try{
@@ -387,7 +388,7 @@ function makeBoard(loader){
     this._vt=setTimeout(function(){virtualizeBoard(self,self.rowIdx,false);},260);
   },
   slideRow:function(row){
-    var w=row.wide?454:288;var vis=Math.floor((1920-96)/w);
+    var w=row.wide?454:288;var vis=Math.max(2,Math.floor((viewportWidth()-96)/w));
     var off=Math.max(0,row.col-(vis-2))*w;if(row.col<=0)off=0;
     row.cardsEl.style.transform='translateX(-'+off+'px)';
     row.cardsEl.style.webkitTransform='translateX(-'+off+'px)';},
@@ -959,7 +960,7 @@ paint:function(){
     var active=(this.zone==='rows'&&r===this.rowIdx);
     setF(row.cardEls,active?row.col:-1);
     row.cardsEl.className=row.cardsEl.className.replace(/ ?\bact\b/,'')+(active?' act':'');
-    var w=288,vis=Math.floor((1920-96)/w);var off=Math.max(0,row.col-(vis-2))*w;
+    var w=288,vis=Math.max(2,Math.floor((viewportWidth()-96)/w));var off=Math.max(0,row.col-(vis-2))*w;
     row.cardsEl.style.transform='translateX(-'+off+'px)';
     row.cardsEl.style.webkitTransform='translateX(-'+off+'px)';}
   var y=0;for(var i=0;i<this.rowIdx;i++)y+=this.rows[i].el.offsetHeight;

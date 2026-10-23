@@ -39,7 +39,7 @@ try { LOGO_PNG = fs.readFileSync(path.join(DIR, 'stremio-logo.png')); } catch (e
 
 var ORIGIN = 'https://app.strem.io';
 var SHELL_URL = ORIGIN + '/shell-v4.4/';
-var APP_VERSION = '1.2.2';
+var APP_VERSION = '1.2.3';
 var PORT = 8082; // versioned away from 1.2.0/1.2.1's :8080 stale detached runtime
 var SERVER_PORT = 11470;
 /* Replaced with the profile-specific, verified assets during packaging. Keeping
@@ -1062,7 +1062,7 @@ function proxyStream(target, range, method, clientRes, orig, depth, triedFresh, 
   var pu;
   try { pu = urlmod.parse(target); } catch (e) { try { clientRes.writeHead(502); clientRes.end(); } catch (x) {} return; }
   var lib = pu.protocol === 'https:' ? https : http;
-  var hdrs = { 'User-Agent': 'Stremio-TV/1.2.2', 'Accept': '*/*', 'Accept-Encoding': 'identity' };
+  var hdrs = { 'User-Agent': 'Stremio-TV/1.2.3', 'Accept': '*/*', 'Accept-Encoding': 'identity' };
   Object.keys(customHeaders || {}).forEach(function (k) { hdrs[k] = customHeaders[k]; });
   if (range) hdrs.Range = range;
   var opts = { protocol: pu.protocol, hostname: pu.hostname, port: pu.port, path: pu.path, method: method === 'HEAD' ? 'HEAD' : 'GET', headers: hdrs };

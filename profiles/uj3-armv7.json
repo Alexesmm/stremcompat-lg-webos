@@ -5,6 +5,7 @@
   "serviceId": "io.strem.tv.legacy3.server",
   "version": "0.9.3",
   "port": 8083,
+  "graphicsResolution": "1920x1080",
   "ecmaTarget": "chrome38",
   "targetLabel": "LG 49UJ6565-SB / webOS 3.9.3",
   "lowMemory": true,

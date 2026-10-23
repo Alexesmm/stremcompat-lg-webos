@@ -30,8 +30,10 @@ Get-ChildItem -LiteralPath $stageService -Filter '*.log' -File -ErrorAction Sile
 
 $appInfoPath = Join-Path $stageApp 'appinfo.json'
 $appInfo = Get-Content -LiteralPath $appInfoPath -Raw | ConvertFrom-Json
+$templateVersion = [string]$appInfo.version
 $appInfo.id = $config.appId
 $appInfo.version = $config.version
+$appInfo.resolution = [string]$config.graphicsResolution
 if ($config.PSObject.Properties.Name -contains 'title') { $appInfo.title = [string]$config.title }
 [System.IO.File]::WriteAllText($appInfoPath, ($appInfo | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
 
@@ -64,7 +66,7 @@ foreach ($file in $textFiles) {
     $text = $text.Replace('io.strem.tv.server', '__PROFILE_SERVICE_ID__')
     $text = $text.Replace('io.strem.tv', [string]$config.appId)
     $text = $text.Replace('__PROFILE_SERVICE_ID__', [string]$config.serviceId)
-    $text = $text.Replace('1.2.2', [string]$config.version)
+    $text = $text.Replace($templateVersion, [string]$config.version)
     $text = $text.Replace('8082', [string]$config.port)
     $text = $text.Replace('LG 50UM7500PSB / webOS 4.x', [string]$config.targetLabel)
     if ($file.EndsWith('tvserver.js')) {
