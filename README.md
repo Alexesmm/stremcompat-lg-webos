@@ -48,21 +48,21 @@ This project is not affiliated with or endorsed by Stremio or LG Electronics. Us
 
 ## Downloads
 
-Use the IPK that matches both the television generation and the application graphics mode. StremCompat 1.0.3 publishes four clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
+Use the IPK that matches both the television generation and the application graphics mode. StremCompat 1.0.4 publishes four clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
 
 | Build | Graphics mode | Status | Confirmed television | Platform | Application shown on TV |
 |---|---:|---|---|---|---|
-| `um4-armv7` 1.2.5 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
-| `um4-armv7-hd` 1.2.5 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
-| `uj3-native-armv7` 1.0.4 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
-| `uj3-native-armv7-hd` 1.0.4 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
+| `um4-armv7` 1.2.7 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
+| `um4-armv7-hd` 1.2.7 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
+| `uj3-native-armv7` 1.0.6 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
+| `uj3-native-armv7-hd` 1.0.6 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
 
 Release assets:
 
-- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.5.ipk`
-- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.5.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.4.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.4.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.7.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.7.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.6.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.6.ipk`
 
 First choose UJ3 for webOS 3.x or UM4 for webOS 4.x. Then choose the graphics mode:
 
@@ -323,13 +323,13 @@ The application cannot expand the codecs or processing power available in the te
 
 ## Releases
 
-Builds are released together under the StremCompat project version. Tags follow Semantic Versioning, such as `v1.0.3`. Each television port keeps its own internal version in the asset filename because the ports can evolve independently. The GitHub Actions release workflow builds all four generation-and-resolution combinations, verifies them, gives them descriptive filenames and attaches them to the matching GitHub Release.
+Builds are released together under the StremCompat project version. Tags follow Semantic Versioning, such as `v1.0.4`. Each television port keeps its own internal version in the asset filename because the ports can evolve independently. The GitHub Actions release workflow builds all four generation-and-resolution combinations, verifies them, gives them descriptive filenames and attaches them to the matching GitHub Release.
 
 Maintainer example:
 
 ```powershell
-git tag v1.0.3
-git push origin v1.0.3
+git tag v1.0.4
+git push origin v1.0.4
 ```
 
 Users do not need to create a Release. They only download the matching IPK from the Releases page.
