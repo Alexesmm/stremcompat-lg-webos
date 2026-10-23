@@ -1033,6 +1033,9 @@ paint:function(){setF(this.els,this.zone==='list'?this.idx:-1);this.paintChips()
   var y=0,el=this.els[this.idx];if(el&&el.offsetTop>260)y=el.offsetTop-260;
   $('stInner').style.transform='translateY(-'+y+'px)';$('stInner').style.webkitTransform='translateY(-'+y+'px)';},
 close:function(){this.open=false;$('streams').style.display='none';},
+choose:function(){var s=this.items[this.idx];if(!s)return true;
+  var backHash='beta#detail/'+this.type+'/'+this.id+(this.vid!==this.id?('/'+this.vid):'');
+  if(s.stored)playStored(s.stored,backHash);else playUrl(s,this.type,this.id,this.vid,backHash);return true;},
 key:function(k){
   if(this.zone==='chips'){
     if(k===39)this.chipIdx=Math.min(this.chipEls.length-1,this.chipIdx+1);
@@ -1042,9 +1045,7 @@ key:function(k){
     this.filter=this.chips[this.chipIdx];this.idx=0;this.rebuild();return true;}
   if(k===40){this.idx=Math.min(this.els.length-1,this.idx+1);this.paint();}
   else if(k===38){if(this.idx>0){this.idx--;this.paint();}else{this.zone='chips';this.paint();}}
-  else if(k===13){var s=this.items[this.idx];if(!s)return true;
-    var backHash='beta#detail/'+this.type+'/'+this.id+(this.vid!==this.id?('/'+this.vid):'');
-    if(s.stored)playStored(s.stored,backHash);else playUrl(s,this.type,this.id,this.vid,backHash);}
+  else if(k===13){return this.choose();}
   else if(k===37)this.close();return true;}
 };
 
@@ -1251,6 +1252,25 @@ key:function(k){
 /* ================= keys / back / idle ================= */
 var lastIn=Date.now();
 function idleTouch(){lastIn=Date.now();if(bodyHas('idle')||bodyHas('trailer')){bodyRemove('idle');bodyRemove('trailer');stopIdleTrailer();}}
+function pointerIndex(target,list){for(var n=target;n&&n!==document.body;n=n.parentNode){for(var i=0;i<list.length;i++)if(list[i]===n)return i;}return -1;}
+function pointerBoard(target,board,activate){if(!board)return false;for(var r=0;r<board.rows.length;r++){var row=board.rows[r],i=pointerIndex(target,row.cardEls||[]);if(i<0)continue;
+  board.rowIdx=r;row.col=i;topNav.active=false;board.paint();board.hero();if(activate&&row.items[i])openItem(row.items[i]);return true;}return false;}
+function pointerUI(target,activate){var i,r,row,def;
+  if(cwMenu.open){i=pointerIndex(target,cwMenu.els);if(i<0)return false;cwMenu.idx=i;cwMenu.paint();if(activate&&cwMenu.acts[i])cwMenu.acts[i]();return true;}
+  if(streamsUI.open){i=pointerIndex(target,streamsUI.chipEls);if(i>=0){streamsUI.zone='chips';streamsUI.chipIdx=i;streamsUI.paint();if(activate){streamsUI.filter=streamsUI.chips[i];streamsUI.idx=0;streamsUI.rebuild();}return true;}
+    i=pointerIndex(target,streamsUI.els);if(i<0)return false;streamsUI.zone='list';streamsUI.idx=i;streamsUI.paint();if(activate)streamsUI.choose();return true;}
+  i=pointerIndex(target,chips);if(i>=0){topNav.idx=i;topNav.active=true;topNav.paint();if(activate)topNav.switchTo(i);return true;}
+  if(SCR==='login'){if(target===$('lgBtn')||target.parentNode===$('lgBtn')){login.zone='btn';login.paint();if(activate)login.doEmail();return true;}return false;}
+  if(BOARD_SCR[SCR]&&pointerBoard(target,curBoard(),activate))return true;
+  if(SCR==='sim'){i=pointerIndex(target,similar.els);if(i>=0){similar.idx=i;similar.paint();if(activate&&similar.items[i])goScr('detail',{type:similar.items[i].type,id:similar.items[i].id,vid:null});return true;}}
+  if(SCR==='detail'){i=pointerIndex(target,detail.btnEls);if(i>=0){detail.zone='btns';detail.btnIdx=i;detail.paint();if(activate&&detail.btnActs[i])detail.btnActs[i]();return true;}
+    i=pointerIndex(target,detail.seasonEls);if(i>=0){detail.zone='seasons';if(detail.seasonIdx!==i){detail.seasonIdx=i;detail.buildEps();}detail.paint();if(activate&&detail.eps.length){detail.zone='eps';detail.paint();}return true;}
+    i=pointerIndex(target,detail.epEls);if(i>=0){detail.zone='eps';detail.epIdx=i;detail.paint();if(activate&&detail.eps[i])detail.openStreams(detail.eps[i].id);return true;}}
+  if(SCR==='search'){for(r=0;r<search.rows.length;r++){row=search.rows[r];i=pointerIndex(target,row.cardEls||[]);if(i>=0){search.zone='rows';search.rowIdx=r;row.col=i;search.paint();if(activate&&row.items[i])openItem(row.items[i]);return true;}}}
+  if(SCR==='set'){i=pointerIndex(target,settings.els);if(i>=0){settings.idx=i;settings.paint();if(activate){def=settings.fdefs[i];if(def.action){if(def.k==='__sync')settings.syncNow();else settings.logout();}else{var rerendered=settings.cycle(def,1);if(!rerendered)settings.els[settings.idx].getElementsByClassName('vl')[0].textContent=settings.valLabel(def);settings.paint();}}return true;}}
+  return false;}
+on(document,'mouseover',function(e){pointerUI(e.target,false);},false);
+on(document,'click',function(e){idleTouch();if(pointerUI(e.target,true)){e.preventDefault();e.stopPropagation();}},false);
 /* idle trailer: after 10s the UI melts away; the focused title's trailer plays
    muted (no subs) behind the artwork, and once it's actually rolling the whole
    foreground fades to 0. 360p to stay easy on RAM; any key kills it instantly. */

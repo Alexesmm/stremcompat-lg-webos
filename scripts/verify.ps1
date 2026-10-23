@@ -62,7 +62,9 @@ if ($appSource -notmatch '<html lang="en">' -or $appSource -notmatch 'beta\?v=1\
 if ($serverSource -notmatch "p === '/streamref'" -or $serverSource -notmatch "p === '/addon'" -or $applicationSource -notmatch "postJson\('/streamref'") { throw 'Ponte segura de addons/player ausente.' }
 if ($applicationSource -notmatch 'rowReady:function' -or $applicationSource -notmatch 'findRow:function' -or $applicationSource -notmatch 'catalogRowsCap') { throw 'Navegacao tolerante a falhas de catalogo ausente.' }
 if ($applicationSource -notmatch 'streamCompatibility' -or $applicationSource -notmatch 'webkitvisibilitychange' -or $applicationSource -notmatch 'PalmServiceBridge') { throw 'Avisos de codec ou recuperacao do runtime ausentes.' }
+if ($applicationSource -notmatch 'function pointerUI' -or $applicationSource -notmatch "on\(document,'click'") { throw 'Suporte ao Magic Remote na interface ausente.' }
 if ($serverSource -notmatch 'player_resume_recovered' -or $serverSource -notmatch 'process\.memoryUsage' -or $serverSource -notmatch "dbg\('\[clientlog\]") { throw 'Diagnosticos ou recuperacao do player ausentes.' }
+if ($serverSource -notmatch 'MediaPlayPause' -or $serverSource -notmatch 'mode===\"seek\"' -or $serverSource -notmatch 'function audioName') { throw 'Controles ou indicadores ativos do player ausentes.' }
 if ($shellSource -notmatch '@media \(max-height:800px\)') { throw 'Layout compacto para a superficie 720p ausente.' }
 
 Write-Host 'OK: shell, manifests, bootstrap ES5, runtime Node 18 e binarios ARMv7 validados.'

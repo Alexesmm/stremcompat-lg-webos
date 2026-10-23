@@ -125,8 +125,33 @@ async function main() {
     var moved = JSON.parse(movedEval.result.value);
     assert.strictEqual(moved.focused, 3, 'Chromium 38 remote Down did not skip a failed catalog');
     assert.notStrictEqual(moved.transform, 'translateY(0px)', 'Chromium 38 catalog board did not move');
+
+    await protocol.call('Runtime.evaluate', { expression: "document.querySelector('.card.f').click()" });
+    await delay(120);
+    var clicked = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('scrDetail').className", returnByValue: true });
+    assert.ok(/\bon\b/.test(clicked.result.value), 'Magic Remote click did not open the focused home card');
+
+    await protocol.call('Runtime.evaluate', { expression: "location.href='http://127.0.0.1:" + appPort + "/play?u='+encodeURIComponent('http://127.0.0.1:" + mockPort + "/fake.mp4')+'&back=beta'" });
+    await delay(700);
+    var playerInitial = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify(window.__tv&&window.__tv.st())", returnByValue: true });
+    assert.strictEqual(JSON.parse(playerInitial.result.value).mode, 'video', 'player did not start in video focus mode');
+    await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 38, nativeVirtualKeyCode: 38, key: 'ArrowUp' });
+    await delay(50);
+    var playerControls = JSON.parse((await protocol.call('Runtime.evaluate', { expression: "JSON.stringify(window.__tv.st())", returnByValue: true })).result.value);
+    assert.strictEqual(playerControls.mode, 'controls', 'Up did not focus the player buttons');
+    assert.strictEqual(playerControls.bIdx, 1, 'Play/Pause was not the default focused button');
+    await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 38, nativeVirtualKeyCode: 38, key: 'ArrowUp' });
+    await delay(50);
+    assert.strictEqual(JSON.parse((await protocol.call('Runtime.evaluate', { expression: "JSON.stringify(window.__tv.st())", returnByValue: true })).result.value).mode, 'seek', 'Up from the buttons did not focus the progress bar');
+    await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
+    await protocol.call('Runtime.evaluate', { expression: "document.getElementById('b_pp').click();document.getElementById('b_set').click()" });
+    await delay(80);
+    var playerMenu = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({state:window.__tv.st(),text:document.getElementById('menu').textContent})", returnByValue: true });
+    var playerMenuState = JSON.parse(playerMenu.result.value);
+    assert.strictEqual(playerMenuState.state.mode, 'menu', 'Magic Remote click did not open player settings');
+    assert.ok(playerMenuState.text.indexOf('Audio:') >= 0 && playerMenuState.text.indexOf('Subtitles:') >= 0, 'active audio/subtitle labels are missing');
     protocol.close();
-    console.log('OK: real Chromium 38 opened login, persisted language, skipped failed catalogs and scrolled a 14-row addon board.');
+    console.log('OK: Chromium 38 login, catalogs, Magic Remote clicks and player focus/audio/subtitle UI.');
   } finally {
     if (browser) try { browser.kill(); } catch (e) {}
     try { server.kill(); } catch (e) {}

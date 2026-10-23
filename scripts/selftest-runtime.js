@@ -108,6 +108,9 @@ async function main() {
     assert.ok(player.text.indexOf('COMPAT="DTS"') >= 0, 'player did not receive the sanitized compatibility hint');
     assert.ok(player.text.indexOf('webkitvisibilitychange') >= 0, 'player lifecycle recovery is missing');
     assert.ok(player.text.indexOf('PalmServiceBridge') >= 0, 'player runtime restart bridge is missing');
+    assert.ok(player.text.indexOf('MediaPlayPause') >= 0 && player.text.indexOf('mode==="seek"') >= 0, 'player media keys or focus zones are missing');
+    assert.ok(player.text.indexOf('function audioName') >= 0 && player.text.indexOf('function subtitleName') >= 0, 'active track labels are missing');
+    assert.ok(player.text.indexOf('document.addEventListener("click"') >= 0, 'Magic Remote player clicks are missing');
 
     var proxied = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + ref, headers: { Range: 'bytes=0-99' } });
     var echoed = JSON.parse(proxied.text);
