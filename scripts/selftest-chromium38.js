@@ -68,14 +68,24 @@ async function main() {
     var protocol = await devtools(page.webSocketDebuggerUrl);
     await protocol.call('Runtime.enable');
     await delay(1500);
-    var evaluated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,phase:window.__STREMIO_BOOT_PHASE__,message:window.__STREMIO_BOOT_MESSAGE__||'',line:window.__STREMIO_BOOT_LINE__||'',login:document.getElementById('scrLogin').className,boot:document.getElementById('boot').style.display})", returnByValue: true });
+    var evaluated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,phase:window.__STREMIO_BOOT_PHASE__,message:window.__STREMIO_BOOT_MESSAGE__||'',line:window.__STREMIO_BOOT_LINE__||'',login:document.getElementById('scrLogin').className,boot:document.getElementById('boot').style.display,language:window.__STREMIO_UI_LANGUAGE__(),languagePicker:document.getElementById('lgLang').textContent})", returnByValue: true });
     var state = JSON.parse(evaluated.result.value);
     if (state.failed || !state.done || protocol.exceptions.length) console.log(JSON.stringify({ state: state, exceptions: protocol.exceptions }, null, 2));
     assert.strictEqual(state.failed, false, 'browser startup reported failure at ' + state.phase);
     assert.strictEqual(state.done, true, 'browser startup did not finish; phase ' + state.phase);
     assert.ok(/\bon\b/.test(state.login), 'login screen is not active');
     assert.strictEqual(state.boot, 'none', 'boot overlay is still visible');
+    assert.strictEqual(state.language, 'en-US', 'first-run interface language is not English');
+    assert.ok(/^Language: English/.test(state.languagePicker), 'login language selector is not in English');
     assert.strictEqual(protocol.exceptions.length, 0, 'Chromium 38 reported an exception.');
+
+    var languageEval = await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('pt-BR');JSON.stringify({language:window.__STREMIO_UI_LANGUAGE__(),stored:localStorage.getItem('uiLanguage'),languagePicker:document.getElementById('lgLang').textContent,emailTitle:document.getElementById('lgEmailTitle').textContent})", returnByValue: true });
+    var language = JSON.parse(languageEval.result.value);
+    assert.strictEqual(language.language, 'pt-BR', 'Portuguese interface selection was not applied');
+    assert.strictEqual(language.stored, 'pt-BR', 'interface language was not persisted locally');
+    assert.ok(/^Idioma: Português/.test(language.languagePicker), 'login language selector was not translated');
+    assert.strictEqual(language.emailTitle, 'Ou use seu e-mail', 'login copy was not translated');
+    await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('en-US')" });
 
     await protocol.call('Runtime.evaluate', { expression: "document.getElementById('lgEmail').focus()" });
     await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
@@ -92,7 +102,7 @@ async function main() {
     assert.ok(/\bon\b/.test(home.board), 'home screen is not active for stored account');
     assert.strictEqual(home.boot, 'none', 'stored-account boot overlay is still visible');
     protocol.close();
-    console.log('OK: real Chromium 38 opened login, handled remote input and reached home with a stored account.');
+    console.log('OK: real Chromium 38 opened login, switched and persisted interface language, handled remote input and reached home with a stored account.');
   } finally {
     if (browser) try { browser.kill(); } catch (e) {}
     try { server.kill(); } catch (e) {}

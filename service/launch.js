@@ -18,7 +18,7 @@ var NODE = path.join(DIR, 'bin', 'node18');
 var LIB = path.join(DIR, 'bin', 'lib');
 var SUPERVISOR = path.join(DIR, 'tvserver.js');
 var APP_PORT = 8082;
-var APP_VERSION = '1.2.3';
+var APP_VERSION = '1.2.4';
 var service = new Service('io.strem.tv.server');
 var spawned = false;
 

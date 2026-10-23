@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 
 $appInfo = Get-Content -LiteralPath (Join-Path $projectRoot 'app\appinfo.json') -Raw | ConvertFrom-Json
-if ($appInfo.id -ne 'io.strem.tv' -or $appInfo.version -ne '1.2.3') { throw 'Manifesto do aplicativo inesperado.' }
+if ($appInfo.id -ne 'io.strem.tv' -or $appInfo.version -ne '1.2.4') { throw 'Manifesto do aplicativo inesperado.' }
 if ($appInfo.type -ne 'web' -or $appInfo.main -ne 'index.html') { throw 'appinfo.json invalido.' }
 $serviceInfo = Get-Content -LiteralPath (Join-Path $projectRoot 'service\package.json') -Raw | ConvertFrom-Json
 if ($serviceInfo.name -ne 'io.strem.tv.server' -or $serviceInfo.version -ne $appInfo.version) { throw 'Versoes do app e servico nao coincidem.' }
@@ -57,7 +57,8 @@ $shellSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\beta.ht
 $applicationSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\beta-app.js') -Raw
 $appSource = Get-Content -LiteralPath (Join-Path $projectRoot 'app\index.html') -Raw
 if ($launchSource -notmatch "APP_PORT = 8082" -or $serverSource -notmatch "PORT = 8082" -or $appSource -notmatch "127\.0\.0\.1:8082") { throw 'Porta local 8082 inconsistente.' }
-if ($serverSource -notmatch "APP_VERSION = '1\.2\.3'" -or $launchSource -notmatch "APP_VERSION = '1\.2\.3'") { throw 'Health/versionamento do runtime inconsistente.' }
+if ($serverSource -notmatch "APP_VERSION = '1\.2\.4'" -or $launchSource -notmatch "APP_VERSION = '1\.2\.4'") { throw 'Health/versionamento do runtime inconsistente.' }
+if ($appSource -notmatch '<html lang="en">' -or $appSource -notmatch 'beta\?v=1\.2\.4') { throw 'Bootstrap inicial em ingles ou versao do shell inconsistente.' }
 if ($serverSource -notmatch "p === '/streamref'" -or $serverSource -notmatch "p === '/addon'" -or $applicationSource -notmatch "postJson\('/streamref'") { throw 'Ponte segura de addons/player ausente.' }
 
 Write-Host 'OK: shell, manifests, bootstrap ES5, runtime Node 18 e binarios ARMv7 validados.'
