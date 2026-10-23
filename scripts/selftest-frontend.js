@@ -16,12 +16,15 @@ function element(id) {
     getElementsByClassName: function () { return [element()]; },
     getElementsByTagName: function () { return []; },
     focus: function () {}, blur: function () {}, pause: function () {}, load: function () {},
-    setAttribute: function () {}, removeAttribute: function () {}
+    attributes: {},
+    setAttribute: function (name, value) { this.attributes[name] = String(value); },
+    getAttribute: function (name) { return this.attributes[name] || null; },
+    removeAttribute: function (name) { delete this.attributes[name]; }
   };
   return el;
 }
 
-function run(storage, expectedScreen, missingIds) {
+function run(storage, expectedScreen, missingIds, expectedLanguage) {
   var elements = {};
   var body = element('body');
   missingIds = missingIds || {};
@@ -52,6 +55,13 @@ function run(storage, expectedScreen, missingIds) {
   vm.runInNewContext(source, context, { filename: 'beta-app.js', timeout: 2000 });
   assert.strictEqual(failure, null, failure || 'unexpected startup failure');
   assert.strictEqual(context.window.__STREMIO_BOOT_DONE__, true);
+  expectedLanguage = expectedLanguage || 'en-US';
+  assert.strictEqual(context.window.__STREMIO_UI_LANGUAGE__(), expectedLanguage, 'unexpected interface language');
+  assert.strictEqual(get('chipSearch').textContent, expectedLanguage === 'pt-BR' ? 'Buscar' : 'Search');
+  assert.strictEqual(get('lgQrTitle').textContent, expectedLanguage === 'pt-BR' ? 'Entrar pelo celular' : 'Sign in with your phone');
+  var passElement = get('lgPass');
+  if (passElement) assert.strictEqual(passElement.getAttribute('placeholder'), expectedLanguage === 'pt-BR' ? 'Senha' : 'Password');
+  assert.ok(get('lgLang').textContent.indexOf(expectedLanguage === 'pt-BR' ? 'Português (Brasil)' : 'English') >= 0, 'language picker label was not localized');
   assert.ok(/\bon\b/.test(get(expectedScreen).className), expectedScreen + ' was not shown');
   assert.strictEqual(get('boot').style.display, 'none');
   if (expectedScreen === 'scrLogin') {
@@ -60,10 +70,22 @@ function run(storage, expectedScreen, missingIds) {
   } else {
     assert.ok(!/\blogin\b/.test(body.className), 'login body state leaked into authenticated UI');
   }
+  return { context: context, get: get, body: body };
+}
+
+function memoryStorage(initial) {
+  var values = initial || {};
+  return {
+    get length() { return Object.keys(values).length; },
+    getItem: function (key) { return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null; },
+    setItem: function (key, value) { values[key] = String(value); },
+    removeItem: function (key) { delete values[key]; },
+    key: function (index) { return Object.keys(values)[index] || null; }
+  };
 }
 
 function emptyStorage() {
-  return { length: 0, getItem: function () { return null; }, setItem: function () {}, removeItem: function () {}, key: function () { return null; } };
+  return memoryStorage();
 }
 
 function unavailableStorage() {
@@ -73,22 +95,21 @@ function unavailableStorage() {
 }
 
 function accountStorage() {
-  var values = {
+  return memoryStorage({
     user: JSON.stringify({ _id: 'test-user', email: 'test@example.com' }),
     authKey: JSON.stringify('test-auth-key'),
     addons: '[]'
-  };
-  var keys = Object.keys(values);
-  return {
-    length: keys.length,
-    getItem: function (key) { return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null; },
-    setItem: function (key, value) { values[key] = value; }, removeItem: function (key) { delete values[key]; },
-    key: function (index) { return keys[index] || null; }
-  };
+  });
 }
 
-run(emptyStorage(), 'scrLogin');
+var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
+firstRun.context.__STREMIO_SET_UI_LANGUAGE__('pt-BR');
+assert.strictEqual(firstRun.context.__STREMIO_UI_LANGUAGE__(), 'pt-BR');
+assert.strictEqual(firstRun.context.localStorage.getItem('uiLanguage'), 'pt-BR', 'language preference was not persisted');
+assert.strictEqual(firstRun.get('chipSearch').textContent, 'Buscar', 'language change was not applied immediately');
 run(unavailableStorage(), 'scrLogin');
 run(accountStorage(), 'scrBoard');
+run(memoryStorage({ uiLanguage: 'pt-BR' }), 'scrLogin', null, 'pt-BR');
+run(memoryStorage({ uiLanguage: 'unsupported-locale' }), 'scrLogin', null, 'en-US');
 run(emptyStorage(), 'scrLogin', { lgEmail: true, lgPass: true });
-console.log('OK: Chromium 38 startup reaches login or home with storage failures and degraded input elements.');
+console.log('OK: Chromium 38 startup keeps English as the fallback, persists Brazilian Portuguese and reaches login or home.');

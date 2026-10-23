@@ -81,7 +81,7 @@ async function main() {
     await protocol.call('Emulation.setDeviceMetricsOverride', { width: width, height: height, deviceScaleFactor: 1, mobile: false });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=' + width });
     await delay(2200);
-    var expression = "(function(){function r(id){var e=document.getElementById(id),b=e&&e.getBoundingClientRect();return b?{left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height}:null;}function d(id){var e=document.getElementById(id);return e?getComputedStyle(e).display:'';}return JSON.stringify({width:innerWidth,height:innerHeight,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,login:document.getElementById('scrLogin').className,bodyClass:document.body.className,boot:document.getElementById('boot').style.display,loginBox:r('lgBox'),topnavDisplay:d('topnav'),logoDisplay:d('logobg'),bodyWidth:document.body.scrollWidth,bodyHeight:document.body.scrollHeight});})()";
+    var expression = "(function(){function r(id){var e=document.getElementById(id),b=e&&e.getBoundingClientRect();return b?{left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height}:null;}function d(id){var e=document.getElementById(id);return e?getComputedStyle(e).display:'';}function s(id){var e=document.getElementById(id);return e?e.textContent:'';}return JSON.stringify({width:innerWidth,height:innerHeight,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,login:document.getElementById('scrLogin').className,bodyClass:document.body.className,boot:document.getElementById('boot').style.display,loginBox:r('lgBox'),languageBox:r('lgLang'),language:window.__STREMIO_UI_LANGUAGE__&&window.__STREMIO_UI_LANGUAGE__(),languageText:s('lgLang'),loginTitle:s('lgQrTitle'),topnavDisplay:d('topnav'),logoDisplay:d('logobg'),bodyWidth:document.body.scrollWidth,bodyHeight:document.body.scrollHeight});})()";
     var evaluated = await protocol.call('Runtime.evaluate', { expression: expression, returnByValue: true });
     var state = JSON.parse(evaluated.result.value);
     assert.strictEqual(state.width, width, 'Unexpected viewport width.');
@@ -93,12 +93,24 @@ async function main() {
     assert.strictEqual(state.boot, 'none', 'Boot overlay is still visible.');
     assert.strictEqual(state.topnavDisplay, 'none', 'Top navigation is visible before login.');
     assert.strictEqual(state.logoDisplay, 'none', 'Decorative Stremio watermark is visible before login.');
+    assert.strictEqual(state.language, 'en-US', 'First-run interface did not default to English.');
+    assert.ok(state.languageText.indexOf('English') >= 0, 'English language selector is missing.');
+    assert.strictEqual(state.loginTitle, 'Sign in with your phone', 'Login text was not rendered in English.');
     assert.ok(state.loginBox && state.loginBox.left >= 0 && state.loginBox.top >= 0, 'Login layout starts outside the viewport.');
     assert.ok(state.loginBox.right <= width && state.loginBox.bottom <= height, 'Login layout is clipped at ' + width + 'x' + height + '.');
+    assert.ok(state.languageBox && state.languageBox.left >= 0 && state.languageBox.top >= 0, 'Language selector starts outside the viewport.');
+    assert.ok(state.languageBox.right <= width && state.languageBox.bottom <= height, 'Language selector is clipped at ' + width + 'x' + height + '.');
     assert.strictEqual(protocol.exceptions.length, 0, 'Chrome reported a JavaScript exception.');
     var shot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, Buffer.from(shot.data, 'base64'));
+    var localized = await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('pt-BR');JSON.stringify({language:window.__STREMIO_UI_LANGUAGE__(),languageText:document.getElementById('lgLang').textContent,loginTitle:document.getElementById('lgQrTitle').textContent,password:document.getElementById('lgPass').getAttribute('placeholder')})", returnByValue: true });
+    var localizedState = JSON.parse(localized.result.value);
+    assert.strictEqual(localizedState.language, 'pt-BR', 'Brazilian Portuguese selection was not persisted.');
+    assert.ok(localizedState.languageText.indexOf('Português (Brasil)') >= 0, 'Portuguese language selector was not rendered.');
+    assert.strictEqual(localizedState.loginTitle, 'Entrar pelo celular', 'Login text was not translated.');
+    assert.strictEqual(localizedState.password, 'Senha', 'Login placeholder was not translated.');
+    await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('en-US')" });
     await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons','[]');" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
     await delay(900);
@@ -109,6 +121,13 @@ async function main() {
     assert.ok(!/\blogin\b/.test(authenticatedState.bodyClass), 'Login body state leaked after authentication.');
     assert.notStrictEqual(authenticatedState.topnavDisplay, 'none', 'Top navigation stayed hidden after authentication.');
     assert.ok(/\bon\b/.test(authenticatedState.home), 'Home screen is not active after authentication.');
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(38);key(39);key(39);key(39);key(40);})()" });
+    await delay(150);
+    var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl');return JSON.stringify({screen:document.getElementById('scrSet').className,firstLabel:labels.length?labels[0].textContent:'',firstValue:values.length?values[0].textContent:''});})()", returnByValue: true });
+    var settingsState = JSON.parse(settingsView.result.value);
+    assert.ok(/\bon\b/.test(settingsState.screen), 'Remote navigation did not open Settings.');
+    assert.strictEqual(settingsState.firstLabel, 'Interface language', 'Interface language setting is missing.');
+    assert.ok(settingsState.firstValue.indexOf('English') >= 0, 'Saved interface language is not shown in Settings.');
     console.log('OK: ' + width + 'x' + height + ' layout ' + JSON.stringify(state) + ' -> ' + output);
   } finally {
     if (protocol) protocol.close();

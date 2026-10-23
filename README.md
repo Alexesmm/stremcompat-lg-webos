@@ -157,6 +157,7 @@ The confirmed UJ3 package was tested with the official Chromium 38 snapshot. Sta
 ## Features
 
 - Stremio account login by email or mobile pairing code.
+- English first-run interface with Brazilian Portuguese selectable on the login screen or under Settings. The choice is stored on the television and remains independent from account, subtitle and audio preferences.
 - Account library, watched state and progress synchronization.
 - Account addon synchronization.
 - Addon-driven Home, Discover, Search and Library screens.

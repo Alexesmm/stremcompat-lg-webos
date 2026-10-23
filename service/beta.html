@@ -188,6 +188,8 @@ body.login #topnav,body.login #logobg{display:none}
 
 /* ---------- login ---------- */
 #lgWrap{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
+#lgLang{position:fixed;top:34px;right:42px;padding:12px 22px;border-radius:24px;font-size:22px;color:rgba(255,255,255,.78);background:rgba(255,255,255,.08);z-index:3}
+#lgLang.f{background:#fff;color:#0c0b11;font-weight:700}
 #lgBox{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
 #lgQr{text-align:center;padding-right:90px;border-right:1px solid rgba(255,255,255,.14)}
 #lgQr h2{font-size:40px;margin:0 0 10px}
@@ -220,11 +222,11 @@ body.login #topnav,body.login #logobg{display:none}
 <div id="bg"></div><div id="bg2"></div><div id="logobg"></div><div id="bgshade"></div>
 
 <div id="topnav">
-  <div class="chip" id="chipSearch">Buscar</div>
-  <div class="chip" id="chipHome">Início</div>
-  <div class="chip" id="chipDisc">Descobrir</div>
-  <div class="chip" id="chipLib">Biblioteca</div>
-  <div class="chip" id="chipSet">Ajustes</div>
+  <div class="chip" id="chipSearch">Search</div>
+  <div class="chip" id="chipHome">Home</div>
+  <div class="chip" id="chipDisc">Discover</div>
+  <div class="chip" id="chipLib">Library</div>
+  <div class="chip" id="chipSet">Settings</div>
   <div id="clock"></div>
 </div>
 
@@ -246,8 +248,8 @@ body.login #topnav,body.login #logobg{display:none}
 
 <div class="scr" id="scrSearch">
   <div id="sWrap">
-    <input id="sBox" placeholder="Buscar filmes e séries">
-    <div id="sHint">Pressione OK para digitar e seta para baixo para ver resultados</div>
+    <input id="sBox" placeholder="Search movies and series">
+    <div id="sHint">Press OK to type, then press Down to browse results</div>
     <div id="sRowsClip"><div id="sRows"></div></div>
   </div>
 </div>
@@ -256,17 +258,18 @@ body.login #topnav,body.login #logobg{display:none}
   <div id="setWrap"><div id="setInner">
     <div id="setAcct"><div class="em"></div><div class="pl"></div></div>
     <div id="setItems"></div>
-    <div class="sethint">Use esquerda/direita para alterar · as mudanças são aplicadas na hora</div>
+    <div class="sethint" id="setHint">Use Left/Right to change · changes apply immediately</div>
   </div></div>
 </div>
 
 <div class="scr" id="scrLogin">
+  <div id="lgLang">Language: English&nbsp;&nbsp;‹ ›</div>
   <div id="lgWrap"><div id="lgBox">
-    <div id="lgQr"><h2>Entrar pelo celular</h2><div class="s">Escaneie o código com a câmera</div><img id="lgQrImg"><div id="lgCode"></div><div id="lgStat">Gerando código…</div></div>
-    <div id="lgForm"><h2>Ou use seu e-mail</h2>
+    <div id="lgQr"><h2 id="lgQrTitle">Sign in with your phone</h2><div class="s" id="lgQrHelp">Scan the code with your camera</div><img id="lgQrImg"><div id="lgCode"></div><div id="lgStat">Generating code…</div></div>
+    <div id="lgForm"><h2 id="lgEmailTitle">Or use your email</h2>
       <input class="lgin" id="lgEmail" placeholder="Email">
-      <input class="lgin" id="lgPass" placeholder="Senha" type="password">
-      <div id="lgBtn">Entrar</div>
+      <input class="lgin" id="lgPass" placeholder="Password" type="password">
+      <div id="lgBtn">Sign in</div>
       <div id="lgErr"></div>
     </div>
   </div></div>
@@ -276,7 +279,7 @@ body.login #topnav,body.login #logobg{display:none}
   <div id="simWrap"><div id="simTitle"></div><div id="simClip"><div id="simGrid"></div></div></div>
 </div>
 
-<div id="streams"><h3>Fontes</h3><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
+<div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
 <div id="toast"></div>
 <div id="boot"><img class="lg" src="/logo.png"></div>
