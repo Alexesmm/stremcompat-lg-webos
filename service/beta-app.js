@@ -289,14 +289,16 @@ function showScr(name){
   var el=BOARD_SCR[name]?'scrBoard':({detail:'scrDetail',search:'scrSearch',set:'scrSet',login:'scrLogin',sim:'scrSim'})[name];
   var all=['scrBoard','scrDetail','scrSearch','scrSet','scrLogin','scrSim'];
   for(var i=0;i<all.length;i++)$(all[i]).className='scr'+(all[i]===el?' on':'');
-  SCR=name;paintChips();updateLogoBg();
+  SCR=name;
+  if(name==='login')bodyAdd('login');else bodyRemove('login');
+  paintChips();updateLogoBg();
   if(name==='detail')bodyAdd('detail');else bodyRemove('detail');}
 function animIn(el){if(!el)return;el.className=el.className.replace(/ ?\banim-in\b/,'');void el.offsetHeight;el.className=(el.className+' anim-in').replace(/^ /,'');}
 /* faded Stremio logo where cover art would be: Settings, and Search until you browse results */
 function updateLogoBg(){
-  var show=(SCR==='set')||(SCR==='login')||(SCR==='search'&&search.zone!=='rows');
+  var show=(SCR==='set')||(SCR==='search'&&search.zone!=='rows');
   $('logobg').className=show?'on':'';
-  if(show)setBg('');}
+  if(show||SCR==='login')setBg('');}
 function goScr(name,params,noStack){
   try{idleTouch();}catch(e){}
   if(!noStack&&SCR!==name)backStack.push(SCR);

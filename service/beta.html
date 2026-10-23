@@ -41,6 +41,9 @@ body.trailer #dWrap{opacity:.14}
 
 /* ---------- top nav (centered; clock pinned right) ---------- */
 #topnav{position:fixed;top:0;left:0;right:0;height:100px;z-index:20;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
+/* Login is intentionally standalone: navigation and the decorative watermark only
+   become relevant after an account is connected. */
+body.login #topnav,body.login #logobg{display:none}
 .chip{padding:14px 40px;margin:0 9px;border-radius:32px;font-size:32px;color:rgba(255,255,255,.78);background:transparent;transition:background .15s ease,color .15s ease}
 .chip.cur{color:#fff;font-weight:700}
 .chip.f{background:#fff;color:#0c0b11;font-weight:700}

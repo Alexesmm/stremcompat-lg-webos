@@ -81,7 +81,7 @@ async function main() {
     await protocol.call('Emulation.setDeviceMetricsOverride', { width: width, height: height, deviceScaleFactor: 1, mobile: false });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=' + width });
     await delay(2200);
-    var expression = "(function(){function r(id){var e=document.getElementById(id),b=e&&e.getBoundingClientRect();return b?{left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height}:null;}return JSON.stringify({width:innerWidth,height:innerHeight,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,login:document.getElementById('scrLogin').className,boot:document.getElementById('boot').style.display,loginBox:r('lgBox'),topnav:r('topnav'),bodyWidth:document.body.scrollWidth,bodyHeight:document.body.scrollHeight});})()";
+    var expression = "(function(){function r(id){var e=document.getElementById(id),b=e&&e.getBoundingClientRect();return b?{left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height}:null;}function d(id){var e=document.getElementById(id);return e?getComputedStyle(e).display:'';}return JSON.stringify({width:innerWidth,height:innerHeight,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,login:document.getElementById('scrLogin').className,bodyClass:document.body.className,boot:document.getElementById('boot').style.display,loginBox:r('lgBox'),topnavDisplay:d('topnav'),logoDisplay:d('logobg'),bodyWidth:document.body.scrollWidth,bodyHeight:document.body.scrollHeight});})()";
     var evaluated = await protocol.call('Runtime.evaluate', { expression: expression, returnByValue: true });
     var state = JSON.parse(evaluated.result.value);
     assert.strictEqual(state.width, width, 'Unexpected viewport width.');
@@ -89,13 +89,26 @@ async function main() {
     assert.strictEqual(state.failed, false, 'Frontend reported a boot failure.');
     assert.strictEqual(state.done, true, 'Frontend did not complete boot.');
     assert.ok(/\bon\b/.test(state.login), 'Login screen is not active.');
+    assert.ok(/\blogin\b/.test(state.bodyClass), 'Login body state is not active.');
     assert.strictEqual(state.boot, 'none', 'Boot overlay is still visible.');
+    assert.strictEqual(state.topnavDisplay, 'none', 'Top navigation is visible before login.');
+    assert.strictEqual(state.logoDisplay, 'none', 'Decorative Stremio watermark is visible before login.');
     assert.ok(state.loginBox && state.loginBox.left >= 0 && state.loginBox.top >= 0, 'Login layout starts outside the viewport.');
     assert.ok(state.loginBox.right <= width && state.loginBox.bottom <= height, 'Login layout is clipped at ' + width + 'x' + height + '.');
     assert.strictEqual(protocol.exceptions.length, 0, 'Chrome reported a JavaScript exception.');
     var shot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, Buffer.from(shot.data, 'base64'));
+    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons','[]');" });
+    await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
+    await delay(900);
+    var authenticated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({bodyClass:document.body.className,topnavDisplay:getComputedStyle(document.getElementById('topnav')).display,home:document.getElementById('scrBoard').className,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__})", returnByValue: true });
+    var authenticatedState = JSON.parse(authenticated.result.value);
+    assert.strictEqual(authenticatedState.failed, false, 'Authenticated frontend reported a boot failure.');
+    assert.strictEqual(authenticatedState.done, true, 'Authenticated frontend did not complete boot.');
+    assert.ok(!/\blogin\b/.test(authenticatedState.bodyClass), 'Login body state leaked after authentication.');
+    assert.notStrictEqual(authenticatedState.topnavDisplay, 'none', 'Top navigation stayed hidden after authentication.');
+    assert.ok(/\bon\b/.test(authenticatedState.home), 'Home screen is not active after authentication.');
     console.log('OK: ' + width + 'x' + height + ' layout ' + JSON.stringify(state) + ' -> ' + output);
   } finally {
     if (protocol) protocol.close();

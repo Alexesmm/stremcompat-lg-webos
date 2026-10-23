@@ -54,6 +54,12 @@ function run(storage, expectedScreen, missingIds) {
   assert.strictEqual(context.window.__STREMIO_BOOT_DONE__, true);
   assert.ok(/\bon\b/.test(get(expectedScreen).className), expectedScreen + ' was not shown');
   assert.strictEqual(get('boot').style.display, 'none');
+  if (expectedScreen === 'scrLogin') {
+    assert.ok(/\blogin\b/.test(body.className), 'login body state was not enabled');
+    assert.strictEqual(get('logobg').className, '', 'login watermark was not disabled');
+  } else {
+    assert.ok(!/\blogin\b/.test(body.className), 'login body state leaked into authenticated UI');
+  }
 }
 
 function emptyStorage() {
