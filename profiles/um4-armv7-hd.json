@@ -4,7 +4,7 @@
   "appId": "io.strem.tv.hd",
   "title": "Stremio HD",
   "serviceId": "io.strem.tv.hd.server",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "port": 8084,
   "graphicsResolution": "1280x720",
   "ecmaTarget": "chrome53",
@@ -13,6 +13,7 @@
   "sourceCap": 60,
   "libraryCap": 60,
   "catalogCap": 16,
+  "catalogRowsCap": 24,
   "backdropWidth": 960,
   "backdropCache": 24,
   "backdropWorkers": 2

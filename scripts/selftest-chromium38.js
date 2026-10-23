@@ -53,6 +53,21 @@ function devtools(url) {
 }
 
 async function main() {
+  var mockPort = 10100 + Math.floor(Math.random() * 300), mockCatalogs = [], mockAddon;
+  for (var ci = 0; ci < 14; ci++) mockCatalogs.push({ type: 'movie', id: 'catalog-' + ci, name: 'Catalog ' + ci });
+  var mockServer = http.createServer(function (req, res) {
+    var match = req.url.match(/^\/catalog\/movie\/catalog-(\d+)\.json/);
+    if (!match) { res.writeHead(404);res.end();return; }
+    var index = parseInt(match[1], 10);
+    if (index === 0 || index === 2) { res.writeHead(503);res.end();return; }
+    var metas = [];
+    for (var mi = 0; mi < 3; mi++) metas.push({ id: 'visual-test:' + index + ':' + mi, type: 'movie', name: 'Catalog ' + index + ' item ' + mi });
+    res.writeHead(200, { 'Content-Type': 'application/json' });res.end(JSON.stringify({ metas: metas }));
+  });
+  await new Promise(function (resolve, reject) { mockServer.once('error', reject);mockServer.listen(mockPort, '127.0.0.1', resolve); });
+  mockAddon = [{ transportUrl: 'http://127.0.0.1:' + mockPort + '/manifest.json', manifest: {
+    id: 'org.stremcompat.chrome38test', name: 'Chromium 38 Test', types: ['movie'], resources: ['catalog'], catalogs: mockCatalogs
+  } }];
   var server = childProcess.spawn(process.execPath, [path.join(serviceRoot, 'service', 'tvserver.js')], { cwd: serviceRoot, windowsHide: true, stdio: 'ignore' });
   var browser;
   try {
@@ -93,19 +108,29 @@ async function main() {
     var keyboard = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('lgPass').className", returnByValue: true });
     assert.ok(/\bf\b/.test(keyboard.result.value), 'remote Down did not move login focus to password');
 
-    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'test-user',email:'test@example.com'}));localStorage.setItem('authKey',JSON.stringify('test-auth'));localStorage.setItem('addons','[]');location.reload()" });
+    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'test-user',email:'test@example.com'}));localStorage.setItem('authKey',JSON.stringify('test-auth'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");location.reload()" });
     await delay(1800);
-    var homeEval = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,phase:window.__STREMIO_BOOT_PHASE__,board:document.getElementById('scrBoard').className,boot:document.getElementById('boot').style.display})", returnByValue: true });
+    var homeEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var rows=document.querySelectorAll('#rows>.row'),visible=0,focused=-1;for(var i=0;i<rows.length;i++){if(getComputedStyle(rows[i]).display!=='none')visible++;if(rows[i].querySelector('.card.f'))focused=i;}return JSON.stringify({done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,phase:window.__STREMIO_BOOT_PHASE__,board:document.getElementById('scrBoard').className,boot:document.getElementById('boot').style.display,total:rows.length,visible:visible,focused:focused});})()", returnByValue: true });
     var home = JSON.parse(homeEval.result.value);
     assert.strictEqual(home.failed, false, 'stored-account startup reported failure at ' + home.phase);
     assert.strictEqual(home.done, true, 'stored-account startup did not finish; phase ' + home.phase);
     assert.ok(/\bon\b/.test(home.board), 'home screen is not active for stored account');
     assert.strictEqual(home.boot, 'none', 'stored-account boot overlay is still visible');
+    assert.strictEqual(home.total, 14, 'Chromium 38 discarded addon catalogs before the profile limit');
+    assert.strictEqual(home.visible, 12, 'Chromium 38 did not isolate failed catalog rows');
+    assert.strictEqual(home.focused, 1, 'Chromium 38 focus did not settle on the first successful catalog');
+    await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
+    await delay(150);
+    var movedEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var rows=document.querySelectorAll('#rows>.row'),focused=-1;for(var i=0;i<rows.length;i++)if(rows[i].querySelector('.card.f'))focused=i;return JSON.stringify({focused:focused,transform:document.getElementById('rows').style.transform});})()", returnByValue: true });
+    var moved = JSON.parse(movedEval.result.value);
+    assert.strictEqual(moved.focused, 3, 'Chromium 38 remote Down did not skip a failed catalog');
+    assert.notStrictEqual(moved.transform, 'translateY(0px)', 'Chromium 38 catalog board did not move');
     protocol.close();
-    console.log('OK: real Chromium 38 opened login, switched and persisted interface language, handled remote input and reached home with a stored account.');
+    console.log('OK: real Chromium 38 opened login, persisted language, skipped failed catalogs and scrolled a 14-row addon board.');
   } finally {
     if (browser) try { browser.kill(); } catch (e) {}
     try { server.kill(); } catch (e) {}
+    try { mockServer.close(); } catch (e) {}
     try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) {}
   }
 }

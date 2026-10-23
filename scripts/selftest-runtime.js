@@ -9,7 +9,7 @@ var path = require('path');
 
 var root = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(__dirname, '..');
 var appPort = parseInt(process.argv[3], 10) || 8082;
-var appVersion = process.argv[4] || '1.2.4';
+var appVersion = process.argv[4] || '1.2.5';
 var forceEmbedded = process.argv[5] === 'embedded';
 var childLogGlobal = '';
 

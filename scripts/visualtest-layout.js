@@ -59,7 +59,23 @@ function devtools(url) {
 
 async function main() {
   var debugPort = 9300 + Math.floor(Math.random() * 400);
+  var mockPort = 9700 + Math.floor(Math.random() * 400);
   var browserProfile = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-visual-'));
+  var mockCatalogs = [], mockAddon;
+  for (var ci = 0; ci < 14; ci++) mockCatalogs.push({ type: 'movie', id: 'catalog-' + ci, name: 'Catalog ' + ci });
+  var mockServer = http.createServer(function (req, res) {
+    var match = req.url.match(/^\/catalog\/movie\/catalog-(\d+)\.json/);
+    if (!match) { res.writeHead(404);res.end();return; }
+    var index = parseInt(match[1], 10);
+    if (index === 0 || index === 2) { res.writeHead(503);res.end();return; }
+    var metas = [];
+    for (var mi = 0; mi < 3; mi++) metas.push({ id: 'visual-test:' + index + ':' + mi, type: 'movie', name: 'Catalog ' + index + ' item ' + mi });
+    res.writeHead(200, { 'Content-Type': 'application/json' });res.end(JSON.stringify({ metas: metas }));
+  });
+  await new Promise(function (resolve, reject) { mockServer.once('error', reject);mockServer.listen(mockPort, '127.0.0.1', resolve); });
+  mockAddon = [{ transportUrl: 'http://127.0.0.1:' + mockPort + '/manifest.json', manifest: {
+    id: 'org.stremcompat.visualtest', name: 'Visual Test', types: ['movie'], resources: ['catalog'], catalogs: mockCatalogs
+  } }];
   var server = childProcess.spawn(process.execPath, [path.join(stage, 'service', 'tvserver.js')], {
     cwd: stage, windowsHide: true, stdio: 'ignore', env: Object.assign({}, process.env, { TVSERVER_LOG: path.join(stage, 'visualtest-tvserver.log') })
   });
@@ -111,28 +127,45 @@ async function main() {
     assert.strictEqual(localizedState.loginTitle, 'Entrar pelo celular', 'Login text was not translated.');
     assert.strictEqual(localizedState.password, 'Senha', 'Login placeholder was not translated.');
     await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('en-US')" });
-    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons','[]');" });
+    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
-    await delay(900);
-    var authenticated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({bodyClass:document.body.className,topnavDisplay:getComputedStyle(document.getElementById('topnav')).display,home:document.getElementById('scrBoard').className,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__})", returnByValue: true });
+    await delay(1800);
+    var authenticated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({bodyClass:document.body.className,topnavDisplay:getComputedStyle(document.getElementById('topnav')).display,home:document.getElementById('scrBoard').className,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,message:window.__STREMIO_BOOT_MESSAGE__||'',line:window.__STREMIO_BOOT_LINE__||'',phase:window.__STREMIO_BOOT_PHASE__||''})", returnByValue: true });
     var authenticatedState = JSON.parse(authenticated.result.value);
-    assert.strictEqual(authenticatedState.failed, false, 'Authenticated frontend reported a boot failure.');
+    assert.strictEqual(authenticatedState.failed, false, 'Authenticated frontend reported a boot failure: ' + JSON.stringify(authenticatedState));
     assert.strictEqual(authenticatedState.done, true, 'Authenticated frontend did not complete boot.');
     assert.ok(!/\blogin\b/.test(authenticatedState.bodyClass), 'Login body state leaked after authentication.');
     assert.notStrictEqual(authenticatedState.topnavDisplay, 'none', 'Top navigation stayed hidden after authentication.');
     assert.ok(/\bon\b/.test(authenticatedState.home), 'Home screen is not active after authentication.');
-    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(38);key(39);key(39);key(39);key(40);})()" });
+    var boardExpression = "(function(){var rows=document.querySelectorAll('#rows>.row'),visible=0,focused=-1,card=null;for(var i=0;i<rows.length;i++){if(getComputedStyle(rows[i]).display!=='none')visible++;var f=rows[i].querySelector('.card.f');if(f){focused=i;card=f;}}var cr=card&&card.getBoundingClientRect(),clip=document.getElementById('rowsClip').getBoundingClientRect();return JSON.stringify({total:rows.length,visible:visible,focused:focused,transform:document.getElementById('rows').style.transform,card:cr?{top:cr.top,bottom:cr.bottom,left:cr.left,right:cr.right}:null,clip:{top:clip.top,bottom:clip.bottom}});})()";
+    var boardEval = await protocol.call('Runtime.evaluate', { expression: boardExpression, returnByValue: true });
+    var boardState = JSON.parse(boardEval.result.value);
+    assert.strictEqual(boardState.total, 14, 'Profile discarded addon catalogs before the configured row limit.');
+    assert.strictEqual(boardState.visible, 12, 'Failed addon catalogs were not isolated from successful rows.');
+    assert.strictEqual(boardState.focused, 1, 'Focus did not settle on the first successful catalog after an initial failure.');
+    assert.ok(boardState.card && boardState.card.top >= boardState.clip.top && boardState.card.bottom <= height, 'Focused catalog card is clipped at ' + width + 'x' + height + '.');
+    await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
+    await delay(180);
+    var nextBoardEval = await protocol.call('Runtime.evaluate', { expression: boardExpression, returnByValue: true });
+    var nextBoardState = JSON.parse(nextBoardEval.result.value);
+    assert.strictEqual(nextBoardState.focused, 3, 'Remote Down did not skip the failed catalog row.');
+    assert.notStrictEqual(nextBoardState.transform, 'translateY(0px)', 'Catalog board stayed fixed after moving to the next successful row.');
+    assert.ok(nextBoardState.card && nextBoardState.card.top >= nextBoardState.clip.top && nextBoardState.card.bottom <= height, 'Next catalog card is clipped at ' + width + 'x' + height + '.');
+    var boardShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
+    fs.writeFileSync(output.replace(/\.png$/i, '-board.png'), Buffer.from(boardShot.data, 'base64'));
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(38);key(38);key(39);key(39);key(39);key(40);})()" });
     await delay(150);
     var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl');return JSON.stringify({screen:document.getElementById('scrSet').className,firstLabel:labels.length?labels[0].textContent:'',firstValue:values.length?values[0].textContent:''});})()", returnByValue: true });
     var settingsState = JSON.parse(settingsView.result.value);
     assert.ok(/\bon\b/.test(settingsState.screen), 'Remote navigation did not open Settings.');
     assert.strictEqual(settingsState.firstLabel, 'Interface language', 'Interface language setting is missing.');
     assert.ok(settingsState.firstValue.indexOf('English') >= 0, 'Saved interface language is not shown in Settings.');
-    console.log('OK: ' + width + 'x' + height + ' layout ' + JSON.stringify(state) + ' -> ' + output);
+    console.log('OK: ' + width + 'x' + height + ' login ' + JSON.stringify(state) + ', catalog navigation ' + JSON.stringify(nextBoardState) + ' -> ' + output);
   } finally {
     if (protocol) protocol.close();
     if (browser) try { browser.kill(); } catch (e) {}
     try { server.kill(); } catch (e) {}
+    try { mockServer.close(); } catch (e) {}
     try { fs.rmSync(browserProfile, { recursive: true, force: true }); } catch (e) {}
   }
 }

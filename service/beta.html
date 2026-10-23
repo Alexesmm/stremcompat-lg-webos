@@ -186,6 +186,33 @@ body.login #topnav,body.login #logobg{display:none}
 .setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#a98fff;margin:30px 0 12px 26px}
 #setItems > .setgrp:first-child{margin-top:6px}
 
+/* The 1280x720 package has fewer vertical pixels than the original 1080p layout.
+   Keep the same DOM and navigation logic, but size the shared cards and hero to the
+   actual application surface so a focused catalog card never sits below the viewport. */
+@media (max-height:800px){
+  #topnav{height:70px}
+  .chip{padding:9px 26px;margin:0 6px;border-radius:22px;font-size:22px}
+  #clock{right:32px;font-size:19px}
+  #hero{top:78px;left:32px;width:56%}
+  #heroLogo{max-width:350px;max-height:100px}
+  #heroTitle{font-size:50px;max-height:105px}
+  #heroMeta{margin-top:10px;font-size:20px}
+  #heroDesc{margin-top:8px;font-size:18px;line-height:1.35;max-height:49px}
+  #rowsClip{top:300px}
+  .row{padding:10px 0 22px 32px;transform:translateY(10px)}
+  .rowtitle{font-size:24px;margin:0 0 12px 3px}
+  .card{width:176px;height:264px;margin-right:16px;border-radius:9px}
+  .card img{border-radius:9px}
+  .card .nm{padding:10px;font-size:18px}
+  .titlelabel{padding:23px 10px 9px;font-size:17px}
+  .card.f{box-shadow:0 0 0 3px #fff !important;transform:translateY(-5px)}
+  .card.wide{width:287px;height:161px}
+  .pbar{height:6px}
+  .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}
+  .wbadge{top:8px;right:8px;width:31px;height:31px}
+  .wbadge svg{width:19px;height:19px}
+}
+
 /* ---------- login ---------- */
 #lgWrap{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #lgLang{position:fixed;top:34px;right:42px;padding:12px 22px;border-radius:24px;font-size:22px;color:rgba(255,255,255,.78);background:rgba(255,255,255,.08);z-index:3}
@@ -321,6 +348,6 @@ body.login #topnav,body.login #logobg{display:none}
   },25000);
 })();
 </script>
-<script src="/beta-app.js?v=1.2.4" onload="window.__STREMIO_SCRIPT_LOADED__()" onerror="window.__STREMIO_BOOT_ERROR__('Application script could not be loaded or parsed.','SCRIPT_LOAD')"></script>
+<script src="/beta-app.js?v=1.2.5" onload="window.__STREMIO_SCRIPT_LOADED__()" onerror="window.__STREMIO_BOOT_ERROR__('Application script could not be loaded or parsed.','SCRIPT_LOAD')"></script>
 </body>
 </html>

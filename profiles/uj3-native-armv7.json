@@ -4,7 +4,7 @@
   "appId": "io.strem.tv.uj3native",
   "title": "Stremio UJ3",
   "serviceId": "io.strem.tv.uj3native.server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "port": 8093,
   "graphicsResolution": "1920x1080",
   "ecmaTarget": "chrome38",
@@ -13,6 +13,7 @@
   "sourceCap": 30,
   "libraryCap": 30,
   "catalogCap": 10,
+  "catalogRowsCap": 16,
   "backdropWidth": 640,
   "backdropCache": 6,
   "backdropWorkers": 1
