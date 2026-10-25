@@ -45,7 +45,7 @@ if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ
 if (application.indexOf('catalogRowsCap:' + profile.catalogRowsCap) < 0) throw new Error('Catalog row limit does not match profile.');
 if (application.indexOf("serviceId:'" + profile.serviceId + "'") < 0) throw new Error('Runtime recovery service ID does not match profile.');
 if (server.indexOf("SERVICE_ID = '" + profile.serviceId + "'") < 0) throw new Error('Player recovery service ID does not match profile.');
-if (application.indexOf('function viewportWidth()') < 0 || application.indexOf('(viewportWidth()-96)') < 0) throw new Error('Resolution-aware row layout missing.');
+if (application.indexOf('function viewportWidth()') < 0 || application.indexOf('function contentWidth()') < 0 || application.indexOf('Math.floor(contentWidth()/w)') < 0) throw new Error('Resolution-aware row layout missing.');
 if (normalizedApplication.indexOf("window.__STREMIO_PHASE__('B_CALL');\nboot();") < 0 || normalizedApplication.indexOf("addEventListener('DOMContentLoaded',boot)") >= 0) throw new Error('Synchronous legacy boot missing.');
 if (application.indexOf("postJson('/streamref'") < 0 || server.indexOf("p === '/addon'") < 0) throw new Error('Addon/player bridge missing.');
 if (application.indexOf("'/stremioapi?path='") < 0 || server.indexOf("p === '/stremioapi'") < 0 || server.indexOf("'/api/login': true") < 0) throw new Error('Legacy-safe Stremio account bridge missing.');

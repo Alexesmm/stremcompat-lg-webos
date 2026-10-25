@@ -166,13 +166,23 @@ async function main() {
     assert.ok(sourcesState.compat.bottom > sourcesState.compat.top, 'Compatibility warning is not visible.');
     var sourcesShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
     fs.writeFileSync(output.replace(/\.png$/i, '-sources.png'), Buffer.from(sourcesShot.data, 'base64'));
-    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(38);key(38);key(39);key(39);key(39);key(40);})()" });
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(37);key(40);key(40);key(40);key(40);key(39);})()" });
     await delay(150);
     var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl');return JSON.stringify({screen:document.getElementById('scrSet').className,firstLabel:labels.length?labels[0].textContent:'',firstValue:values.length?values[0].textContent:''});})()", returnByValue: true });
     var settingsState = JSON.parse(settingsView.result.value);
     assert.ok(/\bon\b/.test(settingsState.screen), 'Remote navigation did not open Settings.');
     assert.strictEqual(settingsState.firstLabel, 'Interface language', 'Interface language setting is missing.');
     assert.ok(settingsState.firstValue.indexOf('English') >= 0, 'Saved interface language is not shown in Settings.');
+    await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/play?u=' + encodeURIComponent('http://127.0.0.1:' + mockPort + '/visual-test.mp4') + '&title=Visual%20test&back=beta' });
+    await delay(700);
+    var nextPrompt = await protocol.call('Runtime.evaluate', { expression: "(function(){var n=document.getElementById('np'),x=document.getElementById('npX');document.getElementById('npT').textContent='Episode 8 · The Next Chapter';n.className='show f';var r=n.getBoundingClientRect(),xr=x.getBoundingClientRect();return JSON.stringify({prompt:{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height},close:{left:xr.left,top:xr.top,right:xr.right,bottom:xr.bottom},text:document.getElementById('npH').textContent});})()", returnByValue: true });
+    var nextPromptState = JSON.parse(nextPrompt.result.value);
+    assert.ok(nextPromptState.prompt.left >= 0 && nextPromptState.prompt.top >= 0 && nextPromptState.prompt.right <= width && nextPromptState.prompt.bottom <= height, 'Next-title prompt is clipped.');
+    assert.ok(nextPromptState.prompt.width <= (height <= 800 ? 370 : 430), 'Next-title prompt is too large for the viewport.');
+    assert.ok(nextPromptState.close.left >= nextPromptState.prompt.left && nextPromptState.close.right <= nextPromptState.prompt.right, 'Next-title close button is outside the prompt.');
+    assert.ok(nextPromptState.text.indexOf('Back: dismiss') >= 0, 'Next-title dismissal hint is missing.');
+    var playerShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
+    fs.writeFileSync(output.replace(/\.png$/i, '-player-next.png'), Buffer.from(playerShot.data, 'base64'));
     console.log('OK: ' + width + 'x' + height + ' login ' + JSON.stringify(state) + ', catalog navigation ' + JSON.stringify(nextBoardState) + ' -> ' + output);
   } finally {
     if (protocol) protocol.close();

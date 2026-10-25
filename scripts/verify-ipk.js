@@ -70,7 +70,7 @@ var packedApplication = find(entries, /\/beta-app\.js$/).data.toString('utf8');
 if (packedLaunch.indexOf('APP_PORT = ' + profile.port) < 0 || packedServer.indexOf('PORT = ' + profile.port) < 0) throw new Error('Porta do perfil ausente no IPK.');
 if (packedServer.indexOf("p === '/streamref'") < 0 || packedServer.indexOf('rewriteHls') < 0) throw new Error('Proxy seguro/HLS ausente no IPK.');
 if (packedApplication.indexOf("postJson('/streamref'") < 0 || packedApplication.indexOf('compact:function()') < 0) throw new Error('Shell otimizado ausente no IPK.');
-if (packedApplication.indexOf('function viewportWidth()') < 0 || packedApplication.indexOf('(viewportWidth()-96)') < 0) throw new Error('Layout responsivo ausente no IPK.');
+if (packedApplication.indexOf('function viewportWidth()') < 0 || packedApplication.indexOf('function contentWidth()') < 0 || packedApplication.indexOf('Math.floor(contentWidth()/w)') < 0) throw new Error('Layout responsivo ausente no IPK.');
 if (packedApplication.indexOf("'/stremioapi?path='") < 0 || packedServer.indexOf("p === '/stremioapi'") < 0 || packedServer.indexOf("'/api/login': true") < 0) throw new Error('Bridge de conta Stremio ausente no IPK.');
 if (packedServer.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || packedServer.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Assets incorporados nao foram gerados.');
 function embedded(name) {

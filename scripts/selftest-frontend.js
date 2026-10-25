@@ -13,8 +13,21 @@ function element(id) {
     children: [], offsetHeight: 100, offsetTop: 0, parentNode: null,
     appendChild: function (child) { child.parentNode = this;this.children.push(child);return child; },
     removeChild: function () {}, insertBefore: function () {}, addEventListener: function () {},
-    getElementsByClassName: function () { return [element()]; },
+    getElementsByClassName: function (name) {
+      if (name === 'navlabel') {
+        if (!this._navLabel) this._navLabel = element(this.id + '-label');
+        return [this._navLabel];
+      }
+      return [element()];
+    },
     getElementsByTagName: function () { return []; },
+    querySelector: function (selector) {
+      if (selector === '.navlabel') {
+        if (!this._navLabel) this._navLabel = element(this.id + '-label');
+        return this._navLabel;
+      }
+      return null;
+    },
     focus: function () {}, blur: function () {}, pause: function () {}, load: function () {},
     attributes: {},
     setAttribute: function (name, value) { this.attributes[name] = String(value); },
@@ -57,7 +70,8 @@ function run(storage, expectedScreen, missingIds, expectedLanguage) {
   assert.strictEqual(context.window.__STREMIO_BOOT_DONE__, true);
   expectedLanguage = expectedLanguage || 'en-US';
   assert.strictEqual(context.window.__STREMIO_UI_LANGUAGE__(), expectedLanguage, 'unexpected interface language');
-  assert.strictEqual(get('chipSearch').textContent, expectedLanguage === 'pt-BR' ? 'Buscar' : 'Search');
+  assert.strictEqual(get('chipSearch').querySelector('.navlabel').textContent, expectedLanguage === 'pt-BR' ? 'Buscar' : 'Search');
+  assert.strictEqual(get('chipAddons').querySelector('.navlabel').textContent, 'Addons');
   assert.strictEqual(get('lgQrTitle').textContent, expectedLanguage === 'pt-BR' ? 'Entrar pelo celular' : 'Sign in with your phone');
   var passElement = get('lgPass');
   if (passElement) assert.strictEqual(passElement.getAttribute('placeholder'), expectedLanguage === 'pt-BR' ? 'Senha' : 'Password');
@@ -106,10 +120,28 @@ var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
 assert.strictEqual(typeof firstRun.context.__STREMIO_RESUME_CHECK__, 'function', 'runtime resume recovery hook is missing');
 assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__STREMIO_STREAM_COMPAT__({ title: 'AV1 2160p' }))), { labels: ['AV1'], rank: 3 });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__STREMIO_STREAM_COMPAT__({ title: 'Dolby Vision HDR10 HEVC Main10 DTS' }))), { labels: ['Dolby Vision', 'HEVC 10-bit', 'DTS'], rank: 0 });
+var manySources = [], qualities = ['4K', '1080p', '720p', 'SD', 'Other'];
+for (var si = 0; si < 80; si++) manySources.push({
+  url: 'https://media.example/' + si, quality: qualities[si % qualities.length],
+  seeders: 80 - si, compatRank: si % 13 === 0 ? 2 : 0, _seq: si
+});
+var compacted = firstRun.context.__STREMIO_COMPACT_SOURCES__(manySources, 12);
+assert.ok(compacted.items.length <= 12, 'global source budget was exceeded');
+qualities.forEach(function (quality) {
+  assert.ok(compacted.items.some(function (item) { return item.quality === quality; }), 'source sampling lost ' + quality);
+});
+assert.ok(source.indexOf("location.assign('/play?u='") < 0, 'beta player fallback leaked a source URL into browser history');
+assert.ok(source.indexOf('self.poll=setInterval') < 0, 'QR polling still allows overlapping interval requests');
+var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
+  { addon:'Other',quality:'1080p',title:'H264 AAC',seeders:900,compatRank:0 },
+  { addon:'Torrentio',quality:'4K',title:'HEVC 10bit DDP WEB-DL',seeders:20,compatRank:0 },
+  { addon:'Torrentio',quality:'4K',title:'H264 AAC',seeders:200,compatRank:0 }
+],{addon:'Torrentio',quality:'4K',text:'HEVC 10bit DDP WEB-DL',compat:'HEVC 10-bit'});
+assert.strictEqual(nextMatch.title,'HEVC 10bit DDP WEB-DL','next episode did not prefer the closest safe source traits');
 firstRun.context.__STREMIO_SET_UI_LANGUAGE__('pt-BR');
 assert.strictEqual(firstRun.context.__STREMIO_UI_LANGUAGE__(), 'pt-BR');
 assert.strictEqual(firstRun.context.localStorage.getItem('uiLanguage'), 'pt-BR', 'language preference was not persisted');
-assert.strictEqual(firstRun.get('chipSearch').textContent, 'Buscar', 'language change was not applied immediately');
+assert.strictEqual(firstRun.get('chipSearch').querySelector('.navlabel').textContent, 'Buscar', 'language change was not applied immediately');
 run(unavailableStorage(), 'scrLogin');
 run(accountStorage(), 'scrBoard');
 run(memoryStorage({ uiLanguage: 'pt-BR' }), 'scrLogin', null, 'pt-BR');

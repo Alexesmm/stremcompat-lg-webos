@@ -7,7 +7,7 @@
 /* Designed for the 1920x1080 webview. Netflix-like, BIG and clear.
    RULES LEARNED ON THIS TV: no blurred shadows, no scale animations, transform-only
    motion, static focus ring, class-based focus (never :focus). */
-html,body{margin:0;padding:0;width:100%;height:100%;background:#0c0b11;color:#fff;font-family:sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+html,body{margin:0;padding:0;width:100%;height:100%;background:#090b12;color:#fff;font-family:sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
 img{border:0}
 
 /* two-layer backdrop: incoming art fades IN over the old one = true crossfade, no pop.
@@ -39,29 +39,35 @@ body.trailer #rows .row{opacity:.75}
 body.trailer #rows .row:first-child{opacity:.14}
 body.trailer #dWrap{opacity:.14}
 
-/* ---------- top nav (centered; clock pinned right) ---------- */
-#topnav{position:fixed;top:0;left:0;right:0;height:100px;z-index:20;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
+/* ---------- compact Stremio-style sidebar ----------
+   It stays narrow while content is focused. Only the selected item expands over the
+   page when the remote or Magic Remote focuses it, so layout never reflows. */
+#topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(9,11,18,.98),rgba(9,11,18,.82) 72%,rgba(9,11,18,0))}
+#brand{position:absolute;left:37px;top:34px;width:54px;height:54px;object-fit:contain;opacity:.96}
 /* Login is intentionally standalone: navigation and the decorative watermark only
    become relevant after an account is connected. */
 body.login #topnav,body.login #logobg{display:none}
-.chip{padding:14px 40px;margin:0 9px;border-radius:32px;font-size:32px;color:rgba(255,255,255,.78);background:transparent;transition:background .15s ease,color .15s ease}
-.chip.cur{color:#fff;font-weight:700}
-.chip.f{background:#fff;color:#0c0b11;font-weight:700}
-#clock{position:absolute;right:48px;top:50%;-webkit-transform:translateY(-50%);transform:translateY(-50%);font-size:28px;color:rgba(255,255,255,.6);font-variant-numeric:tabular-nums}
+.chip{position:relative;width:76px;height:68px;margin:5px 0;border-radius:14px;font-size:27px;color:rgba(255,255,255,.62);background:transparent;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;box-sizing:border-box;transition:background .12s ease,color .12s ease}
+.chip svg{width:34px;height:34px;margin-left:21px;fill:currentColor;-webkit-flex:none;flex:none}
+.navlabel{position:absolute;left:76px;top:0;height:68px;line-height:68px;min-width:170px;padding:0 26px 0 12px;border-radius:0 14px 14px 0;opacity:0;color:inherit;white-space:nowrap;background:inherit;pointer-events:none}
+.chip.cur{color:#a98fff}
+.chip.f{width:276px;background:#fff;color:#0c0b11;font-weight:700}
+.chip.f .navlabel{opacity:1}
+#clock{position:absolute;left:0;right:0;bottom:32px;text-align:center;font-size:24px;color:rgba(255,255,255,.52);font-variant-numeric:tabular-nums}
 
 /* ---------- screens ---------- */
 .scr{position:fixed;top:0;left:0;right:0;bottom:0;display:none}
 .scr.on{display:block}
 
 /* ---------- home hero ---------- */
-#hero{position:absolute;top:118px;left:48px;width:52%;z-index:5}
+#hero{position:absolute;top:52px;left:176px;width:48%;z-index:5}
 #heroLogo{max-width:520px;max-height:175px;display:none}
 #heroTitle{font-size:78px;font-weight:800;line-height:1.05;max-height:164px;overflow:hidden}
 #heroMeta{margin-top:18px;font-size:30px;color:#c9b8ff;font-weight:600}
 #heroDesc{margin-top:16px;font-size:28px;line-height:1.48;color:rgba(255,255,255,.92);max-height:126px;overflow:hidden}
 
 /* ---------- rows ---------- */
-#rowsClip{position:absolute;top:522px;left:0;right:0;bottom:0;overflow:hidden}
+#rowsClip{position:absolute;top:452px;left:128px;right:0;bottom:0;overflow:hidden}
 #rows{position:absolute;top:0;left:0;right:0}
 .row{padding:18px 0 34px 48px;opacity:0;transform:translateY(16px);transition:opacity .35s ease,transform .35s ease}
 .row.in{opacity:1;transform:none}
@@ -83,7 +89,7 @@ body.login #topnav,body.login #logobg{display:none}
 .ep .th .wbadge svg{width:24px;height:24px}
 
 /* ---------- detail ---------- */
-#dWrap{position:absolute;top:100px;left:48px;right:48px;bottom:0}
+#dWrap{position:absolute;top:48px;left:176px;right:48px;bottom:0}
 #dPoster{position:absolute;top:24px;right:0;width:330px;height:495px;border-radius:16px;display:none}
 #dLogo{max-width:560px;max-height:190px;display:none}
 #dTitle{font-size:80px;font-weight:800;max-width:70%;line-height:1.05}
@@ -131,7 +137,7 @@ body.login #topnav,body.login #logobg{display:none}
 .st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.92);max-height:112px;overflow:hidden;white-space:normal;word-break:break-word}
 .st.f{background:#8c5cff}
 .stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.65)}
-.chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,#lgBtn,#lgLang{cursor:pointer}
+.chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang{cursor:pointer}
 
 /* ---------- continue-watching long-press menu ---------- */
 #cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(16,14,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
@@ -142,7 +148,7 @@ body.login #topnav,body.login #logobg{display:none}
 .cwmi.f{background:#8c5cff}
 
 /* ---------- similar ---------- */
-#simWrap{position:absolute;top:120px;left:48px;right:0;bottom:0}
+#simWrap{position:absolute;top:58px;left:176px;right:0;bottom:0}
 #simTitle{font-size:44px;font-weight:800;margin-bottom:26px}
 #simClip{position:absolute;top:104px;left:-14px;right:0;bottom:0;overflow:hidden;padding-left:14px}
 #simGrid{padding:16px 0 0 14px;transition:transform .2s ease}
@@ -153,7 +159,7 @@ body.login #topnav,body.login #logobg{display:none}
 #bgv.on{opacity:1}
 
 /* ---------- discover ---------- */
-#discWrap{position:absolute;top:120px;left:48px;right:0;bottom:0}
+#discWrap{position:absolute;top:58px;left:176px;right:0;bottom:0}
 .frow{white-space:nowrap;overflow:hidden;margin-bottom:16px}
 .fchip{display:inline-block;padding:12px 30px;margin-right:12px;border-radius:26px;font-size:26px;font-weight:600;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8)}
 .fchip.cur{background:rgba(140,92,255,.4);color:#fff}
@@ -163,7 +169,7 @@ body.login #topnav,body.login #logobg{display:none}
 #discGrid .card{margin-bottom:26px}
 
 /* ---------- search ---------- */
-#sWrap{position:absolute;top:126px;left:48px;right:48px;bottom:0}
+#sWrap{position:absolute;top:58px;left:176px;right:48px;bottom:0}
 #sBox{width:940px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none}
 #sBox.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
 #sHint{margin-top:16px;font-size:25px;color:rgba(255,255,255,.58)}
@@ -171,12 +177,12 @@ body.login #topnav,body.login #logobg{display:none}
 #sRows{position:absolute;top:0;left:-48px;right:0;padding-top:26px}
 
 /* ---------- library ---------- */
-#lWrap{position:absolute;top:126px;left:48px;right:0;bottom:0;overflow:hidden}
+#lWrap{position:absolute;top:58px;left:176px;right:0;bottom:0;overflow:hidden}
 #lGrid{transition:transform .2s ease}
 #lGrid .card{margin-bottom:26px}
 
 /* ---------- settings / account ---------- */
-#setWrap{position:absolute;top:130px;left:48px;right:48px;bottom:40px;overflow:hidden}
+#setWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
 #setInner{transition:transform .2s ease}
 #setAcct{padding:20px 26px;border-radius:16px;background:rgba(255,255,255,.06);margin-bottom:26px;max-width:1100px}
 #setAcct .em{font-size:32px;font-weight:700}
@@ -190,20 +196,37 @@ body.login #topnav,body.login #logobg{display:none}
 .setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#a98fff;margin:30px 0 12px 26px}
 #setItems > .setgrp:first-child{margin-top:6px}
 
+/* ---------- addons ---------- */
+#aWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
+#aTitle{font-size:54px;font-weight:800;margin-bottom:10px}
+#aHelp{font-size:25px;color:rgba(255,255,255,.62);margin-bottom:28px}
+#aSync{display:inline-block;padding:17px 38px;border-radius:13px;font-size:28px;font-weight:700;background:rgba(140,92,255,.32);margin-bottom:24px}
+#aSync.f{background:#fff;color:#0c0b11}
+#aClip{position:absolute;top:178px;left:0;right:0;bottom:0;overflow:hidden}
+#aInner{transition:transform .16s ease}
+.addon{max-width:1080px;padding:20px 25px;border-radius:13px;margin-bottom:9px;background:rgba(255,255,255,.045)}
+.addon .an{font-size:29px;font-weight:700}
+.addon .ai{font-size:21px;color:rgba(255,255,255,.5);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.addon.f{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 3px #fff}
+
 /* The 1280x720 package has fewer vertical pixels than the original 1080p layout.
    Keep the same DOM and navigation logic, but size the shared cards and hero to the
    actual application surface so a focused catalog card never sits below the viewport. */
 @media (max-height:800px){
-  #topnav{height:70px}
-  .chip{padding:9px 26px;margin:0 6px;border-radius:22px;font-size:22px}
-  #clock{right:32px;font-size:19px}
-  #hero{top:78px;left:32px;width:56%}
+  #topnav{width:86px}
+  #brand{left:25px;top:20px;width:36px;height:36px}
+  .chip{width:54px;height:48px;margin:3px 0;border-radius:10px;font-size:19px}
+  .chip svg{width:24px;height:24px;margin-left:15px}
+  .navlabel{left:54px;height:48px;line-height:48px;min-width:120px;padding:0 18px 0 8px;border-radius:0 10px 10px 0}
+  .chip.f{width:205px}
+  #clock{bottom:20px;font-size:17px}
+  #hero{top:34px;left:112px;width:54%}
   #heroLogo{max-width:350px;max-height:100px}
   #heroTitle{font-size:50px;max-height:105px}
   #heroMeta{margin-top:10px;font-size:20px}
   #heroDesc{margin-top:8px;font-size:18px;line-height:1.35;max-height:49px}
-  #rowsClip{top:300px}
-  .row{padding:10px 0 22px 32px;transform:translateY(10px)}
+  #rowsClip{top:276px;left:86px}
+  .row{padding:10px 0 22px 26px;transform:translateY(10px)}
   .rowtitle{font-size:24px;margin:0 0 12px 3px}
   .card{width:176px;height:264px;margin-right:16px;border-radius:9px}
   .card img{border-radius:9px}
@@ -225,6 +248,14 @@ body.login #topnav,body.login #logobg{display:none}
   .st .a{font-size:22px}
   .st .compat{margin-top:4px;font-size:16px}
   .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
+  #dWrap{top:32px;left:112px;right:30px}
+  #simWrap,#discWrap,#sWrap,#lWrap,#setWrap,#aWrap{top:36px;left:112px;right:30px}
+  #aTitle{font-size:36px;margin-bottom:6px}
+  #aHelp{font-size:18px;margin-bottom:15px}
+  #aSync{padding:11px 25px;font-size:20px;margin-bottom:14px}
+  #aClip{top:120px}
+  .addon{padding:12px 17px;margin-bottom:6px}
+  .addon .an{font-size:21px}.addon .ai{font-size:16px}
 }
 
 /* ---------- login ---------- */
@@ -237,7 +268,7 @@ body.login #topnav,body.login #logobg{display:none}
 #lgQr .s{font-size:24px;color:rgba(255,255,255,.6);margin-bottom:26px}
 #lgQrImg{width:300px;height:300px;background:#fff;border-radius:18px;padding:12px;box-sizing:border-box}
 #lgCode{font-size:46px;letter-spacing:9px;font-weight:800;margin-top:20px}
-#lgStat{margin-top:14px;font-size:22px;color:rgba(255,255,255,.6)}
+#lgStat{margin:18px auto 0;min-height:30px;line-height:30px;font-size:22px;text-align:center;color:rgba(255,255,255,.6)}
 #lgForm{padding-left:90px}
 #lgForm h2{font-size:40px;margin:0 0 22px}
 .lgin{display:block;width:520px;padding:18px 24px;margin-bottom:16px;font-size:28px;border:0;border-radius:12px;background:rgba(255,255,255,.10);color:#fff;outline:none}
@@ -263,11 +294,13 @@ body.login #topnav,body.login #logobg{display:none}
 <div id="bg"></div><div id="bg2"></div><div id="logobg"></div><div id="bgshade"></div>
 
 <div id="topnav">
-  <div class="chip" id="chipSearch">Search</div>
-  <div class="chip" id="chipHome">Home</div>
-  <div class="chip" id="chipDisc">Discover</div>
-  <div class="chip" id="chipLib">Library</div>
-  <div class="chip" id="chipSet">Settings</div>
+  <img id="brand" src="/logo.png">
+  <div class="chip" id="chipSearch"><svg viewBox="0 0 24 24"><path d="M10 3a7 7 0 105.1 11.8L21 20.7 22.4 19l-5.8-5.7A7 7 0 0010 3zm0 2a5 5 0 110 10 5 5 0 010-10z"/></svg><span class="navlabel">Search</span></div>
+  <div class="chip" id="chipHome"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-2v9h-5v-6h-4v6H5v-9H3l9-8z"/></svg><span class="navlabel">Home</span></div>
+  <div class="chip" id="chipDisc"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm3.8 5.2l-2.2 6.4-6.4 2.2 2.2-6.4 6.4-2.2zm-4.4 4.2l-.8 2 .8-.3.7-.7.7-.7.3-.8-2 .8-.7.7z"/></svg><span class="navlabel">Discover</span></div>
+  <div class="chip" id="chipLib"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4V4zm2 3v11h12V7H6zm2-2h8V3H8v2z"/></svg><span class="navlabel">Library</span></div>
+  <div class="chip" id="chipAddons"><svg viewBox="0 0 24 24"><path d="M9 3h6v4h4v6h-4v4h-2v4H7v-4H3v-6h4V7h2V3zm2 2v4H9v4H5v2h4v4h2v-4h2v-4h4V9h-4V5h-2z"/></svg><span class="navlabel">Addons</span></div>
+  <div class="chip" id="chipSet"><svg viewBox="0 0 24 24"><path d="M19.1 13a7 7 0 000-2l2-1.5-2-3.5-2.4 1a8 8 0 00-1.7-1l-.4-2.5h-4L10.2 6a8 8 0 00-1.7 1L6.1 6 4 9.5 6 11a7 7 0 000 2l-2 1.5L6.1 18l2.4-1a8 8 0 001.7 1l.4 2.5h4L15 18a8 8 0 001.7-1l2.4 1 2-3.5-2-1.5zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg><span class="navlabel">Settings</span></div>
   <div id="clock"></div>
 </div>
 
@@ -301,6 +334,15 @@ body.login #topnav,body.login #logobg{display:none}
     <div id="setItems"></div>
     <div class="sethint" id="setHint">Use Left/Right to change · changes apply immediately</div>
   </div></div>
+</div>
+
+<div class="scr" id="scrAddons">
+  <div id="aWrap">
+    <div id="aTitle">Addons</div>
+    <div id="aHelp">Addons synchronized with your Stremio account</div>
+    <div id="aSync">Sync addons</div>
+    <div id="aClip"><div id="aInner"></div></div>
+  </div>
 </div>
 
 <div class="scr" id="scrLogin">

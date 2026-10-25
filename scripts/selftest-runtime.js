@@ -95,6 +95,7 @@ async function main() {
 
     var payload = JSON.stringify({
       url: 'http://127.0.0.1:9191/video', notWebReady: true, quality: '1080p', compat: 'DTS',
+      title: '</script><script>globalThis.__injected=true</script>',
       headers: { Authorization: 'Bearer test-token', Referer: 'https://addon.example/', 'X-Blocked': 'no' }
     });
     var made = await request({ hostname: '127.0.0.1', port: appPort, path: '/streamref', method: 'POST', headers: {
@@ -111,6 +112,12 @@ async function main() {
     assert.ok(player.text.indexOf('MediaPlayPause') >= 0 && player.text.indexOf('mode==="seek"') >= 0, 'player media keys or focus zones are missing');
     assert.ok(player.text.indexOf('function audioName') >= 0 && player.text.indexOf('function subtitleName') >= 0, 'active track labels are missing');
     assert.ok(player.text.indexOf('document.addEventListener("click"') >= 0, 'Magic Remote player clicks are missing');
+    assert.ok(player.text.indexOf('</script><script>globalThis.__injected') < 0, 'external player text escaped the script context');
+    assert.ok(player.text.indexOf('\\u003c/script\\u003e') >= 0, 'external player text was not encoded safely');
+    assert.ok(player.text.indexOf('function dismissNp') >= 0 && player.text.indexOf('rem<=180') >= 0, 'early compact dismissible next-title prompt is missing');
+    assert.ok(player.text.indexOf('rememberNextSource') >= 0 && player.text.indexOf('tvnextpref_') >= 0, 'next-episode source preference handoff is missing');
+    assert.ok(player.text.indexOf('media_start_retry') >= 0 && player.text.indexOf('armStartupWatch') >= 0, 'single source startup recovery is missing');
+    assert.ok(player.text.indexOf('SEEN=') >= 0 && player.text.indexOf('SEPT=') >= 0, 'localized episode line is missing');
 
     var proxied = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + ref, headers: { Range: 'bytes=0-99' } });
     var echoed = JSON.parse(proxied.text);

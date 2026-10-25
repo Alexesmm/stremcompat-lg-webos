@@ -78,7 +78,11 @@ function portUp(port, cb) {
   setTimeout(function () { f(false); }, 1000);
 }
 
+var streamingServerStartedAt = 0;
 function startStreamingServer() {
+  var now = Date.now();
+  if (now - streamingServerStartedAt < 30000) return;
+  streamingServerStartedAt = now;
   var env = Object.assign({}, process.env);
   env.HOME = env.HOME || '/home/root';
   env.USER = env.USER || 'root';
@@ -508,6 +512,10 @@ var streamRefs = {};
 var streamRefOrder = [];
 var proxySecret = crypto.randomBytes(32);
 function safeText(v, max) { return String(v == null ? '' : v).replace(/[\r\n\0]/g, ' ').slice(0, max); }
+function safeScriptJson(v) {
+  return JSON.stringify(v == null ? '' : v).replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+}
 function safeProxyHeaders(raw) {
   var out = {}, allow = {
     'user-agent': 'User-Agent', 'referer': 'Referer', 'origin': 'Origin',
@@ -529,7 +537,7 @@ function storeStreamRef(raw) {
   if (!/^https?:\/\//i.test(streamUrl)) return '';
   var ref = crypto.randomBytes(12).toString('hex');
   streamRefs[ref] = {
-    url: streamUrl, name: safeText(raw.name, 300), title: safeText(raw.title, 700),
+    url: streamUrl, addon: safeText(raw.addon, 160), name: safeText(raw.name, 300), title: safeText(raw.title, 700),
     description: safeText(raw.description, 700),
     behaviorHints: { filename: safeText(raw.filename, 500) },
     quality: safeText(raw.quality, 40), compat: safeText(raw.compat, 160),
@@ -601,7 +609,8 @@ function playerPage(stream, ctx) {
   }
   var meta = ctx.meta || {};
   var title = meta.name || cleanTitle(stream);
-  var seLine = (ctx.season && ctx.episode) ? ('Season ' + ctx.season + ' · Episode ' + ctx.episode + (ctx.epTitle ? '  ·  ' + ctx.epTitle : '')) : '';
+  var seLineEn = (ctx.season && ctx.episode) ? ('Season ' + ctx.season + ' · Episode ' + ctx.episode + (ctx.epTitle ? '  ·  ' + ctx.epTitle : '')) : '';
+  var seLinePt = (ctx.season && ctx.episode) ? ('Temporada ' + ctx.season + ' · Episódio ' + ctx.episode + (ctx.epTitle ? '  ·  ' + ctx.epTitle : '')) : '';
   var nextVid = ctx.nextVid || '';
   // "Next episode" returns to whichever UI launched us: beta detail page or the v4 route.
   var fromBeta = (ctx.back || '').indexOf('beta') === 0;
@@ -619,7 +628,7 @@ function playerPage(stream, ctx) {
 '#load:before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at center,rgba(12,11,17,.5),rgba(12,11,17,.93))}' +
 '#load .lwrap{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);text-align:center}' +
 '#lname{display:inline-block;font-size:58px;font-weight:700;max-width:84%;text-shadow:0 4px 24px #000;animation:breathe 2.8s ease-in-out infinite}' +
-'#lname img{display:block;margin:0 auto}' +
+'#lname img{display:block;margin:0 auto;max-width:64%;max-height:40vh;filter:drop-shadow(0 6px 26px #000)}' +
 '@keyframes breathe{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.04);opacity:1}}' +
 '#sub{position:fixed;left:6%;right:6%;bottom:8%;text-align:center;line-height:1.35;z-index:3;pointer-events:none}' +
 '#sub span{display:inline-block;font-size:38px;color:#fff;text-shadow:0 2px 7px #000,0 0 3px #000}' +
@@ -633,7 +642,7 @@ function playerPage(stream, ctx) {
 '#bufart img{max-width:60%;max-height:34vh;filter:drop-shadow(0 6px 26px #000)}' +
 '#seekind{position:fixed;top:32%;left:0;right:0;transform:translateY(-50%);text-align:center;font-size:60px;font-weight:800;letter-spacing:1px;opacity:0;transition:opacity .18s;text-shadow:0 4px 20px #000,0 0 44px rgba(0,0,0,.9);z-index:12;pointer-events:none;color:#fff}' +
 '#toast{position:fixed;left:50%;top:8%;transform:translateX(-50%);background:rgba(20,18,30,.86);color:#fff;font-size:24px;font-weight:600;padding:12px 26px;border-radius:30px;opacity:0;transition:opacity .25s;z-index:9;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}' +
-'#seekrow{display:flex;align-items:center;gap:26px}' +
+'#seekrow{display:flex;align-items:center;gap:40px}' +
 '#seek{position:relative;flex:1;height:6px;background:rgba(255,255,255,.22);border-radius:3px}' +
 '#fill{position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,#8c5cff,#b794ff);border-radius:3px;transition:width .18s ease}' +
 '#knob{position:absolute;top:50%;left:0;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.6),0 0 0 4px rgba(140,92,255,.35);transition:left .18s ease,width .15s ease,height .15s ease,margin .15s ease}' +
@@ -641,7 +650,7 @@ function playerPage(stream, ctx) {
 '#seek.f #knob{width:28px;height:28px;margin:-14px 0 0 -14px;box-shadow:0 2px 16px rgba(0,0,0,.7),0 0 0 7px rgba(140,92,255,.65)}' +
 '#seek.seeking{height:8px}' +
 '#seek.seeking #knob{width:26px;height:26px;margin:-13px 0 0 -13px;box-shadow:0 2px 16px rgba(0,0,0,.7),0 0 0 7px rgba(140,92,255,.55)}' +
-'#time{font-size:26px;font-variant-numeric:tabular-nums;opacity:.92;white-space:nowrap}' +
+'#time{font-size:26px;font-variant-numeric:tabular-nums;opacity:.92;white-space:nowrap;padding-left:4px}' +
 '#row{position:relative;height:104px;margin-top:20px}' +
 '#ctr{position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;align-items:center;gap:40px}' +
 '#rgt{position:absolute;right:0;top:8px;display:flex;align-items:center;gap:24px}' +
@@ -661,19 +670,24 @@ function playerPage(stream, ctx) {
 '#pvBox{position:absolute;left:56px;top:76px;max-width:58%}' +
 '#pvLbl{font-size:23px;color:rgba(255,255,255,.65);letter-spacing:2.4px;text-transform:uppercase;margin-bottom:12px}' +
 '#pvTitle{font-size:62px;font-weight:800;line-height:1.08;text-shadow:0 3px 16px #000}' +
+'#pvTitle img{max-width:640px;max-height:210px;display:block}' +
 '#pvSe{margin-top:12px;font-size:28px;color:#c9b8ff;font-weight:600}' +
 '#pvSe:empty{display:none}' +
 '#pvBadges{margin-top:28px}' +
 '.bdg{display:inline-block;padding:9px 20px;border:2px solid rgba(255,255,255,.42);border-radius:9px;font-size:23px;font-weight:600;margin:0 14px 12px 0;color:rgba(255,255,255,.95)}' +
 '.bdg.cert{background:rgba(255,255,255,.18);border-color:transparent;font-weight:800}' +
-'#np{position:fixed;right:52px;bottom:210px;background:rgba(15,13,22,.97);border-radius:16px;padding:22px;display:none;z-index:7;width:470px;box-shadow:0 12px 44px rgba(0,0,0,.65)}' +
+'#np{position:fixed;right:44px;top:72px;background:rgba(15,13,22,.96);border:1px solid rgba(180,150,255,.28);border-radius:13px;padding:16px;display:none;z-index:7;width:420px;box-shadow:0 10px 34px rgba(0,0,0,.58);box-sizing:border-box}' +
 '#np.show{display:block}' +
-'#npL{font-size:20px;color:rgba(255,255,255,.6);letter-spacing:1.6px;text-transform:uppercase}' +
-'#npT{margin-top:8px;font-size:27px;font-weight:700;line-height:1.3;max-height:74px;overflow:hidden}' +
-'#npI{width:100%;height:250px;border-radius:10px;margin-top:14px;background:#000;display:none;object-fit:cover}' +
-'#npB{margin-top:16px;padding:14px 0;border-radius:10px;text-align:center;font-size:26px;font-weight:700;background:rgba(255,255,255,.14)}' +
+'#npX{position:absolute;right:9px;top:7px;width:34px;height:34px;border-radius:17px;text-align:center;line-height:31px;font-size:27px;color:rgba(255,255,255,.72);background:rgba(255,255,255,.09)}' +
+'#npMain{display:flex;align-items:center;padding-right:25px}' +
+'#npI{width:144px;height:81px;border-radius:8px;margin-right:14px;background:#000;display:none;object-fit:cover;flex:none}' +
+'#npC{min-width:0;flex:1}' +
+'#npL{font-size:16px;color:#bda6ff;letter-spacing:1.3px;text-transform:uppercase}' +
+'#npT{margin-top:5px;font-size:22px;font-weight:700;line-height:1.25;max-height:55px;overflow:hidden}' +
+'#npB{margin-top:11px;padding:9px 13px;border-radius:8px;text-align:center;font-size:20px;font-weight:700;background:rgba(140,92,255,.34)}' +
 '#np.f #npB{background:#fff;color:#000}' +
-'#npH{margin-top:10px;font-size:19px;color:rgba(255,255,255,.5);text-align:center}' +
+'#npH{margin-top:8px;font-size:15px;color:rgba(255,255,255,.48);text-align:right}' +
+'@media (max-height:800px){#np{right:24px;top:54px;width:360px;padding:12px}#npI{width:112px;height:63px}#npT{font-size:18px;max-height:46px}#npB{font-size:17px;padding:7px 10px}#npH{font-size:13px}}' +
 '#spv{position:fixed;top:50%;left:50%;width:512px;height:288px;margin:-176px 0 0 -256px;border-radius:14px;background:#0a0a10;display:none;z-index:9;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,.85),0 0 0 3px rgba(255,255,255,.16)}' +
 '#spv img{width:100%;height:100%;object-fit:cover}' +
 '#spv.load:before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,#141220,#201c33,#141220);background-size:200% 100%;animation:shim 1.1s linear infinite}' +
@@ -693,24 +707,33 @@ function playerPage(stream, ctx) {
 '<div id="toast"></div>' +
 '<div id="load"><div class="lwrap"><div id="lname"></div></div></div>' +
 '<div id="pv"><div id="pvBox"><div id="pvLbl">Paused</div><div id="pvTitle"></div><div id="pvSe"></div><div id="pvBadges"></div></div></div>' +
-'<div id="np"><div id="npL">Next episode</div><div id="npT"></div><img id="npI"><div id="npB">Play next</div><div id="npH">Press Up to select</div></div>' +
+'<div id="np"><div id="npX">\u00d7</div><div id="npMain"><img id="npI"><div id="npC"><div id="npL">Next episode</div><div id="npT"></div><div id="npB">Play next</div></div></div><div id="npH">Up: select  \u00b7  Back: dismiss</div></div>' +
 '<div id="spv"><img id="spvi"><div id="spvT"></div></div>' +
 '<div id="bar"><div id="title"></div><div id="tse"></div><div id="seekrow"><div id="seek"><div id="fill"></div><div id="knob"></div></div><div id="time">0:00 / 0:00</div></div>' +
 '<div id="row"><div id="ctr"><div class="pbtn" id="b_rw"><svg viewBox="0 0 24 24" width="42" height="42"><path d="M12 6v12l-9-6 9-6zM22 6v12l-9-6 9-6z"/></svg></div><div class="pbtn big" id="b_pp"><i class=ic-pause></i></div><div class="pbtn" id="b_ff"><svg viewBox="0 0 24 24" width="42" height="42"><path d="M2 6l9 6-9 6V6zM12 6l9 6-9 6V6z"/></svg></div></div><div id="rgt"><div class="pbtn wide" id="b_next" style="display:none">Next episode</div><div class="pbtn" id="b_set"><svg viewBox="0 0 24 24" width="42" height="42"><path d="M19.14 12.94a7.5 7.5 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.61-.22l-2.39.96a7.3 7.3 0 00-1.62-.94l-.36-2.54A.5.5 0 0013.5 2h-3a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 00-.61.22L2.7 8.84a.5.5 0 00.12.64l2.03 1.58a7.5 7.5 0 000 1.88L2.82 14.5a.5.5 0 00-.12.64l1.92 3.32a.5.5 0 00.61.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54a.5.5 0 00.5.42h3a.5.5 0 00.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96a.5.5 0 00.61-.22l1.92-3.32a.5.5 0 00-.12-.64zM12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z"/></svg></div></div></div></div>' +
 '<div id="menu"></div>' +
 '<script>(function(){' +
-'var URL=' + JSON.stringify(streamUrl) + ',TITLE=' + JSON.stringify(title) + ',TYPE=' + JSON.stringify(ctx.type || '') + ',ID=' + JSON.stringify(ctx.id || '') + ',VID=' + JSON.stringify(ctx.vid || '') + ',LOGO=' + JSON.stringify(meta.logo || '') + ',BG=' + JSON.stringify(meta.background || '') + ',POSTER=' + JSON.stringify(meta.poster || '') + ',SE=' + JSON.stringify(seLine) + ',NEXTVID=' + JSON.stringify(nextVid) + ',NEXTHREF=' + JSON.stringify(nextHref) + ',BACK=' + JSON.stringify(ctx.back || '') + ',NEXTTITLE=' + JSON.stringify(ctx.nextTitle || '') + ',NEXTTHUMB=' + JSON.stringify(ctx.nextThumb || '') + ',SNAME=' + JSON.stringify(String((stream.name || '') + ' ' + (stream.title || stream.description || '')).slice(0, 400)) + ',CERT=' + JSON.stringify((ctx.meta && ctx.meta.cert) || '') + ',COMPAT=' + JSON.stringify(stream.compat || '') + ',SERVICE_ID=' + JSON.stringify(SERVICE_ID) + ',APP_PORT=' + JSON.stringify(PORT) + ';' +
+'var URL=' + safeScriptJson(streamUrl) + ',ADDON=' + safeScriptJson(stream.addon || '') + ',QUALITY=' + safeScriptJson(stream.quality || '') + ',TITLE=' + safeScriptJson(title) + ',TYPE=' + safeScriptJson(ctx.type || '') + ',ID=' + safeScriptJson(ctx.id || '') + ',VID=' + safeScriptJson(ctx.vid || '') + ',LOGO=' + safeScriptJson(meta.logo || '') + ',BG=' + safeScriptJson(meta.background || '') + ',POSTER=' + safeScriptJson(meta.poster || '') + ',SEEN=' + safeScriptJson(seLineEn) + ',SEPT=' + safeScriptJson(seLinePt) + ',NEXTVID=' + safeScriptJson(nextVid) + ',NEXTHREF=' + safeScriptJson(nextHref) + ',BACK=' + safeScriptJson(ctx.back || '') + ',NEXTTITLE=' + safeScriptJson(ctx.nextTitle || '') + ',NEXTTHUMB=' + safeScriptJson(ctx.nextThumb || '') + ',SNAME=' + safeScriptJson(String((stream.name || '') + ' ' + (stream.title || stream.description || '')).slice(0, 400)) + ',CERT=' + safeScriptJson((ctx.meta && ctx.meta.cert) || '') + ',COMPAT=' + safeScriptJson(stream.compat || '') + ',SERVICE_ID=' + safeScriptJson(SERVICE_ID) + ',APP_PORT=' + safeScriptJson(PORT) + ';' +
+'var PBR=false;try{PBR=localStorage.getItem("uiLanguage")==="pt-BR";}catch(e){}' +
+'var SE=PBR?SEPT:SEEN;' +
+'var P=PBR?{paused:"Pausado",nextEpisode:"Próximo episódio",playNext:"Reproduzir próximo",dismissHint:"Cima: selecionar · Voltar: fechar",liked:"Gostou?",similar:"Ver algo parecido",findSimilar:"Encontrar parecidos",playbackError:"Erro de reprodução",retrying:"Tentando iniciar a fonte novamente…",resuming:"Continuando de ",nextLoading:"Próximo episódio…",subtitlesReady:"Legendas prontas",subtitleFailed:"Falha ao extrair legendas",nativeSubs:"Legendas nativas ativadas",noNative:"Faixa nativa indisponível — extraindo…",preparingSubs:"Preparando legendas…",noEmbedded:"Nenhuma legenda incorporada",defaultAudio:"Padrão",off:"Desativadas",embedded:"Incorporadas",external:"Externas",selected:"Selecionada",settings:"Ajustes",audio:"Áudio",subtitles:"Legendas",none:"Nenhuma",readingTracks:"Lendo faixas…",noneInFile:"Nenhuma neste arquivo",style:"Estilo",delay:"Atraso",later:"Mais tarde (+0,5s)",earlier:"Mais cedo (-0,5s)",reset:"Redefinir",bigger:"Aumentar texto",smaller:"Diminuir texto",colour:"Cor",background:"Fundo",on:"Ativado",white:"Branco",yellow:"Amarelo",couldNotResume:"Não foi possível continuar",controlUnavailable:"Controle de reprodução indisponível",inactive:"Reprodução pausada enquanto a TV estava inativa",restoring:"Restaurando o serviço local…",restoreFailed:"Não foi possível restaurar o serviço local",ready:"Prontas",loaded:"Legendas carregadas",extracting:"extraindo",language:"idioma"}:{paused:"Paused",nextEpisode:"Next episode",playNext:"Play next",dismissHint:"Up: select · Back: dismiss",liked:"Liked this?",similar:"Watch something similar",findSimilar:"Find similar",playbackError:"Playback error",retrying:"Retrying this source…",resuming:"Resuming from ",nextLoading:"Next episode…",subtitlesReady:"Subtitles ready",subtitleFailed:"Subtitle extraction failed",nativeSubs:"Native subtitles on",noNative:"No native track — extracting…",preparingSubs:"Preparing subtitles…",noEmbedded:"No embedded subtitles",defaultAudio:"Default",off:"Off",embedded:"Embedded",external:"External",selected:"Selected",settings:"Settings",audio:"Audio",subtitles:"Subtitles",none:"None",readingTracks:"Reading tracks…",noneInFile:"None in this file",style:"Style",delay:"Delay",later:"Later (+0.5s)",earlier:"Earlier (-0.5s)",reset:"Reset",bigger:"Text bigger",smaller:"Text smaller",colour:"Colour",background:"Background",on:"On",white:"White",yellow:"Yellow",couldNotResume:"Could not resume playback",controlUnavailable:"Playback control unavailable",inactive:"Playback paused while the TV was inactive",restoring:"Restoring the local service…",restoreFailed:"Could not restore the local service",ready:"Subtitles ready",loaded:"Subtitles loaded",extracting:"extracting",language:"language"};' +
 'var v=document.getElementById("v"),bar=document.getElementById("bar"),fill=document.getElementById("fill"),' +
 'timeEl=document.getElementById("time"),menu=document.getElementById("menu"),subEl=document.getElementById("sub"),' +
 'load=document.getElementById("load"),lname=document.getElementById("lname");' +
 'document.getElementById("title").textContent=TITLE;' +
+'document.getElementById("pvLbl").textContent=P.paused;document.getElementById("npL").textContent=P.nextEpisode;document.getElementById("npB").textContent=P.playNext;document.getElementById("npH").textContent=P.dismissHint;document.getElementById("b_next").textContent=P.nextEpisode;' +
 'function xhr(u,cb){try{var x=new XMLHttpRequest();x.open("GET",u,true);x.onreadystatechange=function(){if(x.readyState===4){var j=null;try{j=JSON.parse(x.responseText);}catch(e){}cb(j);}};x.send();}catch(e){cb(null);}}' +
+'function setArt(host,u){if(!host)return;host.textContent="";if(!u)return;var im=document.createElement("img");im.src=u;host.appendChild(im);}' +
 // ---- loading art is embedded server-side (no flash): show logo+backdrop now ----
 'if(BG)load.style.backgroundImage="url(\\""+BG+"\\")";' +
 'var bufArt=document.getElementById("bufart");' +
-'if(LOGO){var artHtml="<img src=\\""+LOGO+"\\" style=\\"max-width:64%;max-height:40vh;filter:drop-shadow(0 6px 26px #000)\\">";lname.innerHTML=artHtml;bufArt.innerHTML="<img src=\\""+LOGO+"\\">";}else{lname.textContent=TITLE;bufArt.textContent=TITLE;}' +
+'if(LOGO){setArt(lname,LOGO);setArt(bufArt,LOGO);}else{lname.textContent=TITLE;bufArt.textContent=TITLE;}' +
 'if(SE){document.getElementById("tse").textContent=SE;}' +
-'v.src=URL;' +
+'var mediaUsable=false,startupRetry=0,startupResetting=false,startupWatch=null;' +
+'function armStartupWatch(){if(startupWatch)clearTimeout(startupWatch);startupWatch=setTimeout(function(){if(!mediaUsable)retryStartup("timeout");},18000);}' +
+'function mediaReady(){mediaUsable=true;startupResetting=false;if(startupWatch){clearTimeout(startupWatch);startupWatch=null;}}' +
+'function retryStartup(reason){if(mediaUsable||startupRetry>=1||startupResetting)return false;startupRetry++;startupResetting=true;diag("media_start_retry",{reason:reason});showToast(P.retrying);try{v.pause();v.removeAttribute("src");v.load();}catch(e){}setTimeout(function(){startupResetting=false;try{v.src=URL;v.load();var rp=v.play();if(rp&&rp.catch)rp.catch(function(){});}catch(e){}armStartupWatch();},650);return true;}' +
+'v.addEventListener("loadedmetadata",mediaReady);v.addEventListener("playing",mediaReady);v.src=URL;armStartupWatch();' +
 // ---- resume + Continue Watching (shared with the v4 shell via same-origin localStorage) ----
 // The shell keeps watch progress as lib_<first4 of user._id>_<id> items with state.timeOffset
 // (ms). We read it to resume and write it so Continue Watching updates after our bare player.
@@ -733,13 +756,13 @@ function playerPage(stream, ctx) {
 // Stremio auto-watch semantics: removed:false + temp:true (shows in Library + Continue
 // Watching and syncs everywhere). An explicit + Library later flips temp:false.
 'function saveProgress(){if(!v.duration||!ID)return;var now=new Date().toISOString();var it=readLib();if(!it||!it.state){it={state:{},_id:ID,removed:false,temp:true,_ctime:now,name:TITLE,type:TYPE,poster:POSTER||"",posterShape:"poster",background:BG||"",logo:LOGO||"",year:""};}else{if(!it.name&&TITLE)it.name=TITLE;if(!it.poster&&POSTER)it.poster=POSTER;if(!it.type&&TYPE)it.type=TYPE;if(!it.posterShape)it.posterShape="poster";}var s=it.state;s.timeOffset=Math.round(v.currentTime*1000);s.duration=Math.round(v.duration*1000);s.video_id=VID||ID;s.lastWatched=now;s.timeWatched=s.timeOffset;if(s.overallTimeWatched==null)s.overallTimeWatched=s.timeOffset;if(s.timesWatched==null)s.timesWatched=0;if(s.flaggedWatched==null)s.flaggedWatched=0;if(s.season==null)s.season=0;if(s.episode==null)s.episode=0;if(!s.watchedEpisodes)s.watchedEpisodes=[];if(s.noNotif==null)s.noNotif=false;if(s.watched==null)s.watched="";it.state=s;it._mtime=now;if(it.removed==null)it.removed=false;if(it.temp==null)it.temp=true;try{localStorage.setItem(LIBKEY,JSON.stringify(it));}catch(e){}}' +
-'var didResume=false;function tryResume(){if(didResume)return;didResume=true;var it=readLib();if(it&&it.state&&it.state.video_id===(VID||ID)&&it.state.timeOffset>5000){var sec=it.state.timeOffset/1000;if(!it.state.duration||sec<it.state.duration/1000-30){try{v.currentTime=sec;showToast("Resuming from "+fmt(sec));}catch(e){}}}}' +
+'var didResume=false;function tryResume(){if(didResume)return;didResume=true;var it=readLib();if(it&&it.state&&it.state.video_id===(VID||ID)&&it.state.timeOffset>5000){var sec=it.state.timeOffset/1000;if(!it.state.duration||sec<it.state.duration/1000-30){try{v.currentTime=sec;showToast(P.resuming+fmt(sec));}catch(e){}}}}' +
 'v.addEventListener("loadeddata",tryResume);v.addEventListener("canplay",tryResume);' +
 'setInterval(function(){if(!v.paused){saveProgress();pushLib(false);if(v.duration&&v.currentTime/v.duration>0.95)markWatchedLocal();}},10000);v.addEventListener("pause",function(){saveProgress();pushLib(true);});v.addEventListener("ended",function(){saveProgress();pushLib(true);});' +
 // local watched flag: add this video id to state.watchedEpisodes (drives the beta checkmarks)
 'function markWatchedLocal(){try{var it=readLib();if(!it||!it.state)return;var wv=VID||ID;if(!it.state.watchedEpisodes)it.state.watchedEpisodes=[];for(var i=0;i<it.state.watchedEpisodes.length;i++)if(it.state.watchedEpisodes[i]===wv)return;it.state.watchedEpisodes.push(wv);it.state.flaggedWatched=1;it._mtime=new Date().toISOString();localStorage.setItem(LIBKEY,JSON.stringify(it));pushLib(true);}catch(e){}}' +
 // binge: when the episode ends, jump straight to the next one (detail deep-link opens its streams)
-'v.addEventListener("ended",function(){markWatchedLocal();var binge=(lsGet("bingeWatch","true")!=="false")&&(lsGet("enableNextVideo","true")!=="false");if(binge&&NEXTHREF){showToast("Next episode\\u2026");setTimeout(function(){location.replace(NEXTHREF);},600);}});' +
+'v.addEventListener("ended",function(){markWatchedLocal();var binge=(lsGet("bingeWatch","true")!=="false")&&(lsGet("enableNextVideo","true")!=="false");if(binge&&NEXTHREF&&!npDismissed){rememberNextSource();showToast(P.nextLoading);setTimeout(function(){location.replace(NEXTHREF);},600);}});' +
 // ---- external subtitles (English first) ----
 'var extSubs=[],cues=null,embTrack=null,subSize=38,subColor="#fff",subOutline="#000000",subBgOp=0,curSub="off",subDelay=0,subView="root",extLang="";' +
 // ---- pull the shell Settings (same-origin localStorage) so they drive OUR player ----
@@ -754,7 +777,7 @@ function playerPage(stream, ctx) {
 'var rawSub=lsGet("subsLang",null);if(rawSub==null)rawSub=lsGet("subtitles",null);var WANTSUB=(rawSub==null?"eng":rawSub).toLowerCase();' +
 'var WANTAUD=(lsGet("enableDefaultAudioTrack","false")==="true")?(lsGet("defaultAudioTrack","")||"").toLowerCase():"";' +
 'var embTracks=null,embTracksLoading=false,embTracksLoaded=false,embErr="",embReopenArmed=false,embN=-1,embPollAt=0,embFirst=false;' +
-'var autoSubDone=false;function autoSub(){if(autoSubDone||curSub!=="off"||!WANTSUB)return;for(var i=0;i<extSubs.length;i++){if((extSubs[i].lang||"").toLowerCase()===WANTSUB){autoSubDone=true;setExtSub(extSubs[i].u);showToast("Subtitles: "+extSubs[i].name);return;}}}' +
+'var autoSubDone=false;function autoSub(){if(autoSubDone||curSub!=="off"||!WANTSUB)return;for(var i=0;i<extSubs.length;i++){if((extSubs[i].lang||"").toLowerCase()===WANTSUB){autoSubDone=true;setExtSub(extSubs[i].u);showToast(P.subtitles+": "+extSubs[i].name);return;}}}' +
 'if(TYPE&&VID){xhr("/subs?type="+encodeURIComponent(TYPE)+"&vid="+encodeURIComponent(VID),function(j){if(j&&j.subtitles){extSubs=j.subtitles;autoSub();}});}' +
 // honour the Settings default audio language: enable the matching embedded audio track
 'var autoAudDone=false;function autoAudio(){if(autoAudDone||!WANTAUD)return;try{var ts=v.audioTracks;if(!ts||!ts.length)return;for(var i=0;i<ts.length;i++){var l=(ts[i].language||"").toLowerCase();if(l===WANTAUD||l.indexOf(WANTAUD)===0||WANTAUD.indexOf(l)===0){autoAudDone=true;for(var j=0;j<ts.length;j++)ts[j].enabled=(j===i);return;}}}catch(e){}}' +
@@ -762,7 +785,7 @@ function playerPage(stream, ctx) {
 // On this CPU, ffprobe during startup makes the remote stutter. Probe only when
 // the user actually opens the subtitle menu.
 'function ensureEmbTracks(){if(embTracksLoaded||embTracksLoading)return;embTracksLoading=true;xhr("/embtracks?u="+encodeURIComponent(URL),function(j){embTracksLoading=false;embTracksLoaded=true;embTracks=(j&&j.tracks)||[];embErr=(j&&j.err)||"";});}' +
-'function setExtSub(u){curSub="ext:"+u;embTrack=null;embN=-1;cues=null;subEl.innerHTML="";for(var i=0;i<v.textTracks.length;i++){try{v.textTracks[i].mode="disabled";}catch(e){}}xhr("/sub?u="+encodeURIComponent(u),function(j){cues=(j&&j.cues)||[];});}' +
+'function setExtSub(u){curSub="ext:"+u;embTrack=null;embN=-1;cues=null;subEl.textContent="";for(var i=0;i<v.textTracks.length;i++){try{v.textTracks[i].mode="disabled";}catch(e){}}xhr("/sub?u="+encodeURIComponent(u),function(j){cues=(j&&j.cues)||[];});}' +
 // embedded: the TV never exposes MKV sub cues to JS (textTracks empty), so the server
 // demuxes them with ONE sequential ffmpeg read (~9x realtime) and we poll for new cues
 // (append-only) rendered in OUR overlay; finished tracks are disk-cached server-side.
@@ -772,38 +795,40 @@ function playerPage(stream, ctx) {
 'if(want!==embN||!j)return;' +
 'if(j.gone){setEmbSub(embN);return;}' + // server restarted / job reaped -> re-kick
 'if(j.cues&&j.cues.length){if(!cues)cues=[];for(var i=0;i<j.cues.length;i++)cues.push(j.cues[i]);subEl._t=null;' +
-'if(!embFirst){embFirst=true;showToast("Subtitles ready");}}' +
-'if(j.err&&!cues.length){showToast("Subtitle extraction failed");}' +
+'if(!embFirst){embFirst=true;showToast(P.subtitlesReady);}}' +
+'if(j.err&&!cues.length){showToast(P.subtitleFailed);}' +
 '});}' +
 // TRY NATIVE: the TV already decodes the MKV; ask its pipeline to render this text track
 // (mode="showing"). Far better than demuxing over the network if the TV exposes the tracks.
-'function setEmbSub(n,ti){curSub="emb:"+n;embTrack=null;embN=n;cues=[];embFirst=false;subEl.innerHTML="";' +
+'function setEmbSub(n,ti){curSub="emb:"+n;embTrack=null;embN=n;cues=[];embFirst=false;subEl.textContent="";' +
 // Settings: "native" tries the TV's own text track (usually empty on this TV -> falls back)
-'if(EMBMODE==="native"){var ok=false;try{for(var i=0;i<v.textTracks.length;i++)v.textTracks[i].mode="disabled";var tt=v.textTracks[ti||0];if(tt){tt.mode="showing";ok=true;}}catch(e){}if(ok){showToast("Native subtitles on");return;}showToast("No native track \\u2014 extracting\\u2026");}' +
+'if(EMBMODE==="native"){var ok=false;try{for(var i=0;i<v.textTracks.length;i++)v.textTracks[i].mode="disabled";var tt=v.textTracks[ti||0];if(tt){tt.mode="showing";ok=true;}}catch(e){}if(ok){showToast(P.nativeSubs);return;}showToast(P.noNative);}' +
 'xhr("/embstart?"+embQS()+"&t="+(v.currentTime|0),function(j){' +
 'if(embN!==n||!j)return;' +
-'if(j.cues&&j.cues.length){cues=j.cues;subEl._t=null;embFirst=true;showToast(j.cached?"Subtitles loaded":"Subtitles ready");}' +
-'else if(j.started){showToast("Preparing subtitles\\u2026");}' +
-'else if(j.err){showToast("No embedded subtitles");}' +
+'if(j.cues&&j.cues.length){cues=j.cues;subEl._t=null;embFirst=true;showToast(j.cached?P.loaded:P.ready);}' +
+'else if(j.started){showToast(P.preparingSubs);}' +
+'else if(j.err){showToast(P.noEmbedded);}' +
 '});}' +
-'function subsOff(){curSub="off";embTrack=null;embN=-1;cues=null;subEl.innerHTML="";}' +
-'function audioName(){try{for(var i=0;i<v.audioTracks.length;i++){var a=v.audioTracks[i];if(a.enabled)return a.label||a.language||("Audio "+(i+1));}}catch(e){}return "Default";}' +
-'function subtitleName(){if(curSub==="off")return "Off";if(curSub.indexOf("emb:")===0){var n=parseInt(curSub.slice(4),10);if(embTracks)for(var i=0;i<embTracks.length;i++)if(embTracks[i].n===n)return embTracks[i].name||("Embedded "+(i+1));return "Embedded";}if(curSub.indexOf("ext:")===0){var u=curSub.slice(4);for(var j=0;j<extSubs.length;j++)if(extSubs[j].u===u)return extSubs[j].name||extSubs[j].lang||"External";return "External";}return "Off";}' +
-'function selectedLabel(label,on){return label+(on?"  [Selected]":"");}' +
+'function subsOff(){curSub="off";embTrack=null;embN=-1;cues=null;subEl.textContent="";}' +
+'function audioName(){try{for(var i=0;i<v.audioTracks.length;i++){var a=v.audioTracks[i];if(a.enabled)return a.label||a.language||(P.audio+" "+(i+1));}}catch(e){}return P.defaultAudio;}' +
+'function subtitleName(){if(curSub==="off")return P.off;if(curSub.indexOf("emb:")===0){var n=parseInt(curSub.slice(4),10);if(embTracks)for(var i=0;i<embTracks.length;i++)if(embTracks[i].n===n)return embTracks[i].name||(P.embedded+" "+(i+1));return P.embedded;}if(curSub.indexOf("ext:")===0){var u=curSub.slice(4);for(var j=0;j<extSubs.length;j++)if(extSubs[j].u===u)return extSubs[j].name||extSubs[j].lang||P.external;return P.external;}return P.off;}' +
+'function selectedLabel(label,on){return label+(on?("  ["+P.selected+"]"):"");}' +
+'function eh(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}' +
 'function subStyle(){var o=subOutline;var sh="text-shadow:-2px 0 "+o+",2px 0 "+o+",0 -2px "+o+",0 2px "+o+",-1px -1px "+o+",1px 1px "+o+",0 0 5px "+o+";";var bg=subBgOp>0?("background:rgba(0,0,0,"+subBgOp+");padding:2px 16px;border-radius:8px;"):"";return "font-size:"+subSize+"px;color:"+subColor+";"+sh+bg;}' +
-'function renderSub(){if(curSub==="off")return;var txt="";if(cues&&cues.length){var t=v.currentTime-subDelay;for(var i=0;i<cues.length;i++){if(t>=cues[i].s&&t<=cues[i].e){txt=cues[i].t;break;}}}if(subEl._t!==txt){subEl._t=txt;subEl.innerHTML=txt?("<span style=\\""+subStyle()+"\\">"+txt.replace(/\\n/g,"<br>")+"</span>"):"";}}' +
+'function renderSub(){if(curSub==="off")return;var txt="";if(cues&&cues.length){var t=v.currentTime-subDelay;for(var i=0;i<cues.length;i++){if(t>=cues[i].s&&t<=cues[i].e){txt=cues[i].t;break;}}}if(subEl._t!==txt){subEl._t=txt;subEl.textContent="";if(txt){var sp=document.createElement("span");sp.style.cssText=subStyle()+"white-space:pre-line;";sp.textContent=txt;subEl.appendChild(sp);}}}' +
 'function updatePP(){var b=document.getElementById("b_pp");b.innerHTML=v.paused?"<i class=ic-play></i>":"<i class=ic-pause></i>";}' +
 'v.addEventListener("play",updatePP);v.addEventListener("pause",updatePP);' +
 'if(NEXTVID){document.getElementById("b_next").style.display="";}' +
 'var btns=[];(function(){var ids=["b_rw","b_pp","b_ff","b_next","b_set"];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&el.style.display!=="none"){el._base=el.className;btns.push(el);}}})();' +
-'function nextEp(){if(NEXTHREF){try{saveProgress();markWatchedLocal();}catch(e){}location.replace(NEXTHREF);}}' +
+'function rememberNextSource(){if(!ID||!NEXTVID)return;try{localStorage.setItem("tvnextpref_"+ID+"_"+NEXTVID,JSON.stringify({at:Date.now(),addon:ADDON,quality:QUALITY,compat:COMPAT,text:SNAME}));}catch(e){}}' +
+'function nextEp(){if(NEXTHREF){try{saveProgress();markWatchedLocal();rememberNextSource();}catch(e){}location.replace(NEXTHREF);}}' +
 'var mode="video",bIdx=1,mIdx=0,menuItems=[],hideT=null;' +
 'function fmt(s){s=Math.max(0,s|0);var h=(s/3600)|0,m=((s%3600)/60)|0,x=s%60;function p(n){return(n<10?"0":"")+n;}return(h?h+":"+p(m):m)+":"+p(x);}' +
 'function showBar(){bar.className="show";if(hideT)clearTimeout(hideT);hideT=setTimeout(function(){if(mode==="video"){bar.className="";}},4000);}' +
 'function paintBtns(){for(var i=0;i<btns.length;i++)btns[i].className=btns[i]._base+(mode==="controls"&&i===bIdx?" f":"");if(seekBar)seekBar.className=(seekTarget>=0?"seeking":"")+(mode==="seek"?" f":"");}' +
 'function hideLoad(){load.style.display="none";}' +
 'v.addEventListener("playing",hideLoad);v.addEventListener("loadeddata",function(){setTimeout(hideLoad,300);});' +
-'v.addEventListener("error",function(){lname.textContent="Playback error";diag("media_error",{code:v.error?v.error.code:0,ready:v.readyState,network:v.networkState,compat:COMPAT});});' +
+'v.addEventListener("error",function(){if(retryStartup("error"))return;lname.textContent=P.playbackError;diag("media_error",{code:v.error?v.error.code:0,ready:v.readyState,network:v.networkState,compat:COMPAT});});' +
 // buffering: dim the frozen frame and breathe the art (the same look as initial load)
 'var bufEl=document.getElementById("buf");' +
 'function showBuf(){if(load.style.display==="none"&&!v.paused){bufEl.style.display="-webkit-flex";bufEl.style.display="flex";}}' +
@@ -814,14 +839,14 @@ function playerPage(stream, ctx) {
 'renderSub();});' +
 // poll on a TIMER, not timeupdate: cues keep arriving while paused / after playback ends
 'setInterval(function(){if(embN>=0)pollEmbCues();},4000);' +
-'function setPlaying(play){try{if(play){var result=v.play();if(result&&result.catch)result.catch(function(){diag("play_rejected",{});showToast("Could not resume playback");});}else v.pause();setTimeout(updatePP,0);}catch(e){diag("play_toggle_error",{});showToast("Playback control unavailable");}showBar();}' +
+'function setPlaying(play){try{if(play){var result=v.play();if(result&&result.catch)result.catch(function(){diag("play_rejected",{});showToast(P.couldNotResume);});}else v.pause();setTimeout(updatePP,0);}catch(e){diag("play_toggle_error",{});showToast(P.controlUnavailable);}showBar();}' +
 'function tog(){setPlaying(!!(v.paused||v.ended));}' +
 'var seekEl=document.getElementById("seekind"),knob=document.getElementById("knob"),seekBar=document.getElementById("seek"),seekHideT=null,seekTarget=-1,seekTimer=null;' +
 'var toastEl=document.getElementById("toast"),toastT=null;function showToast(m){if(!toastEl)return;toastEl.textContent=m;toastEl.style.opacity="1";if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){toastEl.style.opacity="0";},3200);}' +
 'function diag(ev,data){try{var q=["ev="+encodeURIComponent(ev),"ready="+v.readyState,"network="+v.networkState,"t="+(v.currentTime|0)];data=data||{};for(var k in data)if(Object.prototype.hasOwnProperty.call(data,k)&&data[k]!=null)q.push(encodeURIComponent(k)+"="+encodeURIComponent(String(data[k]).slice(0,160)));var im=new Image();im.src="http://127.0.0.1:"+APP_PORT+"/log?"+q.join("&")+"&_="+Date.now();}catch(e){}}' +
 'function health(cb){var done=false;function end(ok){if(done)return;done=true;cb(ok);}try{var x=new XMLHttpRequest();x.open("GET","http://127.0.0.1:"+APP_PORT+"/health?player="+Date.now(),true);x.onreadystatechange=function(){if(x.readyState===4)end(x.status>=200&&x.status<300);};x.timeout=900;x.ontimeout=function(){end(false);};x.onerror=function(){end(false);};x.send();setTimeout(function(){end(false);},1100);}catch(e){end(false);}}' +
 'function startRuntime(cb){var done=false,b=null;function end(ok){if(done)return;done=true;b=null;cb(ok);}try{if(typeof PalmServiceBridge==="undefined"){end(false);return;}b=new PalmServiceBridge();b.onservicecallback=function(){end(true);};b.call("luna://"+SERVICE_ID+"/start","{}");setTimeout(function(){end(false);},2600);}catch(e){end(false);}}' +
-'var wasPlayingBeforeHide=false,resumeRecovering=false;function recoverPlayerRuntime(){if(resumeRecovering)return;resumeRecovering=true;health(function(up){if(up){resumeRecovering=false;showToast("Playback paused while the TV was inactive");diag("player_resume_ok",{});return;}showToast("Restoring the local service\u2026");diag("player_resume_restart",{});startRuntime(function(){var tries=0;function check(){health(function(ok){if(ok){diag("player_resume_recovered",{tries:tries});location.replace("http://127.0.0.1:"+APP_PORT+"/"+(BACK||"beta"));return;}tries++;if(tries<20){setTimeout(check,500);return;}resumeRecovering=false;showToast("Could not restore the local service");diag("player_resume_failed",{tries:tries});});}check();});});}' +
+'var wasPlayingBeforeHide=false,resumeRecovering=false;function recoverPlayerRuntime(){if(resumeRecovering)return;resumeRecovering=true;health(function(up){if(up){resumeRecovering=false;showToast(P.inactive);diag("player_resume_ok",{});return;}showToast(P.restoring);diag("player_resume_restart",{});startRuntime(function(){var tries=0;function check(){health(function(ok){if(ok){diag("player_resume_recovered",{tries:tries});location.replace("http://127.0.0.1:"+APP_PORT+"/"+(BACK||"beta"));return;}tries++;if(tries<20){setTimeout(check,500);return;}resumeRecovering=false;showToast(P.restoreFailed);diag("player_resume_failed",{tries:tries});});}check();});});}' +
 '(function(){var prop="",event="",hiddenAt=0;if("hidden" in document){prop="hidden";event="visibilitychange";}else if("webkitHidden" in document){prop="webkitHidden";event="webkitvisibilitychange";}if(!event)return;document.addEventListener(event,function(){if(document[prop]){hiddenAt=Date.now();wasPlayingBeforeHide=!v.paused;try{saveProgress();if(wasPlayingBeforeHide)v.pause();else pushLib(true);}catch(e){}diag("player_hidden",{playing:wasPlayingBeforeHide?1:0});}else if(hiddenAt){diag("player_visible",{awaySec:Math.max(0,((Date.now()-hiddenAt)/1000)|0)});hiddenAt=0;setTimeout(recoverPlayerRuntime,120);}},true);})();' +
 // seeks accumulate while you keep pressing (+10, +20, ...) and only commit ~0.5s after
 // you stop, so the bar/knob glide to the target and we buffer once instead of every press.
@@ -845,21 +870,21 @@ function playerPage(stream, ctx) {
 'if(st&&st.tv){try{history.go(-2);return;}catch(e){}}' +
 'location.replace("http://127.0.0.1:8082/"+(BACK||""));}' +
 'function repush(){try{history.pushState({tv:1},"");}catch(e){}}' +
-'function goBack(){if(npFocus){npFocus=false;npShown=false;npDismissed=true;paintNp();repush();}else if(mode==="menu"){menuBack();repush();}else if(mode==="controls"){mode="video";paintBtns();repush();}else{exit();}}' +
+'function goBack(){if(npShown){dismissNp();repush();}else if(mode==="menu"){menuBack();repush();}else if(mode==="controls"){mode="video";paintBtns();repush();}else{exit();}}' +
 // This TV delivers Back as a history pop. We keep ONE dummy entry: popstate closes the
 // menu/controls (re-pushing to stay), or exits when nothing is open.
 'try{history.pushState({tv:1},"");}catch(e){}' +
 'function onPop(){goBack();}window.addEventListener("popstate",onPop);' +
 // ---- menus (subtitles = Off + external English-first + embedded; audio = embedded) ----
 'function openMenu(view){subView=view;menuItems=[];var html="";if(view==="subsroot"||view==="embedded")ensureEmbTracks();' +
-'if(view==="root"){html+="<div class=mh>Settings</div>";html+="<div class=mi>Audio: "+audioName()+" \\u203a</div>";menuItems.push({k:"go",to:"audio"});html+="<div class=mi>Subtitles: "+subtitleName()+" \\u203a</div>";menuItems.push({k:"go",to:"subsroot"});}' +
-'else if(view==="audio"){html+="<div class=mh>Audio</div>";try{for(var a=0;a<v.audioTracks.length;a++){var at=v.audioTracks[a],al=at.label||at.language||("Audio "+(a+1));html+="<div class=\\"mi"+(at.enabled?" on":"")+"\\">"+selectedLabel(al,at.enabled)+"</div>";menuItems.push({k:"aud",idx:a});}}catch(e){}if(!menuItems.length)html+="<div class=mi style=\\"opacity:.5\\">None</div>";}' +
-'else if(view==="subsroot"){html+="<div class=mh>Subtitles: "+subtitleName()+"</div>";var f0=(curSub==="off");html+="<div class=\\"mi"+(f0?" on":"")+"\\">"+selectedLabel("Off",f0)+"</div>";menuItems.push({k:"off"});html+="<div class=mi>Embedded \\u203a</div>";menuItems.push({k:"go",to:"embedded"});html+="<div class=mi>External \\u203a</div>";menuItems.push({k:"go",to:"external"});html+="<div class=mi>Style \\u203a</div>";menuItems.push({k:"go",to:"style"});if(curSub.indexOf("ext:")===0){html+="<div class=mi>Delay \\u203a</div>";menuItems.push({k:"go",to:"delay"});}}' +
-'else if(view==="embedded"){html+="<div class=mh>Embedded</div>";if(embTracksLoading||embTracks===null){html+="<div class=mi style=\\"opacity:.5\\">Reading tracks\\u2026</div>";if(!embReopenArmed){embReopenArmed=true;var iv=setInterval(function(){if(!embTracksLoading){clearInterval(iv);embReopenArmed=false;if(subView==="embedded")reopen();}},400);}}else if(embErr){html+="<div class=mi style=\\"opacity:.6;white-space:normal;font-size:22px\\">"+embErr+"</div>";}else if(!embTracks.length){html+="<div class=mi style=\\"opacity:.5\\">None in this file</div>";}else{for(var j=0;j<embTracks.length;j++){var et=embTracks[j];var fb=(curSub==="emb:"+et.n);html+="<div class=\\"mi"+(fb?" on":"")+"\\">"+selectedLabel(et.name,fb)+"</div>";menuItems.push({k:"emb",idx:et.n,ti:et.ti});}}}' +
-'else if(view==="external"){html+="<div class=mh>External \\u2014 language</div>";if(!extSubs.length)html+="<div class=mi style=\\"opacity:.5\\">None found</div>";var seen={};for(var i=0;i<extSubs.length;i++){var L=extSubs[i].lang;if(!seen[L]){seen[L]=1;html+="<div class=mi>"+extSubs[i].name+" \\u203a</div>";menuItems.push({k:"lang",lang:L});}}}' +
-'else if(view==="extlang"){var nm="";for(var i=0;i<extSubs.length;i++){if(extSubs[i].lang===extLang){nm=extSubs[i].name;break;}}html+="<div class=mh>"+nm+" subtitles</div>";var c=0;for(var i=0;i<extSubs.length;i++){if(extSubs[i].lang===extLang){c++;var fe=(curSub==="ext:"+extSubs[i].u);html+="<div class=\\"mi"+(fe?" on":"")+"\\">"+selectedLabel(nm+" "+c,fe)+"</div>";menuItems.push({k:"ext",u:extSubs[i].u});}}}' +
-'else if(view==="style"){html+="<div class=mh>Style</div>";html+="<div class=mi>Text bigger</div>";menuItems.push({k:"size+"});html+="<div class=mi>Text smaller</div>";menuItems.push({k:"size-"});html+="<div class=mi>Colour: "+(subColor.toLowerCase()==="#ffe600"?"Yellow":"White")+"</div>";menuItems.push({k:"color"});html+="<div class=mi>Background: "+(subBgOp>0?"On":"Off")+"</div>";menuItems.push({k:"bg"});}' +
-'else if(view==="delay"){html+="<div class=mh>Delay: "+(subDelay>0?"+":"")+subDelay.toFixed(1)+"s</div>";html+="<div class=mi>Later (+0.5s)</div>";menuItems.push({k:"d+"});html+="<div class=mi>Earlier (-0.5s)</div>";menuItems.push({k:"d-"});html+="<div class=mi>Reset</div>";menuItems.push({k:"d0"});}' +
+'if(view==="root"){html+="<div class=mh>"+P.settings+"</div>";html+="<div class=mi>"+P.audio+": "+eh(audioName())+" \\u203a</div>";menuItems.push({k:"go",to:"audio"});html+="<div class=mi>"+P.subtitles+": "+eh(subtitleName())+" \\u203a</div>";menuItems.push({k:"go",to:"subsroot"});}' +
+'else if(view==="audio"){html+="<div class=mh>"+P.audio+"</div>";try{for(var a=0;a<v.audioTracks.length;a++){var at=v.audioTracks[a],al=at.label||at.language||(P.audio+" "+(a+1));html+="<div class=\\"mi"+(at.enabled?" on":"")+"\\">"+eh(selectedLabel(al,at.enabled))+"</div>";menuItems.push({k:"aud",idx:a});}}catch(e){}if(!menuItems.length)html+="<div class=mi style=\\"opacity:.5\\">"+P.none+"</div>";}' +
+'else if(view==="subsroot"){html+="<div class=mh>"+P.subtitles+": "+eh(subtitleName())+"</div>";var f0=(curSub==="off");html+="<div class=\\"mi"+(f0?" on":"")+"\\">"+eh(selectedLabel(P.off,f0))+"</div>";menuItems.push({k:"off"});html+="<div class=mi>"+P.embedded+" \\u203a</div>";menuItems.push({k:"go",to:"embedded"});html+="<div class=mi>"+P.external+" \\u203a</div>";menuItems.push({k:"go",to:"external"});html+="<div class=mi>"+P.style+" \\u203a</div>";menuItems.push({k:"go",to:"style"});if(curSub.indexOf("ext:")===0){html+="<div class=mi>"+P.delay+" \\u203a</div>";menuItems.push({k:"go",to:"delay"});}}' +
+'else if(view==="embedded"){html+="<div class=mh>"+P.embedded+"</div>";if(embTracksLoading||embTracks===null){html+="<div class=mi style=\\"opacity:.5\\">"+P.readingTracks+"</div>";if(!embReopenArmed){embReopenArmed=true;var iv=setInterval(function(){if(!embTracksLoading){clearInterval(iv);embReopenArmed=false;if(subView==="embedded")reopen();}},400);}}else if(embErr){html+="<div class=mi style=\\"opacity:.6;white-space:normal;font-size:22px\\">"+eh(embErr)+"</div>";}else if(!embTracks.length){html+="<div class=mi style=\\"opacity:.5\\">"+P.noneInFile+"</div>";}else{for(var j=0;j<embTracks.length;j++){var et=embTracks[j];var fb=(curSub==="emb:"+et.n);html+="<div class=\\"mi"+(fb?" on":"")+"\\">"+eh(selectedLabel(et.name,fb))+"</div>";menuItems.push({k:"emb",idx:et.n,ti:et.ti});}}}' +
+'else if(view==="external"){html+="<div class=mh>"+P.external+" \\u2014 "+P.language+"</div>";if(!extSubs.length)html+="<div class=mi style=\\"opacity:.5\\">"+P.none+"</div>";var seen={};for(var i=0;i<extSubs.length;i++){var L=extSubs[i].lang;if(!seen[L]){seen[L]=1;html+="<div class=mi>"+eh(extSubs[i].name)+" \\u203a</div>";menuItems.push({k:"lang",lang:L});}}}' +
+'else if(view==="extlang"){var nm="";for(var i=0;i<extSubs.length;i++){if(extSubs[i].lang===extLang){nm=extSubs[i].name;break;}}html+="<div class=mh>"+eh(nm)+" "+P.subtitles.toLowerCase()+"</div>";var c=0;for(var i=0;i<extSubs.length;i++){if(extSubs[i].lang===extLang){c++;var fe=(curSub==="ext:"+extSubs[i].u);html+="<div class=\\"mi"+(fe?" on":"")+"\\">"+eh(selectedLabel(nm+" "+c,fe))+"</div>";menuItems.push({k:"ext",u:extSubs[i].u});}}}' +
+'else if(view==="style"){html+="<div class=mh>"+P.style+"</div>";html+="<div class=mi>"+P.bigger+"</div>";menuItems.push({k:"size+"});html+="<div class=mi>"+P.smaller+"</div>";menuItems.push({k:"size-"});html+="<div class=mi>"+P.colour+": "+(subColor.toLowerCase()==="#ffe600"?P.yellow:P.white)+"</div>";menuItems.push({k:"color"});html+="<div class=mi>"+P.background+": "+(subBgOp>0?P.on:P.off)+"</div>";menuItems.push({k:"bg"});}' +
+'else if(view==="delay"){html+="<div class=mh>"+P.delay+": "+(subDelay>0?"+":"")+subDelay.toFixed(1)+"s</div>";html+="<div class=mi>"+P.later+"</div>";menuItems.push({k:"d+"});html+="<div class=mi>"+P.earlier+"</div>";menuItems.push({k:"d-"});html+="<div class=mi>"+P.reset+"</div>";menuItems.push({k:"d0"});}' +
 'menu.innerHTML=html;menu.className="show";mode="menu";mIdx=0;paintMenu();}' +
 'function paintMenu(){var els=menu.querySelectorAll(".mi");for(var i=0;i<els.length;i++)els[i].className="mi"+(i===mIdx?" f":"");if(els[mIdx])els[mIdx].scrollIntoView(false);}' +
 'function reopen(){var keep=mIdx;openMenu(subView);mIdx=keep;paintMenu();}' +
@@ -869,12 +894,12 @@ function playerPage(stream, ctx) {
 'if(it.k==="size+"){subSize=Math.min(76,subSize+4);subEl._t=null;reopen();return;}if(it.k==="size-"){subSize=Math.max(20,subSize-4);subEl._t=null;reopen();return;}' +
 'if(it.k==="color"){subColor=(subColor.toLowerCase()==="#ffe600"?"#ffffff":"#ffe600");subEl._t=null;reopen();return;}if(it.k==="bg"){subBgOp=(subBgOp>0?0:0.6);subEl._t=null;reopen();return;}' +
 'if(it.k==="d+"){subDelay+=0.5;reopen();return;}if(it.k==="d-"){subDelay-=0.5;reopen();return;}if(it.k==="d0"){subDelay=0;reopen();return;}' +
-'if(it.k==="off")subsOff();else if(it.k==="ext")setExtSub(it.u);else if(it.k==="emb")setEmbSub(it.idx,it.ti);else if(it.k==="aud"){try{for(var j=0;j<v.audioTracks.length;j++)v.audioTracks[j].enabled=(j===it.idx);}catch(e){}}var chosen=(it.k==="aud")?("Audio: "+audioName()):("Subtitles: "+subtitleName());closeMenu();showToast(chosen);}' +
+'if(it.k==="off")subsOff();else if(it.k==="ext")setExtSub(it.u);else if(it.k==="emb")setEmbSub(it.idx,it.ti);else if(it.k==="aud"){try{for(var j=0;j<v.audioTracks.length;j++)v.audioTracks[j].enabled=(j===it.idx);}catch(e){}}var chosen=(it.k==="aud")?(P.audio+": "+audioName()):(P.subtitles+": "+subtitleName());closeMenu();showToast(chosen);}' +
 'function closeMenu(){menu.className="";mode="controls";paintBtns();showBar();}' +
 // ---- paused vignette: title + tech badges (ffprobe via /probe, stream-name text as instant fallback) ----
 'var pv=document.getElementById("pv");' +
 // title = the cover-art LOGO image when we have one (Netflix-style), else clean text; no S/E up here
-'(function(){var pt=document.getElementById("pvTitle");if(LOGO){pt.innerHTML="<img src=\\""+LOGO+"\\" style=\\"max-width:640px;max-height:210px;display:block\\">";}else{pt.textContent=TITLE;}})();' +
+'(function(){var pt=document.getElementById("pvTitle");if(LOGO)setArt(pt,LOGO);else pt.textContent=TITLE;})();' +
 'function fillBadges(j){var host=document.getElementById("pvBadges");host.innerHTML="";' +
 'function ab(t,cls){if(!t)return;var d=document.createElement("div");d.className="bdg"+(cls?" "+cls:"");d.textContent=t;host.appendChild(d);}' +
 'if(CERT)ab(CERT,"cert");' +
@@ -891,13 +916,14 @@ function playerPage(stream, ctx) {
 // ---- end-of-title popup (last 3 min): series -> next episode; movie -> "watch something similar" ----
 'var SIMHREF=(BACK.indexOf("beta")===0&&TYPE&&ID&&!NEXTHREF)?("http://127.0.0.1:8082/beta#sim/"+encodeURIComponent(TYPE)+"/"+encodeURIComponent(ID)):"";' +
 'var POPHREF=NEXTHREF||SIMHREF,isNextEp=!!NEXTHREF;' +
-'var np=document.getElementById("np"),npShown=false,npFocus=false,npDismissed=false;' +
+'var np=document.getElementById("np"),npX=document.getElementById("npX"),npShown=false,npFocus=false,npDismissed=false;' +
 'function paintNp(){np.className=npShown?("show"+(npFocus?" f":"")):"";}' +
+'function dismissNp(){npFocus=false;npShown=false;npDismissed=true;paintNp();}' +
 '(function(){var L=document.getElementById("npL"),T=document.getElementById("npT"),B=document.getElementById("npB");' +
-'if(isNextEp){L.textContent="Next episode";B.textContent="Play next";' +
+'if(isNextEp){L.textContent=P.nextEpisode;B.textContent=P.playNext;' +
 'if(NEXTTITLE)T.textContent=NEXTTITLE;else if(NEXTVID&&NEXTVID.indexOf(":")>0){var npp=NEXTVID.split(":");T.textContent="S"+npp[npp.length-2]+" E"+npp[npp.length-1];}' +
 'if(NEXTTHUMB){var npi=document.getElementById("npI");npi.onload=function(){npi.style.display="block";};npi.src=NEXTTHUMB;}}' +
-'else if(SIMHREF){L.textContent="Liked this?";T.textContent="Watch something similar";B.textContent="Find similar";}})();' +
+'else if(SIMHREF){L.textContent=P.liked;T.textContent=P.similar;B.textContent=P.findSimilar;}})();' +
 'function npGo(){if(isNextEp)nextEp();else if(SIMHREF){try{saveProgress();}catch(e){}location.replace(SIMHREF);}}' +
 'function checkNp(){if(!POPHREF||npDismissed||!v.duration)return;var rem=v.duration-v.currentTime;' +
 'if(rem<=180&&rem>2&&!npShown){npShown=true;paintNp();}' +
@@ -923,15 +949,15 @@ function playerPage(stream, ctx) {
 'v.addEventListener("seeked",hidePreview);v.addEventListener("playing",hidePreview);' +
 'function hitIndex(target,list){for(var n=target;n&&n!==document.body;n=n.parentNode){for(var i=0;i<list.length;i++)if(list[i]===n)return i;}return -1;}' +
 'function hitNode(target,node){for(var n=target;n&&n!==document.body;n=n.parentNode)if(n===node)return true;return false;}' +
-'document.addEventListener("mouseover",function(e){var i;if(mode==="menu"){var mis=menu.querySelectorAll(".mi");i=hitIndex(e.target,mis);if(i>=0&&i<menuItems.length){mIdx=i;paintMenu();}return;}i=hitIndex(e.target,btns);if(i>=0){mode="controls";bIdx=i;paintBtns();showBar();return;}if(hitNode(e.target,seekBar)){mode="seek";paintBtns();showBar();}else if(npShown&&hitNode(e.target,np)){npFocus=true;paintNp();}});' +
-'document.addEventListener("click",function(e){var i;if(mode==="menu"){var mis=menu.querySelectorAll(".mi");i=hitIndex(e.target,mis);if(i>=0&&i<menuItems.length){mIdx=i;paintMenu();chooseMenu();e.preventDefault();}return;}i=hitIndex(e.target,btns);if(i>=0){mode="controls";bIdx=i;paintBtns();activateButton();e.preventDefault();return;}if(hitNode(e.target,seekBar)&&v.duration){var rect=seekBar.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));mode="seek";seekTarget=v.duration*ratio;paintSeek();commitSeek();paintBtns();showBar();e.preventDefault();return;}if(npShown&&hitNode(e.target,np)){npFocus=true;paintNp();npGo();e.preventDefault();return;}if(e.target===v){mode="controls";bIdx=1;paintBtns();showBar();e.preventDefault();}});' +
+'document.addEventListener("mouseover",function(e){var i;if(mode==="menu"){var mis=menu.querySelectorAll(".mi");i=hitIndex(e.target,mis);if(i>=0&&i<menuItems.length){mIdx=i;paintMenu();}return;}i=hitIndex(e.target,btns);if(i>=0){mode="controls";bIdx=i;paintBtns();showBar();return;}if(hitNode(e.target,seekBar)){mode="seek";paintBtns();showBar();}else if(npShown&&hitNode(e.target,np)&&!hitNode(e.target,npX)){npFocus=true;paintNp();}});' +
+'document.addEventListener("click",function(e){var i;if(mode==="menu"){var mis=menu.querySelectorAll(".mi");i=hitIndex(e.target,mis);if(i>=0&&i<menuItems.length){mIdx=i;paintMenu();chooseMenu();e.preventDefault();}return;}i=hitIndex(e.target,btns);if(i>=0){mode="controls";bIdx=i;paintBtns();activateButton();e.preventDefault();return;}if(hitNode(e.target,seekBar)&&v.duration){var rect=seekBar.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));mode="seek";seekTarget=v.duration*ratio;paintSeek();commitSeek();paintBtns();showBar();e.preventDefault();return;}if(npShown&&hitNode(e.target,npX)){dismissNp();e.preventDefault();return;}if(npShown&&hitNode(e.target,np)){npFocus=true;paintNp();npGo();e.preventDefault();return;}if(e.target===v){mode="controls";bIdx=1;paintBtns();showBar();e.preventDefault();}});' +
 // ---- key handling ----
 'document.addEventListener("keydown",function(e){var k=e.keyCode,key=e.key||"";' +
 'if(k===415||key==="MediaPlay"){setPlaying(true);e.preventDefault();return;}if(k===19||key==="MediaPause"){setPlaying(false);e.preventDefault();return;}if(k===179||key==="MediaPlayPause"){tog();e.preventDefault();return;}' +
 'if(k===461||k===8||k===27){e.preventDefault();e.stopPropagation();history.back();return;}' +
 'showBar();' +
 'if(mode==="menu"){if(k===38){mIdx=Math.max(0,mIdx-1);paintMenu();}else if(k===40){mIdx=Math.min(menuItems.length-1,mIdx+1);paintMenu();}else if(k===13)chooseMenu();e.preventDefault();return;}' +
-'if(npFocus){if(k===13){npGo();}else if(k===38){npFocus=false;paintNp();mode="controls";paintBtns();}else if(k===40||k===37||k===39){npFocus=false;paintNp();}e.preventDefault();return;}' +
+'if(npFocus){if(k===13){npGo();}else if(k===38){npFocus=false;paintNp();mode="controls";paintBtns();}else if(k===40||k===37||k===39){dismissNp();}e.preventDefault();return;}' +
 'if(mode==="controls"){' +
 '  if(k===37){bIdx=Math.max(0,bIdx-1);paintBtns();}' +
 '  else if(k===39){bIdx=Math.min(btns.length-1,bIdx+1);paintBtns();}' +
@@ -958,14 +984,16 @@ function playerPage(stream, ctx) {
 function waitForServer(cb, waited) {
   waited = waited || 0;
   portUp(SERVER_PORT, function (up) {
-    if (up || waited >= 25000) return cb();
+    if (up) return cb(true);
+    if (waited === 0) startStreamingServer();
+    if (waited >= 25000) return cb(false);
     setTimeout(function () { waitForServer(cb, waited + 700); }, 700);
   });
 }
 
 var shellCache = null, shellCacheAt = 0, shellFetching = false, shellWaiters = [];
-// Fetch + inject the shell once, cache it, and fan out to anyone waiting. Pre-warmed
-// at startup so the first real request is served from memory (no app.strem.io round-trip).
+// Fetch + inject the legacy shell only when its route is requested, cache it, and fan
+// out to anyone waiting. The installed /beta interface never needs this during boot.
 function fetchShell(cb) {
   if (shellCache && (Date.now() - shellCacheAt) < 600000) return cb(shellCache);
   if (cb) shellWaiters.push(cb);
@@ -1002,29 +1030,35 @@ function sendJson(res, obj) {
 }
 var LANGS = { eng: 'English', spa: 'Spanish', fre: 'French', fra: 'French', ger: 'German', deu: 'German', ita: 'Italian', por: 'Portuguese', rus: 'Russian', ara: 'Arabic', dut: 'Dutch', nld: 'Dutch', pol: 'Polish', tur: 'Turkish', swe: 'Swedish', rum: 'Romanian', ron: 'Romanian', gre: 'Greek', heb: 'Hebrew', hin: 'Hindi', kor: 'Korean', jpn: 'Japanese', chi: 'Chinese', zho: 'Chinese', cze: 'Czech', dan: 'Danish', fin: 'Finnish', nor: 'Norwegian', hun: 'Hungarian', bul: 'Bulgarian', ukr: 'Ukrainian', srp: 'Serbian', hrv: 'Croatian', slo: 'Slovak', slv: 'Slovenian', spl: 'Spanish (LA)', pob: 'Portuguese (BR)' };
 function langName(l) { return LANGS[l] || (l ? l.toUpperCase() : 'Unknown'); }
-function fetchUrl(u, cb, depth) {
-  depth = depth || 0;
-  if (!u || depth > 5) return cb(null);
-  var lib = u.indexOf('https:') === 0 ? https : http;
+function fetchUrl(u, cb, depth, maxBytes) {
+  depth = depth || 0;maxBytes = maxBytes || 8 * 1024 * 1024;
+  var pu, done = false;
+  function finish(v) { if (done) return;done = true;cb(v); }
+  try { pu = urlmod.parse(String(u || '')); } catch (e) { return finish(null); }
+  if ((pu.protocol !== 'http:' && pu.protocol !== 'https:') || !pu.hostname || depth > 5) return finish(null);
+  var lib = pu.protocol === 'https:' ? https : http;
   var req;
-  try { req = lib.get(u, onres); } catch (e) { return cb(null); }
+  try { req = lib.get(u, onres); } catch (e) { return finish(null); }
   function onres(r) {
     if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) {
       r.resume();
       var loc = r.headers.location;
-      if (loc.indexOf('http') !== 0) { var pu = urlmod.parse(u); loc = pu.protocol + '//' + pu.host + (loc.charAt(0) === '/' ? '' : '/') + loc; }
-      return fetchUrl(loc, cb, depth + 1);
+      if (loc.indexOf('http') !== 0) loc = pu.protocol + '//' + pu.host + (loc.charAt(0) === '/' ? '' : '/') + loc;
+      done = true;return fetchUrl(loc, cb, depth + 1, maxBytes);
     }
-    var chunks = [];
-    r.on('data', function (d) { chunks.push(d); });
+    if (r.statusCode < 200 || r.statusCode >= 300) { r.resume();return finish(null); }
+    var chunks = [], total = 0;
+    r.on('data', function (d) { total += d.length;if (total > maxBytes) { try { r.destroy(); } catch (e) {}finish(null); } else chunks.push(d); });
     r.on('end', function () {
+      if (done) return;
       var buf = Buffer.concat(chunks);
       if (buf.length > 1 && buf[0] === 0x1f && buf[1] === 0x8b) { try { buf = zlib.gunzipSync(buf); } catch (e) {} }
-      cb(buf);
+      if (buf.length > maxBytes) return finish(null);
+      finish(buf);
     });
   }
-  req.on('error', function () { cb(null); });
-  req.setTimeout(12000, function () { try { req.abort(); } catch (e) {} });
+  req.on('error', function () { finish(null); });
+  req.setTimeout(12000, function () { try { req.abort(); } catch (e) {}finish(null); });
 }
 function fetchJson(u, cb) { fetchUrl(u, function (buf) { if (!buf) return cb(null); try { cb(JSON.parse(buf.toString('utf8'))); } catch (e) { cb(null); } }); }
 
@@ -1084,6 +1118,7 @@ function proxyStream(target, range, method, clientRes, orig, depth, triedFresh, 
   if (!target || depth > 6) { try { if (!clientRes.headersSent) clientRes.writeHead(502); clientRes.end(); } catch (e) {} return; }
   var pu;
   try { pu = urlmod.parse(target); } catch (e) { try { clientRes.writeHead(502); clientRes.end(); } catch (x) {} return; }
+  if ((pu.protocol !== 'http:' && pu.protocol !== 'https:') || !pu.hostname) { try { clientRes.writeHead(400);clientRes.end(); } catch (x) {}return; }
   var lib = pu.protocol === 'https:' ? https : http;
   var hdrs = { 'User-Agent': 'Stremio-TV/1.2.5', 'Accept': '*/*', 'Accept-Encoding': 'identity' };
   Object.keys(customHeaders || {}).forEach(function (k) { hdrs[k] = customHeaders[k]; });
@@ -1208,11 +1243,10 @@ function subKey(q) {
 function pruneSubcache() {
   try {
     var fl = fs.readdirSync(SUBCACHE);
-    if (fl.length <= 40) return;
-    var st = [];
-    for (var i = 0; i < fl.length; i++) { try { st.push({ f: fl[i], m: fs.statSync(path.join(SUBCACHE, fl[i])).mtimeMs }); } catch (e) {} }
+    var st = [], total = 0, maxBytes = 24 * 1024 * 1024;
+    for (var i = 0; i < fl.length; i++) { try { var si = fs.statSync(path.join(SUBCACHE, fl[i]));st.push({ f: fl[i], m: si.mtimeMs, s: si.size || 0 });total += si.size || 0; } catch (e) {} }
     st.sort(function (a, b) { return a.m - b.m; });
-    for (var j = 0; j < st.length - 40; j++) { try { fs.unlinkSync(path.join(SUBCACHE, st[j].f)); } catch (e) {} }
+    while (st.length > 40 || total > maxBytes) { var old = st.shift();if (!old) break;try { fs.unlinkSync(path.join(SUBCACHE, old.f));total -= old.s; } catch (e) {} }
   } catch (e) {}
 }
 var embJob = null; // single slot (low-RAM TV)
@@ -1633,7 +1667,7 @@ http.createServer(function (req, res) {
       else sendJson(res, j);
     });
   } else if (p === '/log') {
-    var allowedLog = ['ev', 'screen', 'quality', 'compat', 'seeders', 'code', 'ready', 'network', 't', 'playing', 'awaySec', 'tries'];
+    var allowedLog = ['ev', 'screen', 'quality', 'compat', 'seeders', 'code', 'ready', 'network', 't', 'playing', 'awaySec', 'tries', 'reason'];
     var entry = {}, lm = process.memoryUsage();
     allowedLog.forEach(function (key) { if (q[key] != null) entry[key] = safeText(q[key], 160); });
     entry.rssMiB = Math.round(lm.rss / 1048576);entry.heapMiB = Math.round(lm.heapUsed / 1048576);
@@ -1670,9 +1704,20 @@ http.createServer(function (req, res) {
       return;
     }
     var ctx = { type: q.type || '', id: q.id || '', vid: q.vid || '', back: q.back || '', streamRef: q.ref || '', meta: null };
-    function servePlayer() {
+    var playerSent = false;
+    function sendPlayer() {
+      if (playerSent) return;playerSent = true;
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(playerPage(stream, ctx));
+    }
+    function servePlayer() {
+      /* Torrent addon URLs point at the bundled Stremio server. The local UI now
+         starts much faster than the old remote shell, so the first selected source
+         can beat :11470 on a cold boot. Wait only for those sources; direct/debrid
+         URLs still open immediately. */
+      if (/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(stream.url || '')) {
+        waitForServer(function (ready) { ctx.streamServerReady = ready;sendPlayer(); });
+      } else sendPlayer();
     }
     // Fetch artwork server-side so the loading screen shows the logo/backdrop
     // immediately (no plain-text flash). Short timeout; falls back to text.
@@ -1769,7 +1814,6 @@ http.createServer(function (req, res) {
   }
 }).listen(PORT, '127.0.0.1', function () {
   dbg('listening on :' + PORT); console.log('tvserver on :' + PORT);
-  // Pre-warm the shell so the first real request is served from memory (saves the
-  // app.strem.io round-trip on launch). Runs in parallel with the streaming server boot.
-  fetchShell(function () { dbg('shell prewarmed'); });
+  // The installed application opens /beta. Keep the legacy upstream shell available
+  // on demand, but do not spend network or memory fetching it during every app boot.
 });
