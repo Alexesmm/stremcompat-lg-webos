@@ -228,7 +228,9 @@ Root access is not required. Installation uses LG's standard Developer Mode work
 
 The compressed IPK is approximately 46 MiB. The installed package uses approximately 92 MiB because the runtime and media tools are compressed inside the IPK. Remove obsolete test editions if the television has limited internal storage.
 
-A power cycle is not normally required. Restart only if webOS Dev Manager reports a successful installation but the new application does not appear or its Luna service cannot be started.
+> **Important after installing an update over an existing StremCompat build:** older LG televisions can keep the previous Luna service and local runtime alive through Quick Start+. The updated app may consequently stay on the loading screen, request reinstallation or fail to connect to its local service even though webOS Dev Manager reported a successful installation. If this happens, close the app, turn the television off, unplug it from power for at least 30 seconds, reconnect it and open StremCompat again. Reinstall the IPK only if the problem remains after this complete power cycle. This does not normally erase the Stremio account or settings stored by the app.
+
+This behavior is most commonly seen with Developer Mode updates installed over the same application ID. Merely putting the television in standby may not help because Quick Start+ can preserve the old process in memory.
 
 Developer Mode installations expire with the Developer Mode timer and may be removed by the television after expiry. Renew the timer before it reaches zero.
 
@@ -318,6 +320,7 @@ The application cannot expand the codecs or processing power available in the te
 ## Troubleshooting
 
 - Confirm that the correct application was opened. The dedicated webOS 3 edition is named `Stremio UJ3`.
+- **After updating an existing installation:** if the app no longer loads, asks to be reinstalled or cannot start its local service, close it, turn the television off, unplug it for at least 30 seconds and then reconnect it. A normal standby restart may preserve the previous runtime through Quick Start+.
 - If the whole application occupies only the upper-left portion of the television, install the matching `graphics-1280x720` package instead of changing the TV picture settings.
 - Remove superseded test editions if storage is low.
 - Verify that Developer Mode is still active.
