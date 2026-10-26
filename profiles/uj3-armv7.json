@@ -13,6 +13,7 @@
   "libraryCap": 36,
   "catalogCap": 12,
   "catalogRowsCap": 16,
+  "discoverCap": 40,
   "backdropWidth": 720,
   "backdropCache": 8,
   "backdropWorkers": 1

@@ -52,17 +52,17 @@ Use the IPK that matches both the television generation and the application grap
 
 | Build | Graphics mode | Status | Confirmed television | Platform | Application shown on TV |
 |---|---:|---|---|---|---|
-| `um4-armv7` 1.2.11 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
-| `um4-armv7-hd` 1.2.11 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
-| `uj3-native-armv7` 1.0.10 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
-| `uj3-native-armv7-hd` 1.0.10 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
+| `um4-armv7` 1.2.12 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
+| `um4-armv7-hd` 1.2.12 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
+| `uj3-native-armv7` 1.0.11 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
+| `uj3-native-armv7-hd` 1.0.11 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
 
 Release assets:
 
-- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.11.ipk`
-- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.11.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.10.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.10.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.12.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.12.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.11.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.11.ipk`
 
 First choose UJ3 for webOS 3.x or UM4 for webOS 4.x. Then choose the graphics mode:
 
@@ -160,7 +160,7 @@ The confirmed UJ3 package was tested with the official Chromium 38 snapshot. Sta
 - English first-run interface with Brazilian Portuguese selectable on the login screen or under Settings. The choice is stored on the television and remains independent from account, subtitle and audio preferences.
 - Account library, watched state and progress synchronization.
 - Account addon synchronization.
-- Addon-driven Home, Discover, Search and Library screens.
+- Addon-driven Home, Discover, Search and Library screens. Discover exposes compatible catalogs and genre options declared by the addons synchronized with the account, then loads additional pages as the user approaches the end of the grid.
 - A fixed icon-only television sidebar, an independent filterable Discover grid and metadata previews while browsing Home and Search.
 - Directional-pad and LG Magic Remote navigation designed specifically for a ten-foot television interface.
 - Catalog fault isolation: unavailable or empty addon rows are skipped without trapping remote focus or blocking the remaining Home rows.
@@ -186,6 +186,7 @@ StremCompat is intentionally optimized for televisions with old Chromium engines
 | Library items retained in memory | 60 | 30 |
 | Catalog items retained per row | 16 | 10 |
 | Addon catalog rows retained on Home | 24 | 16 |
+| Discover items retained across incremental pages | 80 | 40 |
 
 For comparison, one decoded 1920x1080 RGBA background can occupy about 8 MiB before browser and GPU overhead. Repeated full-resolution backgrounds caused memory pressure and sluggish focus movement on the target hardware. Therefore:
 
@@ -193,7 +194,8 @@ For comparison, one decoded 1920x1080 RGBA background can occupy about 8 MiB bef
 - The UM4 edition keeps higher-resolution artwork, a larger cache and more workers because the confirmed 50UM7500PSB handles that profile.
 - The UJ3 edition deliberately prefers stability over backdrop sharpness. It uses smaller artwork, fewer cached images, fewer catalog entries and a simpler low-memory transition path.
 - Only the focused item's backdrop and logo are warmed ahead of time. Neighboring full-screen backgrounds are not all decoded while the user scrolls.
-- Metadata, library and source lists are capped to prevent a large account or addon response from exhausting the television's memory.
+- Metadata, library, source and paginated Discover lists are capped per profile to prevent a large account or addon response from exhausting the television's memory.
+- Backdrop and metadata updates are delayed briefly during rapid remote navigation, and obsolete requests are ignored or cancelled before they can repaint the current selection.
 - Account, addon and artwork requests are bridged through the bundled Node.js runtime to avoid legacy browser TLS and CORS failures.
 - Video playback still uses the source selected by the user through the television's hardware-backed HTML5 media pipeline. The backdrop limits affect **interface artwork only**; they do not reduce a 1080p or 4K video's resolution.
 

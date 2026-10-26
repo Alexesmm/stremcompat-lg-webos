@@ -3,7 +3,7 @@
   "channel": "stable",
   "appId": "io.strem.tv",
   "serviceId": "io.strem.tv.server",
-  "version": "1.2.11",
+  "version": "1.2.12",
   "port": 8082,
   "graphicsResolution": "1920x1080",
   "ecmaTarget": "chrome53",
@@ -13,6 +13,7 @@
   "libraryCap": 60,
   "catalogCap": 16,
   "catalogRowsCap": 24,
+  "discoverCap": 80,
   "backdropWidth": 960,
   "backdropCache": 24,
   "backdropWorkers": 2

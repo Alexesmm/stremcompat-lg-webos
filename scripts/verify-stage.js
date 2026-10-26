@@ -43,6 +43,7 @@ if (launch.indexOf("APP_VERSION = '" + profile.version + "'") < 0 || server.inde
 if (launch.indexOf("new Service('" + profile.serviceId + "')") < 0 || launcher.indexOf('luna://' + profile.serviceId + '/start') < 0) throw new Error('Service ID mismatch.');
 if (application.indexOf("id:'" + profile.profile + "'") < 0 || shell.indexOf('UJ3_BOOT') < 0) throw new Error('Frontend profile or boot diagnostics missing.');
 if (application.indexOf('catalogRowsCap:' + profile.catalogRowsCap) < 0) throw new Error('Catalog row limit does not match profile.');
+if (application.indexOf('discoverCap:' + profile.discoverCap) < 0) throw new Error('Discover limit does not match profile.');
 if (application.indexOf("serviceId:'" + profile.serviceId + "'") < 0) throw new Error('Runtime recovery service ID does not match profile.');
 if (server.indexOf("SERVICE_ID = '" + profile.serviceId + "'") < 0) throw new Error('Player recovery service ID does not match profile.');
 if (application.indexOf('function viewportWidth()') < 0 || application.indexOf('function contentWidth()') < 0 || application.indexOf('Math.floor(contentWidth()/w)') < 0) throw new Error('Resolution-aware row layout missing.');

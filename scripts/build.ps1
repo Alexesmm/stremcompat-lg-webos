@@ -78,7 +78,7 @@ foreach ($file in $textFiles) {
 }
 
 $lowMemory = if ($config.lowMemory) { 'true' } else { 'false' }
-$profileJs = "var TV_PROFILE={id:'$($config.profile)',serviceId:'$($config.serviceId)',lowMemory:$lowMemory,sourceCap:$($config.sourceCap),libraryCap:$($config.libraryCap),catalogCap:$($config.catalogCap),catalogRowsCap:$($config.catalogRowsCap)};"
+$profileJs = "var TV_PROFILE={id:'$($config.profile)',serviceId:'$($config.serviceId)',lowMemory:$lowMemory,sourceCap:$($config.sourceCap),libraryCap:$($config.libraryCap),catalogCap:$($config.catalogCap),catalogRowsCap:$($config.catalogRowsCap),discoverCap:$($config.discoverCap)};"
 $shellPath = Join-Path $stageService 'beta-app.js'
 $shell = [System.IO.File]::ReadAllText($shellPath)
 $shell = [regex]::Replace($shell, "var TV_PROFILE=\{id:'[^']+'.*?\};", $profileJs, 1)

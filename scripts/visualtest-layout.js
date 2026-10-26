@@ -61,15 +61,18 @@ async function main() {
   var debugPort = 9300 + Math.floor(Math.random() * 400);
   var mockPort = 9700 + Math.floor(Math.random() * 400);
   var browserProfile = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-visual-'));
-  var mockCatalogs = [], mockAddon;
+  var mockCatalogs = [], mockAddon, mockRequests = [];
   for (var ci = 0; ci < 14; ci++) mockCatalogs.push({ type: 'movie', id: 'catalog-' + ci, name: 'Catalog ' + ci });
   var mockServer = http.createServer(function (req, res) {
-    var match = req.url.match(/^\/catalog\/movie\/catalog-(\d+)\.json/);
+    mockRequests.push(req.url);
+    var match = req.url.match(/^\/catalog\/movie\/catalog-(\d+)(?:\/[^?]+)?\.json/);
     if (!match) { res.writeHead(404);res.end();return; }
     var index = parseInt(match[1], 10);
     if (index === 0 || index === 2) { res.writeHead(503);res.end();return; }
-    var metas = [];
-    for (var mi = 0; mi < 3; mi++) metas.push({ id: 'visual-test:' + index + ':' + mi, type: 'movie', name: 'Catalog ' + index + ' item ' + mi });
+    var skipMatch = req.url.match(/(?:[\/?&])skip=(\d+)/), skip = skipMatch ? parseInt(skipMatch[1], 10) : 0;
+    var metas = [], count = index === 1 ? 20 : 3;
+    if (index === 1 && skip >= 60) count = 0;
+    for (var mi = 0; mi < count; mi++) metas.push({ id: 'visual-test:' + index + ':' + (skip + mi), type: 'movie', name: 'Catalog ' + index + ' item ' + (skip + mi) });
     res.writeHead(200, { 'Content-Type': 'application/json' });res.end(JSON.stringify({ metas: metas }));
   });
   await new Promise(function (resolve, reject) { mockServer.once('error', reject);mockServer.listen(mockPort, '127.0.0.1', resolve); });
@@ -158,19 +161,27 @@ async function main() {
     assert.ok(nextBoardState.card && nextBoardState.card.top >= nextBoardState.clip.top && nextBoardState.card.bottom <= height, 'Next catalog card is clipped at ' + width + 'x' + height + '.');
     var boardShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
     fs.writeFileSync(output.replace(/\.png$/i, '-board.png'), Buffer.from(boardShot.data, 'base64'));
-    var discoverItems = [];
-    for (var di = 0; di < 12; di++) discoverItems.push({ id: 'discover-test-' + di, type: 'movie', name: 'Discover item ' + di });
-    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('beta_cat_discover_movie_top_all',JSON.stringify({v:2,t:Date.now(),items:" + JSON.stringify(discoverItems) + "}));(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(37);key(40);key(39);})()" });
-    await delay(220);
-    var discoverView = await protocol.call('Runtime.evaluate', { expression: "(function(){var filters=document.querySelectorAll('#discFilters .fchip'),cards=document.querySelectorAll('#discGrid .card'),rail=document.getElementById('chipDisc'),clock=document.getElementById('clock'),clip=document.getElementById('discGridClip').getBoundingClientRect(),card=cards[0]&&cards[0].getBoundingClientRect();return JSON.stringify({screen:document.getElementById('scrDisc').className,board:document.getElementById('scrBoard').className,filters:filters.length,cards:cards.length,railWidth:rail.getBoundingClientRect().width,clock:!!clock,card:card?{top:card.top,bottom:card.bottom}:null,clip:{top:clip.top,bottom:clip.bottom}});})()", returnByValue: true });
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(37);key(40);key(39);key(39);key(13);key(40);key(13);})()" });
+    for (var discoverWait = 0; discoverWait < 25; discoverWait++) {
+      var discoverReady = await protocol.call('Runtime.evaluate', { expression: "document.querySelectorAll('#discGrid .card').length", returnByValue: true });
+      if (discoverReady.result.value >= 10) break;
+      await delay(120);
+    }
+    var discoverView = await protocol.call('Runtime.evaluate', { expression: "(function(){var filters=document.querySelectorAll('#discFilters .fchip'),cards=document.querySelectorAll('#discGrid .card'),rail=document.getElementById('chipDisc'),clock=document.getElementById('clock'),clip=document.getElementById('discGridClip').getBoundingClientRect(),card=cards[0]&&cards[0].getBoundingClientRect();return JSON.stringify({screen:document.getElementById('scrDisc').className,board:document.getElementById('scrBoard').className,filters:filters.length,cards:cards.length,catalog:filters[1]&&filters[1].textContent,railWidth:rail.getBoundingClientRect().width,clock:!!clock,card:card?{top:card.top,bottom:card.bottom}:null,clip:{top:clip.top,bottom:clip.bottom}});})()", returnByValue: true });
     var discoverState = JSON.parse(discoverView.result.value);
-    assert.ok(/\bon\b/.test(discoverState.screen), 'Discover does not use its independent screen.');
+    assert.ok(/\bon\b/.test(discoverState.screen || ''), 'Discover does not use its independent screen: ' + JSON.stringify(discoverState));
     assert.ok(!/\bon\b/.test(discoverState.board), 'Home board remained visible behind Discover.');
     assert.strictEqual(discoverState.filters, 3, 'Discover filters were not rendered.');
-    assert.ok(discoverState.cards >= 10, 'Discover grid did not render enough catalog items.');
+    assert.ok(discoverState.cards >= 10, 'Discover grid did not render enough catalog items: ' + JSON.stringify(discoverState) + ' requests=' + JSON.stringify(mockRequests.slice(-8)));
     assert.strictEqual(discoverState.clock, false, 'Legacy sidebar clock is still present.');
     assert.ok(discoverState.railWidth <= (height <= 800 ? 52 : 70), 'Sidebar item expands over the content.');
     assert.ok(discoverState.card && discoverState.card.top >= discoverState.clip.top && discoverState.card.bottom <= height, 'Discover card is clipped.');
+    assert.strictEqual(discoverState.catalog, 'Catalog 1', 'Discover did not select a synchronized addon catalog.');
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(40);key(40);key(40);})()" });
+    for (var pageWait = 0; pageWait < 20; pageWait++) {var pageReady = await protocol.call('Runtime.evaluate', { expression: "document.querySelectorAll('#discGrid .card').length", returnByValue: true });if (pageReady.result.value > 20) break;await delay(120);}
+    var pagedEval = await protocol.call('Runtime.evaluate', { expression: "document.querySelectorAll('#discGrid .card').length", returnByValue: true });
+    assert.ok(pagedEval.result.value > 20, 'Discover did not request the next addon catalog page near the end of the grid.');
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(38);key(38);key(38);key(37);})()" });
     var discoverShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
     fs.writeFileSync(output.replace(/\.png$/i, '-discover.png'), Buffer.from(discoverShot.data, 'base64'));
     await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, key: 'Enter' });
