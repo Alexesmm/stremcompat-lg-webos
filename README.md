@@ -24,8 +24,6 @@ The goal is not to claim universal support. It is to provide reproducible, testa
 
 This project is not affiliated with or endorsed by Stremio or LG Electronics. Use only addons and media sources that you are authorized to access.
 
-**Project topics:** `stremio` · `webos` · `lg-tv` · `webos-tv` · `armv7` · `smart-tv` · `legacy-hardware` · `ffmpeg` · `nodejs` · `webos-dev-manager`
-
 ## Table of contents
 
 1. [About](#about)
