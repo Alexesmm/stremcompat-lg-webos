@@ -1,7 +1,7 @@
 # StremCompat for LG webOS
 
 <p align="center">
-  <img src="docs/assets/stremcompat-hero-en.png" alt="StremCompat running on an older LG webOS television" width="1200">
+  <img src="docs/assets/stremcompat-hero-en.png" alt="StremCompat 1.1.0 home interface running on LG webOS" width="1200">
 </p>
 
 <p align="center">
