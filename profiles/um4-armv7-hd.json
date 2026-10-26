@@ -4,7 +4,7 @@
   "appId": "io.strem.tv.hd",
   "title": "Stremio HD",
   "serviceId": "io.strem.tv.hd.server",
-  "version": "1.2.10",
+  "version": "1.2.11",
   "port": 8084,
   "graphicsResolution": "1280x720",
   "ecmaTarget": "chrome53",

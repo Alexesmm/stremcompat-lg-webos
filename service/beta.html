@@ -165,20 +165,30 @@ body.series-episode #dSeasons{margin-top:24px}
 /* ---------- discover ---------- */
 #discWrap{position:absolute;top:48px;left:176px;right:48px;bottom:0}
 #discTitle{font-size:52px;font-weight:800;margin-bottom:20px}
-#discFilters{white-space:nowrap;height:66px;overflow:hidden}
-.frow{display:inline-block;white-space:nowrap;margin-right:14px}
-.fchip{display:inline-block;padding:13px 30px;margin-right:10px;border-radius:13px;font-size:25px;font-weight:600;background:rgba(255,255,255,.09);color:rgba(255,255,255,.82)}
+#discFilters{white-space:nowrap;height:66px;overflow:visible;position:relative;z-index:12}
+.frow{display:inline-block;white-space:nowrap;margin-right:14px;position:relative;vertical-align:top}
+.fchip{display:inline-block;padding:13px 54px 13px 30px;margin-right:10px;border-radius:13px;font-size:25px;font-weight:600;background:rgba(255,255,255,.09);color:rgba(255,255,255,.82);position:relative}
+.fchip:after{content:"";position:absolute;right:23px;top:50%;margin-top:-3px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid currentColor;opacity:.72}
+.fchip.open:after{border-top:0;border-bottom:7px solid currentColor}
 .fchip.cur{background:rgba(140,92,255,.4);color:#fff}
 .fchip.f{background:#fff;color:#0c0b11}
+.fmenu{position:absolute;left:0;top:58px;min-width:270px;padding:8px;background:rgba(15,13,29,.99);border:1px solid rgba(166,137,255,.26);border-radius:13px;box-shadow:0 14px 38px rgba(0,0,0,.58);z-index:20;box-sizing:border-box}
+.fopt{position:relative;padding:14px 40px 14px 18px;border-radius:9px;font-size:23px;color:rgba(255,255,255,.86)}
+.fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#8c5cff}
+.fopt.f{background:#fff;color:#0c0b11}
 #discGridClip{position:absolute;top:142px;left:-7px;right:0;bottom:0;overflow:hidden;padding:7px}
 #discGrid{transition:transform .2s ease}
 #discGrid .card{margin-bottom:24px}
 
 /* ---------- search ---------- */
 #sWrap{position:absolute;top:58px;left:176px;right:48px;bottom:0}
-#sBox{width:940px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none}
+#sBox{width:760px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none;box-sizing:border-box}
 #sBox.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
 #sHint{margin-top:16px;font-size:25px;color:rgba(255,255,255,.58)}
+#sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
+#spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#bda6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spDesc{margin-top:9px;font-size:20px;line-height:1.35;color:rgba(255,255,255,.72);max-height:54px;overflow:hidden}
 #sRowsClip{position:absolute;top:156px;left:0;right:0;bottom:0;overflow:hidden}
 #sRows{position:absolute;top:0;left:-48px;right:0;padding-top:26px}
 
@@ -267,8 +277,14 @@ body.series-episode #dSeasons{margin-top:24px}
   #simWrap,#discWrap,#sWrap,#lWrap,#setWrap,#aWrap{top:30px;left:112px;right:30px}
   #discTitle{font-size:34px;margin-bottom:12px}
   #discFilters{height:47px}
-  .frow{margin-right:8px}.fchip{padding:9px 18px;margin-right:7px;border-radius:9px;font-size:18px}
+  .frow{margin-right:8px}.fchip{padding:9px 38px 9px 18px;margin-right:7px;border-radius:9px;font-size:18px}.fchip:after{right:16px;border-left-width:5px;border-right-width:5px;border-top-width:6px}.fchip.open:after{border-top:0;border-bottom-width:6px}
+  .fmenu{top:42px;min-width:190px;padding:6px;border-radius:9px}.fopt{padding:10px 31px 10px 13px;font-size:17px}.fopt.cur:after{right:13px;width:7px;height:7px;margin-top:-4px}
   #discGridClip{top:92px}
+  #sBox{width:500px;padding:15px 21px;font-size:23px;border-radius:10px}
+  #sHint{margin-top:9px;font-size:17px}
+  #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
+  #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
+  #sRowsClip{top:110px}
   #dEps{height:224px;margin-top:12px;padding:5px 5px 0}
   .ep{width:287px;height:202px;margin-right:16px;border-radius:9px}
   .ep .th{width:287px;height:161px;border-radius:8px}.ep .th img{border-radius:8px}
@@ -361,6 +377,7 @@ body.series-episode #dSeasons{margin-top:24px}
   <div id="sWrap">
     <input id="sBox" placeholder="Search movies and series">
     <div id="sHint">Press OK to type, then press Down to browse results</div>
+    <div id="sPreview"><div id="spTitle"></div><div id="spMeta"></div><div id="spDesc"></div></div>
     <div id="sRowsClip"><div id="sRows"></div></div>
   </div>
 </div>

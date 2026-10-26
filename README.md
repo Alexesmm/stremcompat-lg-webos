@@ -18,7 +18,7 @@
 
 StremCompat is an unofficial, remote-friendly Stremio compatibility client for older LG televisions that are not supported by the current LG Content Store application. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access, Homebrew Channel or a permanent system modification.
 
-The project provides separately optimized builds for incompatible webOS generations and for both webOS-supported application graphics modes, 1920x1080 and 1280x720. The 1280x720 editions are the 720p/HD interface builds and also cover LG televisions with physical 1366x768 panels. StremCompat combines a lightweight television interface, a verified ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account and addon synchronization, source filtering and native hardware-backed HTML5 playback.
+The project provides separately optimized builds for incompatible webOS generations and for both webOS-supported application graphics modes, 1920x1080 and 1280x720. The 1280x720 editions are the 720p/HD interface builds and also cover LG televisions with physical 1366x768 panels. StremCompat combines its own lightweight, remote-first television interface with a verified ARMv7 Node.js runtime, FFmpeg tools, a local compatibility server, account and addon synchronization, source filtering and native hardware-backed HTML5 playback.
 
 The goal is not to claim universal support. It is to provide reproducible, testable ports for legacy LG hardware and clearly distinguish physically confirmed televisions from compatibility candidates.
 
@@ -48,21 +48,21 @@ This project is not affiliated with or endorsed by Stremio or LG Electronics. Us
 
 ## Downloads
 
-Use the IPK that matches both the television generation and the application graphics mode. StremCompat 1.0.4 publishes four clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
+Use the IPK that matches both the television generation and the application graphics mode. StremCompat 1.1.0 publishes four clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
 
 | Build | Graphics mode | Status | Confirmed television | Platform | Application shown on TV |
 |---|---:|---|---|---|---|
-| `um4-armv7` 1.2.7 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
-| `um4-armv7-hd` 1.2.7 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
-| `uj3-native-armv7` 1.0.6 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
-| `uj3-native-armv7-hd` 1.0.6 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
+| `um4-armv7` 1.2.11 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
+| `um4-armv7-hd` 1.2.11 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
+| `uj3-native-armv7` 1.0.10 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
+| `uj3-native-armv7-hd` 1.0.10 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
 
 Release assets:
 
-- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.7.ipk`
-- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.7.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.6.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.6.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.11.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.11.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.10.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.10.ipk`
 
 First choose UJ3 for webOS 3.x or UM4 for webOS 4.x. Then choose the graphics mode:
 
@@ -161,6 +161,8 @@ The confirmed UJ3 package was tested with the official Chromium 38 snapshot. Sta
 - Account library, watched state and progress synchronization.
 - Account addon synchronization.
 - Addon-driven Home, Discover, Search and Library screens.
+- A fixed icon-only television sidebar, an independent filterable Discover grid and metadata previews while browsing Home and Search.
+- Directional-pad and LG Magic Remote navigation designed specifically for a ten-foot television interface.
 - Catalog fault isolation: unavailable or empty addon rows are skipped without trapping remote focus or blocking the remaining Home rows.
 - Quality filters for 4K, 1440p, 1080p, 720p, SD and unknown quality.
 - Duplicate source removal.
@@ -336,7 +338,7 @@ Users do not need to create a Release. They only download the matching IPK from 
 
 ## What StremCompat adds
 
-StremCompat is an independent compatibility and integration project for running a modern Stremio experience on older LG webOS televisions. It is not merely a renamed or repackaged copy of one upstream project. Its purpose is to turn several useful pieces of prior community work into television-specific ports that can actually boot, sign in, load addons and play media within the limits of legacy LG hardware.
+StremCompat is an independent compatibility and integration project for running a modern Stremio experience on older LG webOS televisions. It is not merely a renamed or repackaged copy of one upstream project. Its current interface is developed specifically for StremCompat and for remote-controlled legacy televisions. The project combines that interface with carefully adapted bootstrap and runtime components so the resulting ports can actually boot, sign in, load addons and play media within the limits of legacy LG hardware.
 
 The project adds and maintains:
 
@@ -345,14 +347,15 @@ The project adds and maintains:
 - An ES5/Chromium 38 adaptation for webOS 3.x, including startup diagnostics and an embedded interface fallback.
 - Account, addon, metadata, artwork, protected-stream and HLS bridges that avoid legacy browser TLS and CORS limitations.
 - A remote-control television interface with source quality filters, duplicate removal and seeder-aware sorting.
+- A custom low-memory UI with a fixed sidebar, filterable Discover view, contextual metadata previews and horizontal episode browsing.
 - Native hardware-backed television playback with subtitles, audio-track selection, resume and watched-state synchronization.
 - Different memory, artwork and catalog profiles for webOS 3.x and 4.x televisions.
 - Automated package checks plus documented physical-device validation and compatibility reporting.
 
-That integration, legacy-browser engineering, device profiling, packaging and testing are the reason StremCompat exists. The upstream projects remain important foundations and are credited below; StremCompat is the maintained compatibility layer that connects and adapts them for specific older LG televisions.
+That interface work, integration, legacy-browser engineering, device profiling, packaging and testing are the reason StremCompat exists. The upstream projects remain important technical foundations and are credited below; StremCompat is the maintained compatibility client that connects and adapts them for specific older LG televisions.
 
 ## Credits and licensing
 
-StremCompat builds on earlier community research and third-party runtime components. The packaged-app bootstrap began from [kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos), which in turn states that its television interface was built from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The bundled local runtime approach was adapted from [StremioBrew](https://github.com/simussu9-wq/stremiobrew). Stremio, Node.js, FFmpeg and LG webOS tooling are also used or interoperated with.
+The current StremCompat television interface is maintained within this project. Its packaged-app bootstrap began from [kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos); that repository identifies [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv) in its earlier interface lineage. The bundled local runtime approach was adapted from [StremioBrew](https://github.com/simussu9-wq/stremiobrew). Stremio, Node.js, FFmpeg and LG webOS tooling are also used or interoperated with.
 
 See [NOTICE.md](NOTICE.md) for the project lineage and the current redistribution caveats, and [THIRD_PARTY.md](THIRD_PARTY.md) for component-level provenance. No repository-wide open-source license is currently asserted while inherited source without a published license remains in the tree. Third-party names, trademarks, binaries and source code remain subject to their respective licenses and terms.

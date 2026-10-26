@@ -650,7 +650,7 @@ function playerPage(stream, ctx) {
 '#seek.f #knob{width:28px;height:28px;margin:-14px 0 0 -14px;box-shadow:0 2px 16px rgba(0,0,0,.7),0 0 0 7px rgba(140,92,255,.65)}' +
 '#seek.seeking{height:8px}' +
 '#seek.seeking #knob{width:26px;height:26px;margin:-13px 0 0 -13px;box-shadow:0 2px 16px rgba(0,0,0,.7),0 0 0 7px rgba(140,92,255,.55)}' +
-'#time{font-size:26px;font-variant-numeric:tabular-nums;opacity:.92;white-space:nowrap;padding-left:4px}' +
+'#time{font-size:26px;font-variant-numeric:tabular-nums;opacity:.92;white-space:nowrap;margin-left:48px}' +
 '#row{position:relative;height:104px;margin-top:20px}' +
 '#ctr{position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;align-items:center;gap:40px}' +
 '#rgt{position:absolute;right:0;top:8px;display:flex;align-items:center;gap:24px}' +
