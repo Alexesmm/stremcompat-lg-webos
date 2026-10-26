@@ -1,0 +1,102 @@
+name: Television compatibility report
+description: Submit a structured physical-device result for the compatibility documentation
+title: "[Compatibility]: "
+labels:
+  - compatibility
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for a completed physical-TV test that can update compatibility documentation or code. Use Discussions if you still need installation help or have not finished testing.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Test confirmation
+      options:
+        - label: I tested this on the physical television named below.
+          required: true
+        - label: I used the package matching the webOS generation and graphics mode.
+          required: true
+        - label: I removed passwords, tokens and active pairing codes from all evidence.
+          required: true
+  - type: input
+    id: model
+    attributes:
+      label: Complete LG television model
+      description: Include the regional suffix.
+      placeholder: 50UM7500PSB
+    validations:
+      required: true
+  - type: input
+    id: webos
+    attributes:
+      label: Full webOS TV version
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: Exact IPK filename
+    validations:
+      required: true
+  - type: input
+    id: storage
+    attributes:
+      label: Available internal storage before installation
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Overall result
+      options:
+        - Fully working
+        - Partially working
+        - Does not start
+        - Does not install
+    validations:
+      required: true
+  - type: checkboxes
+    id: tests
+    attributes:
+      label: Functions tested successfully
+      options:
+        - label: Installation
+        - label: Startup
+        - label: Account login or pairing
+        - label: Home catalogs
+        - label: Discover, Search and Library
+        - label: Directional remote navigation
+        - label: Magic Remote pointer
+        - label: Addon synchronization and source list
+        - label: H.264 video with AAC or AC3 audio
+        - label: Subtitles and audio-track controls
+  - type: dropdown
+    id: layout
+    attributes:
+      label: Interface layout
+      options:
+        - Correctly fills the screen
+        - Confined to the upper-left area
+        - Clipped or affected by overscan
+        - Other layout problem
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Result details
+      description: Describe everything that failed, including the exact screen and complete error code.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Photographs or safe logs
+      description: Photographs of the TV information and result are useful. Remove private account information and active pairing codes.

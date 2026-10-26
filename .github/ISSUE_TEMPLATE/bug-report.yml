@@ -1,0 +1,112 @@
+name: Bug report
+description: Report a reproducible StremCompat defect that may require a code change
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use Discussions for installation help and uncertain behavior. Continue here when the problem is reproducible and may require a project change. Never include passwords, tokens or an active pairing QR code.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing Issues and Discussions for this problem.
+          required: true
+        - label: I selected the package matching both my webOS generation and graphics mode.
+          required: true
+        - label: If this started after an update, I unplugged the television for at least 30 seconds and tested again.
+          required: true
+        - label: I removed passwords, tokens, cookies and active pairing codes from this report.
+          required: true
+  - type: input
+    id: model
+    attributes:
+      label: Complete LG television model
+      description: Include the screen size and regional suffix, for example 49UJ6565-SB.
+      placeholder: 49UJ6565-SB
+    validations:
+      required: true
+  - type: input
+    id: webos
+    attributes:
+      label: webOS TV version
+      placeholder: 3.9.3-6280413 (dreadlocks2-dudhwa)
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      placeholder: 05.40.97
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: Exact IPK filename
+      description: Include the generation, graphics resolution and version from the downloaded filename.
+      placeholder: StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.11.ipk
+    validations:
+      required: true
+  - type: input
+    id: storage
+    attributes:
+      label: Available internal storage
+      placeholder: 310 MB
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Where does the problem occur?
+      options:
+        - Installation
+        - Startup or loading
+        - Login or pairing
+        - Home, Discover, Search or Library
+        - Addons or source selection
+        - Video, audio or subtitles
+        - Remote or pointer navigation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the shortest reliable sequence that triggers the problem.
+      placeholder: |
+        1. Open StremCompat
+        2. Select ...
+        3. Press ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include the complete UJ3_BOOT, UJ3_ASSET or other visible error code.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Add a photograph, safe log excerpt or source characteristics when relevant. Remove private account data first.
+  - type: textarea
+    id: regression
+    attributes:
+      label: Last version known to work
+      description: Complete this when the problem is a regression; otherwise write "Not known".
+      placeholder: v1.0.0 / Not known
+    validations:
+      required: true

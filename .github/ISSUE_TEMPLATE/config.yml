@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Installation help and general questions
+    url: https://github.com/Alexesmm/stremcompat-lg-webos/discussions/categories/q-a
+    about: Ask for help choosing a package, installing it or diagnosing behavior that is not yet reproducible.
+  - name: Ideas and feature proposals
+    url: https://github.com/Alexesmm/stremcompat-lg-webos/discussions/categories/ideas
+    about: Discuss a proposal and its compatibility impact before it becomes an implementation issue.
+  - name: Releases and downloads
+    url: https://github.com/Alexesmm/stremcompat-lg-webos/releases
+    about: Download the IPK matching the television generation and graphics mode.

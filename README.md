@@ -203,6 +203,8 @@ This tuning cannot add codec support or processing power that the firmware does 
 
 Use [GitHub Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions) for installation questions, compatibility results and general feedback. Use [GitHub Issues](https://github.com/Alexesmm/stremcompat-lg-webos/issues) for reproducible defects that require a code change.
 
+Before opening a report or pull request, read [CONTRIBUTING.md](CONTRIBUTING.md). The repository provides separate Issue forms for reproducible bugs and completed physical-TV compatibility tests. Ideas, early test results and support requests belong in Discussions so that Issues remain an actionable engineering queue. Security-sensitive reports must follow [SECURITY.md](SECURITY.md) and must never be posted publicly.
+
 Include the following information in every television report:
 
 - Complete television model and regional suffix.
