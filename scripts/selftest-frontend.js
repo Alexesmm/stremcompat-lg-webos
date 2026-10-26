@@ -132,6 +132,9 @@ qualities.forEach(function (quality) {
 });
 assert.ok(source.indexOf("location.assign('/play?u='") < 0, 'beta player fallback leaked a source URL into browser history');
 assert.ok(source.indexOf('self.poll=setInterval') < 0, 'QR polling still allows overlapping interval requests');
+assert.ok(source.indexOf("if(this.type!=='series')this.addBtn(tx('watch')") >= 0, 'movie details do not expose an explicit Watch action');
+assert.ok(source.indexOf("$('dPoster')._detailId===this.id") >= 0, 'detail poster is not tied to the current title');
+assert.ok(source.indexOf('detail.meta===m&&detail.id===mediaId') >= 0, 'late detail artwork can overwrite the current title');
 var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
   { addon:'Other',quality:'1080p',title:'H264 AAC',seeders:900,compatRank:0 },
   { addon:'Torrentio',quality:'4K',title:'HEVC 10bit DDP WEB-DL',seeders:20,compatRank:0 },

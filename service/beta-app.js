@@ -943,7 +943,10 @@ seasons:[],seasonIdx:0,eps:[],epIdx:0,epEls:[],seasonEls:[],watchedMap:{},
 enter:function(p){
   this.type=p.type;this.id=p.id;this.vid=p.vid||null;this.zone='btns';this.btnIdx=0;this.meta=null;this.watchedMap={};
   $('dTitle').textContent='';$('dDesc').textContent='';$('dMeta').textContent='';$('dInfo').innerHTML='';
-  $('dLogo').style.display='none';$('dPoster').style.display='none';$('dBtns').innerHTML='';
+  /* Reused image nodes must be cleared before the next metadata request. Otherwise
+     paint() can reveal the previous title while the replacement is still loading. */
+  $('dLogo').style.display='none';$('dLogo').src=BLANK_IMG;
+  $('dPoster').style.display='none';$('dPoster').src=BLANK_IMG;$('dPoster')._detailId='';$('dBtns').innerHTML='';
   $('dSeasons').style.display='none';$('dEps').style.display='none';
   var self=this;
   getMeta(this.type,this.id,function(m){
@@ -974,9 +977,10 @@ render:function(){
   var m=this.meta;
   $('dTitle').textContent=m.name||'';
   var lg=$('dLogo');
-  if(m.logo){var im=new Image();im.onload=function(){lg.src=m.logo;lg.style.display='block';$('dTitle').style.display='none';};im.src=m.logo;}
+  var mediaId=this.id;
+  if(m.logo){var im=new Image();im.onload=function(){if(detail.meta===m&&detail.id===mediaId){lg.src=m.logo;lg.style.display='block';$('dTitle').style.display='none';}};im.src=m.logo;}
   else{$('dTitle').style.display='block';}
-  if(m.poster){var pi=new Image();pi.onload=function(){if(detail.meta===m&&detail.zone!=='eps'){$('dPoster').src=m.poster;$('dPoster').style.display='block';}};pi.src=m.poster;}
+  if(m.poster){var pi=new Image();pi.onload=function(){if(detail.meta===m&&detail.id===mediaId){var dp=$('dPoster');dp.src=m.poster;dp._detailId=mediaId;if(detail.zone!=='eps')dp.style.display='block';}};pi.src=m.poster;}
   var bits=[];if(m.releaseInfo||m.year)bits.push(m.releaseInfo||m.year);if(m.runtime)bits.push(m.runtime);
   if(m.genres&&m.genres.length)bits.push(m.genres.slice(0,3).join(' · '));
   var rate=m.imdbRating?('<span class="drating">★ '+esc(m.imdbRating)+'</span>&nbsp;&nbsp;·&nbsp;&nbsp;'):'';
@@ -994,7 +998,9 @@ render:function(){
   var bt=$('dBtns');bt.innerHTML='';this.btnEls=[];this.btnActs=[];var self=this;
   this.loadWatched();
   if(this.type==='series')this.buildSeasons();
-  /* streams auto-open on the right, so no Play/Episodes buttons — just extras */
+  /* Movies keep an explicit primary action even though sources auto-open. If the
+     viewer dismisses the panel, Watch remains focused and makes recovery obvious. */
+  if(this.type!=='series')this.addBtn(tx('watch'),function(){self.openStreams(self.id);});
   var hasTr=(m.trailers&&m.trailers.length)||(m.trailerStreams&&m.trailerStreams.length);
   if(hasTr)this.addBtn(tx('trailer'),function(){self.playTrailer();});
   this.addBtn(tx('similar'),function(){goScr('sim',{type:self.type,id:self.id,name:m.name});});
@@ -1089,7 +1095,8 @@ paint:function(){
     if(cv&&cv.thumbnail)setBg(cv.thumbnail);else if(this.meta)setBg(this.meta.background||'');}
   else{bodyRemove('series-episode');$('dBtns').style.display='block';$('dDesc').style.display='block';$('dInfo').style.display='block';
     $('dMeta').innerHTML=this.baseMeta;$('dInfo').innerHTML=this.baseInfo;$('dDesc').textContent=this.baseDesc;
-    $('dPoster').style.display=(!this.meta||!this.meta.poster)?'none':'block';if(this.meta)setBg(this.meta.background||bgOf({id:this.id,poster:this.meta.poster}));}
+    var posterReady=this.meta&&this.meta.poster&&$('dPoster')._detailId===this.id;
+    $('dPoster').style.display=posterReady?'block':'none';if(this.meta)setBg(this.meta.background||bgOf({id:this.id,poster:this.meta.poster}));}
 },
 openStreams:function(vid){streamsUI.show(this.type,this.id,vid,this.meta&&this.meta.name);},
 key:function(k){
