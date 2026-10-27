@@ -118,6 +118,7 @@ function accountStorage() {
 
 var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
 assert.strictEqual(typeof firstRun.context.__STREMIO_RESUME_CHECK__, 'function', 'runtime resume recovery hook is missing');
+assert.strictEqual(typeof firstRun.context.__STREMIO_MANUAL_RECOVER__, 'function', 'manual recovery hook is missing');
 assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__STREMIO_STREAM_COMPAT__({ title: 'AV1 2160p' }))), { labels: ['AV1'], rank: 3 });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__STREMIO_STREAM_COMPAT__({ title: 'Dolby Vision HDR10 HEVC Main10 DTS' }))), { labels: ['Dolby Vision', 'HEVC 10-bit', 'DTS'], rank: 0 });
 var manySources = [], qualities = ['4K', '1080p', '720p', 'SD', 'Other'];
@@ -135,6 +136,8 @@ assert.ok(source.indexOf('self.poll=setInterval') < 0, 'QR polling still allows 
 assert.ok(source.indexOf("if(this.type!=='series')this.addBtn(tx('watch')") >= 0, 'movie details do not expose an explicit Watch action');
 assert.ok(source.indexOf("$('dPoster')._detailId===this.id") >= 0, 'detail poster is not tied to the current title');
 assert.ok(source.indexOf('detail.meta===m&&detail.id===mediaId') >= 0, 'late detail artwork can overwrite the current title');
+assert.ok(source.indexOf('function queuePointerHover(target)') >= 0, 'Magic Remote hover navigation is not debounced');
+assert.ok(source.indexOf("def.k==='__reload'") >= 0, 'Settings recovery action is not wired');
 var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
   { addon:'Other',quality:'1080p',title:'H264 AAC',seeders:900,compatRank:0 },
   { addon:'Torrentio',quality:'4K',title:'HEVC 10bit DDP WEB-DL',seeders:20,compatRank:0 },
@@ -147,6 +150,13 @@ assert.strictEqual(firstRun.context.localStorage.getItem('uiLanguage'), 'pt-BR',
 assert.strictEqual(firstRun.get('chipSearch').querySelector('.navlabel').textContent, 'Buscar', 'language change was not applied immediately');
 run(unavailableStorage(), 'scrLogin');
 run(accountStorage(), 'scrBoard');
+var animeRun = run(memoryStorage({
+  user: JSON.stringify({ _id: 'anime-user', email: 'anime@example.com' }),
+  authKey: JSON.stringify('anime-auth-key'),
+  addons: JSON.stringify([{ transportUrl: 'https://anime.example/manifest.json', manifest: { id: 'anime.test', name: 'Anime Test', catalogs: [{ type: 'anime', id: 'popular', name: 'Popular Anime' }] } }])
+}), 'scrBoard');
+var discoverTypes = JSON.parse(JSON.stringify(animeRun.context.__STREMIO_DISCOVER_TYPES__()));
+assert.ok(discoverTypes.some(function (type) { return type.value === 'anime' && type.label === 'Anime'; }), 'Discover did not expose an installed anime catalog type');
 run(memoryStorage({ uiLanguage: 'pt-BR' }), 'scrLogin', null, 'pt-BR');
 run(memoryStorage({ uiLanguage: 'unsupported-locale' }), 'scrLogin', null, 'en-US');
 run(emptyStorage(), 'scrLogin', { lgEmail: true, lgPass: true });

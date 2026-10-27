@@ -46,7 +46,7 @@ var UI_TEXT={
   'en-US':{
     navSearch:'Search',navHome:'Home',navDiscover:'Discover',navLibrary:'Library',navAddons:'Addons',navSettings:'Settings',
     searchPlaceholder:'Search movies and series',searchHint:'Press OK to type, then press Down to browse results',searching:'Searching…',noResults:'No results for “{0}”',
-    movies:'Movies',series:'Series',movie:'Movie',seriesOne:'Series',other:'Other',all:'All',recent:'Recent',discoverTitle:'Discover',popular:'Popular',topRated:'Top rated',allGenres:'All genres',
+    movies:'Movies',series:'Series',anime:'Anime',movie:'Movie',seriesOne:'Series',other:'Other',all:'All',recent:'Recent',discoverTitle:'Discover',popular:'Popular',topRated:'Top rated',allGenres:'All genres',
     popularMovies:'Popular · Movies',popularSeries:'Popular · Series',topMovies:'Top rated · Movies',topSeries:'Top rated · Series',trendingMovies:'Trending · Movies',trendingSeries:'Trending · Series',
     continueWatching:'Continue watching',emptyLibrary:'Your library is empty.<br>Hold OK on a title to add it here.',
     loadingTrailer:'Loading trailer…',trailerUnavailable:'Trailer unavailable',noTrailer:'No trailer available',
@@ -55,7 +55,7 @@ var UI_TEXT={
     similar:'Similar',similarTo:'More like {0}',findingSimilar:'Finding similar titles…',nothingFound:'Nothing found.',couldNotLoad:'Could not load title',
     cast:'Cast',director:'Director',writers:'Writers',country:'Country',awards:'Awards',specials:'Specials',season:'Season {0}',episode:'Episode {0}',seasonEpisode:'Season {0} · Episode {1}',
     sources:'Sources',findingSources:'Finding sources…',noSources:'No sources found.',noSourcesQuality:'No sources in this quality.',lastSource:'Last source',continuePlayback:'Continue playback',sameSource:'The same source used previously',seeders:'seeders',compatibilityCheck:'Check compatibility: {0}',sourcePrepareFailed:'Could not prepare this source. Please try again.',runtimeRestoring:'Restoring the local service…',runtimeUnavailable:'Could not restore the local service',
-    interfaceGroup:'Interface',interfaceLanguage:'Interface language',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Language: {0}  ‹ ›',
+    interfaceGroup:'Interface',interfaceLanguage:'Interface language',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Language: {0}  ‹ ›',maintenanceGroup:'Recovery',reloadApp:'Reload StremCompat',reloadingApp:'Reloading StremCompat…',
     sourceGroup:'Sources',preferredQuality:'Preferred quality',automatic:'Automatic',subtitlesGroup:'Subtitles',subtitleSize:'Subtitle size',defaultLanguage:'Default language',subtitleColor:'Subtitle color',subtitleOutline:'Subtitle outline',subtitleBackground:'Subtitle background',embeddedSubtitles:'Embedded subtitles',
     audioGroup:'Audio',autoAudio:'Select audio automatically',defaultAudio:'Default audio language',playbackGroup:'Playback',seekInterval:'Seek interval',nextEpisode:'Play next episode',backgroundTrailers:'Background trailers',scrubPreview:'Seek preview',addonsGroup:'Addons',addonsHelp:'Addons synchronized with your Stremio account',syncAddons:'Sync addons now',syncShort:'Sync',noAddons:'No addons are installed in this account.',accountGroup:'Account',signOut:'Sign out',
     disabled:'Disabled',enabled:'Enabled',white:'White',yellow:'Yellow',cyan:'Cyan',black:'Black',none:'None',solid:'Solid',transparent:'Transparent',extractRecommended:'Extract (recommended)',tvNative:'TV native',
@@ -67,7 +67,7 @@ var UI_TEXT={
   'pt-BR':{
     navSearch:'Buscar',navHome:'Início',navDiscover:'Descobrir',navLibrary:'Biblioteca',navAddons:'Addons',navSettings:'Ajustes',
     searchPlaceholder:'Buscar filmes e séries',searchHint:'Pressione OK para digitar e seta para baixo para ver resultados',searching:'Buscando…',noResults:'Nenhum resultado para “{0}”',
-    movies:'Filmes',series:'Séries',movie:'Filme',seriesOne:'Série',other:'Outras',all:'Todas',recent:'Recente',discoverTitle:'Descobrir',popular:'Populares',topRated:'Mais bem avaliados',allGenres:'Todos os gêneros',
+    movies:'Filmes',series:'Séries',anime:'Anime',movie:'Filme',seriesOne:'Série',other:'Outras',all:'Todas',recent:'Recente',discoverTitle:'Descobrir',popular:'Populares',topRated:'Mais bem avaliados',allGenres:'Todos os gêneros',
     popularMovies:'Populares · Filmes',popularSeries:'Populares · Séries',topMovies:'Mais bem avaliados · Filmes',topSeries:'Mais bem avaliadas · Séries',trendingMovies:'Em alta · Filmes',trendingSeries:'Em alta · Séries',
     continueWatching:'Continuar assistindo',emptyLibrary:'Sua biblioteca está vazia.<br>Segure OK em um título para adicioná-lo aqui.',
     loadingTrailer:'Carregando trailer…',trailerUnavailable:'Trailer indisponível',noTrailer:'Trailer indisponível',
@@ -76,7 +76,7 @@ var UI_TEXT={
     similar:'Parecidos',similarTo:'Parecidos com {0}',findingSimilar:'Buscando títulos parecidos…',nothingFound:'Nada encontrado.',couldNotLoad:'Não foi possível carregar o título',
     cast:'Elenco',director:'Direção',writers:'Roteiro',country:'País',awards:'Prêmios',specials:'Especiais',season:'Temporada {0}',episode:'Episódio {0}',seasonEpisode:'Temporada {0} · Episódio {1}',
     sources:'Fontes',findingSources:'Buscando fontes…',noSources:'Nenhuma fonte encontrada.',noSourcesQuality:'Nenhuma fonte nesta qualidade.',lastSource:'Última fonte',continuePlayback:'Continuar reprodução',sameSource:'A mesma fonte usada anteriormente',seeders:'seeders',compatibilityCheck:'Verifique a compatibilidade: {0}',sourcePrepareFailed:'Não foi possível preparar esta fonte. Tente novamente.',runtimeRestoring:'Restaurando o serviço local…',runtimeUnavailable:'Não foi possível restaurar o serviço local',
-    interfaceGroup:'Interface',interfaceLanguage:'Idioma da interface',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Idioma: {0}  ‹ ›',
+    interfaceGroup:'Interface',interfaceLanguage:'Idioma da interface',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Idioma: {0}  ‹ ›',maintenanceGroup:'Recuperação',reloadApp:'Recarregar StremCompat',reloadingApp:'Recarregando o StremCompat…',
     sourceGroup:'Fontes',preferredQuality:'Qualidade preferida',automatic:'Automática',subtitlesGroup:'Legendas',subtitleSize:'Tamanho da legenda',defaultLanguage:'Idioma padrão',subtitleColor:'Cor da legenda',subtitleOutline:'Contorno da legenda',subtitleBackground:'Fundo da legenda',embeddedSubtitles:'Legendas incorporadas',
     audioGroup:'Áudio',autoAudio:'Selecionar áudio automaticamente',defaultAudio:'Idioma de áudio padrão',playbackGroup:'Reprodução',seekInterval:'Intervalo de avanço',nextEpisode:'Reproduzir próximo episódio',backgroundTrailers:'Trailers em segundo plano',scrubPreview:'Prévia ao avançar',addonsGroup:'Addons',addonsHelp:'Addons sincronizados com sua conta Stremio',syncAddons:'Sincronizar addons agora',syncShort:'Sincronizar',noAddons:'Nenhum addon instalado nesta conta.',accountGroup:'Conta',signOut:'Sair',
     disabled:'Desativado',enabled:'Ativado',white:'Branco',yellow:'Amarelo',cyan:'Ciano',black:'Preto',none:'Nenhum',solid:'Sólido',transparent:'Transparente',extractRecommended:'Extrair (recomendado)',tvNative:'Nativo da TV',
@@ -133,6 +133,22 @@ function runtimeRecover(){if(runtimeRecovering)return;runtimeRecovering=true;run
     check();});
 });}
 window.__STREMIO_RESUME_CHECK__=runtimeRecover;
+function reloadUi(){var url='/beta?recover='+(Date.now());try{location.replace(url);}catch(e){try{location.reload();}catch(ignore){runtimeRecovering=false;}}}
+function clearTemporaryUiState(){var keys=storageKeys(),kill=[],i;
+  stopIdleTrailer();
+  try{if(disc&&disc.request&&disc.request.abort)disc.request.abort();if(disc){disc.gen++;disc.request=null;disc.loading=false;}}catch(e){}
+  try{if(search&&search.requests){for(i=0;i<search.requests.length;i++)if(search.requests[i]&&search.requests[i].abort)search.requests[i].abort();search.requests=[];search.gen++;}}catch(e){}
+  metaMem={};metaMemOrder=[];warmed={};warmedN=0;
+  for(i=0;i<keys.length;i++)if(keys[i].indexOf('beta_cat_')===0||keys[i].indexOf('beta_meta_')===0||keys[i].indexOf('beta_discover_v3_')===0)kill.push(keys[i]);
+  for(i=0;i<kill.length;i++)try{localStorage.removeItem(kill[i]);}catch(ignore){}
+}
+function manualRecover(){if(runtimeRecovering)return;runtimeRecovering=true;toast(tx('reloadingApp'));clientDiag('manual_reload',{reason:'settings'});clearTemporaryUiState();runtimePing(function(up){
+  if(up){setTimeout(reloadUi,80);return;}
+  clientDiag('manual_restart',{});runtimeStart(function(){var tries=0;
+    function check(){runtimePing(function(ok){if(ok){clientDiag('manual_recovered',{tries:tries});reloadUi();return;}tries++;if(tries<20){setTimeout(check,500);return;}runtimeRecovering=false;toast(tx('runtimeUnavailable'));clientDiag('manual_failed',{tries:tries});});}
+    check();});
+});}
+window.__STREMIO_MANUAL_RECOVER__=manualRecover;
 function isImdb(id){return String(id||'').indexOf('tt')===0;}
 function posterOf(it){if(it.poster)return it.poster;return isImdb(it.id)?('https://images.metahub.space/poster/small/'+it.id+'/img'):'';}
 var ICON={play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',info:'<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>',similar:'<svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>',trailer:'<svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg>',check:'<svg viewBox="0 0 24 24"><path d="M9 16.17l-3.88-3.88L3.7 13.7 9 19 21 7l-1.41-1.42z"/></svg>',plus:'<svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>'};
@@ -196,7 +212,18 @@ function syncAddons(cb){var ak=authKey();if(!ak){if(cb)cb(false);return;}
 
 /* ================= addon-driven catalogs ================= */
 function addonBase(a){return String(a.transportUrl||'').replace(/\/manifest\.json.*$/,'');}
-function typeLabel(t){return t==='movie'?tx('movies'):(t==='series'?tx('series'):t);}
+function typeLabel(t){var value=String(t||'');if(value==='movie')return tx('movies');if(value==='series')return tx('series');if(value==='anime')return tx('anime');
+  value=value.replace(/[_-]+/g,' ');return value?value.charAt(0).toUpperCase()+value.slice(1):tx('other');}
+function discoverCatalogInfo(cat){var ex=cat&&cat.extra||[],blocked=false,genreOptions=[],genreRequired=false;
+  for(var e=0;e<ex.length;e++){var x=ex[e]||{},name=String(x.name||'');if(x.isRequired&&name!=='genre')blocked=true;
+    if(name==='genre'){genreRequired=!!x.isRequired;if(x.options&&x.options.length)genreOptions=x.options.slice(0);}}
+  if(cat&&cat.extraRequired&&cat.extraRequired.length)for(var er=0;er<cat.extraRequired.length;er++)if(cat.extraRequired[er]!=='genre')blocked=true;
+  return {blocked:blocked,genreOptions:genreOptions,genreRequired:genreRequired};}
+function discoverTypes(){var values=['movie','series'],seen={movie:true,series:true},a=addons();
+  for(var i=0;i<a.length;i++){var man=a[i]&&a[i].manifest;if(!man||!man.catalogs)continue;
+    for(var c=0;c<man.catalogs.length;c++){var cat=man.catalogs[c],type=String(cat&&cat.type||'');if(!type||cat.id==null||seen[type]||discoverCatalogInfo(cat).blocked)continue;seen[type]=true;values.push(type);}}
+  var out=[];for(var n=0;n<values.length;n++)out.push({value:values[n],label:typeLabel(values[n])});return out;}
+window.__STREMIO_DISCOVER_TYPES__=discoverTypes;
 function stableHash(value){var s=String(value||''),h=2166136261;
   for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h+=(h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);}
   return (h>>>0).toString(36);}
@@ -221,15 +248,10 @@ function homeCatalogs(){var out=[],a=addons(),maxRows=TV_PROFILE.catalogRowsCap|
 function discoverCatalogs(type){var out=[],seen={},a=addons();
   for(var i=0;i<a.length;i++){var man=a[i]&&a[i].manifest;if(!man||!man.catalogs)continue;var base=addonBase(a[i]);
     for(var c=0;c<man.catalogs.length;c++){var cat=man.catalogs[c];if(!cat||cat.type!==type||cat.id==null)continue;
-      var ex=cat.extra||[],blocked=false,genreOptions=[],genreRequired=false;
-      for(var e=0;e<ex.length;e++){var x=ex[e]||{},name=String(x.name||'');
-        if(x.isRequired&&name!=='genre')blocked=true;
-        if(name==='genre'){genreRequired=!!x.isRequired;if(x.options&&x.options.length)genreOptions=x.options.slice(0);}}
-      if(cat.extraRequired&&cat.extraRequired.length){for(var er=0;er<cat.extraRequired.length;er++)if(cat.extraRequired[er]!=='genre')blocked=true;}
-      if(blocked)continue;
+      var info=discoverCatalogInfo(cat);if(info.blocked)continue;
       var key=[base,type,cat.id].join('|');if(seen[key])continue;seen[key]=true;
-      out.push({label:cat.name||man.name||String(cat.id),type:type,id:String(cat.id),base:base,key:catalogCacheKey(a[i],cat),genres:genreOptions,genreRequired:genreRequired});}}
-  if(!out.length){out.push({label:tx('popular'),type:type,id:'top',base:CIN,key:'fallback_top',genres:[],genreRequired:false});
+      out.push({label:cat.name||man.name||String(cat.id),type:type,id:String(cat.id),base:base,key:catalogCacheKey(a[i],cat),genres:info.genreOptions,genreRequired:info.genreRequired});}}
+  if(!out.length&&(type==='movie'||type==='series')){out.push({label:tx('popular'),type:type,id:'top',base:CIN,key:'fallback_top',genres:[],genreRequired:false});
     out.push({label:tx('topRated'),type:type,id:'imdbRating',base:CIN,key:'fallback_rating',genres:[],genreRequired:false});}
   return out;}
 function discoverGenres(cat){var out=[],values=cat&&cat.genres&&cat.genres.length?cat.genres:null;
@@ -637,16 +659,17 @@ function makeBoard(loader){
 var home=makeBoard(function(b,keep){loadCatalogRows(b,homeDefs(),true,keep);});
 /* Discover intentionally differs from Home: three compact filters feed one virtualized
    poster grid. This keeps the DOM small while making the section useful on a TV remote. */
-var disc={rows:[],items:[],els:[],filterEls:[],optionEls:[],catalogs:[],genres:[],menuEl:null,typeIdx:0,catalogIdx:0,genreIdx:0,filterIdx:0,optionIdx:0,filterOpen:false,idx:0,cols:6,zone:'filters',built:false,gen:0,loading:false,ended:false,skip:0,request:null,cacheKey:'',
+var disc={rows:[],items:[],els:[],filterEls:[],optionEls:[],types:[],catalogs:[],genres:[],menuEl:null,typeIdx:0,catalogIdx:0,genreIdx:0,filterIdx:0,optionIdx:0,filterOpen:false,idx:0,cols:6,zone:'filters',built:false,gen:0,loading:false,ended:false,skip:0,request:null,cacheKey:'',
 enter:function(){unloadBoard(home);unloadBoard(lib);this.zone='filters';this.filterIdx=0;this.filterOpen=false;this.refreshChoices();this.renderFilters();if(!this.built){this.built=true;this.load();}else this.paint();animIn($('discWrap'));},
 focusTop:function(){this.zone='filters';this.filterIdx=0;this.filterOpen=false;this.renderFilters();this.paint();},
-refreshChoices:function(){var type=this.typeIdx?'series':'movie';this.catalogs=discoverCatalogs(type);if(this.catalogIdx>=this.catalogs.length)this.catalogIdx=0;this.genres=discoverGenres(this.catalogs[this.catalogIdx]);if(this.genreIdx>=this.genres.length)this.genreIdx=0;},
+refreshChoices:function(){this.types=discoverTypes();if(this.typeIdx>=this.types.length)this.typeIdx=0;var type=this.selectedType();this.catalogs=discoverCatalogs(type);if(this.catalogIdx>=this.catalogs.length)this.catalogIdx=0;this.genres=discoverGenres(this.catalogs[this.catalogIdx]);if(this.genreIdx>=this.genres.length)this.genreIdx=0;},
+selectedType:function(){return this.types[this.typeIdx]?this.types[this.typeIdx].value:'movie';},
 currentCatalog:function(){return this.catalogs[this.catalogIdx]||null;},
 currentGenre:function(){return this.genres[this.genreIdx]||{value:'',label:tx('allGenres')};},
-filterOptions:function(i){var out=[],n;if(i===0)return [tx('movies'),tx('series')];if(i===1){for(n=0;n<this.catalogs.length;n++)out.push(this.catalogs[n].label);return out;}for(n=0;n<this.genres.length;n++)out.push(this.genres[n].label);return out;},
+filterOptions:function(i){var out=[],n;if(i===0){for(n=0;n<this.types.length;n++)out.push(this.types[n].label);return out;}if(i===1){for(n=0;n<this.catalogs.length;n++)out.push(this.catalogs[n].label);return out;}for(n=0;n<this.genres.length;n++)out.push(this.genres[n].label);return out;},
 filterValue:function(i){return i===0?this.typeIdx:(i===1?this.catalogIdx:this.genreIdx);},
 renderFilters:function(){this.refreshChoices();var cat=this.currentCatalog(),genre=this.currentGenre();
-  var hosts=[$('discType'),$('discCatalog'),$('discGenre')],labels=[this.typeIdx?tx('series'):tx('movies'),cat?cat.label:tx('popular'),genre.label];
+  var hosts=[$('discType'),$('discCatalog'),$('discGenre')],labels=[this.types[this.typeIdx]?this.types[this.typeIdx].label:tx('movies'),cat?cat.label:tx('popular'),genre.label];
   this.filterEls=[];this.optionEls=[];this.menuEl=null;
   for(var i=0;i<hosts.length;i++){hosts[i].innerHTML='';var chip=document.createElement('div');chip.className='fchip'+(this.filterOpen&&i===this.filterIdx?' open':'');chip.textContent=labels[i];hosts[i].appendChild(chip);this.filterEls.push(chip);
     if(this.filterOpen&&i===this.filterIdx){var menu=document.createElement('div');menu.className='fmenu';this.menuEl=menu;var opts=this.filterOptions(i),cur=this.filterValue(i);
@@ -672,7 +695,7 @@ requestPage:function(offset,refresh,expectedGen){if(this.loading||this.ended&&!r
   this.loading=true;this.request=xhrJson(url,function(j){if(self.gen!==gen)return;self.loading=false;self.request=null;var metas=(j&&j.metas)||[],incoming=[],seen={},i;
     if(refresh)self.ended=false;
     for(i=0;i<self.items.length;i++)seen[self.items[i].type+':'+self.items[i].id]=true;
-    for(i=0;i<metas.length;i++){var m=metas[i],type=m.type||(self.typeIdx?'series':'movie'),id=type+':'+m.id;if(!m.id||seen[id])continue;seen[id]=true;
+    for(i=0;i<metas.length;i++){var m=metas[i],type=m.type||self.selectedType(),id=type+':'+m.id;if(!m.id||seen[id])continue;seen[id]=true;
       incoming.push({id:m.id,type:type,name:m.name,poster:m.poster,background:m.background,logo:m.logo,description:m.description,releaseInfo:m.releaseInfo,year:m.year,runtime:m.runtime,imdbRating:m.imdbRating});}
     if(refresh&&offset===0&&self.items.length){var first=incoming,merged=[],all=first.concat(self.items),dedupe={};for(i=0;i<all.length&&merged.length<cap;i++){var dk=all[i].type+':'+all[i].id;if(!dedupe[dk]){dedupe[dk]=true;merged.push(all[i]);}}self.items=merged;}
     else for(i=0;i<incoming.length&&self.items.length<cap;i++)self.items.push(incoming[i]);
@@ -1296,6 +1319,8 @@ enter:function(preserveEdit){
   this.defs=[
     {head:tx('interfaceGroup')},
     {k:UI_LANG_KEY,lb:tx('interfaceLanguage'),opts:[['en-US',tx('english')],['pt-BR',tx('portugueseBrazil')]],d:'en-US'},
+    {head:tx('maintenanceGroup')},
+    {k:'__reload',lb:tx('reloadApp'),action:true},
     {head:tx('sourceGroup')},
     {k:'preferredSourceQuality',lb:tx('preferredQuality'),opts:[['Auto',tx('automatic')],['4K','4K'],['1080p','1080p'],['720p','720p'],['SD','SD']],d:'Auto'},
     {head:tx('subtitlesGroup')},
@@ -1328,6 +1353,7 @@ enter:function(preserveEdit){
   this.paint();animIn($('setWrap'));},
 syncNow:function(){toast(tx('syncing'));pullLib(function(){invalidateBoards();});
   syncAddons(function(changed){toast(changed?tx('addonsUpdated'):tx('addonsCurrent'));if(changed)buildHomeRows(true);});},
+reloadNow:function(){manualRecover();},
 valLabel:function(def){
   var cur=lsRaw(def.k,def.d);
   for(var i=0;i<def.opts.length;i++)if(def.opts[i][0]===cur)return def.opts[i][1]+'  ›';
@@ -1372,7 +1398,7 @@ key:function(k){
   if(k===40)this.idx=Math.min(this.els.length-1,this.idx+1);
   else if(k===38){if(this.idx>0)this.idx--;else{topNav.focus();return true;}}
   else if(k===37){topNav.focus();return true;}
-  else if(k===13&&def){if(def.action){if(def.k==='__sync'){this.syncNow();return true;}this.logout();return true;}this.startEdit();return true;}
+  else if(k===13&&def){if(def.action){if(def.k==='__sync')this.syncNow();else if(def.k==='__reload')this.reloadNow();else if(def.k==='__logout')this.logout();return true;}this.startEdit();return true;}
   this.paint();return true;}
 };
 
@@ -1470,10 +1496,12 @@ function pointerUI(target,activate){var i,r,row,def;
     i=pointerIndex(target,detail.epEls);if(i>=0){detail.zone='eps';detail.epIdx=i;detail.paint();if(activate&&detail.eps[i])detail.openStreams(detail.eps[i].id);return true;}}
   if(SCR==='search'){for(r=0;r<search.rows.length;r++){row=search.rows[r];i=pointerIndex(target,row.cardEls||[]);if(i>=0){search.zone='rows';search.rowIdx=r;row.col=i;search.paint();if(activate&&row.items[i])openItem(row.items[i]);return true;}}}
   if(SCR==='addons'){i=pointerIndex(target,addonPanel.els);if(i>=0){topNav.active=false;addonPanel.idx=i;addonPanel.paint();if(activate&&i===0)addonPanel.syncNow();return true;}}
-  if(SCR==='set'){i=pointerIndex(target,settings.els);if(i>=0){if(!settings.editing||settings.idx===i){settings.idx=i;settings.paint();}if(activate){def=settings.fdefs[i];if(def.action){if(def.k==='__sync')settings.syncNow();else settings.logout();}else if(!settings.editing)settings.startEdit();else if(settings.idx===i){var rerendered=settings.cycle(def,1);if(!rerendered)settings.els[settings.idx].getElementsByClassName('vl')[0].textContent=settings.valLabel(def);settings.paint();}}return true;}}
+  if(SCR==='set'){i=pointerIndex(target,settings.els);if(i>=0){if(!settings.editing||settings.idx===i){settings.idx=i;settings.paint();}if(activate){def=settings.fdefs[i];if(def.action){if(def.k==='__sync')settings.syncNow();else if(def.k==='__reload')settings.reloadNow();else if(def.k==='__logout')settings.logout();}else if(!settings.editing)settings.startEdit();else if(settings.idx===i){var rerendered=settings.cycle(def,1);if(!rerendered)settings.els[settings.idx].getElementsByClassName('vl')[0].textContent=settings.valLabel(def);settings.paint();}}return true;}}
   return false;}
-on(document,'mouseover',function(e){pointerUI(e.target,false);},false);
-on(document,'click',function(e){idleTouch();if(pointerUI(e.target,true)){e.preventDefault();e.stopPropagation();}},false);
+var pointerHoverTimer=null,pointerHoverTarget=null;
+function queuePointerHover(target){pointerHoverTarget=target;if(pointerHoverTimer)clearTimeout(pointerHoverTimer);pointerHoverTimer=setTimeout(function(){var next=pointerHoverTarget;pointerHoverTimer=null;pointerHoverTarget=null;if(next)pointerUI(next,false);},140);}
+on(document,'mouseover',function(e){queuePointerHover(e.target);},false);
+on(document,'click',function(e){if(pointerHoverTimer){clearTimeout(pointerHoverTimer);pointerHoverTimer=null;}pointerHoverTarget=null;idleTouch();if(pointerUI(e.target,true)){e.preventDefault();e.stopPropagation();}},false);
 /* idle trailer: after 10s the UI melts away; the focused title's trailer plays
    muted (no subs) behind the artwork, and once it's actually rolling the whole
    foreground fades to 0. 360p to stay easy on RAM; any key kills it instantly. */
