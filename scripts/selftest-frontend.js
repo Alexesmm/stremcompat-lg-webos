@@ -138,6 +138,7 @@ assert.ok(source.indexOf("$('dPoster')._detailId===this.id") >= 0, 'detail poste
 assert.ok(source.indexOf('detail.meta===m&&detail.id===mediaId') >= 0, 'late detail artwork can overwrite the current title');
 assert.ok(source.indexOf('function queuePointerHover(target)') >= 0, 'Magic Remote hover navigation is not debounced');
 assert.ok(source.indexOf("def.k==='__reload'") >= 0, 'Settings recovery action is not wired');
+assert.ok(source.indexOf("$('bg2').style.backgroundImage='none'") >= 0, 'inactive backdrop texture is not released');
 var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
   { addon:'Other',quality:'1080p',title:'H264 AAC',seeders:900,compatRank:0 },
   { addon:'Torrentio',quality:'4K',title:'HEVC 10bit DDP WEB-DL',seeders:20,compatRank:0 },

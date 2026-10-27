@@ -10,16 +10,16 @@
 html,body{margin:0;padding:0;width:100%;height:100%;background:#090b12;color:#fff;font-family:Arial,"Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
 img{border:0}
 
-/* two-layer backdrop: incoming art fades IN over the old one = true crossfade, no pop.
-   Art lives in the TOP half; a strong gradient + corner vignette melts it to black below. */
-#bg,#bg2{position:fixed;top:0;left:0;right:0;height:74%;background-size:cover;background-position:center top;opacity:0;transition:opacity .5s ease}
-#bg.on,#bg2.on{opacity:.72}
-#bgshade{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,rgba(12,11,17,0) 26%,rgba(12,11,17,.72) 58%,#0c0b11 78%),linear-gradient(to right,rgba(12,11,17,.9) 0%,rgba(12,11,17,.45) 46%,rgba(12,11,17,.12) 100%),radial-gradient(130% 92% at 55% 16%,rgba(0,0,0,0) 40%,rgba(0,0,0,.5) 100%);transition:opacity .9s ease}
-/* DETAIL pages: backdrop fills the whole screen (not the top-74% crop), just a soft bottom
-   vignette + a left darken so the title/info stay readable. */
-body.detail #bg,body.detail #bg2{height:100%}
-body.detail #bg.on,body.detail #bg2.on{opacity:.9}
-body.detail #bgshade{background:linear-gradient(to bottom,rgba(12,11,17,.15) 0%,rgba(12,11,17,0) 22%,rgba(12,11,17,0) 52%,rgba(12,11,17,.55) 84%,#0c0b11 100%),linear-gradient(to right,rgba(12,11,17,.8) 0%,rgba(12,11,17,.28) 52%,rgba(12,11,17,0) 100%)}
+/* A single cropped hero region makes the deliberately downscaled TV artwork look sharper.
+   The two existing layers are retained only on UM4 for the already-tested crossfade; UJ3
+   still decodes one texture. Static gradients blend the edge without GPU-heavy blur. */
+#bg,#bg2{position:fixed;top:0;left:43%;right:0;height:68%;background-size:cover;background-position:center top;opacity:0;transition:opacity .36s ease}
+#bg.on,#bg2.on{opacity:.86}
+#bgshade{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,rgba(9,11,18,0) 30%,rgba(9,11,18,.76) 57%,#090b12 72%),linear-gradient(to right,#090b12 0%,#090b12 36%,rgba(9,11,18,.93) 43%,rgba(9,11,18,.42) 63%,rgba(9,11,18,.08) 100%);transition:opacity .5s ease}
+/* Details use the same split composition, but allow the art to reach lower behind episodes. */
+body.detail #bg,body.detail #bg2{left:34%;height:100%;background-position:center top}
+body.detail #bg.on,body.detail #bg2.on{opacity:.88}
+body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 52%,rgba(9,11,18,.7) 82%,#090b12 100%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.96) 31%,rgba(9,11,18,.45) 53%,rgba(9,11,18,.05) 100%)}
 
 /* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
    available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same
@@ -59,25 +59,25 @@ body.login #topnav,body.login #logobg{display:none}
 .scr.on{display:block}
 
 /* ---------- home hero ---------- */
-#hero{position:absolute;top:52px;left:176px;width:48%;z-index:5}
-#heroLogo{max-width:520px;max-height:175px;display:none}
-#heroTitle{font-size:78px;font-weight:800;line-height:1.05;max-height:164px;overflow:hidden}
-#heroMeta{margin-top:18px;font-size:30px;color:#c9b8ff;font-weight:600}
-#heroDesc{margin-top:16px;font-size:28px;line-height:1.48;color:rgba(255,255,255,.92);max-height:126px;overflow:hidden}
+#hero{position:absolute;top:62px;left:176px;width:40%;z-index:5}
+#heroLogo{max-width:470px;max-height:145px;display:none}
+#heroTitle{font-size:68px;font-weight:800;line-height:1.04;max-height:142px;overflow:hidden;letter-spacing:-1px}
+#heroMeta{margin-top:15px;font-size:27px;color:#c9b8ff;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#heroDesc{margin-top:14px;font-size:25px;line-height:1.42;color:rgba(255,255,255,.88);max-height:107px;overflow:hidden}
 
 /* ---------- rows ---------- */
-#rowsClip{position:absolute;top:452px;left:128px;right:0;bottom:0;overflow:hidden}
+#rowsClip{position:absolute;top:420px;left:128px;right:0;bottom:0;overflow:hidden}
 #rows{position:absolute;top:0;left:0;right:0}
-.row{padding:18px 0 34px 48px;opacity:0;transform:translateY(16px);transition:opacity .35s ease,transform .35s ease}
+.row{padding:15px 0 30px 48px;opacity:0;transform:translateY(16px);transition:opacity .35s ease,transform .35s ease}
 .row.in{opacity:1;transform:none}
-.rowtitle{font-size:36px;font-weight:700;margin:0 0 18px 4px;color:rgba(255,255,255,.95)}
+.rowtitle{font-size:33px;font-weight:700;margin:0 0 16px 4px;color:rgba(255,255,255,.95)}
 .cards{white-space:nowrap}
 .cards.snap{transition:none} /* while holding a direction: steps snap, no animation lag */
-.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:14px;background:#1b1927;overflow:hidden;transition:transform .13s ease}
+.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:14px;background:#1b1927;overflow:hidden;transition:none}
 .card img{width:100%;height:100%;border-radius:14px}
 .card .nm{position:absolute;top:0;left:0;right:0;bottom:0;padding:16px;font-size:28px;line-height:1.3;white-space:normal;color:rgba(255,255,255,.9)}
 .titlelabel{position:absolute;left:0;right:0;bottom:0;padding:34px 15px 13px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.92));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card.f{box-shadow:0 0 0 5px #fff !important;z-index:6;transform:translateY(-8px)}
+.card.f{box-shadow:0 0 0 5px #fff,0 8px 24px rgba(0,0,0,.34) !important;z-index:6;transform:translateY(-6px) scale(1.035)}
 .card.wide{width:430px;height:242px}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
 .pbar div{height:100%;background:#8c5cff}
@@ -237,19 +237,21 @@ body.series-episode #dSeasons{margin-top:24px}
   .chip{width:50px;height:46px;margin:3px 0;border-radius:10px}
   .chip svg{width:23px;height:23px}
   .chip.f:before{left:-9px;top:13px;width:3px;height:20px}
-  #hero{top:34px;left:112px;width:54%}
-  #heroLogo{max-width:350px;max-height:100px}
-  #heroTitle{font-size:50px;max-height:105px}
-  #heroMeta{margin-top:10px;font-size:20px}
-  #heroDesc{margin-top:8px;font-size:18px;line-height:1.35;max-height:49px}
-  #rowsClip{top:276px;left:86px}
+  #bg,#bg2{left:45%;height:66%}
+  body.detail #bg,body.detail #bg2{left:37%;height:100%}
+  #hero{top:38px;left:112px;width:39%}
+  #heroLogo{max-width:320px;max-height:88px}
+  #heroTitle{font-size:45px;max-height:94px}
+  #heroMeta{margin-top:9px;font-size:18px}
+  #heroDesc{margin-top:7px;font-size:17px;line-height:1.34;max-height:46px}
+  #rowsClip{top:258px;left:86px}
   .row{padding:10px 0 22px 26px;transform:translateY(10px)}
   .rowtitle{font-size:24px;margin:0 0 12px 3px}
   .card{width:176px;height:264px;margin-right:16px;border-radius:9px}
   .card img{border-radius:9px}
   .card .nm{padding:10px;font-size:18px}
   .titlelabel{padding:23px 10px 9px;font-size:17px}
-  .card.f{box-shadow:0 0 0 3px #fff !important;transform:translateY(-5px)}
+  .card.f{box-shadow:0 0 0 3px #fff,0 5px 15px rgba(0,0,0,.3) !important;transform:translateY(-4px) scale(1.025)}
   .card.wide{width:287px;height:161px}
   .pbar{height:6px}
   .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}
@@ -325,9 +327,14 @@ body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- misc ---------- */
 #toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .25s;z-index:60;pointer-events:none}
-#boot{position:fixed;top:0;left:0;right:0;bottom:0;background:#0c0b11;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
-#boot .lg{width:132px;height:132px;animation:bb 2s ease-in-out infinite}
-@keyframes bb{0%,100%{opacity:.72;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+#boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(93,57,184,.18),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
+#boot .bootbox{text-align:center;width:360px}
+#boot .lg{width:94px;height:94px;animation:bb 1.8s ease-in-out infinite}
+#boot .bt{margin-top:18px;font-size:27px;font-weight:700;letter-spacing:.6px}
+#boot .btrack{height:3px;margin:28px auto 0;width:220px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+#boot .bfill{height:100%;width:34%;border-radius:3px;background:#9c76ff;animation:loadline 1.45s ease-in-out infinite}
+@keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
+@keyframes loadline{0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
 /* faded official Stremio logo shown where cover art would be (Settings + empty Search) */
 #logobg{position:fixed;top:0;left:0;right:0;height:74%;background:url(/logo.png) center 32%/196px no-repeat;opacity:0;transition:opacity .5s ease;z-index:0}
 #logobg.on{opacity:.09}
@@ -417,7 +424,7 @@ body.series-episode #dSeasons{margin-top:24px}
 <div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
 <div id="toast"></div>
-<div id="boot"><img class="lg" src="/logo.png"></div>
+<div id="boot"><div class="bootbox"><img class="lg" src="/logo.png"><div class="bt">StremCompat</div><div class="btrack"><div class="bfill"></div></div></div></div>
 
 <script>
 /* Kept separate from the application script: syntax/runtime failures in the main

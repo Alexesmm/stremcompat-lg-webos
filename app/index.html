@@ -6,20 +6,20 @@
 <title>Stremio</title>
 <style>
 html,body{width:100%;height:100%;overflow:hidden}
-body{margin:0;background:#08070d;color:#fff;font-family:Arial,sans-serif}
-.backdrop{position:fixed;inset:0;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 65% 18%,rgba(97,57,196,.28),transparent 48%),linear-gradient(145deg,#151024 0%,#08070d 62%)}
-.shade{position:fixed;inset:0;top:0;left:0;right:0;bottom:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 52%)}
-.stage{position:fixed;left:110px;right:110px;top:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
-.brand{width:650px}
-.mark{width:112px;height:112px;border-radius:30px;background:linear-gradient(135deg,#a780ff,#6b3df1);box-shadow:0 22px 70px rgba(108,61,241,.38);position:relative;margin-bottom:34px}
-.mark:after{content:"";position:absolute;left:43px;top:30px;width:0;height:0;border-top:26px solid transparent;border-bottom:26px solid transparent;border-left:38px solid #fff}
-h1{font-size:72px;line-height:1;margin:0 0 18px;font-weight:800;letter-spacing:-2px}
-.lead{font-size:28px;line-height:1.45;color:rgba(255,255,255,.72);max-width:580px}
-.boot{position:absolute;left:0;bottom:105px;width:560px}
-.status{font-size:22px;color:rgba(255,255,255,.82);margin-bottom:16px}
-.track{height:5px;background:rgba(255,255,255,.11);border-radius:5px;overflow:hidden}
-.fill{height:100%;width:8%;border-radius:5px;background:linear-gradient(90deg,#8c5cff,#c4a8ff);transition:width .5s ease}
-.hint{font-size:16px;color:rgba(255,255,255,.36);margin-top:14px}
+body{margin:0;background:#090b12;color:#fff;font-family:Arial,sans-serif}
+.backdrop{position:fixed;inset:0;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 43%,rgba(102,62,202,.2),transparent 34%),#090b12}
+.shade{display:none}
+.stage{position:fixed;left:0;right:0;top:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;text-align:center}
+.brand{width:560px}
+.mark{width:94px;height:94px;margin:0 auto 22px;background:url(icon.png) center/contain no-repeat;animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.72}50%{opacity:1}}
+h1{font-size:38px;line-height:1;margin:0;font-weight:700;letter-spacing:.4px}
+.lead{display:none}
+.boot{margin:62px auto 0;width:420px}
+.status{font-size:20px;color:rgba(255,255,255,.76);margin-bottom:18px}
+.track{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
+.fill{height:100%;width:8%;border-radius:4px;background:#9c76ff;transition:width .45s ease}
+.hint{font-size:15px;color:rgba(255,255,255,.34);margin-top:15px}
 .error{margin-top:28px;display:none}
 button{font-size:21px;font-weight:700;padding:16px 30px;color:#0b0910;background:#fff;border:0;border-radius:12px}
 .code{font-size:15px;color:rgba(255,255,255,.4);margin:15px 0}
@@ -29,7 +29,7 @@ button{font-size:21px;font-weight:700;padding:16px 30px;color:#0b0910;background
 <div class="backdrop"></div><div class="shade"></div>
 <div class="stage"><div class="brand">
   <div class="mark"></div>
-  <h1>Stremio</h1>
+  <h1>StremCompat</h1>
   <div class="lead">Movies, series and all your addons in an experience built for the big screen.</div>
   <div class="boot">
     <div id="status" class="status">Starting the playback system…</div>
