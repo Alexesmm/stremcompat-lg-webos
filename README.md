@@ -1,7 +1,7 @@
 # StremCompat for LG webOS
 
 <p align="center">
-  <img src="docs/assets/stremcompat-hero-en.png" alt="StremCompat 1.1.0 home interface running on LG webOS" width="1200">
+  <img src="docs/assets/stremcompat-hero-en.png" alt="StremCompat home interface running on LG webOS" width="1200">
 </p>
 
 <p align="center">
@@ -46,21 +46,21 @@ This project is not affiliated with or endorsed by Stremio or LG Electronics. Us
 
 ## Downloads
 
-Use the IPK that matches both the television generation and the application graphics mode. StremCompat 1.1.0 publishes four clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
+Use the IPK that matches both the television generation and the application graphics mode. StremCompat 1.1.1 publishes four clearly named assets on the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases).
 
 | Build | Graphics mode | Status | Confirmed television | Platform | Application shown on TV |
 |---|---:|---|---|---|---|
-| `um4-armv7` 1.2.12 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
-| `um4-armv7-hd` 1.2.12 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
-| `uj3-native-armv7` 1.0.11 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
-| `uj3-native-armv7-hd` 1.0.11 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
+| `um4-armv7` 1.2.14 | 1920x1080 | Confirmed | LG 50UM7500PSB, firmware 05.40.97 | webOS 4.x, Chromium 53, ARMv7 | Stremio |
+| `um4-armv7-hd` 1.2.14 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 4.x, Chromium 53, ARMv7 | Stremio HD |
+| `uj3-native-armv7` 1.0.13 | 1920x1080 | Confirmed | LG 49UJ6565-SB, webOS 3.9.3-6280413 (`dreadlocks2-dudhwa`) | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 |
+| `uj3-native-armv7-hd` 1.0.13 | 1280x720 (720p/HD; also 1366x768 panels) | Locally validated; physical reports requested | Not yet confirmed | webOS 3.x, Chromium 38, ARMv7 | Stremio UJ3 HD |
 
 Release assets:
 
-- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.12.ipk`
-- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.12.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.11.ipk`
-- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.11.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.14.ipk`
+- `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.14.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.13.ipk`
+- `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.13.ipk`
 
 First choose UJ3 for webOS 3.x or UM4 for webOS 4.x. Then choose the graphics mode:
 
