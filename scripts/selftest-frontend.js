@@ -151,6 +151,15 @@ assert.strictEqual(episodeModel.seasons[episodeModel.seasons.length-1].n, 0, 'sp
 assert.strictEqual(episodeModel.linear.length, 4, 'specials leaked into continuous episode order');
 assert.strictEqual(episodeModel.linear[0]._stremAbsolute, 1, 'continuous numbering did not start at one');
 assert.strictEqual(episodeModel.linear[2]._stremAbsolute, 101, 'provider absolute episode number was not preserved');
+assert.strictEqual(firstRun.context.__STREMIO_EPISODE_INDEX__(episodeModel.linear,101),2,'overall episode lookup did not find the requested episode');
+assert.strictEqual(firstRun.context.__STREMIO_EPISODE_INDEX__(episodeModel.linear,999),-1,'overall episode lookup accepted a missing episode');
+assert.ok(source.indexOf('window.prompt(')<0,'episode jump still depends on an unsupported browser prompt');
+assert.strictEqual(typeof firstRun.context.__STREMIO_EPISODE_JUMP__,'object','in-app episode keypad is missing');
+firstRun.context.__STREMIO_EPISODE_JUMP__.show(12);
+firstRun.context.__STREMIO_EPISODE_JUMP__.press(6);
+firstRun.context.__STREMIO_EPISODE_JUMP__.press(10);
+assert.strictEqual(firstRun.context.__STREMIO_EPISODE_JUMP__.value,'70','episode keypad did not replace the suggested number and append digits');
+firstRun.context.__STREMIO_EPISODE_JUMP__.close();
 var baseEpisodes={videos:[{id:'show:1:1',season:1,episode:1}]};
 assert.strictEqual(firstRun.context.__STREMIO_MERGE_EPISODES__(baseEpisodes,{videos:[{id:'show:1:1',season:1,episode:1,thumbnail:'/still.jpg',overview:'Overview'}]}),true,'metadata enrichment did not report a change');
 assert.strictEqual(baseEpisodes.videos[0].thumbnail,'/still.jpg','metadata enrichment did not fill a missing thumbnail');

@@ -4,7 +4,7 @@
   "appId": "io.strem.tv.uj3native.hd",
   "title": "Stremio UJ3 HD",
   "serviceId": "io.strem.tv.uj3native.hd.server",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "port": 8094,
   "graphicsResolution": "1280x720",
   "ecmaTarget": "chrome38",

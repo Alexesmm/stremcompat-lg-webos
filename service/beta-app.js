@@ -54,7 +54,7 @@ var UI_TEXT={
     removeLibrary:'Remove from Library',addLibrary:'Add to Library',removedLibrary:'Removed from Library',addedLibrary:'Added to Library',inLibrary:'In Library',libraryButton:'+ Library',
     similar:'Similar',similarTo:'More like {0}',findingSimilar:'Finding similar titles…',nothingFound:'Nothing found.',couldNotLoad:'Could not load title',
     cast:'Cast',director:'Director',writers:'Writers',country:'Country',awards:'Awards',specials:'Specials',season:'Season {0}',episode:'Episode {0}',seasonEpisode:'Season {0} · Episode {1}',absoluteEpisode:'Episode {0} overall',seasonAbsoluteEpisode:'Season {0} · Episode {1} · Episode {2} overall',
-    seasonOrder:'By season',continuousOrder:'Continuous order',previous:'Previous',next:'Next',episodeRange:'Episodes {0}–{1}',goToEpisode:'Go to episode',episodeNumberPrompt:'Enter the overall episode number',episodeNotFound:'Episode not found',
+    seasonOrder:'By season',continuousOrder:'Continuous order',previous:'Previous',next:'Next',episodeRange:'Episodes {0}–{1}',goToEpisode:'Go to episode',episodeNumberPrompt:'Enter the overall episode number',episodeNotFound:'Episode not found',jumpDelete:'Delete',jumpGo:'Go',jumpHint:'Use the arrows and OK. Back cancels.',
     sources:'Sources',findingSources:'Finding sources…',noSources:'No sources found.',noSourcesQuality:'No sources in this quality.',lastSource:'Last source',continuePlayback:'Continue playback',sameSource:'The same source used previously',seeders:'seeders',compatibilityCheck:'Check compatibility: {0}',sourcePrepareFailed:'Could not prepare this source. Please try again.',runtimeRestoring:'Restoring the local service…',runtimeUnavailable:'Could not restore the local service',
     interfaceGroup:'Interface',interfaceLanguage:'Interface language',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Language: {0}  ‹ ›',maintenanceGroup:'Recovery',reloadApp:'Reload StremCompat',reloadingApp:'Reloading StremCompat…',
     sourceGroup:'Sources',preferredQuality:'Preferred quality',automatic:'Automatic',subtitlesGroup:'Subtitles',subtitleSize:'Subtitle size',defaultLanguage:'Default language',subtitleColor:'Subtitle color',subtitleOutline:'Subtitle outline',subtitleBackground:'Subtitle background',embeddedSubtitles:'Embedded subtitles',
@@ -76,7 +76,7 @@ var UI_TEXT={
     removeLibrary:'Remover da Biblioteca',addLibrary:'Adicionar à Biblioteca',removedLibrary:'Removido da Biblioteca',addedLibrary:'Adicionado à Biblioteca',inLibrary:'Na Biblioteca',libraryButton:'+ Biblioteca',
     similar:'Parecidos',similarTo:'Parecidos com {0}',findingSimilar:'Buscando títulos parecidos…',nothingFound:'Nada encontrado.',couldNotLoad:'Não foi possível carregar o título',
     cast:'Elenco',director:'Direção',writers:'Roteiro',country:'País',awards:'Prêmios',specials:'Especiais',season:'Temporada {0}',episode:'Episódio {0}',seasonEpisode:'Temporada {0} · Episódio {1}',absoluteEpisode:'Episódio geral {0}',seasonAbsoluteEpisode:'Temporada {0} · Episódio {1} · Episódio geral {2}',
-    seasonOrder:'Por temporada',continuousOrder:'Ordem contínua',previous:'Anterior',next:'Próximo',episodeRange:'Episódios {0}–{1}',goToEpisode:'Ir para episódio',episodeNumberPrompt:'Digite o número geral do episódio',episodeNotFound:'Episódio não encontrado',
+    seasonOrder:'Por temporada',continuousOrder:'Ordem contínua',previous:'Anterior',next:'Próximo',episodeRange:'Episódios {0}–{1}',goToEpisode:'Ir para episódio',episodeNumberPrompt:'Digite o número geral do episódio',episodeNotFound:'Episódio não encontrado',jumpDelete:'Apagar',jumpGo:'Ir',jumpHint:'Use as setas e OK. Voltar cancela.',
     sources:'Fontes',findingSources:'Buscando fontes…',noSources:'Nenhuma fonte encontrada.',noSourcesQuality:'Nenhuma fonte nesta qualidade.',lastSource:'Última fonte',continuePlayback:'Continuar reprodução',sameSource:'A mesma fonte usada anteriormente',seeders:'seeders',compatibilityCheck:'Verifique a compatibilidade: {0}',sourcePrepareFailed:'Não foi possível preparar esta fonte. Tente novamente.',runtimeRestoring:'Restaurando o serviço local…',runtimeUnavailable:'Não foi possível restaurar o serviço local',
     interfaceGroup:'Interface',interfaceLanguage:'Idioma da interface',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Idioma: {0}  ‹ ›',maintenanceGroup:'Recuperação',reloadApp:'Recarregar StremCompat',reloadingApp:'Recarregando o StremCompat…',
     sourceGroup:'Fontes',preferredQuality:'Qualidade preferida',automatic:'Automática',subtitlesGroup:'Legendas',subtitleSize:'Tamanho da legenda',defaultLanguage:'Idioma padrão',subtitleColor:'Cor da legenda',subtitleOutline:'Contorno da legenda',subtitleBackground:'Fundo da legenda',embeddedSubtitles:'Legendas incorporadas',
@@ -980,6 +980,8 @@ function episodeImage(v,meta){
   if(u&&String(u).charAt(0)==='/')u='https://image.tmdb.org/t/p/w500'+u;
   return u;
 }
+function episodeIndexByNumber(items,n){for(var i=0;i<(items||[]).length;i++)if(items[i]._stremAbsolute===n)return i;return -1;}
+window.__STREMIO_EPISODE_INDEX__=episodeIndexByNumber;
 function episodeFallback(meta,small){if(!meta)return '';return small?(bgSmall(meta)||posterOf(meta)):(meta.background||bgOf(meta)||meta.poster||'');}
 function mergeEpisodeDetails(base,extra){
   if(!base||!extra||!base.videos||!extra.videos)return false;
@@ -1140,9 +1142,10 @@ buildEps:function(){
     host.appendChild(d);this.epEls.push(d);}
   this.epIdx=0;this.markWatched();},
 jumpEpisode:function(){
-  var raw=null;try{raw=window.prompt(tx('episodeNumberPrompt'),String((this.currentEpisode()&&this.currentEpisode()._stremAbsolute)||1));}catch(e){}
-  if(raw==null)return;var n=parseInt(raw,10),at=-1;if(n>0)for(var i=0;i<this.linearEps.length;i++)if(this.linearEps[i]._stremAbsolute===n){at=i;break;}
-  if(at<0){toast(tx('episodeNotFound'));return;}this.episodeMode='continuous';this.rangeIdx=Math.floor(at/50);this.epIdx=at%50;this.buildEps();this.epIdx=at%50;this.zone='eps';this.paint();},
+  episodeJump.show((this.currentEpisode()&&this.currentEpisode()._stremAbsolute)||1);},
+goToEpisodeNumber:function(n){
+  var at=episodeIndexByNumber(this.linearEps,n);if(at<0){toast(tx('episodeNotFound'));return false;}
+  this.episodeMode='continuous';this.rangeIdx=Math.floor(at/50);this.epIdx=at%50;this.buildEps();this.epIdx=at%50;this.zone='eps';this.paint();return true;},
 selectEpisode:function(vid,noOpen){
   if(this.episodeMode==='continuous'){for(var a=0;a<this.linearEps.length;a++)if(this.linearEps[a].id===vid){this.rangeIdx=Math.floor(a/50);this.buildEps();this.epIdx=a%50;this.zone='eps';this.paint();if(!noOpen)this.openStreams(vid);return;}}
   for(var s=0;s<this.seasons.length;s++){var eps=this.seasons[s].eps;
@@ -1197,6 +1200,24 @@ key:function(k){
     this.paint();return true;}
   return true;}
 };
+
+/* Chromium 38/53 can silently ignore the native browser prompt inside packaged TV apps.
+   Keep episode entry inside the application so arrows, OK, number keys and the
+   Magic Remote all use the same predictable path. */
+var episodeJump={open:false,value:'',idx:0,replaceOnDigit:true,els:[],keys:['1','2','3','4','5','6','7','8','9','delete','0','go'],
+show:function(initial){this.open=true;this.value=String(Math.max(1,parseInt(initial,10)||1));this.replaceOnDigit=true;this.idx=0;this.build();$('episodeJump').style.display='block';this.paint();},
+build:function(){var host=$('ejKeys');host.innerHTML='';this.els=[];$('ejTitle').textContent=tx('episodeNumberPrompt');$('ejHint').textContent=tx('jumpHint');
+  for(var i=0;i<this.keys.length;i++){var b=document.createElement('div');b.className='ejkey';b.textContent=this.keys[i]==='delete'?tx('jumpDelete'):(this.keys[i]==='go'?tx('jumpGo'):this.keys[i]);host.appendChild(b);this.els.push(b);}},
+paint:function(){$('ejValue').textContent=this.value||'0';setF(this.els,this.idx);},
+close:function(){this.open=false;$('episodeJump').style.display='none';},
+press:function(i){var k=this.keys[i];if(k==='delete'){this.replaceOnDigit=false;this.value=this.value.slice(0,-1);}else if(k==='go'){var n=parseInt(this.value,10);if(n>0&&detail.goToEpisodeNumber(n))this.close();else if(!(n>0))toast(tx('episodeNotFound'));}else if(this.value.length<5||this.replaceOnDigit){this.value=this.replaceOnDigit?k:((this.value==='0'?'':this.value)+k);this.replaceOnDigit=false;}this.paint();},
+key:function(k){var row=Math.floor(this.idx/3),col=this.idx%3;
+  if(k>=48&&k<=57){this.press(k===48?10:k-49);return;}
+  if(k>=96&&k<=105){this.press(k===96?10:k-97);return;}
+  if(k===37)col=Math.max(0,col-1);else if(k===39)col=Math.min(2,col+1);else if(k===38)row=Math.max(0,row-1);else if(k===40)row=Math.min(3,row+1);else if(k===13){this.press(this.idx);return;}
+  this.idx=row*3+col;this.paint();}}
+;
+window.__STREMIO_EPISODE_JUMP__=episodeJump;
 
 /* ================= STREAMS OVERLAY ================= */
 var streamsUI={open:false,items:[],idx:0,els:[],groups:[],pool:[],trimmed:{},type:'',id:'',vid:'',seq:0,requestSeq:0,autoPref:null,
@@ -1532,6 +1553,7 @@ function pointerIndex(target,list){for(var n=target;n&&n!==document.body;n=n.par
 function pointerBoard(target,board,activate){if(!board)return false;for(var r=0;r<board.rows.length;r++){var row=board.rows[r],i=pointerIndex(target,row.cardEls||[]);if(i<0)continue;
   board.rowIdx=r;row.col=i;topNav.active=false;board.paint();board.hero();if(activate&&row.items[i])openItem(row.items[i]);return true;}return false;}
 function pointerUI(target,activate){var i,r,row,def;
+  if(episodeJump.open){i=pointerIndex(target,episodeJump.els);if(i>=0){episodeJump.idx=i;episodeJump.paint();if(activate)episodeJump.press(i);}return true;}
   if(cwMenu.open){i=pointerIndex(target,cwMenu.els);if(i<0)return false;cwMenu.idx=i;cwMenu.paint();if(activate&&cwMenu.acts[i])cwMenu.acts[i]();return true;}
   if(streamsUI.open){i=pointerIndex(target,streamsUI.chipEls);if(i>=0){streamsUI.zone='chips';streamsUI.chipIdx=i;streamsUI.paint();if(activate){streamsUI.filter=streamsUI.chips[i];streamsUI.idx=0;streamsUI.rebuild();}return true;}
     i=pointerIndex(target,streamsUI.els);if(i<0)return false;streamsUI.zone='list';streamsUI.idx=i;streamsUI.paint();if(activate)streamsUI.choose();return true;}
@@ -1610,6 +1632,7 @@ on(document,'keydown',function(e){
   idleTouch();
   var a=document.activeElement;
   if(a===$('sBox')||a===$('lgEmail')||a===$('lgPass'))return; /* typing: inputs manage themselves */
+  if(episodeJump.open){e.preventDefault();e.stopPropagation();if(k===461||k===8||k===27)episodeJump.close();else episodeJump.key(k);return;}
   if(k===461||k===8||k===27){e.preventDefault();e.stopPropagation();if(SCR==='disc'&&disc.closeFilter())return;history.back();return;}
   if(k!==37&&k!==38&&k!==39&&k!==40&&k!==13)return;
   e.preventDefault();

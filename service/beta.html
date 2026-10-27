@@ -331,6 +331,15 @@ body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- misc ---------- */
 #toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .25s;z-index:60;pointer-events:none}
+#episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
+#ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#171421;border:1px solid rgba(174,135,255,.42);border-radius:22px;box-sizing:border-box}
+#ejTitle{font-size:32px;font-weight:700;color:#fff}
+#ejValue{height:72px;margin:22px 0 18px;border-radius:12px;background:#0c0a12;color:#c9adff;font-size:48px;line-height:72px;font-weight:700}
+#ejKeys{text-align:left}
+.ejkey{display:inline-block;width:132px;height:62px;margin:6px 6px;text-align:center;line-height:62px;border-radius:10px;background:#2b2737;color:#fff;font-size:27px;font-weight:600;box-sizing:border-box;cursor:pointer}
+.ejkey.f{background:#8b5cf6;color:#fff;outline:3px solid #fff}
+#ejHint{margin-top:18px;color:#aaa3b5;font-size:19px}
+@media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
 #boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(93,57,184,.18),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #boot .bootbox{text-align:center;width:360px}
 #boot .lg{width:94px;height:94px;animation:bb 1.8s ease-in-out infinite}
@@ -427,6 +436,7 @@ body.series-episode #dSeasons{margin-top:24px}
 
 <div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
+<div id="episodeJump"><div id="ejBox"><div id="ejTitle"></div><div id="ejValue"></div><div id="ejKeys"></div><div id="ejHint"></div></div></div>
 <div id="toast"></div>
 <div id="boot"><div class="bootbox"><img class="lg" src="/logo.png"><div class="bt">StremCompat</div><div class="btrack"><div class="bfill"></div></div></div></div>
 
