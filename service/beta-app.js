@@ -53,7 +53,8 @@ var UI_TEXT={
     continueLabel:'Continue',watch:'Watch',details:'Details',similarTitles:'More like this',trailer:'Trailer',markWatched:'Mark as watched',markedWatched:'Marked as watched',
     removeLibrary:'Remove from Library',addLibrary:'Add to Library',removedLibrary:'Removed from Library',addedLibrary:'Added to Library',inLibrary:'In Library',libraryButton:'+ Library',
     similar:'Similar',similarTo:'More like {0}',findingSimilar:'Finding similar titles…',nothingFound:'Nothing found.',couldNotLoad:'Could not load title',
-    cast:'Cast',director:'Director',writers:'Writers',country:'Country',awards:'Awards',specials:'Specials',season:'Season {0}',episode:'Episode {0}',seasonEpisode:'Season {0} · Episode {1}',
+    cast:'Cast',director:'Director',writers:'Writers',country:'Country',awards:'Awards',specials:'Specials',season:'Season {0}',episode:'Episode {0}',seasonEpisode:'Season {0} · Episode {1}',absoluteEpisode:'Episode {0} overall',seasonAbsoluteEpisode:'Season {0} · Episode {1} · Episode {2} overall',
+    seasonOrder:'By season',continuousOrder:'Continuous order',previous:'Previous',next:'Next',episodeRange:'Episodes {0}–{1}',goToEpisode:'Go to episode',episodeNumberPrompt:'Enter the overall episode number',episodeNotFound:'Episode not found',
     sources:'Sources',findingSources:'Finding sources…',noSources:'No sources found.',noSourcesQuality:'No sources in this quality.',lastSource:'Last source',continuePlayback:'Continue playback',sameSource:'The same source used previously',seeders:'seeders',compatibilityCheck:'Check compatibility: {0}',sourcePrepareFailed:'Could not prepare this source. Please try again.',runtimeRestoring:'Restoring the local service…',runtimeUnavailable:'Could not restore the local service',
     interfaceGroup:'Interface',interfaceLanguage:'Interface language',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Language: {0}  ‹ ›',maintenanceGroup:'Recovery',reloadApp:'Reload StremCompat',reloadingApp:'Reloading StremCompat…',
     sourceGroup:'Sources',preferredQuality:'Preferred quality',automatic:'Automatic',subtitlesGroup:'Subtitles',subtitleSize:'Subtitle size',defaultLanguage:'Default language',subtitleColor:'Subtitle color',subtitleOutline:'Subtitle outline',subtitleBackground:'Subtitle background',embeddedSubtitles:'Embedded subtitles',
@@ -74,7 +75,8 @@ var UI_TEXT={
     continueLabel:'Continuar',watch:'Assistir',details:'Detalhes',similarTitles:'Ver títulos parecidos',trailer:'Trailer',markWatched:'Marcar como assistido',markedWatched:'Marcado como assistido',
     removeLibrary:'Remover da Biblioteca',addLibrary:'Adicionar à Biblioteca',removedLibrary:'Removido da Biblioteca',addedLibrary:'Adicionado à Biblioteca',inLibrary:'Na Biblioteca',libraryButton:'+ Biblioteca',
     similar:'Parecidos',similarTo:'Parecidos com {0}',findingSimilar:'Buscando títulos parecidos…',nothingFound:'Nada encontrado.',couldNotLoad:'Não foi possível carregar o título',
-    cast:'Elenco',director:'Direção',writers:'Roteiro',country:'País',awards:'Prêmios',specials:'Especiais',season:'Temporada {0}',episode:'Episódio {0}',seasonEpisode:'Temporada {0} · Episódio {1}',
+    cast:'Elenco',director:'Direção',writers:'Roteiro',country:'País',awards:'Prêmios',specials:'Especiais',season:'Temporada {0}',episode:'Episódio {0}',seasonEpisode:'Temporada {0} · Episódio {1}',absoluteEpisode:'Episódio geral {0}',seasonAbsoluteEpisode:'Temporada {0} · Episódio {1} · Episódio geral {2}',
+    seasonOrder:'Por temporada',continuousOrder:'Ordem contínua',previous:'Anterior',next:'Próximo',episodeRange:'Episódios {0}–{1}',goToEpisode:'Ir para episódio',episodeNumberPrompt:'Digite o número geral do episódio',episodeNotFound:'Episódio não encontrado',
     sources:'Fontes',findingSources:'Buscando fontes…',noSources:'Nenhuma fonte encontrada.',noSourcesQuality:'Nenhuma fonte nesta qualidade.',lastSource:'Última fonte',continuePlayback:'Continuar reprodução',sameSource:'A mesma fonte usada anteriormente',seeders:'seeders',compatibilityCheck:'Verifique a compatibilidade: {0}',sourcePrepareFailed:'Não foi possível preparar esta fonte. Tente novamente.',runtimeRestoring:'Restaurando o serviço local…',runtimeUnavailable:'Não foi possível restaurar o serviço local',
     interfaceGroup:'Interface',interfaceLanguage:'Idioma da interface',english:'English',portugueseBrazil:'Português (Brasil)',languagePicker:'Idioma: {0}  ‹ ›',maintenanceGroup:'Recuperação',reloadApp:'Recarregar StremCompat',reloadingApp:'Recarregando o StremCompat…',
     sourceGroup:'Fontes',preferredQuality:'Qualidade preferida',automatic:'Automática',subtitlesGroup:'Legendas',subtitleSize:'Tamanho da legenda',defaultLanguage:'Idioma padrão',subtitleColor:'Cor da legenda',subtitleOutline:'Contorno da legenda',subtitleBackground:'Fundo da legenda',embeddedSubtitles:'Legendas incorporadas',
@@ -954,10 +956,54 @@ key:function(k){
 };
 
 /* ================= DETAIL ================= */
+function episodeNumber(v,fallback){var n=parseInt(v&&(v.episode!=null?v.episode:v.number),10);return n>0?n:fallback;}
+function explicitAbsoluteEpisode(v){
+  var keys=['absoluteEpisode','absolute_episode','absoluteNumber','absolute_number','episodeAbsolute'];
+  for(var i=0;i<keys.length;i++){var n=parseInt(v&&v[keys[i]],10);if(n>0)return n;}
+  return 0;
+}
+function buildEpisodeModel(videos){
+  var bySeason={},order=[],i,s,v,eps,o,sn,cursor=0,seasons=[],linear=[];
+  videos=videos||[];
+  for(i=0;i<videos.length;i++){v=videos[i];s=(v.season!=null)?parseInt(v.season,10):0;if(isNaN(s))s=0;
+    if(!bySeason[s]){bySeason[s]=[];order.push(s);}bySeason[s].push(v);}
+  order.sort(function(a,b){if(a===0)return 1;if(b===0)return -1;return a-b;});
+  for(o=0;o<order.length;o++){sn=order[o];eps=bySeason[sn];
+    eps.sort(function(a,b){return episodeNumber(a,0)-episodeNumber(b,0);});
+    for(i=0;i<eps.length;i++){v=eps[i];v._stremSeason=sn;v._stremSeasonEpisode=episodeNumber(v,i+1);
+      if(sn===0)v._stremAbsolute=0;else{var ex=explicitAbsoluteEpisode(v);cursor=ex>0?Math.max(cursor+1,ex):cursor+1;v._stremAbsolute=cursor;linear.push(v);}}
+    seasons.push({n:sn,eps:eps});}
+  return {seasons:seasons,linear:linear};
+}
+function episodeImage(v,meta){
+  var u=v&&(v.thumbnail||v.still||v.stillPath||v.still_path)||'';
+  if(u&&String(u).charAt(0)==='/')u='https://image.tmdb.org/t/p/w500'+u;
+  return u;
+}
+function episodeFallback(meta,small){if(!meta)return '';return small?(bgSmall(meta)||posterOf(meta)):(meta.background||bgOf(meta)||meta.poster||'');}
+function mergeEpisodeDetails(base,extra){
+  if(!base||!extra||!base.videos||!extra.videos)return false;
+  var byId={},byNum={},i,v,x,k,changed=false,fields=['thumbnail','still','stillPath','still_path','overview','description','name','title','absoluteEpisode','absolute_episode','absoluteNumber','absolute_number'];
+  for(i=0;i<extra.videos.length;i++){x=extra.videos[i];if(x.id)byId[x.id]=x;k=String(x.season==null?0:x.season)+':'+String(episodeNumber(x,i+1));byNum[k]=x;}
+  for(i=0;i<base.videos.length;i++){v=base.videos[i];x=(v.id&&byId[v.id])||byNum[String(v.season==null?0:v.season)+':'+String(episodeNumber(v,i+1))];if(!x)continue;
+    for(var f=0;f<fields.length;f++){k=fields[f];if(!v[k]&&x[k]){v[k]=x[k];changed=true;}}}
+  return changed;
+}
+function enrichEpisodeMetadata(type,id,meta,cb){
+  if(type!=='series'||!meta||!meta.videos||!meta.videos.length){cb(false);return;}
+  var bases=metaAddonsFor(type,id),seen={},queue=[];
+  for(var i=0;i<bases.length;i++){var b=bases[i];if(b&&b!==CIN&&!seen[b]){seen[b]=1;queue.push(b);}}
+  var at=0,changed=false;
+  function next(){if(at>=queue.length){cb(changed);return;}var b=queue[at++];xhrJson(b+'/meta/'+type+'/'+encodeURIComponent(id)+'.json',function(j){if(j&&j.meta)changed=mergeEpisodeDetails(meta,j.meta)||changed;next();},4500);}
+  next();
+}
+window.__STREMIO_EPISODE_MODEL__=buildEpisodeModel;
+window.__STREMIO_MERGE_EPISODES__=mergeEpisodeDetails;
 var detail={meta:null,type:'',id:'',vid:null,zone:'btns',btnIdx:0,btnEls:[],btnActs:[],baseMeta:'',baseDesc:'',baseInfo:'',
-seasons:[],seasonIdx:0,eps:[],epIdx:0,epEls:[],seasonEls:[],watchedMap:{},
+seasons:[],linearEps:[],seasonIdx:0,rangeIdx:0,episodeMode:'season',eps:[],epIdx:0,epEls:[],seasonEls:[],seasonActs:[],seasonControlIdx:0,watchedMap:{},
 enter:function(p){
   this.type=p.type;this.id=p.id;this.vid=p.vid||null;this.zone='btns';this.btnIdx=0;this.meta=null;this.watchedMap={};
+  this.episodeMode='season';this.seasonIdx=0;this.rangeIdx=0;this.epIdx=0;this.seasonControlIdx=0;
   $('dTitle').textContent='';$('dDesc').textContent='';$('dMeta').textContent='';$('dInfo').innerHTML='';
   /* Reused image nodes must be cleared before the next metadata request. Otherwise
      paint() can reveal the previous title while the replacement is still loading. */
@@ -968,8 +1014,10 @@ enter:function(p){
   getMeta(this.type,this.id,function(m){
     if(!m){toast(tx('couldNotLoad'));return;}
     if(SCR!=='detail'||detail.id!==p.id)return;
-    self.meta=m;self.render();self.loadWatched();});
+    self.meta=m;self.render();self.loadWatched();var keepId=self.currentEpisode()&&self.currentEpisode().id;
+    enrichEpisodeMetadata(self.type,self.id,m,function(changed){if(!changed||SCR!=='detail'||detail.id!==p.id)return;self.buildSeasons();if(keepId)self.selectEpisode(keepId,true);self.paint();});});
 },
+currentEpisode:function(){return this.eps&&this.eps[this.epIdx]||null;},
 loadWatched:function(){ /* LOCAL watched list (state.watchedEpisodes) — never synced */
   this.watchedMap={};
   if(this.type!=='series')return;
@@ -1058,35 +1106,45 @@ playTrailer:function(){
   ytPlay(t,'beta#detail/'+this.type+'/'+this.id);
 },
 buildSeasons:function(){
-  var vids=(this.meta&&this.meta.videos)||[];var bySeason={},order=[];
-  for(var i=0;i<vids.length;i++){var v=vids[i];var s=(v.season!=null)?v.season:0;
-    if(!bySeason[s]){bySeason[s]=[];order.push(s);}bySeason[s].push(v);}
-  order.sort(function(a,b){if(a===0)return 1;if(b===0)return -1;return a-b;});
-  this.seasons=[];
-  for(var o=0;o<order.length;o++){var sn=order[o];var eps=bySeason[sn];
-    eps.sort(function(a,b){return (a.episode||a.number||0)-(b.episode||b.number||0);});
-    this.seasons.push({n:sn,eps:eps});}
-  var host=$('dSeasons');host.innerHTML='';this.seasonEls=[];
-  for(var j=0;j<this.seasons.length;j++){var ch=document.createElement('div');ch.className='schip';
-    ch.textContent=this.seasons[j].n===0?tx('specials'):tx('season',this.seasons[j].n);
-    host.appendChild(ch);this.seasonEls.push(ch);}
-  this.seasonIdx=0;this.epIdx=0;this.buildEps();},
+  var model=buildEpisodeModel((this.meta&&this.meta.videos)||[]);this.seasons=model.seasons;this.linearEps=model.linear;
+  if(this.seasonIdx>=this.seasons.length)this.seasonIdx=Math.max(0,this.seasons.length-1);
+  if(this.rangeIdx*50>=this.linearEps.length)this.rangeIdx=Math.max(0,Math.ceil(this.linearEps.length/50)-1);
+  this.epIdx=0;this.buildEps();},
+addSeasonControl:function(label,act,kind){var host=$('dSeasons'),ch=document.createElement('div');ch.className='schip '+(kind||'');ch.textContent=label;host.appendChild(ch);this.seasonEls.push(ch);this.seasonActs.push(act);},
+buildSeasonControls:function(){
+  var self=this,host=$('dSeasons');host.innerHTML='';this.seasonEls=[];this.seasonActs=[];
+  this.addSeasonControl(this.episodeMode==='season'?tx('seasonOrder'):tx('continuousOrder'),function(){var keep=self.currentEpisode();self.episodeMode=self.episodeMode==='season'?'continuous':'season';self.epIdx=0;self.buildEps();if(keep)self.selectEpisode(keep.id,true);},'mode');
+  this.addSeasonControl('‹',function(){if(self.episodeMode==='season'){if(self.seasonIdx>0)self.seasonIdx--;}else if(self.rangeIdx>0)self.rangeIdx--;self.epIdx=0;self.buildEps();},'arrow');
+  var label;
+  if(this.episodeMode==='season'){var se=this.seasons[this.seasonIdx];label=se?(se.n===0?tx('specials'):tx('season',se.n)):tx('season',1);}
+  else{var first=this.rangeIdx*50+1,last=Math.min(this.linearEps.length,first+49);label=tx('episodeRange',first,last);}
+  this.addSeasonControl(label,function(){},'selector');
+  this.addSeasonControl('›',function(){if(self.episodeMode==='season'){if(self.seasonIdx<self.seasons.length-1)self.seasonIdx++;}else if((self.rangeIdx+1)*50<self.linearEps.length)self.rangeIdx++;self.epIdx=0;self.buildEps();},'arrow');
+  this.addSeasonControl(tx('goToEpisode'),function(){self.jumpEpisode();},'jump');
+  if(this.seasonControlIdx>=this.seasonEls.length)this.seasonControlIdx=0;
+},
 buildEps:function(){
-  var se=this.seasons[this.seasonIdx];var host=$('dEpsInner');host.innerHTML='';this.epEls=[];this.eps=se?se.eps:[];
+  var se=this.seasons[this.seasonIdx],start=this.rangeIdx*50;var host=$('dEpsInner');host.innerHTML='';this.epEls=[];
+  this.eps=this.episodeMode==='continuous'?this.linearEps.slice(start,start+50):(se?se.eps:[]);this.buildSeasonControls();
   for(var i=0;i<this.eps.length;i++){var v=this.eps[i];
     var d=document.createElement('div');d.className='ep';
     var th=document.createElement('div');th.className='th';
-    if(v.thumbnail){var im=new Image();im._full=v.thumbnail;im.src=BLANK_IMG;th.appendChild(im);}
+    var actualThumb=episodeImage(v,this.meta),thumb=actualThumb||episodeFallback(this.meta,true);if(thumb){var im=new Image();im._full=thumb;im._fallback=episodeFallback(this.meta,true);im.onerror=function(){if(this._fallback&&this.src!==this._fallback){this._full=null;this.src=this._fallback;}this.onerror=null;};im.src=BLANK_IMG;th.appendChild(im);if(!actualThumb)th.className+=' fallback';}
     d.appendChild(th);
     var bd=document.createElement('div');bd.className='bd';
     var t=document.createElement('div');t.className='t';
-    var epBase=tx('episode',v.episode||v.number||i+1),epName=v.name||v.title||'';
+    var epBase=this.episodeMode==='continuous'?tx('absoluteEpisode',v._stremAbsolute||start+i+1):tx('episode',v._stremSeasonEpisode||i+1),epName=v.name||v.title||'';
     t.textContent=!epName||epName.toLowerCase()===epBase.toLowerCase()?epBase:(epBase+'  ·  '+epName);bd.appendChild(t);
     if(v.overview||v.description){var o=document.createElement('div');o.className='o';o.textContent=v.overview||v.description;bd.appendChild(o);}
     d.appendChild(bd);
     host.appendChild(d);this.epEls.push(d);}
   this.epIdx=0;this.markWatched();},
+jumpEpisode:function(){
+  var raw=null;try{raw=window.prompt(tx('episodeNumberPrompt'),String((this.currentEpisode()&&this.currentEpisode()._stremAbsolute)||1));}catch(e){}
+  if(raw==null)return;var n=parseInt(raw,10),at=-1;if(n>0)for(var i=0;i<this.linearEps.length;i++)if(this.linearEps[i]._stremAbsolute===n){at=i;break;}
+  if(at<0){toast(tx('episodeNotFound'));return;}this.episodeMode='continuous';this.rangeIdx=Math.floor(at/50);this.epIdx=at%50;this.buildEps();this.epIdx=at%50;this.zone='eps';this.paint();},
 selectEpisode:function(vid,noOpen){
+  if(this.episodeMode==='continuous'){for(var a=0;a<this.linearEps.length;a++)if(this.linearEps[a].id===vid){this.rangeIdx=Math.floor(a/50);this.buildEps();this.epIdx=a%50;this.zone='eps';this.paint();if(!noOpen)this.openStreams(vid);return;}}
   for(var s=0;s<this.seasons.length;s++){var eps=this.seasons[s].eps;
     for(var e=0;e<eps.length;e++){if(eps[e].id===vid){this.seasonIdx=s;this.buildEps();this.epIdx=e;this.zone='eps';this.paint();if(!noOpen)this.openStreams(vid);return;}}}
 },
@@ -1095,7 +1153,7 @@ paint:function(){
   var isSeries=this.type==='series';
   $('dSeasons').style.display=isSeries?'block':'none';
   $('dEps').style.display=isSeries?'block':'none';
-  for(var i=0;i<this.seasonEls.length;i++){this.seasonEls[i].className='schip'+(i===this.seasonIdx?' cur':'')+(this.zone==='seasons'&&i===this.seasonIdx?' f':'');}
+  for(var i=0;i<this.seasonEls.length;i++){var base=this.seasonEls[i].className.replace(/ ?\bcur\b/g,'').replace(/ ?\bf\b/g,'');this.seasonEls[i].className=base+(i===2?' cur':'')+(this.zone==='seasons'&&i===this.seasonControlIdx?' f':'');}
   setF(this.epEls,this.zone==='eps'?this.epIdx:-1);
   for(var ii=0;ii<this.epEls.length;ii++){var ims=this.epEls[ii].getElementsByTagName('img'),near=Math.abs(ii-this.epIdx)<=2;
     for(var iz=0;iz<ims.length;iz++){var ei=ims[iz];if(near&&ei._full){ei.src=ei._full;ei._full=null;}else if(!near&&ei.src&&ei.src!==BLANK_IMG){ei._full=ei.src;ei.src=BLANK_IMG;}}}
@@ -1106,9 +1164,9 @@ paint:function(){
   $('dEpsInner').style.webkitTransform='translateX(-'+x+'px)';
   var episodeMode=(this.zone==='eps'),cv=episodeMode?this.eps[this.epIdx]:null;
   if(episodeMode){bodyAdd('series-episode');$('dInfo').style.display='none';$('dPoster').style.display='none';$('dBtns').style.display='none';
-    $('dDesc').style.display='block';$('dMeta').textContent=cv?tx('seasonEpisode',cv.season==null?this.seasons[this.seasonIdx].n:cv.season,cv.episode||cv.number||this.epIdx+1):'';
+    $('dDesc').style.display='block';$('dMeta').textContent=cv?(cv._stremAbsolute?tx('seasonAbsoluteEpisode',cv._stremSeason,cv._stremSeasonEpisode,cv._stremAbsolute):tx('seasonEpisode',cv._stremSeason,cv._stremSeasonEpisode)):'';
     $('dDesc').textContent=(cv&&(cv.overview||cv.description))||'';
-    if(cv&&cv.thumbnail)setBg(cv.thumbnail);else if(this.meta)setBg(this.meta.background||'');}
+    if(cv)setBg(episodeImage(cv,this.meta)||episodeFallback(this.meta,false));else if(this.meta)setBg(this.meta.background||'');}
   else{bodyRemove('series-episode');$('dBtns').style.display='block';$('dDesc').style.display='block';$('dInfo').style.display='block';
     $('dMeta').innerHTML=this.baseMeta;$('dInfo').innerHTML=this.baseInfo;$('dDesc').textContent=this.baseDesc;
     var posterReady=this.meta&&this.meta.poster&&$('dPoster')._detailId===this.id;
@@ -1125,10 +1183,11 @@ key:function(k){
       else this.openStreams(this.id);} /* movie: Down re-opens the streams panel */
     this.paint();return true;}
   if(this.zone==='seasons'){
-    if(k===39){if(this.seasonIdx<this.seasons.length-1){this.seasonIdx++;this.buildEps();}}
-    else if(k===37){if(this.seasonIdx>0){this.seasonIdx--;this.buildEps();}else{topNav.focus();return true;}}
+    if(k===39)this.seasonControlIdx=Math.min(this.seasonEls.length-1,this.seasonControlIdx+1);
+    else if(k===37){if(this.seasonControlIdx>0)this.seasonControlIdx--;else{topNav.focus();return true;}}
     else if(k===38){this.zone='btns';}
-    else if(k===40||k===13){if(this.eps.length)this.zone='eps';}
+    else if(k===40){if(this.eps.length)this.zone='eps';}
+    else if(k===13){var act=this.seasonActs[this.seasonControlIdx];if(act)act();}
     this.paint();return true;}
   if(this.zone==='eps'){
     if(k===39)this.epIdx=Math.min(this.epEls.length-1,this.epIdx+1);
@@ -1485,7 +1544,7 @@ function pointerUI(target,activate){var i,r,row,def;
     i=pointerIndex(target,disc.els);if(i>=0){disc.zone='grid';disc.idx=i;disc.paint();if(activate&&disc.items[i])openItem(disc.items[i]);return true;}}
   if(SCR==='sim'){i=pointerIndex(target,similar.els);if(i>=0){similar.idx=i;similar.paint();if(activate&&similar.items[i])goScr('detail',{type:similar.items[i].type,id:similar.items[i].id,vid:null});return true;}}
   if(SCR==='detail'){i=pointerIndex(target,detail.btnEls);if(i>=0){detail.zone='btns';detail.btnIdx=i;detail.paint();if(activate&&detail.btnActs[i])detail.btnActs[i]();return true;}
-    i=pointerIndex(target,detail.seasonEls);if(i>=0){detail.zone='seasons';if(detail.seasonIdx!==i){detail.seasonIdx=i;detail.buildEps();}detail.paint();if(activate&&detail.eps.length){detail.zone='eps';detail.paint();}return true;}
+    i=pointerIndex(target,detail.seasonEls);if(i>=0){detail.zone='seasons';detail.seasonControlIdx=i;detail.paint();if(activate&&detail.seasonActs[i]){detail.seasonActs[i]();detail.paint();}return true;}
     i=pointerIndex(target,detail.epEls);if(i>=0){detail.zone='eps';detail.epIdx=i;detail.paint();if(activate&&detail.eps[i])detail.openStreams(detail.eps[i].id);return true;}}
   if(SCR==='search'){for(r=0;r<search.rows.length;r++){row=search.rows[r];i=pointerIndex(target,row.cardEls||[]);if(i>=0){search.zone='rows';search.rowIdx=r;row.col=i;search.paint();if(activate&&row.items[i])openItem(row.items[i]);return true;}}}
   if(SCR==='addons'){i=pointerIndex(target,addonPanel.els);if(i>=0){topNav.active=false;addonPanel.idx=i;addonPanel.paint();if(activate&&i===0)addonPanel.syncNow();return true;}}

@@ -139,6 +139,21 @@ assert.ok(source.indexOf('detail.meta===m&&detail.id===mediaId') >= 0, 'late det
 assert.ok(source.indexOf('function queuePointerHover(target)') >= 0, 'Magic Remote hover navigation is not debounced');
 assert.ok(source.indexOf("def.k==='__reload'") >= 0, 'Settings recovery action is not wired');
 assert.ok(source.indexOf("$('bg2').style.backgroundImage='none'") >= 0, 'inactive backdrop texture is not released');
+var episodeModel = firstRun.context.__STREMIO_EPISODE_MODEL__([
+  { id:'show:2:2',season:2,episode:2,title:'Later' },
+  { id:'show:0:1',season:0,episode:1,title:'Special' },
+  { id:'show:1:2',season:1,episode:2,title:'Second' },
+  { id:'show:1:1',season:1,episode:1,title:'First' },
+  { id:'show:2:1',season:2,episode:1,title:'Third',absoluteEpisode:101 }
+]);
+assert.strictEqual(episodeModel.seasons[0].n, 1, 'regular seasons were not sorted before specials');
+assert.strictEqual(episodeModel.seasons[episodeModel.seasons.length-1].n, 0, 'specials were not placed last');
+assert.strictEqual(episodeModel.linear.length, 4, 'specials leaked into continuous episode order');
+assert.strictEqual(episodeModel.linear[0]._stremAbsolute, 1, 'continuous numbering did not start at one');
+assert.strictEqual(episodeModel.linear[2]._stremAbsolute, 101, 'provider absolute episode number was not preserved');
+var baseEpisodes={videos:[{id:'show:1:1',season:1,episode:1}]};
+assert.strictEqual(firstRun.context.__STREMIO_MERGE_EPISODES__(baseEpisodes,{videos:[{id:'show:1:1',season:1,episode:1,thumbnail:'/still.jpg',overview:'Overview'}]}),true,'metadata enrichment did not report a change');
+assert.strictEqual(baseEpisodes.videos[0].thumbnail,'/still.jpg','metadata enrichment did not fill a missing thumbnail');
 var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
   { addon:'Other',quality:'1080p',title:'H264 AAC',seeders:900,compatRank:0 },
   { addon:'Torrentio',quality:'4K',title:'HEVC 10bit DDP WEB-DL',seeders:20,compatRank:0 },
