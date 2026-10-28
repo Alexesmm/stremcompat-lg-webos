@@ -19,7 +19,8 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     loadGen = (board._loadGen || 0) + 1;
   board._loadGen = loadGen;
   board.empty = false;
-  var waiting = defs.length;
+  var waiting = defs.length,
+    started = Date.now();
   if (keepFocus) for (var i0 = 0; i0 < board.rows.length; i0++) oldCols.push(board.rows[i0].col);
   board.rows = [];
   function reveal(row, delay) {
@@ -66,6 +67,8 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
         if (!row.answered) {
           row.answered = true;
           waiting--;
+          /* shown by Settings > Diagnostics */
+          if (!waiting && board === home) window.__STREMIO_HOME_LOAD_MS__ = Date.now() - started;
         }
         row.items = items;
         row.cardsEl.innerHTML = '';

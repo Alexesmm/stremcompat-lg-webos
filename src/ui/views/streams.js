@@ -21,11 +21,13 @@ var streamsUI = {
   chipEls: [],
   failed: [],
   title: '',
+  flushT: null,
   show: function (type, id, vid, title) {
     var request = ++this.requestSeq;
     this.open = true;
     this.failed = [];
     this.title = title || '';
+    this.cancelFlush();
     this.items = [];
     this.idx = 0;
     this.els = [];
@@ -77,7 +79,7 @@ var streamsUI = {
       function (total, failed) {
         if (!self.open || self.requestSeq !== request) return;
         self.failed = failed || [];
-        if (!self.items.length) {
+        if (!self.pool.length) {
           $('stInner').innerHTML =
             '<div class="stmsg">' +
             (self.failed.length
@@ -86,7 +88,7 @@ var streamsUI = {
             '</div>';
           return;
         }
-        self.rebuild();
+        self.flush();
         var matched = matchingNextSource(self.all(), self.autoPref);
         self.autoPref = null;
         if (matched) {
@@ -103,6 +105,25 @@ var streamsUI = {
       this.pool.push(arr[i]);
     }
     this.compact();
+    /* Every answering addon used to rebuild the whole list while the viewer was moving
+       through it. The first answer is drawn at once; later ones are drawn together. */
+    if (!this.items.length) {
+      this.flush();
+      return;
+    }
+    var self = this;
+    if (!this.flushT)
+      this.flushT = setTimeout(function () {
+        self.flushT = null;
+        if (self.open) self.flush();
+      }, 300);
+  },
+  cancelFlush: function () {
+    if (this.flushT) clearTimeout(this.flushT);
+    this.flushT = null;
+  },
+  flush: function () {
+    this.cancelFlush();
     this.renderChips();
     this.rebuild();
   },
@@ -243,6 +264,7 @@ var streamsUI = {
   },
   close: function () {
     this.open = false;
+    this.cancelFlush();
     this.requestSeq++;
     $('streams').style.display = 'none';
   },

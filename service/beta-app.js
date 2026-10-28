@@ -287,6 +287,15 @@ var UI_TEXT = {
     languagePicker: 'Language: {0}  ‹ ›',
     maintenanceGroup: 'Recovery',
     reloadApp: 'Reload StremCompat',
+    diagnostics: 'Diagnostics',
+    diagLoading: 'Reading…',
+    diagUnavailable: 'The local service did not answer',
+    diagServer: 'Local server: {0} MB in use (JS {1} MB) · running for {2} min',
+    diagTv: 'Television: {0} MB free of {1} MB · CPU load {2}',
+    diagStreaming: 'Streaming server: {0}',
+    diagRunning: 'running',
+    diagStopped: 'stopped',
+    diagInterface: 'Interface: {0} MB of JS · Home loaded in {1} s',
     reloadingApp: 'Reloading StremCompat…',
     sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
@@ -520,6 +529,15 @@ var UI_TEXT = {
     languagePicker: 'Idioma: {0}  ‹ ›',
     maintenanceGroup: 'Recuperação',
     reloadApp: 'Recarregar StremCompat',
+    diagnostics: 'Diagnóstico',
+    diagLoading: 'Lendo…',
+    diagUnavailable: 'O serviço local não respondeu',
+    diagServer: 'Servidor local: {0} MB em uso (JS {1} MB) · ativo há {2} min',
+    diagTv: 'TV: {0} MB livres de {1} MB · carga da CPU {2}',
+    diagStreaming: 'Servidor de streaming: {0}',
+    diagRunning: 'ativo',
+    diagStopped: 'parado',
+    diagInterface: 'Interface: {0} MB de JS · Início carregou em {1} s',
     reloadingApp: 'Recarregando o StremCompat…',
     sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
@@ -2891,7 +2909,8 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     loadGen = (board._loadGen || 0) + 1;
   board._loadGen = loadGen;
   board.empty = false;
-  var waiting = defs.length;
+  var waiting = defs.length,
+    started = Date.now();
   if (keepFocus) for (var i0 = 0; i0 < board.rows.length; i0++) oldCols.push(board.rows[i0].col);
   board.rows = [];
   function reveal(row, delay) {
@@ -2938,6 +2957,8 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
         if (!row.answered) {
           row.answered = true;
           waiting--;
+          /* shown by Settings > Diagnostics */
+          if (!waiting && board === home) window.__STREMIO_HOME_LOAD_MS__ = Date.now() - started;
         }
         row.items = items;
         row.cardsEl.innerHTML = '';
@@ -4278,11 +4299,13 @@ var streamsUI = {
   chipEls: [],
   failed: [],
   title: '',
+  flushT: null,
   show: function (type, id, vid, title) {
     var request = ++this.requestSeq;
     this.open = true;
     this.failed = [];
     this.title = title || '';
+    this.cancelFlush();
     this.items = [];
     this.idx = 0;
     this.els = [];
@@ -4334,7 +4357,7 @@ var streamsUI = {
       function (total, failed) {
         if (!self.open || self.requestSeq !== request) return;
         self.failed = failed || [];
-        if (!self.items.length) {
+        if (!self.pool.length) {
           $('stInner').innerHTML =
             '<div class="stmsg">' +
             (self.failed.length
@@ -4343,7 +4366,7 @@ var streamsUI = {
             '</div>';
           return;
         }
-        self.rebuild();
+        self.flush();
         var matched = matchingNextSource(self.all(), self.autoPref);
         self.autoPref = null;
         if (matched) {
@@ -4360,6 +4383,25 @@ var streamsUI = {
       this.pool.push(arr[i]);
     }
     this.compact();
+    /* Every answering addon used to rebuild the whole list while the viewer was moving
+       through it. The first answer is drawn at once; later ones are drawn together. */
+    if (!this.items.length) {
+      this.flush();
+      return;
+    }
+    var self = this;
+    if (!this.flushT)
+      this.flushT = setTimeout(function () {
+        self.flushT = null;
+        if (self.open) self.flush();
+      }, 300);
+  },
+  cancelFlush: function () {
+    if (this.flushT) clearTimeout(this.flushT);
+    this.flushT = null;
+  },
+  flush: function () {
+    this.cancelFlush();
     this.renderChips();
     this.rebuild();
   },
@@ -4500,6 +4542,7 @@ var streamsUI = {
   },
   close: function () {
     this.open = false;
+    this.cancelFlush();
     this.requestSeq++;
     $('streams').style.display = 'none';
   },
@@ -5027,6 +5070,7 @@ var settings = {
       },
       { head: tx('maintenanceGroup') },
       { k: '__reload', lb: tx('reloadApp'), action: true },
+      { k: '__diag', lb: tx('diagnostics'), action: true },
       { head: tx('sourceGroup') },
       {
         k: 'preferredSourceQuality',
@@ -5194,6 +5238,44 @@ var settings = {
   reloadNow: function () {
     manualRecover();
   },
+  /* Numbers to compare before and after a change, read on the television itself. */
+  showDiag: function () {
+    var row = this.els[this.idx],
+      box = row.nextSibling;
+    if (!box || box.className !== 'setdiag') {
+      box = document.createElement('div');
+      box.className = 'setdiag';
+      row.parentNode.insertBefore(box, row.nextSibling);
+    }
+    box.textContent = tx('diagLoading');
+    var heap =
+        window.performance && performance.memory
+          ? Math.round(performance.memory.usedJSHeapSize / 1048576)
+          : '—',
+      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—';
+    xhrJson(
+      '/diag',
+      function (j) {
+        if (!j || !j.server) {
+          box.textContent = tx('diagUnavailable');
+          return;
+        }
+        var lines = [
+          tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
+          tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
+          tx('diagStreaming', j.streamingServer ? tx('diagRunning') : tx('diagStopped')),
+          tx('diagInterface', heap, home)
+        ];
+        box.textContent = '';
+        for (var i = 0; i < lines.length; i++) {
+          var line = document.createElement('div');
+          line.textContent = lines[i];
+          box.appendChild(line);
+        }
+      },
+      5000
+    );
+  },
   valLabel: function (def) {
     var cur = lsRaw(def.k, def.d);
     for (var i = 0; i < def.opts.length; i++) if (def.opts[i][0] === cur) return def.opts[i][1] + '  ›';
@@ -5318,6 +5400,7 @@ var settings = {
       if (def.action) {
         if (def.k === '__sync') this.syncNow();
         else if (def.k === '__reload') this.reloadNow();
+        else if (def.k === '__diag') this.showDiag();
         else if (def.k === '__logout') this.logout();
         return true;
       }
@@ -5761,6 +5844,7 @@ function pointerUI(target, activate) {
         if (def.action) {
           if (def.k === '__sync') settings.syncNow();
           else if (def.k === '__reload') settings.reloadNow();
+          else if (def.k === '__diag') settings.showDiag();
           else if (def.k === '__logout') settings.logout();
         } else if (!settings.editing) settings.startEdit();
         else if (settings.idx === i) {

@@ -60,6 +60,25 @@ function isUp(callback) {
     setTimeout(function () { finish(false); }, 1000);
 }
 
+/* If the local server exits while this service is alive, start it again so the
+   interface does not freeze until the app is reopened. A server that keeps dying is
+   left alone after five restarts in ten minutes instead of looping. */
+var restarts = [];
+function scheduleRestart() {
+    var now = Date.now();
+    restarts = restarts.filter(function (at) { return now - at < 600000; });
+    if (restarts.length >= 5) {
+        log('Runtime keeps exiting; automatic restart paused');
+        return;
+    }
+    restarts.push(now);
+    setTimeout(function () {
+        isUp(function (up) {
+            if (!up && !spawned) startRuntime();
+        });
+    }, 1500);
+}
+
 function startRuntime() {
     var env;
     var child;
@@ -95,6 +114,7 @@ function startRuntime() {
     child.on('exit', function (code, signal) {
         spawned = false;
         log('Runtime exit code=' + code + ' signal=' + signal);
+        scheduleRestart();
     });
     log('Runtime pid=' + child.pid);
     child.unref();

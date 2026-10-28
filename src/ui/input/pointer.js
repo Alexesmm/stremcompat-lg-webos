@@ -204,6 +204,7 @@ function pointerUI(target, activate) {
         if (def.action) {
           if (def.k === '__sync') settings.syncNow();
           else if (def.k === '__reload') settings.reloadNow();
+          else if (def.k === '__diag') settings.showDiag();
           else if (def.k === '__logout') settings.logout();
         } else if (!settings.editing) settings.startEdit();
         else if (settings.idx === i) {

@@ -18,6 +18,7 @@ var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
 var { nextEpisodeId } = require('./episodes');
+var { diagnostics } = require('./diag');
 
 // Routes every request of the local compatibility server.
 function handleRequest(req, res) {
@@ -32,6 +33,8 @@ function handleRequest(req, res) {
       runtime: process.version,
       memory: { rssMiB: Math.round(hm.rss / 1048576), heapMiB: Math.round(hm.heapUsed / 1048576) }
     });
+  } else if (p === '/diag') {
+    diagnostics(res);
   } else if (p === '/ping') {
     // Instant readiness probe for the app launcher — proves the app port is bound so it can
     // redirect here instead of guessing on a timer (which races a cold node start).

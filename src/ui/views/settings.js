@@ -56,6 +56,7 @@ var settings = {
       },
       { head: tx('maintenanceGroup') },
       { k: '__reload', lb: tx('reloadApp'), action: true },
+      { k: '__diag', lb: tx('diagnostics'), action: true },
       { head: tx('sourceGroup') },
       {
         k: 'preferredSourceQuality',
@@ -223,6 +224,44 @@ var settings = {
   reloadNow: function () {
     manualRecover();
   },
+  /* Numbers to compare before and after a change, read on the television itself. */
+  showDiag: function () {
+    var row = this.els[this.idx],
+      box = row.nextSibling;
+    if (!box || box.className !== 'setdiag') {
+      box = document.createElement('div');
+      box.className = 'setdiag';
+      row.parentNode.insertBefore(box, row.nextSibling);
+    }
+    box.textContent = tx('diagLoading');
+    var heap =
+        window.performance && performance.memory
+          ? Math.round(performance.memory.usedJSHeapSize / 1048576)
+          : '—',
+      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—';
+    xhrJson(
+      '/diag',
+      function (j) {
+        if (!j || !j.server) {
+          box.textContent = tx('diagUnavailable');
+          return;
+        }
+        var lines = [
+          tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
+          tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
+          tx('diagStreaming', j.streamingServer ? tx('diagRunning') : tx('diagStopped')),
+          tx('diagInterface', heap, home)
+        ];
+        box.textContent = '';
+        for (var i = 0; i < lines.length; i++) {
+          var line = document.createElement('div');
+          line.textContent = lines[i];
+          box.appendChild(line);
+        }
+      },
+      5000
+    );
+  },
   valLabel: function (def) {
     var cur = lsRaw(def.k, def.d);
     for (var i = 0; i < def.opts.length; i++) if (def.opts[i][0] === cur) return def.opts[i][1] + '  ›';
@@ -347,6 +386,7 @@ var settings = {
       if (def.action) {
         if (def.k === '__sync') this.syncNow();
         else if (def.k === '__reload') this.reloadNow();
+        else if (def.k === '__diag') this.showDiag();
         else if (def.k === '__logout') this.logout();
         return true;
       }
