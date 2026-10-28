@@ -193,15 +193,9 @@ function markWatchedLocal() {
     pushLib(true);
   } catch (e) {}
 }
-// binge: when the episode ends, jump straight to the next one (detail deep-link opens its streams)
+// binge: when the episode ends, count down to the next one (up-next.js)
 v.addEventListener('ended', function () {
   markWatchedLocal();
   var binge = lsGet('bingeWatch', 'true') !== 'false' && lsGet('enableNextVideo', 'true') !== 'false';
-  if (binge && NEXTHREF && !npDismissed) {
-    rememberNextSource();
-    showToast(P.nextLoading);
-    setTimeout(function () {
-      location.replace(NEXTHREF);
-    }, 600);
-  }
+  if (binge && NEXTHREF && !npDismissed) startAutoNext();
 });

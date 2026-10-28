@@ -218,6 +218,10 @@ var UI_TEXT = {
       paused: 'Paused',
       nextEpisode: 'Next episode',
       playNext: 'Play next',
+      playNextIn: 'Next episode in {0}',
+      countdownHint: 'OK: play now · Back: cancel',
+      stillWatching: 'Are you still watching?',
+      keepWatching: 'Continue watching',
       dismissHint: 'Up: select · Back: dismiss',
       liked: 'Liked this?',
       similar: 'Watch something similar',
@@ -480,6 +484,10 @@ var UI_TEXT = {
       paused: 'Pausado',
       nextEpisode: 'Próximo episódio',
       playNext: 'Reproduzir próximo',
+      playNextIn: 'Próximo episódio em {0}',
+      countdownHint: 'OK: assistir agora · Voltar: cancelar',
+      stillWatching: 'Você ainda está assistindo?',
+      keepWatching: 'Continuar assistindo',
       dismissHint: 'Cima: selecionar · Voltar: fechar',
       liked: 'Gostou?',
       similar: 'Ver algo parecido',
@@ -870,17 +878,11 @@ function markWatchedLocal() {
     pushLib(true);
   } catch (e) {}
 }
-// binge: when the episode ends, jump straight to the next one (detail deep-link opens its streams)
+// binge: when the episode ends, count down to the next one (up-next.js)
 v.addEventListener('ended', function () {
   markWatchedLocal();
   var binge = lsGet('bingeWatch', 'true') !== 'false' && lsGet('enableNextVideo', 'true') !== 'false';
-  if (binge && NEXTHREF && !npDismissed) {
-    rememberNextSource();
-    showToast(P.nextLoading);
-    setTimeout(function () {
-      location.replace(NEXTHREF);
-    }, 600);
-  }
+  if (binge && NEXTHREF && !npDismissed) startAutoNext();
 });
 // Subtitle and audio preferences, external and embedded subtitle tracks and the overlay.
 // ---- external subtitles (English first) ----
@@ -1924,6 +1926,7 @@ function paintNp() {
   np.className = npShown ? 'show' + (npFocus ? ' f' : '') : '';
 }
 function dismissNp() {
+  cancelAutoNext();
   npFocus = false;
   npShown = false;
   npDismissed = true;
@@ -1955,6 +1958,7 @@ function dismissNp() {
   }
 })();
 function npGo() {
+  cancelAutoNext();
   if (isNextEp) nextEp();
   else if (SIMHREF) {
     try {
@@ -1976,6 +1980,60 @@ function checkNp() {
   }
 }
 v.addEventListener('timeupdate', checkNp);
+/* When an episode ends the next one starts after a countdown: OK starts it now, Back
+   cancels it. After three episodes in a row with nobody touching the remote it asks
+   whether anyone is still watching instead of carrying on alone. */
+var AUTO_NEXT_SECONDS = 10,
+  AUTO_NEXT_LIMIT = 3,
+  autoNextT = null;
+function autoNextCount() {
+  return parseInt(lsGet('bingeAutoCount', '0'), 10) || 0;
+}
+function setAutoNextCount(n) {
+  try {
+    localStorage.setItem('bingeAutoCount', String(n));
+  } catch (e) {}
+}
+/* any key pressed in the player means someone is there */
+function viewerActive() {
+  if (autoNextCount()) setAutoNextCount(0);
+}
+function startAutoNext() {
+  var L = document.getElementById('npL'),
+    B = document.getElementById('npB'),
+    H = document.getElementById('npH');
+  npShown = true;
+  npFocus = true;
+  showBar();
+  if (autoNextCount() >= AUTO_NEXT_LIMIT) {
+    L.textContent = P.stillWatching;
+    B.textContent = P.keepWatching;
+    paintNp();
+    return;
+  }
+  var left = AUTO_NEXT_SECONDS;
+  H.textContent = P.countdownHint;
+  function tick() {
+    if (left <= 0) {
+      autoNextT = null;
+      setAutoNextCount(autoNextCount() + 1);
+      nextEp();
+      return;
+    }
+    B.textContent = P.playNextIn.replace('{0}', left);
+    left--;
+    autoNextT = setTimeout(tick, 1000);
+  }
+  tick();
+  paintNp();
+}
+function cancelAutoNext() {
+  if (!autoNextT) return;
+  clearTimeout(autoNextT);
+  autoNextT = null;
+  document.getElementById('npB').textContent = P.playNext;
+  document.getElementById('npH').textContent = P.dismissHint;
+}
 // Scrub previews and pointer input.
 // ---- scrub previews: /frame grabs one small jpeg at the seek target (debounced) ----
 // Centered Netflix-style preview: shimmer while a frame loads, keep the LAST frame instead of
@@ -2132,6 +2190,7 @@ document.addEventListener(
   function (e) {
     var k = e.keyCode,
       key = e.key || '';
+    viewerActive();
     if (k === 415 || key === 'MediaPlay') {
       setPlaying(true);
       e.preventDefault();
