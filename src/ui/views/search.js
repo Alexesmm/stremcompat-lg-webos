@@ -192,8 +192,7 @@ var search = {
       row.cardsEl.style.transform = 'translateX(-' + off + 'px)';
       row.cardsEl.style.webkitTransform = 'translateX(-' + off + 'px)';
     }
-    var y = 0;
-    for (var i = 0; i < this.rowIdx; i++) y += this.rows[i].el.offsetHeight;
+    var y = this.rows[this.rowIdx] ? this.rows[this.rowIdx].el.offsetTop - this.rows[0].el.offsetTop : 0;
     $('sRows').style.transform = 'translateY(-' + y + 'px)';
     $('sRows').style.webkitTransform = 'translateY(-' + y + 'px)';
     /* browsing results -> backdrop follows the focused cover; typing -> faded logo */

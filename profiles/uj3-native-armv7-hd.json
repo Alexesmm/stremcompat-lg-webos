@@ -17,5 +17,6 @@
   "discoverCap": 40,
   "backdropWidth": 640,
   "backdropCache": 6,
-  "backdropWorkers": 1
+  "backdropWorkers": 1,
+  "serverSemiSpaceMB": 2
 }

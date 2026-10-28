@@ -4,6 +4,7 @@ var crypto = require('crypto');
 var spawn = require('child_process').spawn;
 var { FFMPEG, PROFILE } = require('./config');
 var { localProxy } = require('./proxy');
+var { NICE, lowerPriority } = require('./priority');
 
 // ---- backdrop resizer: full-res art (1920x1080 = 8.3MB decoded) shrunk to 960x540
 // (2MB decoded) for the BROWSING backdrop — sharp enough upscaled, 4x lighter on the
@@ -79,6 +80,7 @@ function bgResize(q, res) {
   }
   try {
     pr = spawn(FFMPEG, args);
+    lowerPriority(pr, NICE.INTERACTIVE);
   } catch (e) {
     bgzActive--;
     res.writeHead(204);

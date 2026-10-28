@@ -21,7 +21,8 @@ var DEVELOPMENT_PROFILE = {
   discoverCap: 80,
   backdropWidth: 960,
   backdropCache: 24,
-  backdropWorkers: 2
+  backdropWorkers: 2,
+  serverSemiSpaceMB: 4
 };
 
 function loadProfile() {

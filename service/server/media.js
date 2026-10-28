@@ -5,6 +5,7 @@ var spawn = require('child_process').spawn;
 var { FFMPEG, FFPROBE } = require('./config');
 var { sendJson } = require('./http-util');
 var { localProxy } = require('./proxy');
+var { NICE, lowerPriority } = require('./priority');
 
 // ---- stream tech-info probe (for the paused-player vignette badges) ----
 var probeCache = {};
@@ -87,6 +88,7 @@ function probeInfo(u, res) {
   }
   try {
     pr = spawn(FFPROBE, args);
+    lowerPriority(pr, NICE.INTERACTIVE);
   } catch (e) {
     return sendJson(res, {});
   }
@@ -163,6 +165,7 @@ function spriteSpawnOne(job) {
     closed = false;
   try {
     pr = spawn(FFMPEG, args);
+    lowerPriority(pr, NICE.BACKGROUND);
   } catch (e) {
     job.act--;
     return;

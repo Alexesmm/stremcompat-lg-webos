@@ -23,6 +23,14 @@ var APP_VERSION = PROFILE.version;
 var service = new Service(PROFILE.serviceId);
 var spawned = false;
 
+/* A smaller V8 young generation for the local server. Node 18 defaults to 8 MiB
+   semi-spaces on 32-bit (24 MiB of young generation); the server mostly moves
+   Buffers, which live outside the V8 heap, so the TV gets that memory back. */
+function runtimeFlags() {
+    var semi = parseInt(PROFILE.serverSemiSpaceMB, 10);
+    return semi > 0 ? ['--max-semi-space-size=' + semi] : [];
+}
+
 function log(message) {
     try {
         fs.appendFileSync(path.join(DIR, 'launch.log'), new Date().toISOString() + ' ' + message + '\n');
@@ -69,7 +77,7 @@ function startRuntime() {
 
     log('Starting bundled ARMv7 Node runtime');
     try {
-        child = spawn(LOADER, ['--library-path', LIB, NODE, SUPERVISOR], {
+        child = spawn(LOADER, ['--library-path', LIB, NODE].concat(runtimeFlags(), [SUPERVISOR]), {
             cwd: DIR,
             env: env,
             detached: true,

@@ -21,7 +21,7 @@
   .card img{border-radius:9px}
   .card .nm{padding:10px;font-size:18px}
   .titlelabel{padding:23px 10px 9px;font-size:17px}
-  .card.f{box-shadow:0 0 0 3px #fff,0 5px 15px rgba(0,0,0,.3) !important;transform:translateY(-4px) scale(1.025)}
+  .card.f{box-shadow:0 0 0 2px #090b12,0 0 0 5px #fff !important;transform:translateY(-5px)}
   .card.wide{width:287px;height:161px}
   .pbar{height:6px}
   .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}

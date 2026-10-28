@@ -89,9 +89,10 @@ function makeBoard(loader) {
         if (act >= 0) this.paintRow(act, true);
       } else if (act >= 0) this.slideRow(this.rows[act]);
       this._act = act;
-      var y = 0;
-      for (var i2 = 0; i2 < this.rowIdx; i2++) y += this.rows[i2].el.offsetHeight;
-      var t = focusOn ? y : 0;
+      /* rows are the only children of #rows and hidden rows take no space, so the
+         focused row's offsetTop equals the height of the rows above it */
+      var cur = this.rows[this.rowIdx];
+      var t = focusOn && cur ? cur.el.offsetTop : 0;
       $('rows').style.transform = 'translateY(-' + t + 'px)';
       $('rows').style.webkitTransform = 'translateY(-' + t + 'px)';
       virtualizeBoard(this, this.rowIdx, true);
@@ -102,10 +103,11 @@ function makeBoard(loader) {
       }, 260);
     },
     slideRow: function (row) {
-      var w = row.wide ? 454 : 288;
-      if (row.cardEls && row.cardEls.length > 1) {
+      /* the card step is fixed per row: measure it once instead of on every key press */
+      var w = row._step || (row.wide ? 454 : 288);
+      if (!row._step && row.cardEls && row.cardEls.length > 1) {
         var measured = row.cardEls[1].offsetLeft - row.cardEls[0].offsetLeft;
-        if (measured > 0) w = measured;
+        if (measured > 0) w = row._step = measured;
       }
       var vis = Math.max(2, Math.floor(contentWidth() / w));
       var off = Math.max(0, row.col - (vis - 2)) * w;

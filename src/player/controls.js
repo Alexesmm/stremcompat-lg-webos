@@ -53,7 +53,16 @@ function fmt(s) {
   }
   return (h ? h + ':' + p(m) : m) + ':' + p(x);
 }
+/* The bar is hidden most of the time; timeupdate only repaints it while it is visible. */
+function paintProgress() {
+  if (!v.duration || seekTarget >= 0) return;
+  var pct = (v.currentTime / v.duration) * 100;
+  fill.style.width = pct + '%';
+  knob.style.left = pct + '%';
+  timeEl.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration);
+}
 function showBar() {
+  if (bar.className !== 'show') paintProgress();
   bar.className = 'show';
   if (hideT) clearTimeout(hideT);
   hideT = setTimeout(function () {
@@ -104,12 +113,7 @@ v.addEventListener('seeked', hideBuf);
 v.addEventListener('pause', hideBuf);
 v.addEventListener('timeupdate', function () {
   if (seekTarget < 0 && !v.paused) hideBuf();
-  if (v.duration && seekTarget < 0) {
-    var pct = (v.currentTime / v.duration) * 100;
-    fill.style.width = pct + '%';
-    knob.style.left = pct + '%';
-    timeEl.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration);
-  }
+  if (bar.className === 'show') paintProgress();
   renderSub();
 });
 // poll on a TIMER, not timeupdate: cues keep arriving while paused / after playback ends

@@ -252,18 +252,38 @@ function subStyle() {
   var bg = subBgOp > 0 ? 'background:rgba(0,0,0,' + subBgOp + ');padding:2px 16px;border-radius:8px;' : '';
   return 'font-size:' + subSize + 'px;color:' + subColor + ';' + sh + bg;
 }
+/* Cues can arrive out of order (an extraction restarted from 0 appends earlier lines),
+   so the first matching cue is found by a full scan. The scan also records when the
+   set of active cues next changes, and the result is reused until then: one scan per
+   subtitle boundary instead of one per timeupdate. */
+var cueMemo = { list: null, len: 0, from: 0, until: -1, txt: '' };
+function cueText(t) {
+  var m = cueMemo;
+  if (m.list === cues && m.len === cues.length && t >= m.from && t < m.until) return m.txt;
+  var txt = '',
+    found = false,
+    until = Infinity;
+  for (var i = 0; i < cues.length; i++) {
+    var c = cues[i];
+    if (t >= c.s && t <= c.e) {
+      if (!found) {
+        found = true;
+        txt = c.t;
+      }
+      if (c.e < until) until = c.e;
+    } else if (c.s > t && c.s < until) until = c.s;
+  }
+  m.list = cues;
+  m.len = cues.length;
+  m.from = t;
+  m.until = until;
+  m.txt = txt;
+  return txt;
+}
 function renderSub() {
   if (curSub === 'off') return;
   var txt = '';
-  if (cues && cues.length) {
-    var t = v.currentTime - subDelay;
-    for (var i = 0; i < cues.length; i++) {
-      if (t >= cues[i].s && t <= cues[i].e) {
-        txt = cues[i].t;
-        break;
-      }
-    }
-  }
+  if (cues && cues.length) txt = cueText(v.currentTime - subDelay);
   if (subEl._t !== txt) {
     subEl._t = txt;
     subEl.textContent = '';

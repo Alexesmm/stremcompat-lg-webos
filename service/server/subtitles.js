@@ -7,6 +7,7 @@ var spawn = require('child_process').spawn;
 var { DIR, FFMPEG, FFPROBE } = require('./config');
 var { sendJson } = require('./http-util');
 var { localProxy } = require('./proxy');
+var { NICE, lowerPriority } = require('./priority');
 
 var LANGS = {
   eng: 'English',
@@ -126,6 +127,7 @@ function embTracks(u, res) {
   }
   try {
     pr = spawn(FFPROBE, args);
+    lowerPriority(pr, NICE.INTERACTIVE);
   } catch (e) {
     return sendJson(res, { tracks: [], err: 'ffprobe missing' });
   }
@@ -223,6 +225,7 @@ function spawnJobProc(job, fromT) {
   var pr;
   try {
     pr = spawn(FFMPEG, args);
+    lowerPriority(pr, NICE.SUBTITLES);
   } catch (e) {
     job.done = true;
     job.err = 'spawn failed';
