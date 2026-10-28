@@ -34,6 +34,7 @@ var topNav = {
     var t = chipTarget[i];
     backStack = [];
     scrParams = null;
+    if (t !== 'search') search.reset();
     this.active = true;
     if (t === 'home') {
       showScr('home');

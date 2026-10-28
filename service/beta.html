@@ -199,17 +199,25 @@ body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- search ---------- */
 #sWrap{position:absolute;top:58px;left:176px;right:48px;bottom:0}
-#sBox{width:760px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none;box-sizing:border-box}
+#sBox{width:528px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none;box-sizing:border-box}
 #sBox.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
-#sHint{margin-top:16px;font-size:25px;color:rgba(255,255,255,.58)}
-#sRecent{margin-top:30px;white-space:nowrap;overflow:hidden}
+#sKeys{position:absolute;top:110px;left:0;width:528px}
+.skey{display:inline-block;vertical-align:top;width:78px;height:62px;margin:0 8px 8px 0;border-radius:10px;background:rgba(255,255,255,.08);text-align:center;line-height:62px;font-size:28px;font-weight:600;color:rgba(255,255,255,.9);transition:background .12s ease}
+.skey.wide{width:164px;font-size:22px}
+.skey.f{background:#fff;color:#0c0b11}
+#sSide{position:absolute;top:0;left:576px;right:0}
+#sHint{margin-top:22px;font-size:25px;color:rgba(255,255,255,.58)}
+#sRecent{margin-top:24px}
+#sRecent .schip{margin-bottom:14px}
+#sRecent .schip.clear{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);color:rgba(255,255,255,.7)}
+#sRecent .schip.clear.f{background:#fff;color:#0c0b11;box-shadow:none}
 .sreclbl{margin:0 0 14px 2px;font-size:21px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.5)}
 #sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
 #spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#bda6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spDesc{margin-top:9px;font-size:20px;line-height:1.35;color:rgba(255,255,255,.72);max-height:54px;overflow:hidden}
-#sRowsClip{position:absolute;top:156px;left:0;right:0;bottom:0;overflow:hidden}
-#sRows{position:absolute;top:0;left:-48px;right:0;padding-top:26px}
+#sRowsClip{position:absolute;top:156px;left:564px;right:0;bottom:0;overflow:hidden}
+#sRows{position:absolute;top:0;left:-36px;right:0;padding-top:26px}
 
 /* ---------- settings / account ---------- */
 #setWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
@@ -300,13 +308,16 @@ body.series-episode #dSeasons{margin-top:24px}
   .frow{margin-right:8px}.fchip{padding:9px 38px 9px 18px;margin-right:7px;border-radius:9px;font-size:18px}.fchip:after{right:16px;border-left-width:5px;border-right-width:5px;border-top-width:6px}.fchip.open:after{border-top:0;border-bottom-width:6px}
   .fmenu{top:42px;min-width:190px;max-height:300px;padding:6px;border-radius:9px}.fopt{padding:10px 31px 10px 13px;font-size:17px}.fopt.cur:after{right:13px;width:7px;height:7px;margin-top:-4px}
   #discGridClip{top:92px}
-  #sBox{width:500px;padding:15px 21px;font-size:23px;border-radius:10px}
+  #sBox{width:348px;padding:15px 21px;font-size:23px;border-radius:10px}
+  #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:15px}
+  #sSide{left:384px}
   #sHint{margin-top:9px;font-size:17px}
   .setdiag{padding:9px 17px;font-size:15px}
   #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:15px}
   #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
   #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
-  #sRowsClip{top:110px}
+  #sRowsClip{top:110px;left:376px}
+  #sRows{left:-20px}
   #dEps{height:224px;margin-top:12px;padding:5px 5px 0}
   .ep{width:287px;height:202px;margin-right:16px;border-radius:9px}
   .ep .th{width:287px;height:161px;border-radius:8px}.ep .th img{border-radius:8px}
@@ -413,8 +424,8 @@ body.series-episode #dSeasons{margin-top:24px}
 <div class="scr" id="scrSearch">
   <div id="sWrap">
     <input id="sBox" placeholder="Search movies and series">
-    <div id="sHint">Press OK to type, then press Down to browse results</div>
-    <div id="sRecent"></div>
+    <div id="sKeys"></div>
+    <div id="sSide"><div id="sHint">Type with the keyboard; results appear as you type</div><div id="sRecent"></div></div>
     <div id="sPreview"><div id="spTitle"></div><div id="spMeta"></div><div id="spDesc"></div></div>
     <div id="sRowsClip"><div id="sRows"></div></div>
   </div>

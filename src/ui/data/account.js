@@ -64,7 +64,7 @@ function cwCard(it) {
   };
 }
 window.__STREMIO_CW_CARD__ = cwCard;
-function cwItems() {
+function cwItems(limit) {
   var out = [],
     lib = allLib();
   for (var i = 0; i < lib.length; i++) {
@@ -80,7 +80,7 @@ function cwItems() {
   out.sort(function (a, b) {
     return String(b._mtime || '').localeCompare(String(a._mtime || ''));
   });
-  return out.slice(0, 12);
+  return out.slice(0, limit || 12);
 }
 function libGridItems() {
   var out = [],
@@ -138,11 +138,14 @@ function pullLib(cb) {
 }
 /* push one library item up to the account (datastorePut = how Stremio persists it) */
 function pushLib(item) {
+  if (item && item._id) pushLibItems([item]);
+}
+function pushLibItems(items) {
   var ak = authKey();
-  if (!ak || !item || !item._id) return;
+  if (!ak || !items || !items.length) return;
   postJson(
     API + '/api/datastorePut',
-    { authKey: ak, collection: 'libraryItem', changes: [item] },
+    { authKey: ak, collection: 'libraryItem', changes: items },
     function () {},
     9000
   );

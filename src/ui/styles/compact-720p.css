@@ -55,13 +55,16 @@
   .frow{margin-right:8px}.fchip{padding:9px 38px 9px 18px;margin-right:7px;border-radius:9px;font-size:18px}.fchip:after{right:16px;border-left-width:5px;border-right-width:5px;border-top-width:6px}.fchip.open:after{border-top:0;border-bottom-width:6px}
   .fmenu{top:42px;min-width:190px;max-height:300px;padding:6px;border-radius:9px}.fopt{padding:10px 31px 10px 13px;font-size:17px}.fopt.cur:after{right:13px;width:7px;height:7px;margin-top:-4px}
   #discGridClip{top:92px}
-  #sBox{width:500px;padding:15px 21px;font-size:23px;border-radius:10px}
+  #sBox{width:348px;padding:15px 21px;font-size:23px;border-radius:10px}
+  #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:15px}
+  #sSide{left:384px}
   #sHint{margin-top:9px;font-size:17px}
   .setdiag{padding:9px 17px;font-size:15px}
   #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:15px}
   #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
   #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
-  #sRowsClip{top:110px}
+  #sRowsClip{top:110px;left:376px}
+  #sRows{left:-20px}
   #dEps{height:224px;margin-top:12px;padding:5px 5px 0}
   .ep{width:287px;height:202px;margin-right:16px;border-radius:9px}
   .ep .th{width:287px;height:161px;border-radius:8px}.ep .th img{border-radius:8px}

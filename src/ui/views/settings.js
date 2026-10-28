@@ -175,6 +175,9 @@ var settings = {
         ],
         d: 'false'
       },
+      { head: tx('historyGroup') },
+      { k: '__clearSearches', lb: tx('clearSearches'), action: true },
+      { k: '__clearCw', lb: tx('clearCw'), action: true },
       { head: tx('addonsGroup') },
       { k: '__sync', lb: tx('syncAddons'), action: true },
       { head: tx('accountGroup') },
@@ -224,15 +227,53 @@ var settings = {
   reloadNow: function () {
     manualRecover();
   },
+  /* actions that are not Sync or Reload; the destructive one asks for a second OK */
+  runAction: function (k) {
+    if (k === '__diag') this.showDiag();
+    else if (k === '__logout') this.logout();
+    else if (k === '__clearSearches') {
+      clearRecentSearches();
+      toast(tx('searchesCleared'));
+    } else if (k === '__clearCw') {
+      if (!this.confirming(k)) return;
+      var n = clearContinueWatching();
+      toast(n ? tx('cwCleared', n) : tx('nothingToClear'));
+    }
+  },
+  /* true on the second OK within 4 s; the first one turns the value into a prompt */
+  confirming: function (k) {
+    var row = this.els[this.idx],
+      vl = row && row.getElementsByClassName('vl')[0];
+    if (this.confirmKey === k && Date.now() < this.confirmUntil) {
+      this.confirmKey = '';
+      if (vl) vl.textContent = '';
+      return true;
+    }
+    this.confirmKey = k;
+    this.confirmUntil = Date.now() + 4000;
+    if (vl) {
+      vl.textContent = tx('confirmAgain');
+      setTimeout(function () {
+        vl.textContent = '';
+      }, 4000);
+    }
+    return false;
+  },
+  /* the diagnostics panel opens under its row; OK again or Back closes it */
+  closeDiag: function () {
+    var box = $('setDiag');
+    if (!box) return false;
+    box.parentNode.removeChild(box);
+    return true;
+  },
   /* Numbers to compare before and after a change, read on the television itself. */
   showDiag: function () {
+    if (this.closeDiag()) return;
     var row = this.els[this.idx],
-      box = row.nextSibling;
-    if (!box || box.className !== 'setdiag') {
       box = document.createElement('div');
-      box.className = 'setdiag';
-      row.parentNode.insertBefore(box, row.nextSibling);
-    }
+    box.id = 'setDiag';
+    box.className = 'setdiag';
+    row.parentNode.insertBefore(box, row.nextSibling);
     box.textContent = tx('diagLoading');
     var heap =
         window.performance && performance.memory
@@ -386,8 +427,7 @@ var settings = {
       if (def.action) {
         if (def.k === '__sync') this.syncNow();
         else if (def.k === '__reload') this.reloadNow();
-        else if (def.k === '__diag') this.showDiag();
-        else if (def.k === '__logout') this.logout();
+        else this.runAction(def.k);
         return true;
       }
       this.startEdit();

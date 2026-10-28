@@ -150,8 +150,8 @@ async function main() {
     for (var col = 0; col < 3; col++) await key(37);
     await key(38);
     await key(39);
-    await key(40);
-    var recentEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var f=document.querySelector('#sRecent .schip.f');return JSON.stringify({search:document.getElementById('scrSearch').className,chips:document.querySelectorAll('#sRecent .schip').length,focused:f?f.textContent:''});})()", returnByValue: true });
+    for (var kc = 0; kc < 6; kc++) await key(39);
+    var recentEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var f=document.querySelector('#sRecent .schip.f');return JSON.stringify({search:document.getElementById('scrSearch').className,chips:document.querySelectorAll('#sRecent .schip:not(.clear)').length,focused:f?f.textContent:''});})()", returnByValue: true });
     var recent = JSON.parse(recentEval.result.value);
     assert.ok(/\bon\b/.test(recent.search), 'the remote did not reach Search from the menu');
     assert.strictEqual(recent.chips, 2, 'recent searches are not offered under the search box');
@@ -160,6 +160,14 @@ async function main() {
     var rerun = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({value:document.getElementById('sBox').value,stored:JSON.parse(localStorage.getItem('recentSearches'))[0]})", returnByValue: true });
     assert.strictEqual(JSON.parse(rerun.result.value).value, 'dune', 'OK on a recent search did not run it');
     assert.strictEqual(protocol.exceptions.length, 0, 'recent searches raised an exception: ' + JSON.stringify(protocol.exceptions));
+    await key(13);
+    var typed = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('sBox').value", returnByValue: true });
+    assert.strictEqual(typed.result.value, 'dunef', 'the on-screen keyboard did not type the focused letter');
+    for (var kd = 0; kd < 6; kd++) await key(40);
+    await key(37);
+    await key(13);
+    var deleted = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('sBox').value", returnByValue: true });
+    assert.strictEqual(deleted.result.value, 'dune', 'the on-screen delete key did not remove a letter');
 
     await protocol.call('Runtime.evaluate', { expression: "location.href='http://127.0.0.1:" + appPort + "/play?u='+encodeURIComponent('http://127.0.0.1:" + mockPort + "/fake.mp4')+'&back=beta'" });
     await delay(700);

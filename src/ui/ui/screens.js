@@ -112,6 +112,7 @@ function goBackScr() {
     streamsUI.close();
     return;
   }
+  if (SCR === 'set' && settings.closeDiag()) return;
   if (SCR === 'set' && settings.editing) {
     settings.cancelEdit();
     return;
@@ -124,6 +125,7 @@ function goBackScr() {
   if (topNav.active) {
     if (SCR !== 'home') {
       topNav.idx = 1;
+      search.reset();
       goScr('home', null, true);
       topNav.active = false;
     } else {

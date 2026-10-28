@@ -53,6 +53,13 @@ var cwMenu = {
         refreshCurBoard();
         toast(tx('markedWatched'));
       });
+    if (it.cw)
+      add(ICON.close, tx('removeFromCw'), function () {
+        removeFromCw(it);
+        self.close();
+        refreshCurBoard();
+        toast(tx('removedFromCw'));
+      });
     add(
       libHas(it.id) ? ICON.check : ICON.plus,
       libHas(it.id) ? tx('removeLibrary') : tx('addLibrary'),

@@ -59,6 +59,36 @@ function libToggle(item) {
   pushLib(lsJson(PRE + item.id));
   invalidateBoards();
 }
+/* Leaves Continue Watching without marking anything watched, as Stremio dismisses an
+   item: the saved position returns to the start. Synced like any library change. */
+function dismissCw(id) {
+  var lib = lsJson(PRE + id);
+  if (!lib || !lib.state) return null;
+  lib.state.timeOffset = 0;
+  lib._mtime = new Date().toISOString();
+  lsSet(PRE + id, lib);
+  return lib;
+}
+function removeFromCw(it) {
+  var lib = dismissCw(it.id);
+  if (lib) pushLib(lib);
+  invalidateBoards();
+}
+function clearContinueWatching() {
+  var items = cwItems(1000),
+    changed = [];
+  for (var i = 0; i < items.length; i++) {
+    var lib = dismissCw(items[i]._id);
+    if (lib) changed.push(lib);
+  }
+  pushLibItems(changed);
+  invalidateBoards();
+  return changed.length;
+}
+function clearRecentSearches() {
+  lsSet(RECENT_SEARCH_KEY, []);
+  search.recentSig = null;
+}
 function markCwWatched(it) {
   var lib2 = lsJson(PRE + it.id);
   if (!lib2) return;

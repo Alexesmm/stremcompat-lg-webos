@@ -160,6 +160,15 @@ function pointerUI(target, activate) {
     }
   }
   if (SCR === 'search') {
+    i = pointerIndex(target, search.keyEls);
+    if (i >= 0) {
+      topNav.active = false;
+      search.zone = 'keys';
+      search.keyIdx = i;
+      if (activate) search.press(SEARCH_KEYS[i]);
+      search.paint();
+      return true;
+    }
     i = pointerIndex(target, search.recentEls);
     if (i >= 0) {
       topNav.active = false;
@@ -204,8 +213,7 @@ function pointerUI(target, activate) {
         if (def.action) {
           if (def.k === '__sync') settings.syncNow();
           else if (def.k === '__reload') settings.reloadNow();
-          else if (def.k === '__diag') settings.showDiag();
-          else if (def.k === '__logout') settings.logout();
+          else settings.runAction(def.k);
         } else if (!settings.editing) settings.startEdit();
         else if (settings.idx === i) {
           var rerendered = settings.cycle(def, 1);
