@@ -19,15 +19,28 @@ function libPrefix() {
 // one shared account library (lib_<hash>_): progress/watched is pushed to api.strem.io
 var LIBKEY = libPrefix() + ID;
 // POST helper + push the library item to the account (same datastorePut Stremio uses)
-function xpost(u, body) {
+/* done (optional) runs once the request finished, failed or took longer than 2 s */
+function xpost(u, body, done) {
+  var called = false;
+  function finish() {
+    if (called) return;
+    called = true;
+    if (done) done();
+  }
+  setTimeout(finish, 2000);
   try {
     if (u.indexOf('https://api.strem.io/api/') === 0)
       u = '/stremioapi?path=' + encodeURIComponent(u.slice('https://api.strem.io'.length));
     var x = new XMLHttpRequest();
     x.open('POST', u, true);
     x.setRequestHeader('Content-Type', 'application/json');
+    x.onreadystatechange = function () {
+      if (x.readyState === 4) finish();
+    };
     x.send(JSON.stringify(body));
-  } catch (e) {}
+  } catch (e) {
+    finish();
+  }
 }
 function authKeyLS() {
   try {
@@ -37,15 +50,20 @@ function authKeyLS() {
   }
 }
 var lastPush = 0;
-function pushLib(force) {
-  var ak = authKeyLS();
-  if (!ak) return;
-  var it = readLib();
-  if (!it || !it._id) return;
-  var n = Date.now();
-  if (!force && n - lastPush < 60000) return;
+function pushLib(force, done) {
+  var ak = authKeyLS(),
+    it = readLib(),
+    n = Date.now();
+  if (!ak || !it || !it._id || (!force && n - lastPush < 60000)) {
+    if (done) done();
+    return;
+  }
   lastPush = n;
-  xpost('https://api.strem.io/api/datastorePut', { authKey: ak, collection: 'libraryItem', changes: [it] });
+  xpost(
+    'https://api.strem.io/api/datastorePut',
+    { authKey: ak, collection: 'libraryItem', changes: [it] },
+    done
+  );
 }
 // remember exactly which stream we played so Continue Watching can resume it directly
 try {
@@ -120,6 +138,9 @@ function saveProgress() {
   it._mtime = now;
   if (it.removed == null) it.removed = false;
   if (it.temp == null) it.temp = true;
+  /* Stremio apps list an item in Continue Watching only when it is in the library or
+     temporary: a title removed from the library and watched again must become temporary */
+  if (it.removed && !it.temp) it.temp = true;
   try {
     localStorage.setItem(LIBKEY, JSON.stringify(it));
   } catch (e) {}

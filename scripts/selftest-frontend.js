@@ -202,6 +202,10 @@ var newEp = firstRun.context.__STREMIO_FIRST_NEW_EPISODE__({ videos: [
 ] }, { lastWatched:'2021-02-01T00:00:00Z', watchedEpisodes:['s:2:1'] });
 assert.strictEqual(newEp && newEp.id, 's:2:2', 'new episodes ignored watched, special or unaired rules');
 assert.strictEqual(newEp.count, 1, 'new episode count is wrong');
+var mtimeMs = firstRun.context.__STREMIO_MTIME_MS__;
+assert.strictEqual(mtimeMs('2026-10-28T12:00:00.000Z'), Date.parse('2026-10-28T12:00:00.000Z'), 'an ISO library time was not read as a time');
+assert.strictEqual(mtimeMs(1793000000000), 1793000000000, 'a millisecond library time from datastoreMeta was changed');
+assert.ok(mtimeMs('2026-10-28T12:00:00.000Z') > mtimeMs(1700000000000), 'library times are still compared as text');
 var baseEpisodes={videos:[{id:'show:1:1',season:1,episode:1}]};
 assert.strictEqual(firstRun.context.__STREMIO_MERGE_EPISODES__(baseEpisodes,{videos:[{id:'show:1:1',season:1,episode:1,thumbnail:'/still.jpg',overview:'Overview'}]}),true,'metadata enrichment did not report a change');
 assert.strictEqual(baseEpisodes.videos[0].thumbnail,'/still.jpg','metadata enrichment did not fill a missing thumbnail');

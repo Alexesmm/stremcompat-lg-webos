@@ -97,6 +97,13 @@ function libGridItems() {
   return out.slice(0, TV_PROFILE.libraryCap);
 }
 /* pull the account library on boot: newest-mtime-wins, then rebuild the boards */
+/* a modification time as milliseconds, from a number or an ISO string */
+function mtimeMs(v) {
+  if (typeof v === 'number') return v;
+  var t = Date.parse(v || '');
+  return isNaN(t) ? 0 : t;
+}
+window.__STREMIO_MTIME_MS__ = mtimeMs;
 function pullLib(cb) {
   var ak = authKey();
   if (!ak) {
@@ -109,14 +116,29 @@ function pullLib(cb) {
       if (cb) cb();
       return;
     }
-    var want = [];
+    /* datastoreMeta returns modification times in milliseconds while items carry ISO
+       strings, so both are compared as times (a text comparison never pulled anything
+       that already existed here). Items newer here than on the account, or missing
+       there, are pushed back: a push lost when the player closed is not lost for good. */
+    var want = [],
+      onServer = {},
+      push = [];
     for (var i = 0; i < rows.length; i++) {
       var id = rows[i][0],
-        mt = rows[i][1];
-      var loc = lsJson(PRE + id);
-      if (!loc || String(loc._mtime || '') < String(mt || '')) want.push(id);
-      if (want.length >= 150) break;
+        mt = mtimeMs(rows[i][1]),
+        loc = lsJson(PRE + id);
+      onServer[id] = 1;
+      if (!loc || mtimeMs(loc._mtime) < mt) {
+        if (want.length < 150) want.push(id);
+      } else if (mtimeMs(loc._mtime) > mt + 1000 && push.length < 50) push.push(loc);
     }
+    var local = allLib();
+    for (var l = 0; l < local.length && push.length < 50; l++) {
+      var li = local[l],
+        ls = li.state || {};
+      if (li._id && !onServer[li._id] && (li.removed === false || ls.timeOffset > 0)) push.push(li);
+    }
+    pushLibItems(push);
     if (!want.length) {
       if (cb) cb();
       return;

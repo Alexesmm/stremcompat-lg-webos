@@ -68,10 +68,6 @@ function exit() {
   if (exited) return;
   exited = true;
   try {
-    saveProgress();
-    pushLib(true);
-  } catch (e) {}
-  try {
     v.pause();
   } catch (e) {}
   try {
@@ -87,6 +83,23 @@ function exit() {
   try {
     sessionStorage.setItem('tvBack', '1');
   } catch (e) {}
+  /* The progress has to reach the account before the page changes, or other devices never
+     see this session: leave when the push answers, or after 0.9 s at the latest. */
+  var left = false;
+  function leave() {
+    if (left) return;
+    left = true;
+    leavePlayer();
+  }
+  setTimeout(leave, 900);
+  try {
+    saveProgress();
+    pushLib(true, leave);
+  } catch (e) {
+    leave();
+  }
+}
+function leavePlayer() {
   var st = null;
   try {
     st = history.state;
