@@ -5760,28 +5760,6 @@ var settings = {
     var langOpts = mediaLanguageOptions(),
       audioOpts = langOpts.slice(1);
     this.defs = [
-      { head: tx('interfaceGroup') },
-      {
-        k: UI_LANG_KEY,
-        lb: tx('interfaceLanguage'),
-        opts: [
-          ['en-US', tx('english')],
-          ['pt-BR', tx('portugueseBrazil')]
-        ],
-        d: 'en-US'
-      },
-      {
-        k: 'uiTextSize',
-        lb: tx('interfaceTextSize'),
-        opts: [
-          ['normal', tx('textNormal')],
-          ['large', tx('textLarge')]
-        ],
-        d: 'normal'
-      },
-      { head: tx('maintenanceGroup') },
-      { k: '__reload', lb: tx('reloadApp'), action: true },
-      { k: '__diag', lb: tx('diagnostics'), action: true },
       { head: tx('sourceGroup') },
       {
         k: 'preferredSourceQuality',
@@ -5795,7 +5773,39 @@ var settings = {
         ],
         d: 'Auto'
       },
+      { head: tx('playbackGroup') },
+      {
+        k: 'bingeWatch',
+        lb: tx('nextEpisode'),
+        opts: [
+          ['true', tx('enabled')],
+          ['false', tx('disabled')]
+        ],
+        d: 'true'
+      },
+      {
+        k: 'seekStep',
+        lb: tx('seekInterval'),
+        opts: [
+          ['5', '5s'],
+          ['10', '10s'],
+          ['15', '15s'],
+          ['20', '20s'],
+          ['30', '30s']
+        ],
+        d: '10'
+      },
+      {
+        k: 'scrubPreview',
+        lb: tx('scrubPreview'),
+        opts: [
+          ['true', tx('enabled')],
+          ['false', tx('disabled')]
+        ],
+        d: 'false'
+      },
       { head: tx('subtitlesGroup') },
+      { k: 'subsLang', lb: tx('defaultLanguage'), opts: langOpts, d: 'por' },
       {
         k: 'subtitleSize',
         lb: tx('subtitleSize'),
@@ -5810,7 +5820,6 @@ var settings = {
         ],
         d: '2'
       },
-      { k: 'subsLang', lb: tx('defaultLanguage'), opts: langOpts, d: 'por' },
       {
         k: 'subsColor',
         lb: tx('subtitleColor'),
@@ -5860,36 +5869,24 @@ var settings = {
         d: 'false'
       },
       { k: 'defaultAudioTrack', lb: tx('defaultAudio'), opts: audioOpts, d: 'por' },
-      { head: tx('playbackGroup') },
+      { head: tx('interfaceGroup') },
       {
-        k: 'seekStep',
-        lb: tx('seekInterval'),
+        k: UI_LANG_KEY,
+        lb: tx('interfaceLanguage'),
         opts: [
-          ['5', '5s'],
-          ['10', '10s'],
-          ['15', '15s'],
-          ['20', '20s'],
-          ['30', '30s']
+          ['en-US', tx('english')],
+          ['pt-BR', tx('portugueseBrazil')]
         ],
-        d: '10'
+        d: 'en-US'
       },
       {
-        k: 'bingeWatch',
-        lb: tx('nextEpisode'),
+        k: 'uiTextSize',
+        lb: tx('interfaceTextSize'),
         opts: [
-          ['true', tx('enabled')],
-          ['false', tx('disabled')]
+          ['normal', tx('textNormal')],
+          ['large', tx('textLarge')]
         ],
-        d: 'true'
-      },
-      {
-        k: 'bgTrailer',
-        lb: tx('backgroundTrailers'),
-        opts: [
-          ['false', tx('disabled')],
-          ['true', tx('enabled')]
-        ],
-        d: 'false'
+        d: 'normal'
       },
       {
         k: 'dynamicTint',
@@ -5901,11 +5898,11 @@ var settings = {
         d: TV_PROFILE.lowMemory ? 'false' : 'true'
       },
       {
-        k: 'scrubPreview',
-        lb: tx('scrubPreview'),
+        k: 'bgTrailer',
+        lb: tx('backgroundTrailers'),
         opts: [
-          ['true', tx('enabled')],
-          ['false', tx('disabled')]
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
         ],
         d: 'false'
       },
@@ -5915,7 +5912,10 @@ var settings = {
       { head: tx('addonsGroup') },
       { k: '__sync', lb: tx('syncAddons'), action: true },
       { head: tx('accountGroup') },
-      { k: '__logout', lb: tx('signOut'), action: true }
+      { k: '__logout', lb: tx('signOut'), action: true },
+      { head: tx('maintenanceGroup') },
+      { k: '__diag', lb: tx('diagnostics'), action: true },
+      { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
     var host = $('setItems');
     host.innerHTML = '';
