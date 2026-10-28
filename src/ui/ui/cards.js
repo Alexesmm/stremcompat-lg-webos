@@ -36,7 +36,13 @@ function unloadBoard(b) {
 }
 function makeCard(it, wide, label, eager) {
   var d = document.createElement('div');
-  d.className = 'card' + (wide ? ' wide' : '');
+  d.className = 'card' + (wide ? ' wide' : '') + (label && !wide ? ' labeled' : '');
+  /* no artwork: drop the broken image and show the title on a gradient instead */
+  function noArt(img) {
+    if (img && img.parentNode) img.parentNode.removeChild(img);
+    if (d.className.indexOf('noart') < 0) d.className += ' noart';
+    nm.style.display = 'block';
+  }
   /* dark placeholder only — the title text is HIDDEN until/unless the art fails to load,
      so scrolling never flashes text before the poster paints (that was the glitch) */
   var nm = document.createElement('div');
@@ -52,7 +58,7 @@ function makeCard(it, wide, label, eager) {
       img.onload = null;
     };
     img.onerror = function () {
-      if (img.src !== BLANK_IMG) nm.style.display = 'block';
+      if (img.src !== BLANK_IMG) noArt(img);
     };
     /* LAZY by default: rows away from the cursor never even START their downloads/decodes
        (the boot flood of ~100 posters was part of the slow/unstable startup) */
@@ -63,7 +69,7 @@ function makeCard(it, wide, label, eager) {
       d.insertBefore(img, d.firstChild);
       img.onload = null;
     }
-  } else nm.style.display = 'block';
+  } else noArt(null);
   if (label && !wide) {
     var tl = document.createElement('div');
     tl.className = 'titlelabel';
@@ -112,6 +118,18 @@ function cwSubtitle(it) {
   }
   var left = it.minutesLeft ? tx('cwLeft', it.minutesLeft) : '';
   return ep && left ? ep + '  ·  ' + left : ep || left;
+}
+/* An empty screen says what happened and what to do next. */
+function emptyState(title, hint) {
+  return (
+    '<div class="empty"><div class="emptyic">' +
+    ICON.info +
+    '</div><div class="emptyt">' +
+    esc(title) +
+    '</div><div class="emptyh">' +
+    esc(hint) +
+    '</div></div>'
+  );
 }
 /* Static grey cards the size of real ones while a catalog loads, so the board does not
    jump when it arrives. No images and no animation: nothing to decode or repaint. */

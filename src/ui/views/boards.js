@@ -284,7 +284,7 @@ var disc = {
       this.els.push(c);
     }
     if (!this.items.length && !this.loading)
-      host.innerHTML = '<div class="stmsg">' + tx('nothingFound') + '</div>';
+      host.innerHTML = emptyState(tx('nothingFound'), tx('nothingFoundHint'));
     this.idx = Math.min(this.idx, Math.max(0, this.items.length - 1));
     this.paint();
   },

@@ -154,10 +154,7 @@ function loadLibraryRows(board) {
   if (!board.rows.length) {
     var e = document.createElement('div');
     e.className = 'row in';
-    e.innerHTML =
-      '<div style="font-size:30px;color:rgba(255,255,255,.55);padding:70px 48px 0;line-height:1.5">' +
-      tx('emptyLibrary') +
-      '</div>';
+    e.innerHTML = emptyState(tx('emptyLibraryTitle'), tx('emptyLibraryHint'));
     board.rows.push({ el: e, items: [], cardEls: [], cardsEl: document.createElement('div'), col: 0 });
   }
   board.rowIdx = 0;

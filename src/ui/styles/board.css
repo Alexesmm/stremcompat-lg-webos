@@ -22,6 +22,9 @@
 .card.wide{width:430px;height:242px}
 .card.more{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
 .morelbl{position:absolute;top:50%;left:0;right:0;margin-top:-20px;text-align:center;font-size:30px;font-weight:700;color:rgba(255,255,255,.85)}
+.card.noart{background:linear-gradient(155deg,#2b2346 0%,#17141f 72%)}
+.card.noart .nm{top:auto;padding:20px 18px;font-size:27px;font-weight:700;line-height:1.25;color:#fff}
+.card.wide.noart .nm,.card.labeled.noart .nm{display:none !important}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
 .pbar div{height:100%;background:#8c5cff}

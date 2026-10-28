@@ -44,11 +44,7 @@ var similar = {
           host.appendChild(cd);
           self.els.push(cd);
         }
-        if (!self.items.length)
-          host.innerHTML =
-            '<div style="font-size:27px;color:rgba(255,255,255,.55);padding:40px">' +
-            tx('nothingFound') +
-            '</div>';
+        if (!self.items.length) host.innerHTML = emptyState(tx('nothingFound'), tx('similarEmptyHint'));
         self.idx = Math.max(0, Math.min(p.idx || 0, self.items.length - 1));
         self.paint();
       });

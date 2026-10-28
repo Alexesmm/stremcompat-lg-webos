@@ -159,6 +159,8 @@ var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chi
 var chipTarget = ['search', 'home', 'disc', 'lib', 'addons', 'set'];
 window.__STREMIO_PHASE__('M2');
 function paintChips() {
+  if (topNav.active) bodyAdd('navopen');
+  else bodyRemove('navopen');
   for (var i = 0; i < chips.length; i++) {
     var t = chipTarget[i];
     var cur = t === SCR || (t === 'home' && (SCR === 'detail' || SCR === 'sim'));

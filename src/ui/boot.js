@@ -3,6 +3,8 @@
 function boot() {
   try {
     window.__STREMIO_PHASE__('B0');
+    if (TV_PROFILE.lowMemory) bodyAdd('lowmem');
+    applyTextSize();
     if (!user()) {
       window.__STREMIO_PHASE__('L0');
       showScr('login');

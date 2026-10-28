@@ -1,4 +1,27 @@
 /* ---------- misc ---------- */
+/* Settings > Interface text: larger. Only type grows; boxes keep their size. */
+body.bigtext .rowtitle{font-size:37px}
+body.bigtext #heroMeta{font-size:28px}
+body.bigtext #heroDesc{font-size:28px;max-height:120px}
+body.bigtext .titlelabel,body.bigtext .card .nm{font-size:29px}
+body.bigtext .cwlabel{font-size:29px}
+body.bigtext .cwlabel .sub{font-size:23px}
+body.bigtext #dMeta{font-size:31px}
+body.bigtext #dDesc{font-size:31px;max-height:144px}
+body.bigtext #dInfo{font-size:30px}
+body.bigtext .ep .t{font-size:28px}
+body.bigtext .st .a{font-size:32px}
+body.bigtext .st .b{font-size:29px}
+body.bigtext .set .lb{font-size:32px}
+body.bigtext .set .vl{font-size:29px}
+body.bigtext .cwmi{font-size:33px}
+body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
+/* empty states */
+.empty{padding:70px 48px 0;max-width:900px}
+.emptyic{width:56px;height:56px;color:#a98fff;margin-bottom:18px}
+.emptyic svg{width:56px;height:56px;fill:currentColor}
+.emptyt{font-size:34px;font-weight:700;color:#fff}
+.emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.6)}
 #toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#171421;border:1px solid rgba(174,135,255,.42);border-radius:22px;box-sizing:border-box}

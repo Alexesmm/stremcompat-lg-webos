@@ -59,14 +59,23 @@ body.trailer #dWrap{opacity:.14}
 body.login #topnav,body.login #logobg{display:none}
 .chip{position:relative;width:68px;height:62px;margin:5px 0;border-radius:15px;color:rgba(255,255,255,.58);background:transparent;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-sizing:border-box;transition:background .12s ease,color .12s ease}
 .chip svg{width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;-webkit-flex:none;flex:none}
-.navlabel{display:none}
+.navlabel{display:block;position:absolute;left:92px;top:50%;margin-top:-17px;line-height:34px;font-size:27px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap;pointer-events:none;opacity:0;-webkit-transform:translateX(-10px);transform:translateX(-10px);transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.2,.8,.2,1)}
+/* while the menu has focus the labels appear over a darker panel, without moving the page */
+#topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(9,11,18,.98) 52%,rgba(9,11,18,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
+body.navopen #topnav:before{opacity:1}
+body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
+.chip.cur .navlabel{color:#cdb9ff}
+.chip.f .navlabel{color:#fff}
 .chip.cur{color:#b69cff}
 .chip.f{background:#fff;color:#12101a}
 .chip.f:before{content:"";position:absolute;left:-14px;top:17px;width:4px;height:28px;border-radius:3px;background:#8c5cff}
 
 /* ---------- screens ---------- */
 .scr{position:fixed;top:0;left:0;right:0;bottom:0;display:none}
-.scr.on{display:block}
+.scr.on{display:block;-webkit-animation:scrIn .18s cubic-bezier(.2,.8,.2,1);animation:scrIn .18s cubic-bezier(.2,.8,.2,1)}
+body.lowmem .scr.on{-webkit-animation:none;animation:none}
+@-webkit-keyframes scrIn{from{opacity:0}to{opacity:1}}
+@keyframes scrIn{from{opacity:0}to{opacity:1}}
 
 /* ---------- home hero ---------- */
 #hero{position:absolute;top:62px;left:176px;width:40%;z-index:5}
@@ -92,6 +101,9 @@ body.login #topnav,body.login #logobg{display:none}
 .card.wide{width:430px;height:242px}
 .card.more{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
 .morelbl{position:absolute;top:50%;left:0;right:0;margin-top:-20px;text-align:center;font-size:30px;font-weight:700;color:rgba(255,255,255,.85)}
+.card.noart{background:linear-gradient(155deg,#2b2346 0%,#17141f 72%)}
+.card.noart .nm{top:auto;padding:20px 18px;font-size:27px;font-weight:700;line-height:1.25;color:#fff}
+.card.wide.noart .nm,.card.labeled.noart .nm{display:none !important}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
 .pbar div{height:100%;background:#8c5cff}
@@ -265,6 +277,8 @@ body.series-episode #dSeasons{margin-top:24px}
   .chip{width:50px;height:46px;margin:3px 0;border-radius:10px}
   .chip svg{width:23px;height:23px}
   .chip.f:before{left:-9px;top:13px;width:3px;height:20px}
+  .navlabel{left:62px;margin-top:-12px;line-height:24px;font-size:19px}
+  #topnav:before{width:330px}
   #bg,#bg2{left:45%;height:66%}
   body.detail #bg,body.detail #bg2{left:37%;height:100%}
   #hero{top:38px;left:112px;width:39%}
@@ -318,6 +332,7 @@ body.series-episode #dSeasons{margin-top:24px}
   #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:15px}
   #sSide{left:384px}
   #sHint{margin-top:9px;font-size:17px}
+  .empty{padding:40px 26px 0}.emptyic,.emptyic svg{width:38px;height:38px}.emptyt{font-size:23px}.emptyh{font-size:17px}
   .setdiag{padding:9px 17px;font-size:15px}
   #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:15px}
   #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
@@ -363,6 +378,29 @@ body.series-episode #dSeasons{margin-top:24px}
 #lgErr{margin-top:16px;font-size:23px;color:#ff9a9a;min-height:28px}
 
 /* ---------- misc ---------- */
+/* Settings > Interface text: larger. Only type grows; boxes keep their size. */
+body.bigtext .rowtitle{font-size:37px}
+body.bigtext #heroMeta{font-size:28px}
+body.bigtext #heroDesc{font-size:28px;max-height:120px}
+body.bigtext .titlelabel,body.bigtext .card .nm{font-size:29px}
+body.bigtext .cwlabel{font-size:29px}
+body.bigtext .cwlabel .sub{font-size:23px}
+body.bigtext #dMeta{font-size:31px}
+body.bigtext #dDesc{font-size:31px;max-height:144px}
+body.bigtext #dInfo{font-size:30px}
+body.bigtext .ep .t{font-size:28px}
+body.bigtext .st .a{font-size:32px}
+body.bigtext .st .b{font-size:29px}
+body.bigtext .set .lb{font-size:32px}
+body.bigtext .set .vl{font-size:29px}
+body.bigtext .cwmi{font-size:33px}
+body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
+/* empty states */
+.empty{padding:70px 48px 0;max-width:900px}
+.emptyic{width:56px;height:56px;color:#a98fff;margin-bottom:18px}
+.emptyic svg{width:56px;height:56px;fill:currentColor}
+.emptyt{font-size:34px;font-weight:700;color:#fff}
+.emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.6)}
 #toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#171421;border:1px solid rgba(174,135,255,.42);border-radius:22px;box-sizing:border-box}

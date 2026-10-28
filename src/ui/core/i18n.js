@@ -1,4 +1,8 @@
 // Applying the interface language to the static markup and switching it.
+function applyTextSize() {
+  if (lsRaw('uiTextSize', 'normal') === 'large') bodyAdd('bigtext');
+  else bodyRemove('bigtext');
+}
 function uiLanguageLabel(code) {
   return code === 'pt-BR' ? tx('portugueseBrazil') : tx('english');
 }

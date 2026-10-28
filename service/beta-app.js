@@ -240,7 +240,14 @@ var UI_TEXT = {
     cwLeft: '{0} min left',
     badgeSoon: 'Coming soon',
     badgeNew: 'New',
-    emptyLibrary: 'Your library is empty.<br>Hold OK on a title to add it here.',
+    emptyLibraryTitle: 'Your library is empty',
+    emptyLibraryHint: 'Hold OK on any title and choose Add to Library.',
+    nothingFoundHint: 'Try another catalog or genre.',
+    similarEmptyHint: 'This title has no similar suggestions yet.',
+    noResultsHint: 'Try another name, fewer words or the original title.',
+    interfaceTextSize: 'Interface text',
+    textNormal: 'Normal',
+    textLarge: 'Larger',
     loadingTrailer: 'Loading trailer…',
     trailerUnavailable: 'Trailer unavailable',
     noTrailer: 'No trailer available',
@@ -507,7 +514,14 @@ var UI_TEXT = {
     cwLeft: 'faltam {0} min',
     badgeSoon: 'Em breve',
     badgeNew: 'Novo',
-    emptyLibrary: 'Sua biblioteca está vazia.<br>Segure OK em um título para adicioná-lo aqui.',
+    emptyLibraryTitle: 'Sua biblioteca está vazia',
+    emptyLibraryHint: 'Segure OK em qualquer título e escolha Adicionar à Biblioteca.',
+    nothingFoundHint: 'Tente outro catálogo ou gênero.',
+    similarEmptyHint: 'Este título ainda não tem sugestões parecidas.',
+    noResultsHint: 'Tente outro nome, menos palavras ou o título original.',
+    interfaceTextSize: 'Texto da interface',
+    textNormal: 'Normal',
+    textLarge: 'Maior',
     loadingTrailer: 'Carregando trailer…',
     trailerUnavailable: 'Trailer indisponível',
     noTrailer: 'Trailer indisponível',
@@ -755,6 +769,10 @@ function watchFinished(offsetMs, durationMs) {
   return durationMs - offsetMs <= Math.max(FINISHED_MIN_LEFT_MS, durationMs * FINISHED_MIN_LEFT_RATIO);
 }
 // Applying the interface language to the static markup and switching it.
+function applyTextSize() {
+  if (lsRaw('uiTextSize', 'normal') === 'large') bodyAdd('bigtext');
+  else bodyRemove('bigtext');
+}
 function uiLanguageLabel(code) {
   return code === 'pt-BR' ? tx('portugueseBrazil') : tx('english');
 }
@@ -2208,6 +2226,8 @@ var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chi
 var chipTarget = ['search', 'home', 'disc', 'lib', 'addons', 'set'];
 window.__STREMIO_PHASE__('M2');
 function paintChips() {
+  if (topNav.active) bodyAdd('navopen');
+  else bodyRemove('navopen');
   for (var i = 0; i < chips.length; i++) {
     var t = chipTarget[i];
     var cur = t === SCR || (t === 'home' && (SCR === 'detail' || SCR === 'sim'));
@@ -2817,7 +2837,7 @@ var disc = {
       this.els.push(c);
     }
     if (!this.items.length && !this.loading)
-      host.innerHTML = '<div class="stmsg">' + tx('nothingFound') + '</div>';
+      host.innerHTML = emptyState(tx('nothingFound'), tx('nothingFoundHint'));
     this.idx = Math.min(this.idx, Math.max(0, this.items.length - 1));
     this.paint();
   },
@@ -2964,7 +2984,13 @@ function unloadBoard(b) {
 }
 function makeCard(it, wide, label, eager) {
   var d = document.createElement('div');
-  d.className = 'card' + (wide ? ' wide' : '');
+  d.className = 'card' + (wide ? ' wide' : '') + (label && !wide ? ' labeled' : '');
+  /* no artwork: drop the broken image and show the title on a gradient instead */
+  function noArt(img) {
+    if (img && img.parentNode) img.parentNode.removeChild(img);
+    if (d.className.indexOf('noart') < 0) d.className += ' noart';
+    nm.style.display = 'block';
+  }
   /* dark placeholder only — the title text is HIDDEN until/unless the art fails to load,
      so scrolling never flashes text before the poster paints (that was the glitch) */
   var nm = document.createElement('div');
@@ -2980,7 +3006,7 @@ function makeCard(it, wide, label, eager) {
       img.onload = null;
     };
     img.onerror = function () {
-      if (img.src !== BLANK_IMG) nm.style.display = 'block';
+      if (img.src !== BLANK_IMG) noArt(img);
     };
     /* LAZY by default: rows away from the cursor never even START their downloads/decodes
        (the boot flood of ~100 posters was part of the slow/unstable startup) */
@@ -2991,7 +3017,7 @@ function makeCard(it, wide, label, eager) {
       d.insertBefore(img, d.firstChild);
       img.onload = null;
     }
-  } else nm.style.display = 'block';
+  } else noArt(null);
   if (label && !wide) {
     var tl = document.createElement('div');
     tl.className = 'titlelabel';
@@ -3040,6 +3066,18 @@ function cwSubtitle(it) {
   }
   var left = it.minutesLeft ? tx('cwLeft', it.minutesLeft) : '';
   return ep && left ? ep + '  ·  ' + left : ep || left;
+}
+/* An empty screen says what happened and what to do next. */
+function emptyState(title, hint) {
+  return (
+    '<div class="empty"><div class="emptyic">' +
+    ICON.info +
+    '</div><div class="emptyt">' +
+    esc(title) +
+    '</div><div class="emptyh">' +
+    esc(hint) +
+    '</div></div>'
+  );
 }
 /* Static grey cards the size of real ones while a catalog loads, so the board does not
    jump when it arrives. No images and no animation: nothing to decode or repaint. */
@@ -3229,10 +3267,7 @@ function loadLibraryRows(board) {
   if (!board.rows.length) {
     var e = document.createElement('div');
     e.className = 'row in';
-    e.innerHTML =
-      '<div style="font-size:30px;color:rgba(255,255,255,.55);padding:70px 48px 0;line-height:1.5">' +
-      tx('emptyLibrary') +
-      '</div>';
+    e.innerHTML = emptyState(tx('emptyLibraryTitle'), tx('emptyLibraryHint'));
     board.rows.push({ el: e, items: [], cardEls: [], cardsEl: document.createElement('div'), col: 0 });
   }
   board.rowIdx = 0;
@@ -3553,11 +3588,7 @@ var similar = {
           host.appendChild(cd);
           self.els.push(cd);
         }
-        if (!self.items.length)
-          host.innerHTML =
-            '<div style="font-size:27px;color:rgba(255,255,255,.55);padding:40px">' +
-            tx('nothingFound') +
-            '</div>';
+        if (!self.items.length) host.innerHTML = emptyState(tx('nothingFound'), tx('similarEmptyHint'));
         self.idx = Math.max(0, Math.min(p.idx || 0, self.items.length - 1));
         self.paint();
       });
@@ -5042,7 +5073,8 @@ var search = {
         host.appendChild(row.el);
       }
       if (got >= 2) {
-        $('sHint').textContent = self.rows.length ? '' : tx('noResults', q);
+        $('sHint').textContent = '';
+        if (!self.rows.length) host.innerHTML = emptyState(tx('noResults', q), tx('noResultsHint'));
         /* a submitted query moves to the results; live typing keeps the keyboard */
         if (self.rows.length && self.zone === 'input') self.zone = 'rows';
         self.paint();
@@ -5429,6 +5461,15 @@ var settings = {
         ],
         d: 'en-US'
       },
+      {
+        k: 'uiTextSize',
+        lb: tx('interfaceTextSize'),
+        opts: [
+          ['normal', tx('textNormal')],
+          ['large', tx('textLarge')]
+        ],
+        d: 'normal'
+      },
       { head: tx('maintenanceGroup') },
       { k: '__reload', lb: tx('reloadApp'), action: true },
       { k: '__diag', lb: tx('diagnostics'), action: true },
@@ -5698,6 +5739,7 @@ var settings = {
     for (var i = 0; i < def.opts.length; i++) if (def.opts[i][0] === cur) ci = i;
     ci = (ci + dir + def.opts.length) % def.opts.length;
     lsRawSet(def.k, def.opts[ci][0]);
+    if (def.k === 'uiTextSize') applyTextSize();
     if (def.k === UI_LANG_KEY) {
       var keep = this.idx;
       setUILanguage(def.opts[ci][0]);
@@ -6568,6 +6610,8 @@ window.__STREMIO_PHASE__('M4');
 function boot() {
   try {
     window.__STREMIO_PHASE__('B0');
+    if (TV_PROFILE.lowMemory) bodyAdd('lowmem');
+    applyTextSize();
     if (!user()) {
       window.__STREMIO_PHASE__('L0');
       showScr('login');

@@ -7,6 +7,8 @@
   .chip{width:50px;height:46px;margin:3px 0;border-radius:10px}
   .chip svg{width:23px;height:23px}
   .chip.f:before{left:-9px;top:13px;width:3px;height:20px}
+  .navlabel{left:62px;margin-top:-12px;line-height:24px;font-size:19px}
+  #topnav:before{width:330px}
   #bg,#bg2{left:45%;height:66%}
   body.detail #bg,body.detail #bg2{left:37%;height:100%}
   #hero{top:38px;left:112px;width:39%}
@@ -60,6 +62,7 @@
   #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:15px}
   #sSide{left:384px}
   #sHint{margin-top:9px;font-size:17px}
+  .empty{padding:40px 26px 0}.emptyic,.emptyic svg{width:38px;height:38px}.emptyt{font-size:23px}.emptyh{font-size:17px}
   .setdiag{padding:9px 17px;font-size:15px}
   #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:15px}
   #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}

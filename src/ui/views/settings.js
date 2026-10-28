@@ -54,6 +54,15 @@ var settings = {
         ],
         d: 'en-US'
       },
+      {
+        k: 'uiTextSize',
+        lb: tx('interfaceTextSize'),
+        opts: [
+          ['normal', tx('textNormal')],
+          ['large', tx('textLarge')]
+        ],
+        d: 'normal'
+      },
       { head: tx('maintenanceGroup') },
       { k: '__reload', lb: tx('reloadApp'), action: true },
       { k: '__diag', lb: tx('diagnostics'), action: true },
@@ -323,6 +332,7 @@ var settings = {
     for (var i = 0; i < def.opts.length; i++) if (def.opts[i][0] === cur) ci = i;
     ci = (ci + dir + def.opts.length) % def.opts.length;
     lsRawSet(def.k, def.opts[ci][0]);
+    if (def.k === 'uiTextSize') applyTextSize();
     if (def.k === UI_LANG_KEY) {
       var keep = this.idx;
       setUILanguage(def.opts[ci][0]);

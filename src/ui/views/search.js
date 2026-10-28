@@ -211,7 +211,8 @@ var search = {
         host.appendChild(row.el);
       }
       if (got >= 2) {
-        $('sHint').textContent = self.rows.length ? '' : tx('noResults', q);
+        $('sHint').textContent = '';
+        if (!self.rows.length) host.innerHTML = emptyState(tx('noResults', q), tx('noResultsHint'));
         /* a submitted query moves to the results; live typing keeps the keyboard */
         if (self.rows.length && self.zone === 'input') self.zone = 'rows';
         self.paint();
