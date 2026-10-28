@@ -10,6 +10,8 @@
 #stInner{transition:transform .16s ease}
 .st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
 .st .a{font-size:29px;font-weight:700;color:#c9b8ff}
+.st .rec{margin-bottom:8px;font-size:20px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#8ee3ad}
+.st.f .rec{color:#fff}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
 .st.f .compat{color:#fff}

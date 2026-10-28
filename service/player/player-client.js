@@ -16,6 +16,8 @@ var P = PBR
       playbackError: 'Erro de reprodução',
       retrying: 'Tentando iniciar a fonte novamente…',
       resuming: 'Continuando de ',
+      restartHint: 'OK: recomeçar',
+      fromStart: 'Reproduzindo do início',
       nextLoading: 'Próximo episódio…',
       subtitlesReady: 'Legendas prontas',
       subtitleFailed: 'Falha ao extrair legendas',
@@ -67,6 +69,8 @@ var P = PBR
       playbackError: 'Playback error',
       retrying: 'Retrying this source…',
       resuming: 'Resuming from ',
+      restartHint: 'OK: start over',
+      fromStart: 'Playing from the start',
       nextLoading: 'Next episode…',
       subtitlesReady: 'Subtitles ready',
       subtitleFailed: 'Subtitle extraction failed',
@@ -333,6 +337,19 @@ function saveProgress() {
   } catch (e) {}
 }
 var didResume = false;
+/* After an automatic resume, OK starts over for as long as the hint is on screen;
+   any other toast replaces the hint and withdraws the offer. */
+var RESTART_WINDOW = 8000,
+  restartUntil = 0;
+function restartOffered() {
+  if (Date.now() >= restartUntil) return false;
+  restartUntil = 0;
+  try {
+    v.currentTime = 0;
+  } catch (e) {}
+  showToast(P.fromStart);
+  return true;
+}
 function tryResume() {
   if (didResume) return;
   didResume = true;
@@ -342,7 +359,8 @@ function tryResume() {
     if (!it.state.duration || sec < it.state.duration / 1000 - 30) {
       try {
         v.currentTime = sec;
-        showToast(P.resuming + fmt(sec));
+        showToast(P.resuming + fmt(sec) + '  ·  ' + P.restartHint, RESTART_WINDOW);
+        restartUntil = Date.now() + RESTART_WINDOW;
       } catch (e) {}
     }
   }
@@ -838,14 +856,15 @@ var seekEl = document.getElementById('seekind'),
   seekTimer = null;
 var toastEl = document.getElementById('toast'),
   toastT = null;
-function showToast(m) {
+function showToast(m, ms) {
   if (!toastEl) return;
+  restartUntil = 0;
   toastEl.textContent = m;
   toastEl.style.opacity = '1';
   if (toastT) clearTimeout(toastT);
   toastT = setTimeout(function () {
     toastEl.style.opacity = '0';
-  }, 3200);
+  }, ms || 3200);
 }
 function diag(ev, data) {
   try {
@@ -1736,7 +1755,7 @@ document.addEventListener(
       return;
     }
     if (k === 13) {
-      tog();
+      if (!restartOffered()) tog();
       e.preventDefault();
     } else if (k === 37) {
       seek(-SEEKSTEP);

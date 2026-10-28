@@ -98,6 +98,17 @@ function makeCard(it, wide, label, eager) {
   return d;
 }
 
+/* Static grey cards the size of real ones while a catalog loads, so the board does not
+   jump when it arrives. No images and no animation: nothing to decode or repaint. */
+function placeholderCards(row) {
+  var n = Math.min(8, Math.ceil(contentWidth() / (row.wide ? 454 : 288)) + 1);
+  for (var i = 0; i < n; i++) {
+    var c = document.createElement('div');
+    c.className = 'card ph' + (row.wide ? ' wide' : '');
+    row.cardsEl.appendChild(c);
+  }
+  row.el.className = 'row in';
+}
 function buildRow(title, items, wide, label, eager) {
   var row = { title: title, items: items, col: 0, wide: !!wide };
   var el = document.createElement('div');

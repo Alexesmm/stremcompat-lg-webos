@@ -32,6 +32,8 @@
 #sBox{width:760px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none;box-sizing:border-box}
 #sBox.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
 #sHint{margin-top:16px;font-size:25px;color:rgba(255,255,255,.58)}
+#sRecent{margin-top:30px;white-space:nowrap;overflow:hidden}
+.sreclbl{margin:0 0 14px 2px;font-size:21px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.5)}
 #sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
 #spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#bda6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

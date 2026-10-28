@@ -1,9 +1,27 @@
-// Search screen.
+// Search screen and recent searches.
+/* Typing with the remote is slow, so the last searches stay one key away. */
+var RECENT_SEARCH_KEY = 'recentSearches',
+  RECENT_SEARCH_MAX = 8;
+function recentSearches() {
+  var list = lsJson(RECENT_SEARCH_KEY);
+  return Object.prototype.toString.call(list) === '[object Array]' ? list : [];
+}
+function rememberSearch(q) {
+  var list = recentSearches(),
+    out = [q];
+  for (var i = 0; i < list.length && out.length < RECENT_SEARCH_MAX; i++)
+    if (typeof list[i] === 'string' && list[i].toLowerCase() !== q.toLowerCase()) out.push(list[i]);
+  lsSet(RECENT_SEARCH_KEY, out);
+}
 /* ================= SEARCH ================= */
 var search = {
   zone: 'input',
   rows: [],
   rowIdx: 0,
+  recent: [],
+  recentEls: [],
+  recentIdx: 0,
+  recentSig: null,
   q: '',
   gen: 0,
   previewId: '',
@@ -28,8 +46,8 @@ var search = {
             e.preventDefault();
             e.stopPropagation();
             $('sBox').blur();
-            if (self.rows.length) {
-              self.zone = 'rows';
+            if (self.rows.length || self.recent.length) {
+              self.zone = self.rows.length ? 'rows' : 'recent';
               self.paint();
             }
           } else if (e.keyCode === 461 || e.keyCode === 27) {
@@ -69,6 +87,7 @@ var search = {
       return;
     }
     this.q = q;
+    rememberSearch(q);
     var gen = ++this.gen;
     for (var rq = 0; rq < this.requests.length; rq++)
       if (this.requests[rq] && this.requests[rq].abort)
@@ -178,9 +197,44 @@ var search = {
       }, 220);
     }
   },
+  /* recent searches are offered while there are no results to browse */
+  renderRecent: function () {
+    var list = this.rows.length ? [] : recentSearches(),
+      sig = UI_LANG + '\n' + list.join('\n');
+    if (sig === this.recentSig) return;
+    this.recentSig = sig;
+    var host = $('sRecent');
+    host.innerHTML = '';
+    this.recent = list;
+    this.recentEls = [];
+    if (!this.recent.length) return;
+    var lbl = document.createElement('div');
+    lbl.className = 'sreclbl';
+    lbl.textContent = tx('recentSearches');
+    host.appendChild(lbl);
+    for (var i = 0; i < this.recent.length; i++) {
+      var c = document.createElement('div');
+      c.className = 'schip';
+      c.textContent = this.recent[i];
+      host.appendChild(c);
+      this.recentEls.push(c);
+    }
+    this.recentIdx = Math.min(this.recentIdx, this.recent.length - 1);
+  },
+  runRecent: function (i) {
+    var q = this.recent[i];
+    if (!q) return;
+    $('sBox').value = q;
+    this.recentIdx = 0;
+    this.zone = 'input';
+    this.run(q);
+  },
   paint: function () {
     virtualizeBoard(this, this.rowIdx, false);
     $('sBox').className = this.zone === 'input' ? 'f' : '';
+    this.renderRecent();
+    if (this.zone === 'recent' && !this.recent.length) this.zone = 'input';
+    setF(this.recentEls, this.zone === 'recent' ? this.recentIdx : -1);
     for (var r = 0; r < this.rows.length; r++) {
       var row = this.rows[r];
       var active = this.zone === 'rows' && r === this.rowIdx;
@@ -213,8 +267,8 @@ var search = {
         $('sBox').focus();
         return true;
       }
-      if (k === 40 && this.rows.length) {
-        this.zone = 'rows';
+      if (k === 40 && (this.rows.length || this.recent.length)) {
+        this.zone = this.rows.length ? 'rows' : 'recent';
         this.paint();
         return true;
       }
@@ -222,6 +276,22 @@ var search = {
         topNav.focus();
         return true;
       }
+      return true;
+    }
+    if (this.zone === 'recent') {
+      if (k === 39) this.recentIdx = Math.min(this.recentEls.length - 1, this.recentIdx + 1);
+      else if (k === 37) {
+        if (this.recentIdx === 0) {
+          topNav.focus();
+          return true;
+        }
+        this.recentIdx--;
+      } else if (k === 38) this.zone = 'input';
+      else if (k === 13) {
+        this.runRecent(this.recentIdx);
+        return true;
+      }
+      this.paint();
       return true;
     }
     var row = this.rows[this.rowIdx];

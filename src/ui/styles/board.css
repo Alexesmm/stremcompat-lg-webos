@@ -19,6 +19,7 @@
 .titlelabel{position:absolute;left:0;right:0;bottom:0;padding:34px 15px 13px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.92));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.f{box-shadow:0 0 0 3px #090b12,0 0 0 8px #fff !important;z-index:6;transform:translateY(-8px)}
 .card.wide{width:430px;height:242px}
+.card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
 .pbar div{height:100%;background:#8c5cff}
 .cwlabel{position:absolute;left:0;right:0;bottom:9px;padding:12px 15px;font-size:26px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.88));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

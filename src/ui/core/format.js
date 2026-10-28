@@ -7,12 +7,12 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 var toastT = null;
-function toast(m) {
+function toast(m, ms) {
   var t = $('toast');
   t.textContent = m;
   t.style.opacity = '1';
   if (toastT) clearTimeout(toastT);
   toastT = setTimeout(function () {
     t.style.opacity = '0';
-  }, 2800);
+  }, ms || 2800);
 }

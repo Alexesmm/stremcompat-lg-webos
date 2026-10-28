@@ -79,6 +79,7 @@ body.login #topnav,body.login #logobg{display:none}
 .titlelabel{position:absolute;left:0;right:0;bottom:0;padding:34px 15px 13px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.92));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.f{box-shadow:0 0 0 3px #090b12,0 0 0 8px #fff !important;z-index:6;transform:translateY(-8px)}
 .card.wide{width:430px;height:242px}
+.card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
 .pbar div{height:100%;background:#8c5cff}
 .cwlabel{position:absolute;left:0;right:0;bottom:9px;padding:12px 15px;font-size:26px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.88));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -138,6 +139,8 @@ body.series-episode #dSeasons{margin-top:24px}
 #stInner{transition:transform .16s ease}
 .st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
 .st .a{font-size:29px;font-weight:700;color:#c9b8ff}
+.st .rec{margin-bottom:8px;font-size:20px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#8ee3ad}
+.st.f .rec{color:#fff}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
 .st.f .compat{color:#fff}
@@ -188,6 +191,8 @@ body.series-episode #dSeasons{margin-top:24px}
 #sBox{width:760px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none;box-sizing:border-box}
 #sBox.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
 #sHint{margin-top:16px;font-size:25px;color:rgba(255,255,255,.58)}
+#sRecent{margin-top:30px;white-space:nowrap;overflow:hidden}
+.sreclbl{margin:0 0 14px 2px;font-size:21px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.5)}
 #sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
 #spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#bda6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -262,6 +267,7 @@ body.series-episode #dSeasons{margin-top:24px}
   #stClip{top:176px;left:20px;right:20px;bottom:18px}
   .st{padding:14px 18px;margin-bottom:8px}
   .st .a{font-size:22px}
+  .st .rec{margin-bottom:5px;font-size:15px}
   .st .compat{margin-top:4px;font-size:16px}
   .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
   #dWrap{top:32px;left:112px;right:30px}
@@ -281,6 +287,7 @@ body.series-episode #dSeasons{margin-top:24px}
   #discGridClip{top:92px}
   #sBox{width:500px;padding:15px 21px;font-size:23px;border-radius:10px}
   #sHint{margin-top:9px;font-size:17px}
+  #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:15px}
   #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
   #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
   #sRowsClip{top:110px}
@@ -390,6 +397,7 @@ body.series-episode #dSeasons{margin-top:24px}
   <div id="sWrap">
     <input id="sBox" placeholder="Search movies and series">
     <div id="sHint">Press OK to type, then press Down to browse results</div>
+    <div id="sRecent"></div>
     <div id="sPreview"><div id="spTitle"></div><div id="spMeta"></div><div id="spDesc"></div></div>
     <div id="sRowsClip"><div id="sRows"></div></div>
   </div>

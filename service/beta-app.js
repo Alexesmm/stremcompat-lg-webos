@@ -205,6 +205,8 @@ var UI_TEXT = {
     other: 'Other',
     all: 'All',
     recent: 'Recent',
+    recentSearches: 'Recent searches',
+    holdOkHint: 'Tip: hold OK on a title for more options',
     discoverTitle: 'Discover',
     popular: 'Popular',
     topRated: 'Top rated',
@@ -265,6 +267,7 @@ var UI_TEXT = {
     noSources: 'No sources found.',
     noSourcesQuality: 'No sources in this quality.',
     addonsNoAnswer: 'No answer from: {0}',
+    recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
     lastSource: 'Last source',
     continuePlayback: 'Continue playback',
@@ -381,6 +384,8 @@ var UI_TEXT = {
     other: 'Outras',
     all: 'Todas',
     recent: 'Recente',
+    recentSearches: 'Buscas recentes',
+    holdOkHint: 'Dica: segure OK em um título para mais opções',
     discoverTitle: 'Descobrir',
     popular: 'Populares',
     topRated: 'Mais bem avaliados',
@@ -441,6 +446,7 @@ var UI_TEXT = {
     noSources: 'Nenhuma fonte encontrada.',
     noSourcesQuality: 'Nenhuma fonte nesta qualidade.',
     addonsNoAnswer: 'Sem resposta de: {0}',
+    recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
     lastSource: 'Última fonte',
     continuePlayback: 'Continuar reprodução',
@@ -613,14 +619,14 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 var toastT = null;
-function toast(m) {
+function toast(m, ms) {
   var t = $('toast');
   t.textContent = m;
   t.style.opacity = '1';
   if (toastT) clearTimeout(toastT);
   toastT = setTimeout(function () {
     t.style.opacity = '0';
-  }, 2800);
+  }, ms || 2800);
 }
 // Client diagnostics (/log) and recovery of the local Node service after Quick Start+.
 function clientDiag(event, data) {
@@ -2711,6 +2717,17 @@ function makeCard(it, wide, label, eager) {
   return d;
 }
 
+/* Static grey cards the size of real ones while a catalog loads, so the board does not
+   jump when it arrives. No images and no animation: nothing to decode or repaint. */
+function placeholderCards(row) {
+  var n = Math.min(8, Math.ceil(contentWidth() / (row.wide ? 454 : 288)) + 1);
+  for (var i = 0; i < n; i++) {
+    var c = document.createElement('div');
+    c.className = 'card ph' + (row.wide ? ' wide' : '');
+    row.cardsEl.appendChild(c);
+  }
+  row.el.className = 'row in';
+}
 function buildRow(title, items, wide, label, eager) {
   var row = { title: title, items: items, col: 0, wide: !!wide };
   var el = document.createElement('div');
@@ -2777,7 +2794,9 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     (function (def, di) {
       var row = buildRow(def.title, [], false);
       board.rows.push(row);
-      row.el.style.display = 'none';
+      /* only the rows that start on screen get placeholders; a rebuild keeps its rows */
+      if (!keepFocus && di < 3) placeholderCards(row);
+      else row.el.style.display = 'none';
       getCatalogUrl(def.url, def.key, def.type, function (items) {
         if (board._loadGen !== loadGen) return; /* ignore callbacks from a superseded rebuild */
         row.items = items;
@@ -4226,10 +4245,26 @@ var streamsUI = {
     host.innerHTML = '';
     this.items = [];
     this.els = [];
+    /* The list is already ordered by compatibility and seeders; the first source with
+       no compatibility warning is named as the one to pick when there is a choice. */
+    var rec = -1,
+      choices = 0;
+    for (var r = 0; r < flat.length; r++) {
+      if (flat[r].stored) continue;
+      choices++;
+      if (rec < 0 && !(flat[r].compatRank > 0)) rec = r;
+    }
+    if (choices < 2) rec = -1;
     for (var i = 0; i < flat.length; i++) {
       var s = flat[i],
         d = document.createElement('div');
       d.className = 'st';
+      if (i === rec) {
+        var tag = document.createElement('div');
+        tag.className = 'rec';
+        tag.textContent = tx('recommendedSource');
+        d.appendChild(tag);
+      }
       var a = document.createElement('div');
       a.className = 'a';
       a.textContent = s.stored
@@ -4324,12 +4359,30 @@ var streamsUI = {
     return true;
   }
 };
-// Search screen.
+// Search screen and recent searches.
+/* Typing with the remote is slow, so the last searches stay one key away. */
+var RECENT_SEARCH_KEY = 'recentSearches',
+  RECENT_SEARCH_MAX = 8;
+function recentSearches() {
+  var list = lsJson(RECENT_SEARCH_KEY);
+  return Object.prototype.toString.call(list) === '[object Array]' ? list : [];
+}
+function rememberSearch(q) {
+  var list = recentSearches(),
+    out = [q];
+  for (var i = 0; i < list.length && out.length < RECENT_SEARCH_MAX; i++)
+    if (typeof list[i] === 'string' && list[i].toLowerCase() !== q.toLowerCase()) out.push(list[i]);
+  lsSet(RECENT_SEARCH_KEY, out);
+}
 /* ================= SEARCH ================= */
 var search = {
   zone: 'input',
   rows: [],
   rowIdx: 0,
+  recent: [],
+  recentEls: [],
+  recentIdx: 0,
+  recentSig: null,
   q: '',
   gen: 0,
   previewId: '',
@@ -4354,8 +4407,8 @@ var search = {
             e.preventDefault();
             e.stopPropagation();
             $('sBox').blur();
-            if (self.rows.length) {
-              self.zone = 'rows';
+            if (self.rows.length || self.recent.length) {
+              self.zone = self.rows.length ? 'rows' : 'recent';
               self.paint();
             }
           } else if (e.keyCode === 461 || e.keyCode === 27) {
@@ -4395,6 +4448,7 @@ var search = {
       return;
     }
     this.q = q;
+    rememberSearch(q);
     var gen = ++this.gen;
     for (var rq = 0; rq < this.requests.length; rq++)
       if (this.requests[rq] && this.requests[rq].abort)
@@ -4504,9 +4558,44 @@ var search = {
       }, 220);
     }
   },
+  /* recent searches are offered while there are no results to browse */
+  renderRecent: function () {
+    var list = this.rows.length ? [] : recentSearches(),
+      sig = UI_LANG + '\n' + list.join('\n');
+    if (sig === this.recentSig) return;
+    this.recentSig = sig;
+    var host = $('sRecent');
+    host.innerHTML = '';
+    this.recent = list;
+    this.recentEls = [];
+    if (!this.recent.length) return;
+    var lbl = document.createElement('div');
+    lbl.className = 'sreclbl';
+    lbl.textContent = tx('recentSearches');
+    host.appendChild(lbl);
+    for (var i = 0; i < this.recent.length; i++) {
+      var c = document.createElement('div');
+      c.className = 'schip';
+      c.textContent = this.recent[i];
+      host.appendChild(c);
+      this.recentEls.push(c);
+    }
+    this.recentIdx = Math.min(this.recentIdx, this.recent.length - 1);
+  },
+  runRecent: function (i) {
+    var q = this.recent[i];
+    if (!q) return;
+    $('sBox').value = q;
+    this.recentIdx = 0;
+    this.zone = 'input';
+    this.run(q);
+  },
   paint: function () {
     virtualizeBoard(this, this.rowIdx, false);
     $('sBox').className = this.zone === 'input' ? 'f' : '';
+    this.renderRecent();
+    if (this.zone === 'recent' && !this.recent.length) this.zone = 'input';
+    setF(this.recentEls, this.zone === 'recent' ? this.recentIdx : -1);
     for (var r = 0; r < this.rows.length; r++) {
       var row = this.rows[r];
       var active = this.zone === 'rows' && r === this.rowIdx;
@@ -4539,8 +4628,8 @@ var search = {
         $('sBox').focus();
         return true;
       }
-      if (k === 40 && this.rows.length) {
-        this.zone = 'rows';
+      if (k === 40 && (this.rows.length || this.recent.length)) {
+        this.zone = this.rows.length ? 'rows' : 'recent';
         this.paint();
         return true;
       }
@@ -4548,6 +4637,22 @@ var search = {
         topNav.focus();
         return true;
       }
+      return true;
+    }
+    if (this.zone === 'recent') {
+      if (k === 39) this.recentIdx = Math.min(this.recentEls.length - 1, this.recentIdx + 1);
+      else if (k === 37) {
+        if (this.recentIdx === 0) {
+          topNav.focus();
+          return true;
+        }
+        this.recentIdx--;
+      } else if (k === 38) this.zone = 'input';
+      else if (k === 13) {
+        this.runRecent(this.recentIdx);
+        return true;
+      }
+      this.paint();
       return true;
     }
     var row = this.rows[this.rowIdx];
@@ -5424,6 +5529,15 @@ function pointerUI(target, activate) {
     }
   }
   if (SCR === 'search') {
+    i = pointerIndex(target, search.recentEls);
+    if (i >= 0) {
+      topNav.active = false;
+      search.zone = 'recent';
+      search.recentIdx = i;
+      search.paint();
+      if (activate) search.runRecent(i);
+      return true;
+    }
     for (r = 0; r < search.rows.length; r++) {
       row = search.rows[r];
       i = pointerIndex(target, row.cardEls || []);
@@ -5806,6 +5920,12 @@ function boot() {
         }
       });
     }, 900);
+    /* the long-press menu has no visible entry point: explain it once, on Home */
+    setTimeout(function () {
+      if (lsRaw('holdOkHintShown', '') || SCR !== 'home' || streamsUI.open || cwMenu.open) return;
+      lsRawSet('holdOkHintShown', '1');
+      toast(tx('holdOkHint'), 6000);
+    }, 4000);
   } catch (error) {
     window.__STREMIO_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
   }

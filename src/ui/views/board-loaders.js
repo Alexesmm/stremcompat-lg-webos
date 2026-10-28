@@ -43,7 +43,9 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     (function (def, di) {
       var row = buildRow(def.title, [], false);
       board.rows.push(row);
-      row.el.style.display = 'none';
+      /* only the rows that start on screen get placeholders; a rebuild keeps its rows */
+      if (!keepFocus && di < 3) placeholderCards(row);
+      else row.el.style.display = 'none';
       getCatalogUrl(def.url, def.key, def.type, function (items) {
         if (board._loadGen !== loadGen) return; /* ignore callbacks from a superseded rebuild */
         row.items = items;

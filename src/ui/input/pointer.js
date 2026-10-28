@@ -160,6 +160,15 @@ function pointerUI(target, activate) {
     }
   }
   if (SCR === 'search') {
+    i = pointerIndex(target, search.recentEls);
+    if (i >= 0) {
+      topNav.active = false;
+      search.zone = 'recent';
+      search.recentIdx = i;
+      search.paint();
+      if (activate) search.runRecent(i);
+      return true;
+    }
     for (r = 0; r < search.rows.length; r++) {
       row = search.rows[r];
       i = pointerIndex(target, row.cardEls || []);

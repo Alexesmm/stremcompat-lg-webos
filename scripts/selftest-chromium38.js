@@ -138,6 +138,25 @@ async function main() {
     assert.strictEqual(back.focused, 3, 'Back from a title did not keep the Home focus');
     assert.strictEqual(protocol.exceptions.length, 0, 'Back navigation raised an exception: ' + JSON.stringify(protocol.exceptions));
 
+    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('recentSearches',JSON.stringify(['dune','alien']))" });
+    async function key(code) {
+      await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: code, nativeVirtualKeyCode: code });
+      await delay(120);
+    }
+    for (var col = 0; col < 3; col++) await key(37);
+    await key(38);
+    await key(39);
+    await key(40);
+    var recentEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var f=document.querySelector('#sRecent .schip.f');return JSON.stringify({search:document.getElementById('scrSearch').className,chips:document.querySelectorAll('#sRecent .schip').length,focused:f?f.textContent:''});})()", returnByValue: true });
+    var recent = JSON.parse(recentEval.result.value);
+    assert.ok(/\bon\b/.test(recent.search), 'the remote did not reach Search from the menu');
+    assert.strictEqual(recent.chips, 2, 'recent searches are not offered under the search box');
+    assert.strictEqual(recent.focused, 'dune', 'Down from the search box did not focus the latest search');
+    await key(13);
+    var rerun = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({value:document.getElementById('sBox').value,stored:JSON.parse(localStorage.getItem('recentSearches'))[0]})", returnByValue: true });
+    assert.strictEqual(JSON.parse(rerun.result.value).value, 'dune', 'OK on a recent search did not run it');
+    assert.strictEqual(protocol.exceptions.length, 0, 'recent searches raised an exception: ' + JSON.stringify(protocol.exceptions));
+
     await protocol.call('Runtime.evaluate', { expression: "location.href='http://127.0.0.1:" + appPort + "/play?u='+encodeURIComponent('http://127.0.0.1:" + mockPort + "/fake.mp4')+'&back=beta'" });
     await delay(700);
     var playerInitial = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify(window.__tv&&window.__tv.st())", returnByValue: true });

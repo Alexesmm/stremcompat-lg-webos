@@ -45,6 +45,12 @@ function boot() {
         }
       });
     }, 900);
+    /* the long-press menu has no visible entry point: explain it once, on Home */
+    setTimeout(function () {
+      if (lsRaw('holdOkHintShown', '') || SCR !== 'home' || streamsUI.open || cwMenu.open) return;
+      lsRawSet('holdOkHintShown', '1');
+      toast(tx('holdOkHint'), 6000);
+    }, 4000);
   } catch (error) {
     window.__STREMIO_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
   }

@@ -176,10 +176,26 @@ var streamsUI = {
     host.innerHTML = '';
     this.items = [];
     this.els = [];
+    /* The list is already ordered by compatibility and seeders; the first source with
+       no compatibility warning is named as the one to pick when there is a choice. */
+    var rec = -1,
+      choices = 0;
+    for (var r = 0; r < flat.length; r++) {
+      if (flat[r].stored) continue;
+      choices++;
+      if (rec < 0 && !(flat[r].compatRank > 0)) rec = r;
+    }
+    if (choices < 2) rec = -1;
     for (var i = 0; i < flat.length; i++) {
       var s = flat[i],
         d = document.createElement('div');
       d.className = 'st';
+      if (i === rec) {
+        var tag = document.createElement('div');
+        tag.className = 'rec';
+        tag.textContent = tx('recommendedSource');
+        d.appendChild(tag);
+      }
       var a = document.createElement('div');
       a.className = 'a';
       a.textContent = s.stored

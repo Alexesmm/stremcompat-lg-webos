@@ -125,6 +125,19 @@ function saveProgress() {
   } catch (e) {}
 }
 var didResume = false;
+/* After an automatic resume, OK starts over for as long as the hint is on screen;
+   any other toast replaces the hint and withdraws the offer. */
+var RESTART_WINDOW = 8000,
+  restartUntil = 0;
+function restartOffered() {
+  if (Date.now() >= restartUntil) return false;
+  restartUntil = 0;
+  try {
+    v.currentTime = 0;
+  } catch (e) {}
+  showToast(P.fromStart);
+  return true;
+}
 function tryResume() {
   if (didResume) return;
   didResume = true;
@@ -134,7 +147,8 @@ function tryResume() {
     if (!it.state.duration || sec < it.state.duration / 1000 - 30) {
       try {
         v.currentTime = sec;
-        showToast(P.resuming + fmt(sec));
+        showToast(P.resuming + fmt(sec) + '  ·  ' + P.restartHint, RESTART_WINDOW);
+        restartUntil = Date.now() + RESTART_WINDOW;
       } catch (e) {}
     }
   }

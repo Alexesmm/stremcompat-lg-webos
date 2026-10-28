@@ -148,14 +148,15 @@ var seekEl = document.getElementById('seekind'),
   seekTimer = null;
 var toastEl = document.getElementById('toast'),
   toastT = null;
-function showToast(m) {
+function showToast(m, ms) {
   if (!toastEl) return;
+  restartUntil = 0;
   toastEl.textContent = m;
   toastEl.style.opacity = '1';
   if (toastT) clearTimeout(toastT);
   toastT = setTimeout(function () {
     toastEl.style.opacity = '0';
-  }, 3200);
+  }, ms || 3200);
 }
 function diag(ev, data) {
   try {
