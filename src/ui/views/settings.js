@@ -187,15 +187,6 @@ var settings = {
         d: 'normal'
       },
       {
-        k: 'dynamicTint',
-        lb: tx('dynamicTint'),
-        opts: [
-          ['false', tx('disabled')],
-          ['true', tx('enabled')]
-        ],
-        d: TV_PROFILE.lowMemory ? 'false' : 'true'
-      },
-      {
         k: 'bgTrailer',
         lb: tx('backgroundTrailers'),
         opts: [
