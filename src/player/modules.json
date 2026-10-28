@@ -1,6 +1,7 @@
 [
   "../shared/strings.js",
   "../shared/watch-state.js",
+  "../shared/stream-addons.js",
   "strings.js",
   "core.js",
   "progress.js",

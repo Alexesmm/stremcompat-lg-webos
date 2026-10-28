@@ -25,7 +25,7 @@ function paintSeek() {
   var pct = Math.max(0, Math.min(100, (seekTarget / v.duration) * 100));
   fill.style.width = pct + '%';
   knob.style.left = pct + '%';
-  timeEl.textContent = fmt(seekTarget) + ' / ' + fmt(v.duration);
+  paintTime(seekTarget);
 }
 function commitSeek() {
   if (seekTarget < 0) return;

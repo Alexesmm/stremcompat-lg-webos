@@ -62,6 +62,7 @@ function checkNp() {
   if (rem <= 180 && rem > 2 && !npShown) {
     npShown = true;
     paintNp();
+    prefetchNext();
   } else if (rem > 180 && npShown) {
     npShown = false;
     npFocus = false;
@@ -69,6 +70,20 @@ function checkNp() {
   }
 }
 v.addEventListener('timeupdate', checkNp);
+/* While the next-episode panel is up, ask the addons for that episode's sources so the
+   local server has them cached (server/addon-cache.js) when the title page opens. */
+var nextPrefetched = false;
+function prefetchNext() {
+  if (nextPrefetched || !isNextEp || !NEXTVID) return;
+  nextPrefetched = true;
+  var list = [];
+  try {
+    list = JSON.parse(localStorage.getItem('addons') || '[]');
+  } catch (e) {}
+  var ads = streamAddonsIn(list, TYPE || 'series');
+  for (var i = 0; i < ads.length; i++)
+    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[i].base, TYPE || 'series', NEXTVID)), function () {});
+}
 /* When an episode ends the next one starts after a countdown: OK starts it now, Back
    cancels it. After three episodes in a row with nobody touching the remote it asks
    whether anyone is still watching instead of carrying on alone. */

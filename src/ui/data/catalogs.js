@@ -1,8 +1,5 @@
 // Catalog discovery from installed addons (Home rows, Discover filters).
 /* ================= addon-driven catalogs ================= */
-function addonBase(a) {
-  return String(a.transportUrl || '').replace(/\/manifest\.json.*$/, '');
-}
 function typeLabel(t) {
   var value = String(t || '');
   if (value === 'movie') return tx('movies');

@@ -53,13 +53,18 @@ function fmt(s) {
   }
   return (h ? h + ':' + p(m) : m) + ':' + p(x);
 }
+/* elapsed / total, then the time left */
+function paintTime(at) {
+  timeEl.innerHTML =
+    fmt(at) + ' / ' + fmt(v.duration) + '<span class=trem>-' + fmt(Math.max(0, v.duration - at)) + '</span>';
+}
 /* The bar is hidden most of the time; timeupdate only repaints it while it is visible. */
 function paintProgress() {
   if (!v.duration || seekTarget >= 0) return;
   var pct = (v.currentTime / v.duration) * 100;
   fill.style.width = pct + '%';
   knob.style.left = pct + '%';
-  timeEl.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration);
+  paintTime(v.currentTime);
 }
 function showBar() {
   if (bar.className !== 'show') paintProgress();

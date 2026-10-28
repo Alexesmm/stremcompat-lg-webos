@@ -43,6 +43,7 @@ function setArt(host, u) {
 if (BG) load.style.backgroundImage = 'url("' + BG + '")';
 var bufArt = document.getElementById('bufart');
 if (LOGO) {
+  setArt(document.getElementById('tlogo'), LOGO);
   setArt(lname, LOGO);
   setArt(bufArt, LOGO);
 } else {

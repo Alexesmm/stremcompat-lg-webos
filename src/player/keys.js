@@ -32,6 +32,27 @@ document.addEventListener(
       e.preventDefault();
       return;
     }
+    /* LG remote: red subtitles, green audio, yellow skips 85 s (an intro), blue settings;
+       digits jump to 0-90 % of the video, as on YouTube */
+    if (mode !== 'menu' && !npFocus) {
+      var colour = { 403: 'subsroot', 404: 'audio', 406: 'root' }[k];
+      if (colour) {
+        openMenu(colour);
+        e.preventDefault();
+        return;
+      }
+      if (k === 405) {
+        seek(85);
+        e.preventDefault();
+        return;
+      }
+      var digit = k >= 48 && k <= 57 ? k - 48 : k >= 96 && k <= 105 ? k - 96 : -1;
+      if (digit >= 0 && v.duration) {
+        seek((v.duration * digit) / 10 - (seekTarget >= 0 ? seekTarget : v.currentTime));
+        e.preventDefault();
+        return;
+      }
+    }
     showBar();
     if (mode === 'menu') {
       if (k === 38) {

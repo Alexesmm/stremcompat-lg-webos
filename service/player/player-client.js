@@ -602,6 +602,42 @@ function watchFinished(offsetMs, durationMs) {
   if (!(durationMs > 0) || !(offsetMs > 0) || offsetMs < durationMs / 2) return false;
   return durationMs - offsetMs <= Math.max(FINISHED_MIN_LEFT_MS, durationMs * FINISHED_MIN_LEFT_RATIO);
 }
+// Which installed addons answer stream requests; shared by the interface and the player.
+function addonBase(a) {
+  return String(a.transportUrl || '').replace(/\/manifest\.json.*$/, '');
+}
+function streamAddonsIn(a, type) {
+  var out = [];
+  a = a || [];
+  for (var i = 0; i < a.length; i++) {
+    var m = a[i] && a[i].manifest;
+    if (!m) continue;
+    var res = m.resources || [],
+      okRes = false;
+    for (var r = 0; r < res.length; r++) {
+      var rr = res[r];
+      if (rr === 'stream' || (rr && rr.name === 'stream')) okRes = true;
+    }
+    if (!okRes) continue;
+    var types = m.types || [];
+    if (types.length && types.indexOf(type) < 0) {
+      /* a stream resource OBJECT with no explicit types means "any type" — don't skip it */
+      var allow = false;
+      for (var r2 = 0; r2 < res.length; r2++) {
+        var rr2 = res[r2];
+        if (rr2 && rr2.name === 'stream') {
+          if (!rr2.types || !rr2.types.length || rr2.types.indexOf(type) >= 0) allow = true;
+        }
+      }
+      if (!allow) continue;
+    }
+    out.push({ name: m.name || 'Addon', base: addonBase(a[i]) });
+  }
+  return out;
+}
+function streamUrl(base, type, vid) {
+  return base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json';
+}
 // Player strings from the shared table, and the season/episode line.
 /* The player strings in the current language, completed from English. */
 function playerText() {
@@ -661,6 +697,7 @@ function setArt(host, u) {
 if (BG) load.style.backgroundImage = 'url("' + BG + '")';
 var bufArt = document.getElementById('bufart');
 if (LOGO) {
+  setArt(document.getElementById('tlogo'), LOGO);
   setArt(lname, LOGO);
   setArt(bufArt, LOGO);
 } else {
@@ -1269,13 +1306,18 @@ function fmt(s) {
   }
   return (h ? h + ':' + p(m) : m) + ':' + p(x);
 }
+/* elapsed / total, then the time left */
+function paintTime(at) {
+  timeEl.innerHTML =
+    fmt(at) + ' / ' + fmt(v.duration) + '<span class=trem>-' + fmt(Math.max(0, v.duration - at)) + '</span>';
+}
 /* The bar is hidden most of the time; timeupdate only repaints it while it is visible. */
 function paintProgress() {
   if (!v.duration || seekTarget >= 0) return;
   var pct = (v.currentTime / v.duration) * 100;
   fill.style.width = pct + '%';
   knob.style.left = pct + '%';
-  timeEl.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration);
+  paintTime(v.currentTime);
 }
 function showBar() {
   if (bar.className !== 'show') paintProgress();
@@ -1563,7 +1605,7 @@ function paintSeek() {
   var pct = Math.max(0, Math.min(100, (seekTarget / v.duration) * 100));
   fill.style.width = pct + '%';
   knob.style.left = pct + '%';
-  timeEl.textContent = fmt(seekTarget) + ' / ' + fmt(v.duration);
+  paintTime(seekTarget);
 }
 function commitSeek() {
   if (seekTarget < 0) return;
@@ -2028,6 +2070,7 @@ function checkNp() {
   if (rem <= 180 && rem > 2 && !npShown) {
     npShown = true;
     paintNp();
+    prefetchNext();
   } else if (rem > 180 && npShown) {
     npShown = false;
     npFocus = false;
@@ -2035,6 +2078,20 @@ function checkNp() {
   }
 }
 v.addEventListener('timeupdate', checkNp);
+/* While the next-episode panel is up, ask the addons for that episode's sources so the
+   local server has them cached (server/addon-cache.js) when the title page opens. */
+var nextPrefetched = false;
+function prefetchNext() {
+  if (nextPrefetched || !isNextEp || !NEXTVID) return;
+  nextPrefetched = true;
+  var list = [];
+  try {
+    list = JSON.parse(localStorage.getItem('addons') || '[]');
+  } catch (e) {}
+  var ads = streamAddonsIn(list, TYPE || 'series');
+  for (var i = 0; i < ads.length; i++)
+    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[i].base, TYPE || 'series', NEXTVID)), function () {});
+}
 /* When an episode ends the next one starts after a countdown: OK starts it now, Back
    cancels it. After three episodes in a row with nobody touching the remote it asks
    whether anyone is still watching instead of carrying on alone. */
@@ -2271,6 +2328,27 @@ document.addEventListener(
       if (k === 13) tryAnotherSource();
       e.preventDefault();
       return;
+    }
+    /* LG remote: red subtitles, green audio, yellow skips 85 s (an intro), blue settings;
+       digits jump to 0-90 % of the video, as on YouTube */
+    if (mode !== 'menu' && !npFocus) {
+      var colour = { 403: 'subsroot', 404: 'audio', 406: 'root' }[k];
+      if (colour) {
+        openMenu(colour);
+        e.preventDefault();
+        return;
+      }
+      if (k === 405) {
+        seek(85);
+        e.preventDefault();
+        return;
+      }
+      var digit = k >= 48 && k <= 57 ? k - 48 : k >= 96 && k <= 105 ? k - 96 : -1;
+      if (digit >= 0 && v.duration) {
+        seek((v.duration * digit) / 10 - (seekTarget >= 0 ? seekTarget : v.currentTime));
+        e.preventDefault();
+        return;
+      }
     }
     showBar();
     if (mode === 'menu') {

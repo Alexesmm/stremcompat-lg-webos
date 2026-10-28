@@ -5,6 +5,7 @@
   "core/storage.js",
   "../shared/strings.js",
   "../shared/watch-state.js",
+  "../shared/stream-addons.js",
   "core/i18n.js",
   "core/format.js",
   "core/runtime.js",

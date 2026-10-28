@@ -6,7 +6,7 @@ var { APP_VERSION, PORT } = require('./config');
 var { dbg } = require('./log');
 var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
-var { fetchAddonJson, fetchJson, fetchUrl, readJsonBody, sendJson } = require('./http-util');
+var { fetchJson, fetchUrl, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
 var { waitForServer } = require('./streaming-server');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
@@ -19,6 +19,7 @@ var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
 var { nextEpisodeId } = require('./episodes');
 var { diagnostics } = require('./diag');
+var { cachedAddonJson } = require('./addon-cache');
 
 // Routes every request of the local compatibility server.
 function handleRequest(req, res) {
@@ -48,7 +49,7 @@ function handleRequest(req, res) {
       sendJson(res, ref ? { ref: ref } : { error: 'invalid_stream' });
     });
   } else if (p === '/addon') {
-    fetchAddonJson(q.u || '', function (j) {
+    cachedAddonJson(q.u || '', function (j) {
       if (!j) {
         res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end('{"error":"addon_unavailable"}');
