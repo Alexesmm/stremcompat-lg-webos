@@ -61,7 +61,7 @@ async function main() {
     var index = parseInt(match[1], 10);
     if (index === 0 || index === 2) { res.writeHead(503);res.end();return; }
     var metas = [];
-    for (var mi = 0; mi < 3; mi++) metas.push({ id: 'visual-test:' + index + ':' + mi, type: 'movie', name: 'Catalog ' + index + ' item ' + mi });
+    for (var mi = 0; mi < (index === 1 ? 8 : 3); mi++) metas.push({ id: 'visual-test:' + index + ':' + mi, type: 'movie', name: 'Catalog ' + index + ' item ' + mi });
     res.writeHead(200, { 'Content-Type': 'application/json' });res.end(JSON.stringify({ metas: metas }));
   });
   await new Promise(function (resolve, reject) { mockServer.once('error', reject);mockServer.listen(mockPort, '127.0.0.1', resolve); });
@@ -123,6 +123,15 @@ async function main() {
     assert.strictEqual(orderEval.result.value, 0, 'Chromium 38 reordered unnumbered episodes (unstable sort)');
     var fontEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var faces=[];document.fonts.forEach(function(f){faces.push(f.weight+':'+f.status);});return faces.join(',');})()", returnByValue: true });
     assert.strictEqual(fontEval.result.value, '400:loaded,700:loaded', 'Chromium 38 could not load the Inter font faces');
+    for (var sa = 0; sa < 8; sa++) await key(39);
+    var seeAllEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var f=document.querySelector('#rows>.row .card.f');return f?f.className:'';})()", returnByValue: true });
+    assert.ok(/\bmore\b/.test(seeAllEval.result.value), 'a catalog row with eight titles does not end with See all');
+    await key(13);
+    await delay(300);
+    var discEval = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('scrDisc').className", returnByValue: true });
+    assert.ok(/\bon\b/.test(discEval.result.value), 'See all did not open Discover');
+    await key(461);
+    await delay(300);
     await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
     await delay(150);
     var movedEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var rows=document.querySelectorAll('#rows>.row'),focused=-1;for(var i=0;i<rows.length;i++)if(rows[i].querySelector('.card.f'))focused=i;return JSON.stringify({focused:focused,transform:document.getElementById('rows').style.transform});})()", returnByValue: true });
@@ -188,6 +197,14 @@ async function main() {
     var playerMenuState = JSON.parse(playerMenu.result.value);
     assert.strictEqual(playerMenuState.state.mode, 'menu', 'Magic Remote click did not open player settings');
     assert.ok(playerMenuState.text.indexOf('Audio:') >= 0 && playerMenuState.text.indexOf('Subtitles:') >= 0, 'active audio/subtitle labels are missing');
+    await protocol.call('Runtime.evaluate', { expression: "location.href='/play?u='+encodeURIComponent('http://127.0.0.1:" + mockPort + "/missing.mp4')+'&type=movie&id=tt0111161&vid=tt0111161&back='+encodeURIComponent('beta#detail/movie/tt0111161')" });
+    await delay(5500);
+    var failEval = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('fail').className", returnByValue: true });
+    assert.strictEqual(failEval.result.value, 'show', 'a source that cannot play did not offer another source');
+    await key(13);
+    await delay(2500);
+    var retryEval = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('scrDetail').className", returnByValue: true });
+    assert.ok(/\bon\b/.test(retryEval.result.value), 'Try another source did not return to the title page');
     protocol.close();
     console.log('OK: Chromium 38 login, catalogs, Magic Remote clicks and player focus/audio/subtitle UI.');
   } finally {

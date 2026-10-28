@@ -2132,6 +2132,9 @@ function showScr(name) {
   var all = ['scrBoard', 'scrDetail', 'scrDisc', 'scrSearch', 'scrAddons', 'scrSet', 'scrLogin', 'scrSim'];
   for (var i = 0; i < all.length; i++) $(all[i]).className = 'scr' + (all[i] === el ? ' on' : '');
   SCR = name;
+  /* the side menu follows the section on screen, also when Back returns to it */
+  var section = chipTarget.indexOf(name);
+  if (section >= 0) topNav.idx = section;
   if (name === 'login') bodyAdd('login');
   else bodyRemove('login');
   paintChips();

@@ -19,7 +19,7 @@
     "package:um4-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7-hd",
     "package:uj3-native-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7-hd",
     "package:all": "npm run package:um4 && npm run package:um4-hd && npm run package:uj3-native && npm run package:uj3-native-hd",
-    "test": "node ./scripts/selftest-frontend.js && node ./scripts/selftest-runtime.js",
+    "test": "node ./scripts/selftest-frontend.js && node ./scripts/selftest-player.js && node ./scripts/selftest-runtime.js",
     "test:chrome38": "node ./scripts/selftest-chromium38.js",
     "test:visual:layouts": "powershell -ExecutionPolicy Bypass -File ./scripts/visualtest-layouts.ps1",
     "verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
