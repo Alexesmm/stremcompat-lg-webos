@@ -70,11 +70,20 @@ function showBar() {
   if (bar.className !== 'show') paintProgress();
   bar.className = 'show';
   if (hideT) clearTimeout(hideT);
-  hideT = setTimeout(function () {
-    if (mode === 'video') {
-      bar.className = '';
-    }
-  }, 4000);
+  hideT = setTimeout(hideControls, mode === 'menu' ? 8000 : 5000);
+}
+/* After a few seconds without a key or the pointer, everything goes away and only the
+   video stays: the bar, a focused button and the settings menu alike. The focus returns
+   to the video, so the next key brings the controls back. */
+function hideControls() {
+  if (seekTarget >= 0) {
+    showBar();
+    return;
+  }
+  if (mode === 'menu') menu.className = '';
+  mode = 'video';
+  paintBtns();
+  bar.className = '';
 }
 function paintBtns() {
   for (var i = 0; i < btns.length; i++)

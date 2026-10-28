@@ -794,15 +794,28 @@ function libPrefix() {
 // one shared account library (lib_<hash>_): progress/watched is pushed to api.strem.io
 var LIBKEY = libPrefix() + ID;
 // POST helper + push the library item to the account (same datastorePut Stremio uses)
-function xpost(u, body) {
+/* done (optional) runs once the request finished, failed or took longer than 2 s */
+function xpost(u, body, done) {
+  var called = false;
+  function finish() {
+    if (called) return;
+    called = true;
+    if (done) done();
+  }
+  setTimeout(finish, 2000);
   try {
     if (u.indexOf('https://api.strem.io/api/') === 0)
       u = '/stremioapi?path=' + encodeURIComponent(u.slice('https://api.strem.io'.length));
     var x = new XMLHttpRequest();
     x.open('POST', u, true);
     x.setRequestHeader('Content-Type', 'application/json');
+    x.onreadystatechange = function () {
+      if (x.readyState === 4) finish();
+    };
     x.send(JSON.stringify(body));
-  } catch (e) {}
+  } catch (e) {
+    finish();
+  }
 }
 function authKeyLS() {
   try {
@@ -812,15 +825,20 @@ function authKeyLS() {
   }
 }
 var lastPush = 0;
-function pushLib(force) {
-  var ak = authKeyLS();
-  if (!ak) return;
-  var it = readLib();
-  if (!it || !it._id) return;
-  var n = Date.now();
-  if (!force && n - lastPush < 60000) return;
+function pushLib(force, done) {
+  var ak = authKeyLS(),
+    it = readLib(),
+    n = Date.now();
+  if (!ak || !it || !it._id || (!force && n - lastPush < 60000)) {
+    if (done) done();
+    return;
+  }
   lastPush = n;
-  xpost('https://api.strem.io/api/datastorePut', { authKey: ak, collection: 'libraryItem', changes: [it] });
+  xpost(
+    'https://api.strem.io/api/datastorePut',
+    { authKey: ak, collection: 'libraryItem', changes: [it] },
+    done
+  );
 }
 // remember exactly which stream we played so Continue Watching can resume it directly
 try {
@@ -895,6 +913,9 @@ function saveProgress() {
   it._mtime = now;
   if (it.removed == null) it.removed = false;
   if (it.temp == null) it.temp = true;
+  /* Stremio apps list an item in Continue Watching only when it is in the library or
+     temporary: a title removed from the library and watched again must become temporary */
+  if (it.removed && !it.temp) it.temp = true;
   try {
     localStorage.setItem(LIBKEY, JSON.stringify(it));
   } catch (e) {}
@@ -1368,11 +1389,20 @@ function showBar() {
   if (bar.className !== 'show') paintProgress();
   bar.className = 'show';
   if (hideT) clearTimeout(hideT);
-  hideT = setTimeout(function () {
-    if (mode === 'video') {
-      bar.className = '';
-    }
-  }, 4000);
+  hideT = setTimeout(hideControls, mode === 'menu' ? 8000 : 5000);
+}
+/* After a few seconds without a key or the pointer, everything goes away and only the
+   video stays: the bar, a focused button and the settings menu alike. The focus returns
+   to the video, so the next key brings the controls back. */
+function hideControls() {
+  if (seekTarget >= 0) {
+    showBar();
+    return;
+  }
+  if (mode === 'menu') menu.className = '';
+  mode = 'video';
+  paintBtns();
+  bar.className = '';
 }
 function paintBtns() {
   for (var i = 0; i < btns.length; i++)
@@ -1695,10 +1725,6 @@ function exit() {
   if (exited) return;
   exited = true;
   try {
-    saveProgress();
-    pushLib(true);
-  } catch (e) {}
-  try {
     v.pause();
   } catch (e) {}
   try {
@@ -1714,6 +1740,23 @@ function exit() {
   try {
     sessionStorage.setItem('tvBack', '1');
   } catch (e) {}
+  /* The progress has to reach the account before the page changes, or other devices never
+     see this session: leave when the push answers, or after 0.9 s at the latest. */
+  var left = false;
+  function leave() {
+    if (left) return;
+    left = true;
+    leavePlayer();
+  }
+  setTimeout(leave, 900);
+  try {
+    saveProgress();
+    pushLib(true, leave);
+  } catch (e) {
+    leave();
+  }
+}
+function leavePlayer() {
   var st = null;
   try {
     st = history.state;
