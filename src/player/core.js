@@ -59,7 +59,8 @@ var mediaUsable = false,
 function armStartupWatch() {
   if (startupWatch) clearTimeout(startupWatch);
   startupWatch = setTimeout(function () {
-    if (!mediaUsable) retryStartup('timeout');
+    if (!mediaUsable && !retryStartup('timeout') && ID && BACK.indexOf('beta#detail/') === 0)
+      showSourceFailed();
   }, 18000);
 }
 function mediaReady() {

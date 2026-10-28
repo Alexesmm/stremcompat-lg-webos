@@ -12,6 +12,12 @@
 .st .a{font-size:29px;font-weight:700;color:#c9b8ff}
 .st .rec{margin-bottom:8px;font-size:20px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#8ee3ad}
 .st.f .rec{color:#fff}
+.st .tags{margin-top:9px}
+.tg{display:inline-block;padding:4px 11px;margin:0 8px 6px 0;border-radius:6px;background:rgba(255,255,255,.1);font-size:20px;font-weight:700;color:rgba(255,255,255,.9)}
+.tg.q{background:#8c5cff;color:#fff}
+.tg.size,.tg.seed{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+.st.f .tg{background:rgba(255,255,255,.24);color:#fff}
+.st.f .tg.q{background:#fff;color:#5b2fd6}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
 .st.f .compat{color:#fff}

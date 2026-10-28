@@ -80,3 +80,9 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 .mi.f{background:#8c5cff}
 .mi.on{color:#cdbcff;font-weight:600}
 .mh{padding:12px 22px;font-size:17px;opacity:.6;text-transform:uppercase}
+#fail{position:fixed;top:0;left:0;right:0;bottom:0;z-index:12;display:none;background:#0a0910;text-align:center;padding-top:30vh;box-sizing:border-box}
+#fail.show{display:block}
+#failT{font-size:44px;font-weight:700}
+#failS{margin:14px auto 40px;max-width:70%;font-size:24px;color:rgba(255,255,255,.62)}
+#failB{display:inline-block;height:auto;padding:22px 52px;font-size:28px}
+#failH{margin-top:26px;font-size:20px;color:rgba(255,255,255,.5)}

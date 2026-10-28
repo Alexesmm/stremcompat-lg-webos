@@ -298,6 +298,8 @@ var UI_TEXT = {
     noSources: 'No sources found.',
     noSourcesQuality: 'No sources in this quality.',
     addonsNoAnswer: 'No answer from: {0}',
+    tryingNextSource: 'Trying the next source…',
+    noOtherSource: 'No other source to try',
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
@@ -305,6 +307,7 @@ var UI_TEXT = {
     continuePlayback: 'Continue playback',
     sameSource: 'The same source used previously',
     seeders: 'seeders',
+    seedsTag: '{0} seeds',
     compatibilityCheck: 'Check compatibility: {0}',
     sourcePrepareFailed: 'Could not prepare this source. Please try again.',
     runtimeRestoring: 'Restoring the local service…',
@@ -411,6 +414,9 @@ var UI_TEXT = {
       nextEpisode: 'Next episode',
       playNext: 'Play next',
       playNextIn: 'Next episode in {0}',
+      sourceFailed: 'This source could not be played',
+      tryAnother: 'Try another source',
+      failHint: 'OK: try another · Back: leave',
       countdownHint: 'OK: play now · Back: cancel',
       stillWatching: 'Are you still watching?',
       keepWatching: 'Continue watching',
@@ -574,6 +580,8 @@ var UI_TEXT = {
     noSources: 'Nenhuma fonte encontrada.',
     noSourcesQuality: 'Nenhuma fonte nesta qualidade.',
     addonsNoAnswer: 'Sem resposta de: {0}',
+    tryingNextSource: 'Tentando a próxima fonte…',
+    noOtherSource: 'Não há outra fonte para tentar',
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
@@ -581,6 +589,7 @@ var UI_TEXT = {
     continuePlayback: 'Continuar reprodução',
     sameSource: 'A mesma fonte usada anteriormente',
     seeders: 'seeders',
+    seedsTag: '{0} seeds',
     compatibilityCheck: 'Verifique a compatibilidade: {0}',
     sourcePrepareFailed: 'Não foi possível preparar esta fonte. Tente novamente.',
     runtimeRestoring: 'Restaurando o serviço local…',
@@ -687,6 +696,9 @@ var UI_TEXT = {
       nextEpisode: 'Próximo episódio',
       playNext: 'Reproduzir próximo',
       playNextIn: 'Próximo episódio em {0}',
+      sourceFailed: 'Não foi possível reproduzir esta fonte',
+      tryAnother: 'Tentar outra fonte',
+      failHint: 'OK: tentar outra · Voltar: sair',
       countdownHint: 'OK: assistir agora · Voltar: cancelar',
       stillWatching: 'Você ainda está assistindo?',
       keepWatching: 'Continuar assistindo',
@@ -1536,6 +1548,29 @@ function streamCompatibility(s) {
   return { labels: labels, rank: rank };
 }
 window.__STREMIO_STREAM_COMPAT__ = streamCompatibility;
+/* Short tags for the source list, read from the same advisory text: quality, HDR,
+   codec, audio, size and seeders, so a source can be judged without reading its name. */
+function sourceTags(s) {
+  var t = streamText(s),
+    low = t.toLowerCase(),
+    out = [],
+    m;
+  if (s.quality && s.quality !== 'Other' && s.quality !== 'Recent') out.push({ t: s.quality, c: 'q' });
+  if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+' });
+  else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR' });
+  if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DV' });
+  if (/\b(hevc|x265|h[ ._-]?265)\b/.test(low)) out.push({ t: 'HEVC' });
+  else if (/\b(x264|h[ ._-]?264|avc)\b/.test(low)) out.push({ t: 'H.264' });
+  if (/\batmos\b/.test(low)) out.push({ t: 'Atmos' });
+  else if (/\b(ddp|dd\+|e[ ._-]?ac[ ._-]?3|eac3)/.test(low)) out.push({ t: 'DD+' });
+  else if (/\b(ac3|dd5[ ._]?1|dolby[ ._-]?digital)\b/.test(low)) out.push({ t: 'DD' });
+  else if (/\baac\b/.test(low)) out.push({ t: 'AAC' });
+  m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
+  if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
+  if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
+  return out;
+}
+window.__STREMIO_SOURCE_TAGS__ = sourceTags;
 function streamSourceKey(s) {
   if (s.stored) return 'stored';
   var u = String(s.url || '').replace(/#.*$/, '');
@@ -1741,6 +1776,33 @@ function playStored(q, backHash) {
   q = q.replace(/&back=[^&]*/, '');
   location.assign('/play' + q + '&back=' + encodeURIComponent(backHash));
 }
+/* Left by the player when a source would not play (player controls.js): the title page
+   reopens the sources and plays the next one, skipping the failed source. */
+function retryKey(id, vid) {
+  return 'tvretry_' + id + '_' + vid;
+}
+function hasRetryRequest(id, vid) {
+  return !!lsRaw(retryKey(id, vid), '');
+}
+function takeRetryRequest(id, vid) {
+  var pref = lsJson(retryKey(id, vid));
+  try {
+    localStorage.removeItem(retryKey(id, vid));
+  } catch (e) {}
+  return pref && pref.at && Date.now() - pref.at < 10 * 60 * 1000 ? pref : null;
+}
+/* the first source in list order that is not the one that failed */
+function nextSourceAfterFailure(items, pref) {
+  for (var i = 0; i < items.length; i++) {
+    var s = items[i];
+    if (s.stored) continue;
+    if (s.addon === pref.addon && String((s.name || '') + ' ' + (s.title || '')).slice(0, 400) === pref.text)
+      continue;
+    return s;
+  }
+  return null;
+}
+window.__STREMIO_NEXT_AFTER_FAILURE__ = nextSourceAfterFailure;
 function hasNextSourcePreference(id, vid) {
   try {
     return !!localStorage.getItem('tvnextpref_' + id + '_' + vid);
@@ -4031,7 +4093,14 @@ var detail = {
           }, 250);
         }
       }
-    } else if (!this.restored && !primary) {
+    }
+    /* the player asked for another source after this one failed */
+    var retryVid = this.type === 'series' ? av : this.id;
+    if (retryVid && hasRetryRequest(this.id, retryVid))
+      setTimeout(function () {
+        if (SCR === 'detail' && !streamsUI.open) self.openStreams(retryVid);
+      }, 250);
+    else if (this.type !== 'series' && !this.restored && !primary) {
       /* a new film opens its sources; one in progress, or one the viewer just came back
          from, waits on its Continue / Watch buttons instead */
       setTimeout(function () {
@@ -4656,6 +4725,7 @@ var streamsUI = {
     this.vid = vid;
     this.seq = 0;
     this.autoPref = takeNextSourcePreference(id, vid);
+    this.retryPref = takeRetryRequest(id, vid);
     this.zone = 'list';
     this.filter = 'All';
     this.chipIdx = 0;
@@ -4706,6 +4776,21 @@ var streamsUI = {
           return;
         }
         self.flush();
+        if (self.retryPref) {
+          var retry = nextSourceAfterFailure(self.items, self.retryPref);
+          self.retryPref = null;
+          if (retry) {
+            toast(tx('tryingNextSource'));
+            playUrl(
+              retry,
+              self.type,
+              self.id,
+              self.vid,
+              'beta#detail/' + self.type + '/' + self.id + (self.vid !== self.id ? '/' + self.vid : '')
+            );
+          } else toast(tx('noOtherSource'));
+          return;
+        }
         var matched = matchingNextSource(self.all(), self.autoPref);
         self.autoPref = null;
         if (matched) {
@@ -4836,13 +4921,20 @@ var streamsUI = {
       }
       var a = document.createElement('div');
       a.className = 'a';
-      a.textContent = s.stored
-        ? tx('continuePlayback')
-        : qualityLabel(s.quality || 'Other') +
-          (s.seeders >= 0 ? '  ·  ' + s.seeders + ' ' + tx('seeders') : '') +
-          '  ·  ' +
-          (s.addon || 'Addon');
+      a.textContent = s.stored ? tx('continuePlayback') : s.addon || 'Addon';
       d.appendChild(a);
+      var tags = s.stored ? [] : sourceTags(s);
+      if (tags.length) {
+        var tg = document.createElement('div');
+        tg.className = 'tags';
+        for (var ti = 0; ti < tags.length; ti++) {
+          var tgi = document.createElement('span');
+          tgi.className = 'tg' + (tags[ti].c ? ' ' + tags[ti].c : '');
+          tgi.textContent = tags[ti].t;
+          tg.appendChild(tgi);
+        }
+        d.appendChild(tg);
+      }
       if (s.compatLabels && s.compatLabels.length) {
         var c = document.createElement('div');
         c.className = 'compat';

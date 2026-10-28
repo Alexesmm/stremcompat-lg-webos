@@ -83,9 +83,31 @@ v.addEventListener('playing', hideLoad);
 v.addEventListener('loadeddata', function () {
   setTimeout(hideLoad, 300);
 });
+/* A source that will not play: offer the next one instead of a dead end. The interface
+   reads tvretry_* on the title page and plays the next source in its list, skipping this one. */
+var failShown = false;
+function showSourceFailed() {
+  if (failShown) return;
+  failShown = true;
+  document.getElementById('failT').textContent = P.sourceFailed;
+  document.getElementById('failS').textContent = (ADDON ? ADDON + '  ·  ' : '') + (QUALITY || '');
+  document.getElementById('failB').textContent = P.tryAnother;
+  document.getElementById('failH').textContent = P.failHint;
+  document.getElementById('fail').className = 'show';
+}
+function tryAnotherSource() {
+  try {
+    localStorage.setItem(
+      'tvretry_' + ID + '_' + (VID || ID),
+      JSON.stringify({ at: Date.now(), addon: ADDON, text: SNAME })
+    );
+  } catch (e) {}
+  location.replace('/' + (BACK || 'beta'));
+}
 v.addEventListener('error', function () {
   if (retryStartup('error')) return;
   lname.textContent = P.playbackError;
+  if (ID && BACK.indexOf('beta#detail/') === 0) showSourceFailed();
   diag('media_error', {
     code: v.error ? v.error.code : 0,
     ready: v.readyState,

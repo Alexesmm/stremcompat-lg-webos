@@ -96,6 +96,29 @@ function streamCompatibility(s) {
   return { labels: labels, rank: rank };
 }
 window.__STREMIO_STREAM_COMPAT__ = streamCompatibility;
+/* Short tags for the source list, read from the same advisory text: quality, HDR,
+   codec, audio, size and seeders, so a source can be judged without reading its name. */
+function sourceTags(s) {
+  var t = streamText(s),
+    low = t.toLowerCase(),
+    out = [],
+    m;
+  if (s.quality && s.quality !== 'Other' && s.quality !== 'Recent') out.push({ t: s.quality, c: 'q' });
+  if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+' });
+  else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR' });
+  if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DV' });
+  if (/\b(hevc|x265|h[ ._-]?265)\b/.test(low)) out.push({ t: 'HEVC' });
+  else if (/\b(x264|h[ ._-]?264|avc)\b/.test(low)) out.push({ t: 'H.264' });
+  if (/\batmos\b/.test(low)) out.push({ t: 'Atmos' });
+  else if (/\b(ddp|dd\+|e[ ._-]?ac[ ._-]?3|eac3)/.test(low)) out.push({ t: 'DD+' });
+  else if (/\b(ac3|dd5[ ._]?1|dolby[ ._-]?digital)\b/.test(low)) out.push({ t: 'DD' });
+  else if (/\baac\b/.test(low)) out.push({ t: 'AAC' });
+  m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
+  if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
+  if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
+  return out;
+}
+window.__STREMIO_SOURCE_TAGS__ = sourceTags;
 function streamSourceKey(s) {
   if (s.stored) return 'stored';
   var u = String(s.url || '').replace(/#.*$/, '');

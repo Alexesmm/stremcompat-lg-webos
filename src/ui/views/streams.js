@@ -39,6 +39,7 @@ var streamsUI = {
     this.vid = vid;
     this.seq = 0;
     this.autoPref = takeNextSourcePreference(id, vid);
+    this.retryPref = takeRetryRequest(id, vid);
     this.zone = 'list';
     this.filter = 'All';
     this.chipIdx = 0;
@@ -89,6 +90,21 @@ var streamsUI = {
           return;
         }
         self.flush();
+        if (self.retryPref) {
+          var retry = nextSourceAfterFailure(self.items, self.retryPref);
+          self.retryPref = null;
+          if (retry) {
+            toast(tx('tryingNextSource'));
+            playUrl(
+              retry,
+              self.type,
+              self.id,
+              self.vid,
+              'beta#detail/' + self.type + '/' + self.id + (self.vid !== self.id ? '/' + self.vid : '')
+            );
+          } else toast(tx('noOtherSource'));
+          return;
+        }
         var matched = matchingNextSource(self.all(), self.autoPref);
         self.autoPref = null;
         if (matched) {
@@ -219,13 +235,20 @@ var streamsUI = {
       }
       var a = document.createElement('div');
       a.className = 'a';
-      a.textContent = s.stored
-        ? tx('continuePlayback')
-        : qualityLabel(s.quality || 'Other') +
-          (s.seeders >= 0 ? '  ·  ' + s.seeders + ' ' + tx('seeders') : '') +
-          '  ·  ' +
-          (s.addon || 'Addon');
+      a.textContent = s.stored ? tx('continuePlayback') : s.addon || 'Addon';
       d.appendChild(a);
+      var tags = s.stored ? [] : sourceTags(s);
+      if (tags.length) {
+        var tg = document.createElement('div');
+        tg.className = 'tags';
+        for (var ti = 0; ti < tags.length; ti++) {
+          var tgi = document.createElement('span');
+          tgi.className = 'tg' + (tags[ti].c ? ' ' + tags[ti].c : '');
+          tgi.textContent = tags[ti].t;
+          tg.appendChild(tgi);
+        }
+        d.appendChild(tg);
+      }
       if (s.compatLabels && s.compatLabels.length) {
         var c = document.createElement('div');
         c.className = 'compat';

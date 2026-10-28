@@ -116,6 +116,8 @@ var UI_TEXT = {
     noSources: 'No sources found.',
     noSourcesQuality: 'No sources in this quality.',
     addonsNoAnswer: 'No answer from: {0}',
+    tryingNextSource: 'Trying the next source…',
+    noOtherSource: 'No other source to try',
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
@@ -123,6 +125,7 @@ var UI_TEXT = {
     continuePlayback: 'Continue playback',
     sameSource: 'The same source used previously',
     seeders: 'seeders',
+    seedsTag: '{0} seeds',
     compatibilityCheck: 'Check compatibility: {0}',
     sourcePrepareFailed: 'Could not prepare this source. Please try again.',
     runtimeRestoring: 'Restoring the local service…',
@@ -229,6 +232,9 @@ var UI_TEXT = {
       nextEpisode: 'Next episode',
       playNext: 'Play next',
       playNextIn: 'Next episode in {0}',
+      sourceFailed: 'This source could not be played',
+      tryAnother: 'Try another source',
+      failHint: 'OK: try another · Back: leave',
       countdownHint: 'OK: play now · Back: cancel',
       stillWatching: 'Are you still watching?',
       keepWatching: 'Continue watching',
@@ -392,6 +398,8 @@ var UI_TEXT = {
     noSources: 'Nenhuma fonte encontrada.',
     noSourcesQuality: 'Nenhuma fonte nesta qualidade.',
     addonsNoAnswer: 'Sem resposta de: {0}',
+    tryingNextSource: 'Tentando a próxima fonte…',
+    noOtherSource: 'Não há outra fonte para tentar',
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
@@ -399,6 +407,7 @@ var UI_TEXT = {
     continuePlayback: 'Continuar reprodução',
     sameSource: 'A mesma fonte usada anteriormente',
     seeders: 'seeders',
+    seedsTag: '{0} seeds',
     compatibilityCheck: 'Verifique a compatibilidade: {0}',
     sourcePrepareFailed: 'Não foi possível preparar esta fonte. Tente novamente.',
     runtimeRestoring: 'Restaurando o serviço local…',
@@ -505,6 +514,9 @@ var UI_TEXT = {
       nextEpisode: 'Próximo episódio',
       playNext: 'Reproduzir próximo',
       playNextIn: 'Próximo episódio em {0}',
+      sourceFailed: 'Não foi possível reproduzir esta fonte',
+      tryAnother: 'Tentar outra fonte',
+      failHint: 'OK: tentar outra · Voltar: sair',
       countdownHint: 'OK: assistir agora · Voltar: cancelar',
       stillWatching: 'Você ainda está assistindo?',
       keepWatching: 'Continuar assistindo',
@@ -665,7 +677,8 @@ var mediaUsable = false,
 function armStartupWatch() {
   if (startupWatch) clearTimeout(startupWatch);
   startupWatch = setTimeout(function () {
-    if (!mediaUsable) retryStartup('timeout');
+    if (!mediaUsable && !retryStartup('timeout') && ID && BACK.indexOf('beta#detail/') === 0)
+      showSourceFailed();
   }, 18000);
 }
 function mediaReady() {
@@ -1286,9 +1299,31 @@ v.addEventListener('playing', hideLoad);
 v.addEventListener('loadeddata', function () {
   setTimeout(hideLoad, 300);
 });
+/* A source that will not play: offer the next one instead of a dead end. The interface
+   reads tvretry_* on the title page and plays the next source in its list, skipping this one. */
+var failShown = false;
+function showSourceFailed() {
+  if (failShown) return;
+  failShown = true;
+  document.getElementById('failT').textContent = P.sourceFailed;
+  document.getElementById('failS').textContent = (ADDON ? ADDON + '  ·  ' : '') + (QUALITY || '');
+  document.getElementById('failB').textContent = P.tryAnother;
+  document.getElementById('failH').textContent = P.failHint;
+  document.getElementById('fail').className = 'show';
+}
+function tryAnotherSource() {
+  try {
+    localStorage.setItem(
+      'tvretry_' + ID + '_' + (VID || ID),
+      JSON.stringify({ at: Date.now(), addon: ADDON, text: SNAME })
+    );
+  } catch (e) {}
+  location.replace('/' + (BACK || 'beta'));
+}
 v.addEventListener('error', function () {
   if (retryStartup('error')) return;
   lname.textContent = P.playbackError;
+  if (ID && BACK.indexOf('beta#detail/') === 0) showSourceFailed();
   diag('media_error', {
     code: v.error ? v.error.code : 0,
     ready: v.readyState,
@@ -2230,6 +2265,11 @@ document.addEventListener(
       e.preventDefault();
       e.stopPropagation();
       history.back();
+      return;
+    }
+    if (failShown) {
+      if (k === 13) tryAnotherSource();
+      e.preventDefault();
       return;
     }
     showBar();

@@ -27,6 +27,11 @@ document.addEventListener(
       history.back();
       return;
     }
+    if (failShown) {
+      if (k === 13) tryAnotherSource();
+      e.preventDefault();
+      return;
+    }
     showBar();
     if (mode === 'menu') {
       if (k === 38) {

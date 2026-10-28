@@ -200,7 +200,14 @@ var detail = {
           }, 250);
         }
       }
-    } else if (!this.restored && !primary) {
+    }
+    /* the player asked for another source after this one failed */
+    var retryVid = this.type === 'series' ? av : this.id;
+    if (retryVid && hasRetryRequest(this.id, retryVid))
+      setTimeout(function () {
+        if (SCR === 'detail' && !streamsUI.open) self.openStreams(retryVid);
+      }, 250);
+    else if (this.type !== 'series' && !this.restored && !primary) {
       /* a new film opens its sources; one in progress, or one the viewer just came back
          from, waits on its Continue / Watch buttons instead */
       setTimeout(function () {

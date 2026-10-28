@@ -64,6 +64,33 @@ function playStored(q, backHash) {
   q = q.replace(/&back=[^&]*/, '');
   location.assign('/play' + q + '&back=' + encodeURIComponent(backHash));
 }
+/* Left by the player when a source would not play (player controls.js): the title page
+   reopens the sources and plays the next one, skipping the failed source. */
+function retryKey(id, vid) {
+  return 'tvretry_' + id + '_' + vid;
+}
+function hasRetryRequest(id, vid) {
+  return !!lsRaw(retryKey(id, vid), '');
+}
+function takeRetryRequest(id, vid) {
+  var pref = lsJson(retryKey(id, vid));
+  try {
+    localStorage.removeItem(retryKey(id, vid));
+  } catch (e) {}
+  return pref && pref.at && Date.now() - pref.at < 10 * 60 * 1000 ? pref : null;
+}
+/* the first source in list order that is not the one that failed */
+function nextSourceAfterFailure(items, pref) {
+  for (var i = 0; i < items.length; i++) {
+    var s = items[i];
+    if (s.stored) continue;
+    if (s.addon === pref.addon && String((s.name || '') + ' ' + (s.title || '')).slice(0, 400) === pref.text)
+      continue;
+    return s;
+  }
+  return null;
+}
+window.__STREMIO_NEXT_AFTER_FAILURE__ = nextSourceAfterFailure;
 function hasNextSourcePreference(id, vid) {
   try {
     return !!localStorage.getItem('tvnextpref_' + id + '_' + vid);

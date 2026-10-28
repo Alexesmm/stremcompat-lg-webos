@@ -185,6 +185,14 @@ var done = cwCard({ _id:'tt5', type:'series', name:'Show', state:{ video_id:'tt5
 assert.strictEqual(done.upNext && done.videoId, 'tt5:2:6', 'a finished episode did not become its next episode');
 assert.strictEqual(cwCard({ _id:'m', type:'movie', state:{ video_id:'m', timeOffset:movie - 10 * 60000, duration:movie } }).upNext, false, 'ten minutes before the end of a film counted as finished');
 assert.strictEqual(cwCard({ _id:'c', type:'movie', state:{ video_id:'c', timeOffset:65000, duration:600000 } }).minutesLeft, 9, 'minutes left were not rounded');
+var tagText = firstRun.context.__STREMIO_SOURCE_TAGS__({ name:'Torrentio 4k', title:'Show.2160p.WEB-DL.DDP5.1.DV.HDR10.HEVC 24.5 GB', quality:'4K', seeders:532 }).map(function (x) { return x.t; }).join(',');
+assert.strictEqual(tagText, '4K,HDR,DV,HEVC,DD+,24.5 GB,532 seeds', 'source tags were not read from the stream text');
+var afterFail = firstRun.context.__STREMIO_NEXT_AFTER_FAILURE__([
+  { stored:'q', addon:'Last' },
+  { addon:'Torrentio', name:'A', title:'broken' },
+  { addon:'Torrentio', name:'B', title:'good' }
+], { addon:'Torrentio', text:'A broken' });
+assert.strictEqual(afterFail && afterFail.name, 'B', 'the failed source was offered again');
 var baseEpisodes={videos:[{id:'show:1:1',season:1,episode:1}]};
 assert.strictEqual(firstRun.context.__STREMIO_MERGE_EPISODES__(baseEpisodes,{videos:[{id:'show:1:1',season:1,episode:1,thumbnail:'/still.jpg',overview:'Overview'}]}),true,'metadata enrichment did not report a change');
 assert.strictEqual(baseEpisodes.videos[0].thumbnail,'/still.jpg','metadata enrichment did not fill a missing thumbnail');
