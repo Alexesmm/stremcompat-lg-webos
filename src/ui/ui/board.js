@@ -36,6 +36,7 @@ function makeBoard(loader) {
       var host = $('rows');
       host.innerHTML = '';
       for (var i = 0; i < this.rows.length; i++) host.appendChild(this.rows[i].el);
+      paintBoardMessage(this);
     },
     /* replay the staggered entrance every time the board is (re)shown, not just first build */
     reveal: function () {
@@ -193,6 +194,7 @@ function makeBoard(loader) {
     key: function (k) {
       if (this.settleRow() < 0) {
         if (k === 38) topNav.focus();
+        else if (k === 13 && this.empty) refreshCurBoard();
         return true;
       }
       var row = this.rows[this.rowIdx];

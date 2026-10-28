@@ -267,6 +267,7 @@ var UI_TEXT = {
     noSources: 'No sources found.',
     noSourcesQuality: 'No sources in this quality.',
     addonsNoAnswer: 'No answer from: {0}',
+    catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
     lastSource: 'Last source',
@@ -446,6 +447,7 @@ var UI_TEXT = {
     noSources: 'Nenhuma fonte encontrada.',
     noSourcesQuality: 'Nenhuma fonte nesta qualidade.',
     addonsNoAnswer: 'Sem resposta de: {0}',
+    catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
     lastSource: 'Última fonte',
@@ -2054,6 +2056,7 @@ function makeBoard(loader) {
       var host = $('rows');
       host.innerHTML = '';
       for (var i = 0; i < this.rows.length; i++) host.appendChild(this.rows[i].el);
+      paintBoardMessage(this);
     },
     /* replay the staggered entrance every time the board is (re)shown, not just first build */
     reveal: function () {
@@ -2211,6 +2214,7 @@ function makeBoard(loader) {
     key: function (k) {
       if (this.settleRow() < 0) {
         if (k === 38) topNav.focus();
+        else if (k === 13 && this.empty) refreshCurBoard();
         return true;
       }
       var row = this.rows[this.rowIdx];
@@ -2750,12 +2754,27 @@ function buildRow(title, items, wide, label, eager) {
   return row;
 }
 // Row loaders for Home, Discover and Library, and opening a focused item.
+/* When every catalog answered and none has titles, Home says so instead of staying blank. */
+function paintBoardMessage(board) {
+  var msg = $('boardMsg');
+  if (curBoard() !== board) return;
+  msg.innerHTML = board.empty ? tx('catalogsFailed') + '<br>' + tx('pressOkRetry') : '';
+  msg.style.display = board.empty ? 'block' : 'none';
+}
+function settleBoardMessage(board) {
+  var any = false;
+  for (var i = 0; i < board.rows.length; i++) if (board.rows[i].items.length) any = true;
+  board.empty = !any;
+  paintBoardMessage(board);
+}
 /* generic catalog-backed board loader (rows fill in asynchronously, cache-first) */
 function loadCatalogRows(board, defs, includeCW, keepFocus) {
   var oldRow = board.rowIdx,
     oldCols = [],
     loadGen = (board._loadGen || 0) + 1;
   board._loadGen = loadGen;
+  board.empty = false;
+  var waiting = defs.length;
   if (keepFocus) for (var i0 = 0; i0 < board.rows.length; i0++) oldCols.push(board.rows[i0].col);
   board.rows = [];
   function reveal(row, delay) {
@@ -2799,6 +2818,10 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
       else row.el.style.display = 'none';
       getCatalogUrl(def.url, def.key, def.type, function (items) {
         if (board._loadGen !== loadGen) return; /* ignore callbacks from a superseded rebuild */
+        if (!row.answered) {
+          row.answered = true;
+          waiting--;
+        }
         row.items = items;
         row.cardsEl.innerHTML = '';
         row.cardEls = [];
@@ -2814,8 +2837,10 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           board.paint(true);
           board.hero();
         }
+        if (!waiting || items.length) settleBoardMessage(board);
       });
     })(defs[d], d);
+  if (!waiting) settleBoardMessage(board);
   if (keepFocus) {
     board.rowIdx = Math.min(oldRow, board.rows.length - 1);
     for (var j = 0; j < board.rows.length && j < oldCols.length; j++)

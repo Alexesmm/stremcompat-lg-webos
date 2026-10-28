@@ -1,4 +1,4 @@
-// Serving the television interface (beta.html template, beta-app.js) and the logo.
+// Serving the television interface (beta.html template, beta-app.js), the logo and the font.
 
 var fs = require('fs');
 var path = require('path');
@@ -62,11 +62,27 @@ function readUiAsset(name, embedded, cb) {
   next();
 }
 
+// Inter (SIL OFL 1.1, service/fonts/OFL.txt), Latin subset, regular and bold, as WOFF 1
+// because Chromium 38 rejects current WOFF2: about 60 KB held in memory. A missing file only means the pages fall back to Arial.
+var FONTS = {};
+['inter-latin-400.woff', 'inter-latin-700.woff'].forEach(function (name) {
+  try {
+    FONTS['/fonts/' + name] = fs.readFileSync(path.join(DIR, 'fonts', name));
+  } catch (e) {
+    dbg('font read failed: ' + e.message);
+  }
+});
+
 function logoPng() {
   return LOGO_PNG;
 }
 
+function fontFile(pathname) {
+  return Object.prototype.hasOwnProperty.call(FONTS, pathname) ? FONTS[pathname] : null;
+}
+
 module.exports = {
+  fontFile: fontFile,
   logoPng: logoPng,
   readUiAsset: readUiAsset,
   renderInterfaceHtml: renderInterfaceHtml

@@ -27,6 +27,10 @@ The extracted package includes:
 
 The bundled FFmpeg binary identifies itself as configured with `--enable-gpl` and `--enable-version3`, along with GPL-enabled libraries including libx264. Treat that binary as GPLv3-covered distribution material. The pinned IPK does not identify the exact FFmpeg source revision or provide a corresponding source offer, so the runtime provenance is not yet sufficient for a fully documented public redistribution. A future release should replace it with a reproducible build and publish the exact corresponding source and build configuration.
 
+## Bundled font
+
+`service/fonts/` contains the Latin subset of [Inter](https://github.com/rsms/inter) in its regular (400) and bold (700) weights, taken from the `@fontsource/inter` 5.1.0 package as WOFF 1 files (Chromium 38 rejects current WOFF2 files). Inter is copyright 2016 The Inter Project Authors and is distributed under the SIL Open Font License 1.1, reproduced in `service/fonts/OFL.txt`.
+
 ## Build tooling and platform documentation
 
 - [LG webOS TV CLI](https://webostv.developer.lge.com/develop/tools/cli-dev-guide)

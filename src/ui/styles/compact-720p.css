@@ -15,6 +15,7 @@
   #heroMeta{margin-top:9px;font-size:18px}
   #heroDesc{margin-top:7px;font-size:17px;line-height:1.34;max-height:46px}
   #rowsClip{top:258px;left:86px}
+  #boardMsg{top:270px;left:112px;font-size:20px}
   .row{padding:10px 0 22px 26px;transform:translateY(10px)}
   .rowtitle{font-size:24px;margin:0 0 12px 3px}
   .card{width:176px;height:264px;margin-right:16px;border-radius:9px}

@@ -2,14 +2,15 @@
 #hero{position:absolute;top:62px;left:176px;width:40%;z-index:5}
 #heroLogo{max-width:470px;max-height:145px;display:none}
 #heroTitle{font-size:68px;font-weight:800;line-height:1.04;max-height:142px;overflow:hidden;letter-spacing:-1px}
-#heroMeta{margin-top:15px;font-size:27px;color:#c9b8ff;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#heroDesc{margin-top:14px;font-size:25px;line-height:1.42;color:rgba(255,255,255,.88);max-height:107px;overflow:hidden}
+#heroMeta{margin-top:15px;font-size:25px;color:rgba(214,201,255,.86);font-weight:700;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#heroDesc{margin-top:14px;font-size:25px;line-height:1.42;color:rgba(255,255,255,.78);max-height:107px;overflow:hidden}
 
 /* ---------- rows ---------- */
 #rowsClip{position:absolute;top:420px;left:128px;right:0;bottom:0;overflow:hidden}
 #rows{position:absolute;top:0;left:0;right:0}
 .row{padding:15px 0 30px 48px;opacity:0;transform:translateY(16px);transition:opacity .35s ease,transform .35s ease}
 .row.in{opacity:1;transform:none}
+#boardMsg{position:absolute;top:440px;left:176px;right:48px;display:none;font-size:29px;line-height:1.5;color:rgba(255,255,255,.7)}
 .rowtitle{font-size:33px;font-weight:700;margin:0 0 16px 4px;color:rgba(255,255,255,.95)}
 .cards{white-space:nowrap}
 .cards.snap{transition:none} /* while holding a direction: steps snap, no animation lag */

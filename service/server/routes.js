@@ -7,7 +7,7 @@ var { dbg } = require('./log');
 var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
 var { fetchAddonJson, fetchJson, fetchUrl, readJsonBody, sendJson } = require('./http-util');
-var { logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
+var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
 var { waitForServer } = require('./streaming-server');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
 var { proxySignature, proxyStream, redirectedHeaders, resolvedFor } = require('./proxy');
@@ -302,6 +302,13 @@ function handleRequest(req, res) {
       res.writeHead(404);
       res.end();
     }
+  } else if (fontFile(p)) {
+    res.writeHead(200, {
+      'Content-Type': 'font/woff',
+      'Cache-Control': 'max-age=31536000',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(fontFile(p));
   } else if (p === '/yt') {
     ytResolve(String(q.v || ''), !!q.lq, function (url, err) {
       sendJson(res, url ? { url: url } : { err: err || 'unavailable' });

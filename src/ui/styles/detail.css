@@ -2,13 +2,13 @@
 #dWrap{position:absolute;top:48px;left:176px;right:48px;bottom:0}
 #dPoster{position:absolute;top:24px;right:0;width:330px;height:495px;border-radius:16px;display:none}
 #dLogo{max-width:560px;max-height:190px;display:none}
-#dTitle{font-size:80px;font-weight:800;max-width:70%;line-height:1.05}
-#dMeta{margin-top:20px;font-size:31px;color:#c9b8ff;font-weight:600}
+#dTitle{font-size:80px;font-weight:800;max-width:70%;line-height:1.05;letter-spacing:-1.5px}
+#dMeta{margin-top:20px;font-size:28px;color:rgba(214,201,255,.86);font-weight:600}
 .drating{color:#ffd27a;font-weight:800}
 #dInfo{margin-top:20px;font-size:27px;color:rgba(255,255,255,.9);max-width:70%}
 #dInfo div{margin-bottom:9px}
 .dlbl{display:inline-block;width:190px;color:rgba(255,255,255,.52);font-size:23px;text-transform:uppercase;letter-spacing:1.4px}
-#dDesc{margin-top:16px;font-size:29px;line-height:1.5;color:rgba(255,255,255,.92);max-width:68%;max-height:136px;overflow:hidden}
+#dDesc{margin-top:16px;font-size:28px;line-height:1.5;color:rgba(255,255,255,.82);max-width:68%;max-height:136px;overflow:hidden}
 #dBtns{margin-top:34px}
 .btn{display:inline-block;padding:19px 50px;margin-right:20px;border-radius:14px;font-size:31px;font-weight:700;background:rgba(255,255,255,.14);color:#fff;transition:background .12s ease}
 .btn.f{background:#fff;color:#0c0b11}

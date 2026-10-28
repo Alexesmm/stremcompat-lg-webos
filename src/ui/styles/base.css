@@ -1,7 +1,12 @@
 /* Designed for the 1920x1080 webview. Netflix-like, BIG and clear.
    RULES LEARNED ON THIS TV: no blurred shadows, no scale animations, transform-only
-   motion, static focus ring, class-based focus (never :focus). */
-html,body{margin:0;padding:0;width:100%;height:100%;background:#090b12;color:#fff;font-family:Arial,"Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+   motion, static focus ring, class-based focus (never :focus).
+   Inter is served by tvserver as WOFF 1: Chromium 38 implements an early WOFF2 draft
+   and rejects current WOFF2 files. Only the 400 and 700 faces exist, so 600 and 800
+   resolve to 700 without synthetic bold. */
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-400.woff) format("woff");font-weight:400;font-style:normal}
+@font-face{font-family:Inter;src:url(/fonts/inter-latin-700.woff) format("woff");font-weight:700;font-style:normal}
+html,body{margin:0;padding:0;width:100%;height:100%;background:#090b12;color:#fff;font-family:Inter,Arial,"Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
 img{border:0}
 
 /* A single cropped hero region makes the deliberately downscaled TV artwork look sharper.
