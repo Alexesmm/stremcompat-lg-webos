@@ -36,20 +36,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     var cw = cwItems();
     if (cw.length) {
       var cwMapped = [];
-      for (var c = 0; c < cw.length; c++) {
-        var it = cw[c],
-          s2 = it.state || {};
-        cwMapped.push({
-          id: it._id,
-          type: it.type || 'movie',
-          name: it.name,
-          poster: it.poster,
-          background: it.background,
-          videoId: s2.video_id || it._id,
-          progress: s2.duration > 0 ? s2.timeOffset / s2.duration : 0,
-          cw: true
-        });
-      }
+      for (var c = 0; c < cw.length; c++) cwMapped.push(cwCard(cw[c]));
       var r0 = buildRow(tx('continueWatching'), cwMapped, true);
       board.rows.push(r0);
       reveal(r0, 70);
@@ -126,20 +113,7 @@ function loadLibraryRows(board) {
   var cw = cwItems();
   if (cw.length) {
     var m = [];
-    for (var c = 0; c < cw.length; c++) {
-      var it = cw[c],
-        s2 = it.state || {};
-      m.push({
-        id: it._id,
-        type: it.type || 'movie',
-        name: it.name,
-        poster: it.poster,
-        background: it.background,
-        videoId: s2.video_id || it._id,
-        progress: s2.duration > 0 ? s2.timeOffset / s2.duration : 0,
-        cw: true
-      });
-    }
+    for (var c = 0; c < cw.length; c++) m.push(cwCard(cw[c]));
     var r0 = buildRow(tx('continueWatching'), m, true);
     r0.el.className = 'row in';
     board.rows.push(r0);

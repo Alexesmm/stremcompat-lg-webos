@@ -79,12 +79,14 @@ function makeCard(it, wide, label, eager) {
   if (wide) {
     var lb = document.createElement('div');
     lb.className = 'cwlabel';
-    var epTxt = '';
-    if (it.videoId && it.videoId.indexOf(':') > 0) {
-      var pp = it.videoId.split(':');
-      epTxt = '  S' + pp[pp.length - 2] + ' E' + pp[pp.length - 1];
+    lb.textContent = it.name || '';
+    var sub = cwSubtitle(it);
+    if (sub) {
+      var sl = document.createElement('div');
+      sl.className = 'sub' + (it.upNext ? ' next' : '');
+      sl.textContent = sub;
+      lb.appendChild(sl);
     }
-    lb.textContent = (it.name || '') + epTxt;
     d.appendChild(lb);
     if (it.progress > 0) {
       var pb = document.createElement('div');
@@ -98,6 +100,19 @@ function makeCard(it, wide, label, eager) {
   return d;
 }
 
+/* "Up next · S2 E6", "S2 E5 · 12 min left" or "48 min left" under a Continue Watching title */
+function cwSubtitle(it) {
+  var ep = '';
+  if (it.videoId && it.videoId.indexOf(':') > 0) {
+    var pp = it.videoId.split(':');
+    if (pp.length >= 3) {
+      if (it.upNext) return tx('cwUpNext', pp[pp.length - 2], pp[pp.length - 1]);
+      ep = tx('cwEpisode', pp[pp.length - 2], pp[pp.length - 1]);
+    }
+  }
+  var left = it.minutesLeft ? tx('cwLeft', it.minutesLeft) : '';
+  return ep && left ? ep + '  ·  ' + left : ep || left;
+}
 /* Static grey cards the size of real ones while a catalog loads, so the board does not
    jump when it arrives. No images and no animation: nothing to decode or repaint. */
 function placeholderCards(row) {

@@ -9,7 +9,9 @@
    motion, static focus ring, class-based focus (never :focus).
    Inter is served by tvserver as WOFF 1: Chromium 38 implements an early WOFF2 draft
    and rejects current WOFF2 files. Only the 400 and 700 faces exist, so 600 and 800
-   resolve to 700 without synthetic bold. */
+   resolve to 700 without synthetic bold.
+   MOTION: focus feedback .12s ease; lists and panels moving .18s and things appearing
+   .3s, both cubic-bezier(.2,.8,.2,1); backdrop and idle fades are deliberately slower. */
 @font-face{font-family:Inter;src:url(/fonts/inter-latin-400.woff) format("woff");font-weight:400;font-style:normal}
 @font-face{font-family:Inter;src:url(/fonts/inter-latin-700.woff) format("woff");font-weight:700;font-style:normal}
 html,body{margin:0;padding:0;width:100%;height:100%;background:#090b12;color:#fff;font-family:Inter,Arial,"Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
@@ -73,7 +75,7 @@ body.login #topnav,body.login #logobg{display:none}
 /* ---------- rows ---------- */
 #rowsClip{position:absolute;top:420px;left:128px;right:0;bottom:0;overflow:hidden}
 #rows{position:absolute;top:0;left:0;right:0}
-.row{padding:15px 0 30px 48px;opacity:0;transform:translateY(16px);transition:opacity .35s ease,transform .35s ease}
+.row{padding:15px 0 30px 48px;opacity:0;transform:translateY(16px);transition:opacity .3s cubic-bezier(.2,.8,.2,1),transform .3s cubic-bezier(.2,.8,.2,1)}
 .row.in{opacity:1;transform:none}
 #boardMsg{position:absolute;top:440px;left:176px;right:48px;display:none;font-size:29px;line-height:1.5;color:rgba(255,255,255,.7)}
 .rowtitle{font-size:33px;font-weight:700;margin:0 0 16px 4px;color:rgba(255,255,255,.95)}
@@ -88,6 +90,8 @@ body.login #topnav,body.login #logobg{display:none}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
 .pbar div{height:100%;background:#8c5cff}
+.cwlabel .sub{margin-top:3px;font-size:20px;font-weight:600;color:rgba(255,255,255,.72);overflow:hidden;text-overflow:ellipsis}
+.cwlabel .sub.next{color:#cdb9ff}
 .cwlabel{position:absolute;left:0;right:0;bottom:9px;padding:12px 15px;font-size:26px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.88));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wbadge{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;background:rgba(140,92,255,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.55);z-index:3}
 .wbadge svg{width:28px;height:28px;fill:currentColor}
@@ -116,15 +120,16 @@ body.login #topnav,body.login #logobg{display:none}
 .schip.selector{min-width:220px;text-align:center}
 .schip.jump{background:rgba(140,92,255,.18)}
 #dEps{margin-top:22px;height:330px;overflow:hidden;display:none;white-space:nowrap;padding:7px 7px 0}
-#dEpsInner{transition:transform .16s ease;white-space:nowrap}
+#dEpsInner{transition:transform .18s cubic-bezier(.2,.8,.2,1);white-space:nowrap}
 .ep{display:inline-block;vertical-align:top;width:430px;height:286px;border-radius:14px;margin-right:24px;background:rgba(12,11,17,.58);overflow:hidden;white-space:normal;transition:transform .12s ease,background .12s ease}
 .ep .th{width:430px;height:242px;border-radius:12px;background:#0a0a10;-webkit-flex:none;flex:none;overflow:hidden;position:relative}
 .ep .th img{width:100%;height:100%;border-radius:12px;object-fit:cover}
 .ep .th.fallback img{opacity:.52}
+.epbadge{position:absolute;left:10px;top:10px;z-index:2;padding:5px 11px;border-radius:7px;background:#8c5cff;color:#fff;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.ep .th .pbar{z-index:2}
 .ep .th:after{content:"";position:absolute;left:0;right:0;bottom:0;height:48%;background:linear-gradient(transparent,rgba(0,0,0,.6));border-radius:0 0 10px 10px;pointer-events:none}
 .ep .bd{padding:11px 14px;min-width:0}
 .ep .t{font-size:25px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ep .o{display:none}
 .ep.f{background:rgba(255,255,255,.14);box-shadow:0 0 0 5px #fff;transform:translateY(-5px)}
 .ep.w .t{color:#a98fff}
 body.series-episode #dLogo{max-width:460px;max-height:128px}
@@ -134,15 +139,15 @@ body.series-episode #dDesc{margin-top:10px;max-width:86%;max-height:88px;font-si
 body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- streams overlay ---------- */
-#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 30px;box-sizing:border-box}
+#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 #streams h3{margin:0 0 8px;font-size:38px}
 #stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px}
 #stChips{white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
 .stchip.cur{background:rgba(140,92,255,.4);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
-#stClip{position:absolute;top:224px;left:30px;right:30px;bottom:30px;overflow:hidden}
-#stInner{transition:transform .16s ease}
+#stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
+#stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
 .st .a{font-size:29px;font-weight:700;color:#c9b8ff}
 .st .rec{margin-bottom:8px;font-size:20px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#8ee3ad}
@@ -167,7 +172,7 @@ body.series-episode #dSeasons{margin-top:24px}
 #simWrap{position:absolute;top:58px;left:176px;right:0;bottom:0}
 #simTitle{font-size:44px;font-weight:800;margin-bottom:26px}
 #simClip{position:absolute;top:104px;left:-14px;right:0;bottom:0;overflow:hidden;padding-left:14px}
-#simGrid{padding:16px 0 0 14px;transition:transform .2s ease}
+#simGrid{padding:16px 0 0 14px;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 #simGrid .card{margin-bottom:26px}
 
 /* ---------- idle trailer layer (top area only; #bgshade vignettes it into black) ---------- */
@@ -189,7 +194,7 @@ body.series-episode #dSeasons{margin-top:24px}
 .fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#8c5cff}
 .fopt.f{background:#fff;color:#0c0b11}
 #discGridClip{position:absolute;top:142px;left:-7px;right:0;bottom:0;overflow:hidden;padding:7px}
-#discGrid{transition:transform .2s ease}
+#discGrid{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 #discGrid .card{margin-bottom:24px}
 
 /* ---------- search ---------- */
@@ -208,7 +213,7 @@ body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- settings / account ---------- */
 #setWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
-#setInner{transition:transform .2s ease}
+#setInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 #setAcct{padding:20px 26px;border-radius:16px;background:rgba(255,255,255,.06);margin-bottom:26px;max-width:1100px}
 #setAcct .em{font-size:32px;font-weight:700}
 #setAcct .pl{margin-top:8px;font-size:24px;color:rgba(255,255,255,.6)}
@@ -232,7 +237,7 @@ body.series-episode #dSeasons{margin-top:24px}
 #aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(140,92,255,.32)}
 #aSync.f{background:#fff;color:#0c0b11}
 #aClip{position:absolute;top:128px;left:0;right:0;bottom:0;overflow:hidden}
-#aInner{transition:transform .16s ease}
+#aInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .addon{max-width:1080px;padding:20px 25px;border-radius:13px;margin-bottom:9px;background:rgba(255,255,255,.045)}
 .addon .an{font-size:29px;font-weight:700}
 .addon .ai{font-size:21px;color:rgba(255,255,255,.5);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -266,6 +271,8 @@ body.series-episode #dSeasons{margin-top:24px}
   .card.wide{width:287px;height:161px}
   .pbar{height:6px}
   .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}
+  .cwlabel .sub{margin-top:1px;font-size:13px}
+  .epbadge{left:7px;top:7px;padding:3px 7px;font-size:12px}
   .wbadge{top:8px;right:8px;width:31px;height:31px}
   .wbadge svg{width:19px;height:19px}
   #streams{top:70px;width:620px;padding:20px}
@@ -339,7 +346,7 @@ body.series-episode #dSeasons{margin-top:24px}
 #lgErr{margin-top:16px;font-size:23px;color:#ff9a9a;min-height:28px}
 
 /* ---------- misc ---------- */
-#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .25s;z-index:60;pointer-events:none}
+#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#171421;border:1px solid rgba(174,135,255,.42);border-radius:22px;box-sizing:border-box}
 #ejTitle{font-size:32px;font-weight:700;color:#fff}
@@ -362,7 +369,7 @@ body.series-episode #dSeasons{margin-top:24px}
 #logobg.on{opacity:.09}
 /* subtle entrance for Search / Settings (boards have their own row stagger) */
 @keyframes fadeup{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.anim-in{animation:fadeup .42s ease}
+.anim-in{animation:fadeup .3s cubic-bezier(.2,.8,.2,1)}
 </style>
 </head>
 <body>

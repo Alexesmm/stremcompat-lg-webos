@@ -35,6 +35,35 @@ function allLib() {
   }
   return out;
 }
+/* whole minutes left, or 0 when the numbers cannot be trusted */
+function watchMinutesLeft(offsetMs, durationMs) {
+  if (!(durationMs > 0) || !(offsetMs > 60000) || offsetMs >= durationMs) return 0;
+  return Math.max(1, Math.round((durationMs - offsetMs) / 60000));
+}
+/* the episode the player recorded as next when this one finished */
+function upNextOf(id, vid) {
+  var next = lsRaw('tvnext_' + id + '_' + vid, '');
+  return next && next !== vid ? next : '';
+}
+/* Continue Watching card data: a finished episode becomes its next episode, and the
+   minutes left are only shown when the saved numbers can be trusted. */
+function cwCard(it) {
+  var s = it.state || {},
+    next = watchFinished(s.timeOffset, s.duration) ? upNextOf(it._id, s.video_id) : '';
+  return {
+    id: it._id,
+    type: it.type || 'movie',
+    name: it.name,
+    poster: it.poster,
+    background: it.background,
+    videoId: next || s.video_id || it._id,
+    progress: next ? 0 : s.duration > 0 ? s.timeOffset / s.duration : 0,
+    minutesLeft: next ? 0 : watchMinutesLeft(s.timeOffset, s.duration),
+    upNext: !!next,
+    cw: true
+  };
+}
+window.__STREMIO_CW_CARD__ = cwCard;
 function cwItems() {
   var out = [],
     lib = allLib();
@@ -42,7 +71,9 @@ function cwItems() {
     var it = lib[i],
       s = it.state || {};
     if (!s.timeOffset || s.timeOffset < 60000) continue;
-    if (s.duration && s.timeOffset > s.duration * 0.96) continue;
+    /* a finished episode stays only when its next episode is known (cwCard) */
+    if (watchFinished(s.timeOffset, s.duration) && !(it.type === 'series' && upNextOf(it._id, s.video_id)))
+      continue;
     if (!it.name) continue;
     out.push(it);
   }

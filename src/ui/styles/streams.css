@@ -1,13 +1,13 @@
 /* ---------- streams overlay ---------- */
-#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 30px;box-sizing:border-box}
+#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 #streams h3{margin:0 0 8px;font-size:38px}
 #stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px}
 #stChips{white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
 .stchip.cur{background:rgba(140,92,255,.4);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
-#stClip{position:absolute;top:224px;left:30px;right:30px;bottom:30px;overflow:hidden}
-#stInner{transition:transform .16s ease}
+#stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
+#stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
 .st .a{font-size:29px;font-weight:700;color:#c9b8ff}
 .st .rec{margin-bottom:8px;font-size:20px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#8ee3ad}

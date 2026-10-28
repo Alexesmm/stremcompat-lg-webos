@@ -2,7 +2,7 @@
 #simWrap{position:absolute;top:58px;left:176px;right:0;bottom:0}
 #simTitle{font-size:44px;font-weight:800;margin-bottom:26px}
 #simClip{position:absolute;top:104px;left:-14px;right:0;bottom:0;overflow:hidden;padding-left:14px}
-#simGrid{padding:16px 0 0 14px;transition:transform .2s ease}
+#simGrid{padding:16px 0 0 14px;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 #simGrid .card{margin-bottom:26px}
 
 /* ---------- idle trailer layer (top area only; #bgshade vignettes it into black) ---------- */
@@ -24,7 +24,7 @@
 .fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#8c5cff}
 .fopt.f{background:#fff;color:#0c0b11}
 #discGridClip{position:absolute;top:142px;left:-7px;right:0;bottom:0;overflow:hidden;padding:7px}
-#discGrid{transition:transform .2s ease}
+#discGrid{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 #discGrid .card{margin-bottom:24px}
 
 /* ---------- search ---------- */
@@ -43,7 +43,7 @@
 
 /* ---------- settings / account ---------- */
 #setWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
-#setInner{transition:transform .2s ease}
+#setInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 #setAcct{padding:20px 26px;border-radius:16px;background:rgba(255,255,255,.06);margin-bottom:26px;max-width:1100px}
 #setAcct .em{font-size:32px;font-weight:700}
 #setAcct .pl{margin-top:8px;font-size:24px;color:rgba(255,255,255,.6)}
@@ -67,7 +67,7 @@
 #aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(140,92,255,.32)}
 #aSync.f{background:#fff;color:#0c0b11}
 #aClip{position:absolute;top:128px;left:0;right:0;bottom:0;overflow:hidden}
-#aInner{transition:transform .16s ease}
+#aInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .addon{max-width:1080px;padding:20px 25px;border-radius:13px;margin-bottom:9px;background:rgba(255,255,255,.045)}
 .addon .an{font-size:29px;font-weight:700}
 .addon .ai{font-size:21px;color:rgba(255,255,255,.5);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

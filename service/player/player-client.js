@@ -38,6 +38,11 @@ var UI_TEXT = {
     trendingMovies: 'Trending · Movies',
     trendingSeries: 'Trending · Series',
     continueWatching: 'Continue watching',
+    cwUpNext: 'Up next · S{0} E{1}',
+    cwEpisode: 'S{0} E{1}',
+    cwLeft: '{0} min left',
+    badgeSoon: 'Coming soon',
+    badgeNew: 'New',
     emptyLibrary: 'Your library is empty.<br>Hold OK on a title to add it here.',
     loadingTrailer: 'Loading trailer…',
     trailerUnavailable: 'Trailer unavailable',
@@ -280,6 +285,11 @@ var UI_TEXT = {
     trendingMovies: 'Em alta · Filmes',
     trendingSeries: 'Em alta · Séries',
     continueWatching: 'Continuar assistindo',
+    cwUpNext: 'Próximo · T{0} E{1}',
+    cwEpisode: 'T{0} E{1}',
+    cwLeft: 'faltam {0} min',
+    badgeSoon: 'Em breve',
+    badgeNew: 'Novo',
     emptyLibrary: 'Sua biblioteca está vazia.<br>Segure OK em um título para adicioná-lo aqui.',
     loadingTrailer: 'Carregando trailer…',
     trailerUnavailable: 'Trailer indisponível',
@@ -510,6 +520,17 @@ function tx(key) {
     var at = parseInt(index, 10) + 1;
     return args[at] == null ? '' : String(args[at]);
   });
+}
+// When a title counts as finished, shared by the interface and the player.
+/* Without credit markers, "finished" means little is left: at most 2 minutes or 5% of
+   the video, whichever is longer, and only past half of it so a short clip is not
+   finished as soon as it starts. Continue Watching, the watched mark and the next
+   episode all use this one rule. */
+var FINISHED_MIN_LEFT_MS = 120000,
+  FINISHED_MIN_LEFT_RATIO = 0.05;
+function watchFinished(offsetMs, durationMs) {
+  if (!(durationMs > 0) || !(offsetMs > 0) || offsetMs < durationMs / 2) return false;
+  return durationMs - offsetMs <= Math.max(FINISHED_MIN_LEFT_MS, durationMs * FINISHED_MIN_LEFT_RATIO);
 }
 // Player strings from the shared table, and the season/episode line.
 /* The player strings in the current language, completed from English. */
@@ -785,7 +806,7 @@ setInterval(function () {
   if (!v.paused) {
     saveProgress();
     pushLib(false);
-    if (v.duration && v.currentTime / v.duration > 0.95) markWatchedLocal();
+    if (v.duration && watchFinished(v.currentTime * 1000, v.duration * 1000)) markWatchedLocal();
   }
 }, 10000);
 v.addEventListener('pause', function () {
@@ -797,7 +818,15 @@ v.addEventListener('ended', function () {
   pushLib(true);
 });
 // local watched flag: add this video id to state.watchedEpisodes (drives the beta checkmarks)
+/* once this episode is finished, Continue Watching offers the next one (account.js) */
+function rememberUpNext() {
+  if (!ID || !VID || !NEXTVID) return;
+  try {
+    localStorage.setItem('tvnext_' + ID + '_' + VID, NEXTVID);
+  } catch (e) {}
+}
 function markWatchedLocal() {
+  rememberUpNext();
   try {
     var it = readLib();
     if (!it || !it.state) return;

@@ -8,7 +8,7 @@
 /* ---------- rows ---------- */
 #rowsClip{position:absolute;top:420px;left:128px;right:0;bottom:0;overflow:hidden}
 #rows{position:absolute;top:0;left:0;right:0}
-.row{padding:15px 0 30px 48px;opacity:0;transform:translateY(16px);transition:opacity .35s ease,transform .35s ease}
+.row{padding:15px 0 30px 48px;opacity:0;transform:translateY(16px);transition:opacity .3s cubic-bezier(.2,.8,.2,1),transform .3s cubic-bezier(.2,.8,.2,1)}
 .row.in{opacity:1;transform:none}
 #boardMsg{position:absolute;top:440px;left:176px;right:48px;display:none;font-size:29px;line-height:1.5;color:rgba(255,255,255,.7)}
 .rowtitle{font-size:33px;font-weight:700;margin:0 0 16px 4px;color:rgba(255,255,255,.95)}
@@ -23,6 +23,8 @@
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
 .pbar div{height:100%;background:#8c5cff}
+.cwlabel .sub{margin-top:3px;font-size:20px;font-weight:600;color:rgba(255,255,255,.72);overflow:hidden;text-overflow:ellipsis}
+.cwlabel .sub.next{color:#cdb9ff}
 .cwlabel{position:absolute;left:0;right:0;bottom:9px;padding:12px 15px;font-size:26px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.88));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wbadge{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;background:rgba(140,92,255,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.55);z-index:3}
 .wbadge svg{width:28px;height:28px;fill:currentColor}

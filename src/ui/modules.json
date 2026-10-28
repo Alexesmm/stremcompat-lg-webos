@@ -4,6 +4,7 @@
   "core/net.js",
   "core/storage.js",
   "../shared/strings.js",
+  "../shared/watch-state.js",
   "core/i18n.js",
   "core/format.js",
   "core/runtime.js",

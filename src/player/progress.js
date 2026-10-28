@@ -159,7 +159,7 @@ setInterval(function () {
   if (!v.paused) {
     saveProgress();
     pushLib(false);
-    if (v.duration && v.currentTime / v.duration > 0.95) markWatchedLocal();
+    if (v.duration && watchFinished(v.currentTime * 1000, v.duration * 1000)) markWatchedLocal();
   }
 }, 10000);
 v.addEventListener('pause', function () {
@@ -171,7 +171,15 @@ v.addEventListener('ended', function () {
   pushLib(true);
 });
 // local watched flag: add this video id to state.watchedEpisodes (drives the beta checkmarks)
+/* once this episode is finished, Continue Watching offers the next one (account.js) */
+function rememberUpNext() {
+  if (!ID || !VID || !NEXTVID) return;
+  try {
+    localStorage.setItem('tvnext_' + ID + '_' + VID, NEXTVID);
+  } catch (e) {}
+}
 function markWatchedLocal() {
+  rememberUpNext();
   try {
     var it = readLib();
     if (!it || !it.state) return;

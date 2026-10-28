@@ -126,6 +126,13 @@ detail.buildSeasonControls = function () {
   );
   if (this.seasonControlIdx >= this.seasonEls.length) this.seasonControlIdx = 0;
 };
+/* Coming soon before release, New during the first week */
+function episodeBadge(v, now) {
+  var at = releasedTime(v);
+  if (!at) return '';
+  if (at > now) return tx('badgeSoon');
+  return now - at < 7 * 86400000 ? tx('badgeNew') : '';
+}
 detail.buildEps = function () {
   var se = this.seasons[this.seasonIdx],
     start = this.rangeIdx * 50;
@@ -134,6 +141,10 @@ detail.buildEps = function () {
   this.epEls = [];
   this.eps = this.episodeMode === 'continuous' ? this.linearEps.slice(start, start + 50) : se ? se.eps : [];
   this.buildSeasonControls();
+  /* progress of the episode being watched, and release badges */
+  var lib = lsJson(PRE + this.id),
+    st = (lib && lib.state) || {},
+    now = Date.now();
   for (var i = 0; i < this.eps.length; i++) {
     var v = this.eps[i];
     var d = document.createElement('div');
@@ -157,6 +168,26 @@ detail.buildEps = function () {
       th.appendChild(im);
       if (!actualThumb) th.className += ' fallback';
     }
+    var badge = episodeBadge(v, now);
+    if (badge) {
+      var bg = document.createElement('div');
+      bg.className = 'epbadge';
+      bg.textContent = badge;
+      th.appendChild(bg);
+    }
+    if (
+      v.id === st.video_id &&
+      st.duration > 0 &&
+      st.timeOffset > 60000 &&
+      !watchFinished(st.timeOffset, st.duration)
+    ) {
+      var pb = document.createElement('div');
+      pb.className = 'pbar';
+      var pf = document.createElement('div');
+      pf.style.width = Math.min(100, Math.round((st.timeOffset / st.duration) * 100)) + '%';
+      pb.appendChild(pf);
+      th.appendChild(pb);
+    }
     d.appendChild(th);
     var bd = document.createElement('div');
     bd.className = 'bd';
@@ -170,12 +201,6 @@ detail.buildEps = function () {
     t.textContent =
       !epName || epName.toLowerCase() === epBase.toLowerCase() ? epBase : epBase + '  ·  ' + epName;
     bd.appendChild(t);
-    if (v.overview || v.description) {
-      var o = document.createElement('div');
-      o.className = 'o';
-      o.textContent = v.overview || v.description;
-      bd.appendChild(o);
-    }
     d.appendChild(bd);
     host.appendChild(d);
     this.epEls.push(d);

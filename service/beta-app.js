@@ -220,6 +220,11 @@ var UI_TEXT = {
     trendingMovies: 'Trending · Movies',
     trendingSeries: 'Trending · Series',
     continueWatching: 'Continue watching',
+    cwUpNext: 'Up next · S{0} E{1}',
+    cwEpisode: 'S{0} E{1}',
+    cwLeft: '{0} min left',
+    badgeSoon: 'Coming soon',
+    badgeNew: 'New',
     emptyLibrary: 'Your library is empty.<br>Hold OK on a title to add it here.',
     loadingTrailer: 'Loading trailer…',
     trailerUnavailable: 'Trailer unavailable',
@@ -462,6 +467,11 @@ var UI_TEXT = {
     trendingMovies: 'Em alta · Filmes',
     trendingSeries: 'Em alta · Séries',
     continueWatching: 'Continuar assistindo',
+    cwUpNext: 'Próximo · T{0} E{1}',
+    cwEpisode: 'T{0} E{1}',
+    cwLeft: 'faltam {0} min',
+    badgeSoon: 'Em breve',
+    badgeNew: 'Novo',
     emptyLibrary: 'Sua biblioteca está vazia.<br>Segure OK em um título para adicioná-lo aqui.',
     loadingTrailer: 'Carregando trailer…',
     trailerUnavailable: 'Trailer indisponível',
@@ -692,6 +702,17 @@ function tx(key) {
     var at = parseInt(index, 10) + 1;
     return args[at] == null ? '' : String(args[at]);
   });
+}
+// When a title counts as finished, shared by the interface and the player.
+/* Without credit markers, "finished" means little is left: at most 2 minutes or 5% of
+   the video, whichever is longer, and only past half of it so a short clip is not
+   finished as soon as it starts. Continue Watching, the watched mark and the next
+   episode all use this one rule. */
+var FINISHED_MIN_LEFT_MS = 120000,
+  FINISHED_MIN_LEFT_RATIO = 0.05;
+function watchFinished(offsetMs, durationMs) {
+  if (!(durationMs > 0) || !(offsetMs > 0) || offsetMs < durationMs / 2) return false;
+  return durationMs - offsetMs <= Math.max(FINISHED_MIN_LEFT_MS, durationMs * FINISHED_MIN_LEFT_RATIO);
 }
 // Applying the interface language to the static markup and switching it.
 function uiLanguageLabel(code) {
@@ -1025,6 +1046,35 @@ function allLib() {
   }
   return out;
 }
+/* whole minutes left, or 0 when the numbers cannot be trusted */
+function watchMinutesLeft(offsetMs, durationMs) {
+  if (!(durationMs > 0) || !(offsetMs > 60000) || offsetMs >= durationMs) return 0;
+  return Math.max(1, Math.round((durationMs - offsetMs) / 60000));
+}
+/* the episode the player recorded as next when this one finished */
+function upNextOf(id, vid) {
+  var next = lsRaw('tvnext_' + id + '_' + vid, '');
+  return next && next !== vid ? next : '';
+}
+/* Continue Watching card data: a finished episode becomes its next episode, and the
+   minutes left are only shown when the saved numbers can be trusted. */
+function cwCard(it) {
+  var s = it.state || {},
+    next = watchFinished(s.timeOffset, s.duration) ? upNextOf(it._id, s.video_id) : '';
+  return {
+    id: it._id,
+    type: it.type || 'movie',
+    name: it.name,
+    poster: it.poster,
+    background: it.background,
+    videoId: next || s.video_id || it._id,
+    progress: next ? 0 : s.duration > 0 ? s.timeOffset / s.duration : 0,
+    minutesLeft: next ? 0 : watchMinutesLeft(s.timeOffset, s.duration),
+    upNext: !!next,
+    cw: true
+  };
+}
+window.__STREMIO_CW_CARD__ = cwCard;
 function cwItems() {
   var out = [],
     lib = allLib();
@@ -1032,7 +1082,9 @@ function cwItems() {
     var it = lib[i],
       s = it.state || {};
     if (!s.timeOffset || s.timeOffset < 60000) continue;
-    if (s.duration && s.timeOffset > s.duration * 0.96) continue;
+    /* a finished episode stays only when its next episode is known (cwCard) */
+    if (watchFinished(s.timeOffset, s.duration) && !(it.type === 'series' && upNextOf(it._id, s.video_id)))
+      continue;
     if (!it.name) continue;
     out.push(it);
   }
@@ -2837,12 +2889,14 @@ function makeCard(it, wide, label, eager) {
   if (wide) {
     var lb = document.createElement('div');
     lb.className = 'cwlabel';
-    var epTxt = '';
-    if (it.videoId && it.videoId.indexOf(':') > 0) {
-      var pp = it.videoId.split(':');
-      epTxt = '  S' + pp[pp.length - 2] + ' E' + pp[pp.length - 1];
+    lb.textContent = it.name || '';
+    var sub = cwSubtitle(it);
+    if (sub) {
+      var sl = document.createElement('div');
+      sl.className = 'sub' + (it.upNext ? ' next' : '');
+      sl.textContent = sub;
+      lb.appendChild(sl);
     }
-    lb.textContent = (it.name || '') + epTxt;
     d.appendChild(lb);
     if (it.progress > 0) {
       var pb = document.createElement('div');
@@ -2856,6 +2910,19 @@ function makeCard(it, wide, label, eager) {
   return d;
 }
 
+/* "Up next · S2 E6", "S2 E5 · 12 min left" or "48 min left" under a Continue Watching title */
+function cwSubtitle(it) {
+  var ep = '';
+  if (it.videoId && it.videoId.indexOf(':') > 0) {
+    var pp = it.videoId.split(':');
+    if (pp.length >= 3) {
+      if (it.upNext) return tx('cwUpNext', pp[pp.length - 2], pp[pp.length - 1]);
+      ep = tx('cwEpisode', pp[pp.length - 2], pp[pp.length - 1]);
+    }
+  }
+  var left = it.minutesLeft ? tx('cwLeft', it.minutesLeft) : '';
+  return ep && left ? ep + '  ·  ' + left : ep || left;
+}
 /* Static grey cards the size of real ones while a catalog loads, so the board does not
    jump when it arrives. No images and no animation: nothing to decode or repaint. */
 function placeholderCards(row) {
@@ -2926,20 +2993,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     var cw = cwItems();
     if (cw.length) {
       var cwMapped = [];
-      for (var c = 0; c < cw.length; c++) {
-        var it = cw[c],
-          s2 = it.state || {};
-        cwMapped.push({
-          id: it._id,
-          type: it.type || 'movie',
-          name: it.name,
-          poster: it.poster,
-          background: it.background,
-          videoId: s2.video_id || it._id,
-          progress: s2.duration > 0 ? s2.timeOffset / s2.duration : 0,
-          cw: true
-        });
-      }
+      for (var c = 0; c < cw.length; c++) cwMapped.push(cwCard(cw[c]));
       var r0 = buildRow(tx('continueWatching'), cwMapped, true);
       board.rows.push(r0);
       reveal(r0, 70);
@@ -3016,20 +3070,7 @@ function loadLibraryRows(board) {
   var cw = cwItems();
   if (cw.length) {
     var m = [];
-    for (var c = 0; c < cw.length; c++) {
-      var it = cw[c],
-        s2 = it.state || {};
-      m.push({
-        id: it._id,
-        type: it.type || 'movie',
-        name: it.name,
-        poster: it.poster,
-        background: it.background,
-        videoId: s2.video_id || it._id,
-        progress: s2.duration > 0 ? s2.timeOffset / s2.duration : 0,
-        cw: true
-      });
-    }
+    for (var c = 0; c < cw.length; c++) m.push(cwCard(cw[c]));
     var r0 = buildRow(tx('continueWatching'), m, true);
     r0.el.className = 'row in';
     board.rows.push(r0);
@@ -4091,6 +4132,13 @@ detail.buildSeasonControls = function () {
   );
   if (this.seasonControlIdx >= this.seasonEls.length) this.seasonControlIdx = 0;
 };
+/* Coming soon before release, New during the first week */
+function episodeBadge(v, now) {
+  var at = releasedTime(v);
+  if (!at) return '';
+  if (at > now) return tx('badgeSoon');
+  return now - at < 7 * 86400000 ? tx('badgeNew') : '';
+}
 detail.buildEps = function () {
   var se = this.seasons[this.seasonIdx],
     start = this.rangeIdx * 50;
@@ -4099,6 +4147,10 @@ detail.buildEps = function () {
   this.epEls = [];
   this.eps = this.episodeMode === 'continuous' ? this.linearEps.slice(start, start + 50) : se ? se.eps : [];
   this.buildSeasonControls();
+  /* progress of the episode being watched, and release badges */
+  var lib = lsJson(PRE + this.id),
+    st = (lib && lib.state) || {},
+    now = Date.now();
   for (var i = 0; i < this.eps.length; i++) {
     var v = this.eps[i];
     var d = document.createElement('div');
@@ -4122,6 +4174,26 @@ detail.buildEps = function () {
       th.appendChild(im);
       if (!actualThumb) th.className += ' fallback';
     }
+    var badge = episodeBadge(v, now);
+    if (badge) {
+      var bg = document.createElement('div');
+      bg.className = 'epbadge';
+      bg.textContent = badge;
+      th.appendChild(bg);
+    }
+    if (
+      v.id === st.video_id &&
+      st.duration > 0 &&
+      st.timeOffset > 60000 &&
+      !watchFinished(st.timeOffset, st.duration)
+    ) {
+      var pb = document.createElement('div');
+      pb.className = 'pbar';
+      var pf = document.createElement('div');
+      pf.style.width = Math.min(100, Math.round((st.timeOffset / st.duration) * 100)) + '%';
+      pb.appendChild(pf);
+      th.appendChild(pb);
+    }
     d.appendChild(th);
     var bd = document.createElement('div');
     bd.className = 'bd';
@@ -4135,12 +4207,6 @@ detail.buildEps = function () {
     t.textContent =
       !epName || epName.toLowerCase() === epBase.toLowerCase() ? epBase : epBase + '  ·  ' + epName;
     bd.appendChild(t);
-    if (v.overview || v.description) {
-      var o = document.createElement('div');
-      o.className = 'o';
-      o.textContent = v.overview || v.description;
-      bd.appendChild(o);
-    }
     d.appendChild(bd);
     host.appendChild(d);
     this.epEls.push(d);

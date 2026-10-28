@@ -1,5 +1,5 @@
 /* ---------- misc ---------- */
-#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .25s;z-index:60;pointer-events:none}
+#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#171421;border:1px solid rgba(174,135,255,.42);border-radius:22px;box-sizing:border-box}
 #ejTitle{font-size:32px;font-weight:700;color:#fff}
@@ -22,4 +22,4 @@
 #logobg.on{opacity:.09}
 /* subtle entrance for Search / Settings (boards have their own row stagger) */
 @keyframes fadeup{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.anim-in{animation:fadeup .42s ease}
+.anim-in{animation:fadeup .3s cubic-bezier(.2,.8,.2,1)}

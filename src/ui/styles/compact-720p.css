@@ -26,6 +26,8 @@
   .card.wide{width:287px;height:161px}
   .pbar{height:6px}
   .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}
+  .cwlabel .sub{margin-top:1px;font-size:13px}
+  .epbadge{left:7px;top:7px;padding:3px 7px;font-size:12px}
   .wbadge{top:8px;right:8px;width:31px;height:31px}
   .wbadge svg{width:19px;height:19px}
   #streams{top:70px;width:620px;padding:20px}
