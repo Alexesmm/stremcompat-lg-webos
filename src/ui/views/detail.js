@@ -102,12 +102,21 @@ var detail = {
       }
     }
   },
+  /* the first released episode not watched yet; once everything released was watched,
+     the latest released one (not S1E1, and never an episode that has not aired) */
   firstUnwatched: function () {
+    var now = Date.now(),
+      latest = null;
     for (var s = 0; s < this.seasons.length; s++) {
       if (this.seasons[s].n === 0) continue;
       var eps = this.seasons[s].eps;
-      for (var e = 0; e < eps.length; e++) if (!this.watchedMap[eps[e].id]) return eps[e].id;
+      for (var e = 0; e < eps.length; e++) {
+        if (!episodeReleased(eps[e], now)) continue;
+        if (!this.watchedMap[eps[e].id]) return eps[e].id;
+        latest = eps[e].id;
+      }
     }
+    if (latest) return latest;
     return this.seasons[0] && this.seasons[0].eps[0] ? this.seasons[0].eps[0].id : null;
   },
   render: function () {
@@ -348,9 +357,12 @@ var detail = {
       var se = this.seasons[this.seasonIdx];
       label = se ? (se.n === 0 ? tx('specials') : tx('season', se.n)) : tx('season', 1);
     } else {
-      var first = this.rangeIdx * 50 + 1,
-        last = Math.min(this.linearEps.length, first + 49);
-      label = tx('episodeRange', first, last);
+      /* label the range with the overall numbers its cards show: provider absolute
+         numbers can skip, so positions and numbers are not always the same */
+      var slice = this.linearEps.slice(this.rangeIdx * 50, this.rangeIdx * 50 + 50);
+      label = slice.length
+        ? tx('episodeRange', slice[0]._stremAbsolute, slice[slice.length - 1]._stremAbsolute)
+        : tx('episodeRange', 0, 0);
     }
     this.addSeasonControl(label, function () {}, 'selector');
     this.addSeasonControl(

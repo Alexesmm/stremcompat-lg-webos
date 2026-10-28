@@ -119,6 +119,8 @@ async function main() {
     assert.strictEqual(home.total, 14, 'Chromium 38 discarded addon catalogs before the profile limit');
     assert.strictEqual(home.visible, 12, 'Chromium 38 did not isolate failed catalog rows');
     assert.strictEqual(home.focused, 1, 'Chromium 38 focus did not settle on the first successful catalog');
+    var orderEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var v=[];for(var i=0;i<40;i++)v.push({id:'o:1:x'+i,season:1});var m=window.__STREMIO_EPISODE_MODEL__(v),bad=0;for(var j=0;j<m.linear.length;j++)if(m.linear[j].id!=='o:1:x'+j)bad++;return bad;})()", returnByValue: true });
+    assert.strictEqual(orderEval.result.value, 0, 'Chromium 38 reordered unnumbered episodes (unstable sort)');
     var fontEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var faces=[];document.fonts.forEach(function(f){faces.push(f.weight+':'+f.status);});return faces.join(',');})()", returnByValue: true });
     assert.strictEqual(fontEval.result.value, '400:loaded,700:loaded', 'Chromium 38 could not load the Inter font faces');
     await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });

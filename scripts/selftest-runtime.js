@@ -15,6 +15,21 @@ var appVersion = process.argv[4] || profile.version;
 var forceEmbedded = process.argv[5] === 'embedded';
 var childLogGlobal = '';
 
+var nextEpisodeId = require(path.join(root, 'service', 'server', 'episodes.js')).nextEpisodeId;
+var showVideos = [
+  { id: 'tt1:2:1', season: 2, episode: 1, released: '2020-02-01T00:00:00Z' },
+  { id: 'tt1:1:2', season: 1, episode: 2, released: '2020-01-08T00:00:00Z' },
+  { id: 'tt1:0:1', season: 0, episode: 1 },
+  { id: 'tt1:1:1', season: 1, episode: 1, released: '2020-01-01T00:00:00Z' },
+  { id: 'tt1:2:2', season: 2, episode: 2, released: '2999-01-01T00:00:00Z' }
+];
+assert.strictEqual(nextEpisodeId(showVideos, 'tt1:1:1'), 'tt1:1:2', 'next episode inside a season');
+assert.strictEqual(nextEpisodeId(showVideos, 'tt1:1:2'), 'tt1:2:1', 'next episode did not cross into the next season');
+assert.strictEqual(nextEpisodeId(showVideos, 'tt1:2:1'), '', 'next episode pointed to an episode that has not aired');
+assert.strictEqual(nextEpisodeId(showVideos, 'tt1:0:1'), '', 'a special led into the regular seasons');
+assert.strictEqual(nextEpisodeId(showVideos, 'tt1:9:9'), '', 'an unknown video produced a next episode');
+assert.strictEqual(nextEpisodeId(null, 'tt1:1:4'), 'tt1:1:5', 'without metadata the next number is the fallback');
+
 function request(options, body) {
   return new Promise(function (resolve, reject) {
     var req = http.request(options, function (res) {

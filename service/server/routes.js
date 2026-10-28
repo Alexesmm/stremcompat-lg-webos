@@ -17,6 +17,7 @@ var { postStremioApi } = require('./stremio-api');
 var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
+var { nextEpisodeId } = require('./episodes');
 
 // Routes every request of the local compatibility server.
 function handleRequest(req, res) {
@@ -182,7 +183,7 @@ function handleRequest(req, res) {
             var pp = vid.split(':');
             ctx.episode = pp[pp.length - 1];
             ctx.season = pp[pp.length - 2];
-            ctx.nextVid = pp[0] + ':' + ctx.season + ':' + (parseInt(ctx.episode, 10) + 1);
+            ctx.nextVid = nextEpisodeId(m.videos, vid);
             if (m.videos) {
               for (var i = 0; i < m.videos.length; i++) {
                 var mv = m.videos[i];

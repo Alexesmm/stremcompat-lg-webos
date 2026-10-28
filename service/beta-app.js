@@ -3264,22 +3264,54 @@ function explicitAbsoluteEpisode(v) {
   }
   return 0;
 }
+function releasedTime(v) {
+  var t = Date.parse((v && (v.released || v.firstAired)) || '');
+  return isNaN(t) ? 0 : t;
+}
+/* an episode without a date counts as released: addons often omit it */
+function episodeReleased(v, now) {
+  var t = releasedTime(v);
+  return !t || t <= (now || Date.now());
+}
+/* Episodes sort by number. Chromium 38/53 sort is not stable beyond 10 items, so ties
+   (missing or repeated numbers) fall back to the release date and then to the order
+   the addon sent, which keeps the list and the overall numbering identical on every
+   opening. Unnumbered episodes go after the numbered ones of their season. */
+function episodeOrder(a, b) {
+  var na = episodeNumber(a, 0),
+    nb = episodeNumber(b, 0);
+  if (na && nb && na !== nb) return na - nb;
+  if (!na !== !nb) return na ? -1 : 1;
+  var ra = releasedTime(a),
+    rb = releasedTime(b);
+  if (ra && rb && ra !== rb) return ra - rb;
+  return a._stremOrder - b._stremOrder;
+}
 function buildEpisodeModel(videos) {
   var bySeason = {},
     order = [],
+    seen = {},
+    hasSeasons = false,
     i,
     s,
     v,
     eps,
     o,
     sn,
+    last,
     cursor = 0,
     seasons = [],
     linear = [];
   videos = videos || [];
+  for (i = 0; i < videos.length; i++) if (videos[i] && videos[i].season != null) hasSeasons = true;
   for (i = 0; i < videos.length; i++) {
     v = videos[i];
-    s = v.season != null ? parseInt(v.season, 10) : 0;
+    if (!v || (v.id && seen[v.id])) continue; /* an addon listing the same video twice */
+    if (v.id) seen[v.id] = 1;
+    v._stremOrder = i;
+    /* without any season field (channel-like series) the videos are one regular
+       season, not specials, so they still get an overall numbering */
+    s = v.season != null ? parseInt(v.season, 10) : hasSeasons ? 0 : 1;
     if (isNaN(s)) s = 0;
     if (!bySeason[s]) {
       bySeason[s] = [];
@@ -3295,13 +3327,14 @@ function buildEpisodeModel(videos) {
   for (o = 0; o < order.length; o++) {
     sn = order[o];
     eps = bySeason[sn];
-    eps.sort(function (a, b) {
-      return episodeNumber(a, 0) - episodeNumber(b, 0);
-    });
+    eps.sort(episodeOrder);
+    last = 0;
     for (i = 0; i < eps.length; i++) {
       v = eps[i];
       v._stremSeason = sn;
-      v._stremSeasonEpisode = episodeNumber(v, i + 1);
+      /* an unnumbered episode continues after the highest number seen, never reusing one */
+      v._stremSeasonEpisode = episodeNumber(v, last + 1);
+      last = Math.max(last, v._stremSeasonEpisode);
       if (sn === 0) v._stremAbsolute = 0;
       else {
         var ex = explicitAbsoluteEpisode(v);
@@ -3513,12 +3546,21 @@ var detail = {
       }
     }
   },
+  /* the first released episode not watched yet; once everything released was watched,
+     the latest released one (not S1E1, and never an episode that has not aired) */
   firstUnwatched: function () {
+    var now = Date.now(),
+      latest = null;
     for (var s = 0; s < this.seasons.length; s++) {
       if (this.seasons[s].n === 0) continue;
       var eps = this.seasons[s].eps;
-      for (var e = 0; e < eps.length; e++) if (!this.watchedMap[eps[e].id]) return eps[e].id;
+      for (var e = 0; e < eps.length; e++) {
+        if (!episodeReleased(eps[e], now)) continue;
+        if (!this.watchedMap[eps[e].id]) return eps[e].id;
+        latest = eps[e].id;
+      }
     }
+    if (latest) return latest;
     return this.seasons[0] && this.seasons[0].eps[0] ? this.seasons[0].eps[0].id : null;
   },
   render: function () {
@@ -3759,9 +3801,12 @@ var detail = {
       var se = this.seasons[this.seasonIdx];
       label = se ? (se.n === 0 ? tx('specials') : tx('season', se.n)) : tx('season', 1);
     } else {
-      var first = this.rangeIdx * 50 + 1,
-        last = Math.min(this.linearEps.length, first + 49);
-      label = tx('episodeRange', first, last);
+      /* label the range with the overall numbers its cards show: provider absolute
+         numbers can skip, so positions and numbers are not always the same */
+      var slice = this.linearEps.slice(this.rangeIdx * 50, this.rangeIdx * 50 + 50);
+      label = slice.length
+        ? tx('episodeRange', slice[0]._stremAbsolute, slice[slice.length - 1]._stremAbsolute)
+        : tx('episodeRange', 0, 0);
     }
     this.addSeasonControl(label, function () {}, 'selector');
     this.addSeasonControl(
