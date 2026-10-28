@@ -36,6 +36,31 @@ var WANTAUD =
   lsGet('enableDefaultAudioTrack', 'false') === 'true'
     ? (lsGet('defaultAudioTrack', '') || '').toLowerCase()
     : '';
+/* Choices remembered per title (the series, not the episode): the audio language, the
+   subtitle language or Off, and the subtitle delay. They win over the Settings defaults,
+   so an anime watched in Japanese with Portuguese subtitles stays that way. */
+var TITLE_PREF_KEY = 'tvtitle_' + ID;
+function titlePref() {
+  try {
+    return JSON.parse(localStorage.getItem(TITLE_PREF_KEY) || 'null') || {};
+  } catch (e) {
+    return {};
+  }
+}
+function saveTitlePref(field, value) {
+  if (!ID) return;
+  var p = titlePref();
+  p[field] = value;
+  try {
+    localStorage.setItem(TITLE_PREF_KEY, JSON.stringify(p));
+  } catch (e) {}
+}
+(function () {
+  var p = titlePref();
+  if (p.aud) WANTAUD = p.aud;
+  if (p.sub) WANTSUB = p.sub === 'off' ? '' : p.sub;
+  if (typeof p.delay === 'number') subDelay = p.delay;
+})();
 var embTracks = null,
   embTracksLoading = false,
   embTracksLoaded = false,

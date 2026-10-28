@@ -196,25 +196,34 @@ function chooseMenu() {
   }
   if (it.k === 'd+') {
     subDelay += 0.5;
+    saveTitlePref('delay', subDelay);
     reopen();
     return;
   }
   if (it.k === 'd-') {
     subDelay -= 0.5;
+    saveTitlePref('delay', subDelay);
     reopen();
     return;
   }
   if (it.k === 'd0') {
     subDelay = 0;
+    saveTitlePref('delay', 0);
     reopen();
     return;
   }
-  if (it.k === 'off') subsOff();
-  else if (it.k === 'ext') setExtSub(it.u);
-  else if (it.k === 'emb') setEmbSub(it.idx, it.ti);
+  if (it.k === 'off') {
+    subsOff();
+    saveTitlePref('sub', 'off');
+  } else if (it.k === 'ext') {
+    setExtSub(it.u);
+    for (var x = 0; x < extSubs.length; x++) if (extSubs[x].u === it.u) saveTitlePref('sub', extSubs[x].lang);
+  } else if (it.k === 'emb') setEmbSub(it.idx, it.ti);
   else if (it.k === 'aud') {
     try {
       for (var j = 0; j < v.audioTracks.length; j++) v.audioTracks[j].enabled = j === it.idx;
+      var al = (v.audioTracks[it.idx] && v.audioTracks[it.idx].language) || '';
+      if (al) saveTitlePref('aud', al.toLowerCase());
     } catch (e) {}
   }
   var chosen = it.k === 'aud' ? P.audio + ': ' + audioName() : P.subtitles + ': ' + subtitleName();
