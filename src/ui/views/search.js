@@ -43,9 +43,14 @@ var search = {
       );
     }
   },
-  enter: function () {
+  enter: function (p) {
     this.wire();
     this.zone = 'input';
+    /* Back from a result returns to that result, not to the text box */
+    if (p && p.zone === 'rows' && this.rows.length) {
+      this.zone = 'rows';
+      this.rowIdx = Math.max(0, Math.min(p.rowIdx || 0, this.rows.length - 1));
+    }
     this.paint();
     animIn($('sWrap'));
   },

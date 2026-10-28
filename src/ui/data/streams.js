@@ -185,19 +185,23 @@ function compactSourcePool(input, cap) {
   return { items: selected, trimmed: trimmed };
 }
 window.__STREMIO_COMPACT_SOURCES__ = compactSourcePool;
+/* onDone(total, failed): failed lists the addons that did not answer, so the picker can
+   tell "nothing found" apart from "the addon is down". */
 function fetchStreams(type, vid, onPart, onDone) {
   var list = streamAddons(type);
   var pending = list.length;
   var total = 0;
+  var failed = [];
   if (!pending) {
-    onDone(0);
+    onDone(0, failed);
     return;
   }
   for (var i = 0; i < list.length; i++)
     (function (ad, idx) {
       xhrJson(
         ad.base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json',
-        function (j) {
+        function (j, failure) {
+          if (failure) failed.push(ad.name);
           var st = (j && j.streams) || [];
           var out = [];
           for (var k = 0; k < st.length; k++) {
@@ -225,7 +229,7 @@ function fetchStreams(type, vid, onPart, onDone) {
           total += out.length;
           if (out.length) onPart(out, idx, ad.name);
           pending--;
-          if (pending <= 0) onDone(total);
+          if (pending <= 0) onDone(total, failed);
         },
         45000
       ); /* slow debrid addons can take 20-30s; phone/PC wait too — 15s was dropping them */

@@ -33,6 +33,7 @@ var topNav = {
     this.idx = i;
     var t = chipTarget[i];
     backStack = [];
+    scrParams = null;
     this.active = true;
     if (t === 'home') {
       showScr('home');

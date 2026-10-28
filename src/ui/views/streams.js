@@ -19,9 +19,13 @@ var streamsUI = {
   chipIdx: 0,
   chips: [],
   chipEls: [],
+  failed: [],
+  title: '',
   show: function (type, id, vid, title) {
     var request = ++this.requestSeq;
     this.open = true;
+    this.failed = [];
+    this.title = title || '';
     this.items = [];
     this.idx = 0;
     this.els = [];
@@ -70,12 +74,19 @@ var streamsUI = {
       function (part, gi, gn) {
         if (self.open && self.requestSeq === request) self.push(part, gi + 1, gn);
       },
-      function (total) {
+      function (total, failed) {
         if (!self.open || self.requestSeq !== request) return;
+        self.failed = failed || [];
         if (!self.items.length) {
-          $('stInner').innerHTML = '<div class="stmsg">' + tx('noSources') + '</div>';
+          $('stInner').innerHTML =
+            '<div class="stmsg">' +
+            (self.failed.length
+              ? esc(tx('addonsNoAnswer', self.failed.join(', '))) + '<br>' + tx('pressOkRetry')
+              : tx('noSources')) +
+            '</div>';
           return;
         }
+        self.rebuild();
         var matched = matchingNextSource(self.all(), self.autoPref);
         self.autoPref = null;
         if (matched) {
@@ -193,6 +204,12 @@ var streamsUI = {
       this.els.push(d);
     }
     if (!this.items.length) host.innerHTML = '<div class="stmsg">' + tx('noSourcesQuality') + '</div>';
+    if (this.failed.length) {
+      var note = document.createElement('div');
+      note.className = 'stmsg';
+      note.textContent = tx('addonsNoAnswer', this.failed.join(', '));
+      host.appendChild(note);
+    }
     if (sel) {
       var at = this.items.indexOf(sel);
       this.idx = at >= 0 ? at : Math.min(this.idx, Math.max(0, this.items.length - 1));
@@ -215,7 +232,10 @@ var streamsUI = {
   },
   choose: function () {
     var s = this.items[this.idx];
-    if (!s) return true;
+    if (!s) {
+      if (this.failed.length) this.show(this.type, this.id, this.vid, this.title);
+      return true;
+    }
     var backHash = 'beta#detail/' + this.type + '/' + this.id + (this.vid !== this.id ? '/' + this.vid : '');
     if (s.stored) playStored(s.stored, backHash);
     else playUrl(s, this.type, this.id, this.vid, backHash);

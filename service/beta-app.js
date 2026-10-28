@@ -69,6 +69,9 @@ function bodyRemove(name) {
 function xhrGetUrl(u) {
   return /^https?:\/\//i.test(String(u || '')) ? '/addon?u=' + encodeURIComponent(u) : u;
 }
+/* cb(json, failure): failure is null on success, otherwise 'timeout', 'offline'
+   (the local service did not answer), 'unavailable' (HTTP error, e.g. the addon
+   bridge's 502) or 'invalid' (the body was not JSON). */
 function xhrJson(u, cb, tmo) {
   var done = false;
   try {
@@ -77,11 +80,16 @@ function xhrJson(u, cb, tmo) {
     x.onreadystatechange = function () {
       if (x.readyState === 4 && !done) {
         done = true;
-        var j = null;
+        var j = null,
+          failure = null;
+        if (!x.status) failure = 'offline';
+        else if (x.status >= 400) failure = 'unavailable';
         try {
           j = JSON.parse(x.responseText);
-        } catch (e) {}
-        cb(j);
+        } catch (e) {
+          failure = failure || 'invalid';
+        }
+        cb(failure ? null : j, failure);
       }
     };
     x.send();
@@ -91,12 +99,12 @@ function xhrJson(u, cb, tmo) {
         try {
           x.abort();
         } catch (e) {}
-        cb(null);
+        cb(null, 'timeout');
       }
     }, tmo || 14000);
     return x;
   } catch (e) {
-    cb(null);
+    cb(null, 'offline');
     return null;
   }
 }
@@ -256,6 +264,8 @@ var UI_TEXT = {
     findingSources: 'Finding sources…',
     noSources: 'No sources found.',
     noSourcesQuality: 'No sources in this quality.',
+    addonsNoAnswer: 'No answer from: {0}',
+    pressOkRetry: 'Press OK to try again',
     lastSource: 'Last source',
     continuePlayback: 'Continue playback',
     sameSource: 'The same source used previously',
@@ -430,6 +440,8 @@ var UI_TEXT = {
     findingSources: 'Buscando fontes…',
     noSources: 'Nenhuma fonte encontrada.',
     noSourcesQuality: 'Nenhuma fonte nesta qualidade.',
+    addonsNoAnswer: 'Sem resposta de: {0}',
+    pressOkRetry: 'Pressione OK para tentar de novo',
     lastSource: 'Última fonte',
     continuePlayback: 'Continuar reprodução',
     sameSource: 'A mesma fonte usada anteriormente',
@@ -1351,19 +1363,23 @@ function compactSourcePool(input, cap) {
   return { items: selected, trimmed: trimmed };
 }
 window.__STREMIO_COMPACT_SOURCES__ = compactSourcePool;
+/* onDone(total, failed): failed lists the addons that did not answer, so the picker can
+   tell "nothing found" apart from "the addon is down". */
 function fetchStreams(type, vid, onPart, onDone) {
   var list = streamAddons(type);
   var pending = list.length;
   var total = 0;
+  var failed = [];
   if (!pending) {
-    onDone(0);
+    onDone(0, failed);
     return;
   }
   for (var i = 0; i < list.length; i++)
     (function (ad, idx) {
       xhrJson(
         ad.base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json',
-        function (j) {
+        function (j, failure) {
+          if (failure) failed.push(ad.name);
           var st = (j && j.streams) || [];
           var out = [];
           for (var k = 0; k < st.length; k++) {
@@ -1391,7 +1407,7 @@ function fetchStreams(type, vid, onPart, onDone) {
           total += out.length;
           if (out.length) onPart(out, idx, ad.name);
           pending--;
-          if (pending <= 0) onDone(total);
+          if (pending <= 0) onDone(total, failed);
         },
         45000
       ); /* slow debrid addons can take 20-30s; phone/PC wait too — 15s was dropping them */
@@ -1744,7 +1760,11 @@ function prewarmNeighbors(row) {
 // Screen switching and the Back stack.
 /* ================= screen manager ================= */
 var SCR = 'home';
+/* Each Back entry keeps the screen, the parameters it was opened with and where the
+   focus was, so Back returns to the same title and the same card. */
 var backStack = [];
+var BACK_LIMIT = 20;
+var scrParams = null;
 var BOARD_SCR = { home: 1, lib: 1 };
 function showScr(name) {
   var el = BOARD_SCR[name]
@@ -1783,11 +1803,32 @@ function updateLogoBg() {
   $('logobg').className = show ? 'on' : '';
   if (show || SCR === 'login') setBg('');
 }
+function screenFocus() {
+  if (SCR === 'search') return { zone: search.zone, rowIdx: search.rowIdx };
+  if (SCR === 'sim') return { idx: similar.idx };
+  if (SCR === 'detail' && detail.type === 'series') {
+    var ep = detail.currentEpisode();
+    return ep ? { vid: ep.id } : null;
+  }
+  return null;
+}
+function backParams(entry) {
+  var p = {},
+    k;
+  for (k in entry.params) if (Object.prototype.hasOwnProperty.call(entry.params, k)) p[k] = entry.params[k];
+  for (k in entry.focus) if (Object.prototype.hasOwnProperty.call(entry.focus, k)) p[k] = entry.focus[k];
+  p.restored = true;
+  return p;
+}
 function goScr(name, params, noStack) {
   try {
     idleTouch();
   } catch (e) {}
-  if (!noStack && SCR !== name) backStack.push(SCR);
+  if (!noStack && SCR !== name) {
+    backStack.push({ name: SCR, params: scrParams, focus: screenFocus() });
+    if (backStack.length > BACK_LIMIT) backStack.shift();
+  }
+  scrParams = params || null;
   topNav.active = false;
   if (name === 'home') {
     showScr('home');
@@ -1800,7 +1841,7 @@ function goScr(name, params, noStack) {
     disc.enter();
   } else if (name === 'search') {
     showScr('search');
-    search.enter();
+    search.enter(params);
   } else if (name === 'lib') {
     showScr('lib');
     lib.enter();
@@ -1853,7 +1894,7 @@ function goBackScr() {
   }
   var prev = backStack.pop();
   if (prev) {
-    goScr(prev, null, true);
+    goScr(prev.name, backParams(prev), true);
     return;
   }
   if (SCR === 'home') {
@@ -1917,6 +1958,7 @@ var topNav = {
     this.idx = i;
     var t = chipTarget[i];
     backStack = [];
+    scrParams = null;
     this.active = true;
     if (t === 'home') {
       showScr('home');
@@ -3076,6 +3118,7 @@ var similar = {
   cols: 6,
   gen: 0,
   enter: function (p) {
+    p = p || { type: detail.type, id: detail.id };
     var self = this,
       gen = ++this.gen;
     this.items = [];
@@ -3117,6 +3160,7 @@ var similar = {
             '<div style="font-size:27px;color:rgba(255,255,255,.55);padding:40px">' +
             tx('nothingFound') +
             '</div>';
+        self.idx = Math.max(0, Math.min(p.idx || 0, self.items.length - 1));
         self.paint();
       });
     });
@@ -3345,9 +3389,12 @@ var detail = {
   seasonControlIdx: 0,
   watchedMap: {},
   enter: function (p) {
+    p = p || { type: this.type, id: this.id };
     this.type = p.type;
     this.id = p.id;
     this.vid = p.vid || null;
+    /* reached with Back: the viewer already saw (or dismissed) the sources */
+    this.restored = !!p.restored;
     this.zone = 'btns';
     this.btnIdx = 0;
     this.meta = null;
@@ -3537,7 +3584,7 @@ var detail = {
           }, 250);
         }
       }
-    } else {
+    } else if (!this.restored) {
       setTimeout(function () {
         if (SCR === 'detail' && detail.meta === m && !streamsUI.open) self.openStreams(self.id);
       }, 250);
@@ -4020,9 +4067,13 @@ var streamsUI = {
   chipIdx: 0,
   chips: [],
   chipEls: [],
+  failed: [],
+  title: '',
   show: function (type, id, vid, title) {
     var request = ++this.requestSeq;
     this.open = true;
+    this.failed = [];
+    this.title = title || '';
     this.items = [];
     this.idx = 0;
     this.els = [];
@@ -4071,12 +4122,19 @@ var streamsUI = {
       function (part, gi, gn) {
         if (self.open && self.requestSeq === request) self.push(part, gi + 1, gn);
       },
-      function (total) {
+      function (total, failed) {
         if (!self.open || self.requestSeq !== request) return;
+        self.failed = failed || [];
         if (!self.items.length) {
-          $('stInner').innerHTML = '<div class="stmsg">' + tx('noSources') + '</div>';
+          $('stInner').innerHTML =
+            '<div class="stmsg">' +
+            (self.failed.length
+              ? esc(tx('addonsNoAnswer', self.failed.join(', '))) + '<br>' + tx('pressOkRetry')
+              : tx('noSources')) +
+            '</div>';
           return;
         }
+        self.rebuild();
         var matched = matchingNextSource(self.all(), self.autoPref);
         self.autoPref = null;
         if (matched) {
@@ -4194,6 +4252,12 @@ var streamsUI = {
       this.els.push(d);
     }
     if (!this.items.length) host.innerHTML = '<div class="stmsg">' + tx('noSourcesQuality') + '</div>';
+    if (this.failed.length) {
+      var note = document.createElement('div');
+      note.className = 'stmsg';
+      note.textContent = tx('addonsNoAnswer', this.failed.join(', '));
+      host.appendChild(note);
+    }
     if (sel) {
       var at = this.items.indexOf(sel);
       this.idx = at >= 0 ? at : Math.min(this.idx, Math.max(0, this.items.length - 1));
@@ -4216,7 +4280,10 @@ var streamsUI = {
   },
   choose: function () {
     var s = this.items[this.idx];
-    if (!s) return true;
+    if (!s) {
+      if (this.failed.length) this.show(this.type, this.id, this.vid, this.title);
+      return true;
+    }
     var backHash = 'beta#detail/' + this.type + '/' + this.id + (this.vid !== this.id ? '/' + this.vid : '');
     if (s.stored) playStored(s.stored, backHash);
     else playUrl(s, this.type, this.id, this.vid, backHash);
@@ -4300,9 +4367,14 @@ var search = {
       );
     }
   },
-  enter: function () {
+  enter: function (p) {
     this.wire();
     this.zone = 'input';
+    /* Back from a result returns to that result, not to the text box */
+    if (p && p.zone === 'rows' && this.rows.length) {
+      this.zone = 'rows';
+      this.rowIdx = Math.max(0, Math.min(p.rowIdx || 0, this.rows.length - 1));
+    }
     this.paint();
     animIn($('sWrap'));
   },

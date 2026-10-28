@@ -7,6 +7,7 @@ var similar = {
   cols: 6,
   gen: 0,
   enter: function (p) {
+    p = p || { type: detail.type, id: detail.id };
     var self = this,
       gen = ++this.gen;
     this.items = [];
@@ -48,6 +49,7 @@ var similar = {
             '<div style="font-size:27px;color:rgba(255,255,255,.55);padding:40px">' +
             tx('nothingFound') +
             '</div>';
+        self.idx = Math.max(0, Math.min(p.idx || 0, self.items.length - 1));
         self.paint();
       });
     });

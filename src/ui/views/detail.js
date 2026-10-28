@@ -24,9 +24,12 @@ var detail = {
   seasonControlIdx: 0,
   watchedMap: {},
   enter: function (p) {
+    p = p || { type: this.type, id: this.id };
     this.type = p.type;
     this.id = p.id;
     this.vid = p.vid || null;
+    /* reached with Back: the viewer already saw (or dismissed) the sources */
+    this.restored = !!p.restored;
     this.zone = 'btns';
     this.btnIdx = 0;
     this.meta = null;
@@ -216,7 +219,7 @@ var detail = {
           }, 250);
         }
       }
-    } else {
+    } else if (!this.restored) {
       setTimeout(function () {
         if (SCR === 'detail' && detail.meta === m && !streamsUI.open) self.openStreams(self.id);
       }, 250);

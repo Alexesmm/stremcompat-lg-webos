@@ -130,6 +130,13 @@ async function main() {
     await delay(120);
     var clicked = await protocol.call('Runtime.evaluate', { expression: "document.getElementById('scrDetail').className", returnByValue: true });
     assert.ok(/\bon\b/.test(clicked.result.value), 'Magic Remote click did not open the focused home card');
+    await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 461, nativeVirtualKeyCode: 461, key: 'GoBack' });
+    await delay(200);
+    var backEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var rows=document.querySelectorAll('#rows>.row'),focused=-1;for(var i=0;i<rows.length;i++)if(rows[i].querySelector('.card.f'))focused=i;return JSON.stringify({board:document.getElementById('scrBoard').className,focused:focused});})()", returnByValue: true });
+    var back = JSON.parse(backEval.result.value);
+    assert.ok(/\bon\b/.test(back.board), 'Back from a title did not return to Home');
+    assert.strictEqual(back.focused, 3, 'Back from a title did not keep the Home focus');
+    assert.strictEqual(protocol.exceptions.length, 0, 'Back navigation raised an exception: ' + JSON.stringify(protocol.exceptions));
 
     await protocol.call('Runtime.evaluate', { expression: "location.href='http://127.0.0.1:" + appPort + "/play?u='+encodeURIComponent('http://127.0.0.1:" + mockPort + "/fake.mp4')+'&back=beta'" });
     await delay(700);

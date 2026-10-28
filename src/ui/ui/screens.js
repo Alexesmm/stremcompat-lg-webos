@@ -1,7 +1,11 @@
 // Screen switching and the Back stack.
 /* ================= screen manager ================= */
 var SCR = 'home';
+/* Each Back entry keeps the screen, the parameters it was opened with and where the
+   focus was, so Back returns to the same title and the same card. */
 var backStack = [];
+var BACK_LIMIT = 20;
+var scrParams = null;
 var BOARD_SCR = { home: 1, lib: 1 };
 function showScr(name) {
   var el = BOARD_SCR[name]
@@ -40,11 +44,32 @@ function updateLogoBg() {
   $('logobg').className = show ? 'on' : '';
   if (show || SCR === 'login') setBg('');
 }
+function screenFocus() {
+  if (SCR === 'search') return { zone: search.zone, rowIdx: search.rowIdx };
+  if (SCR === 'sim') return { idx: similar.idx };
+  if (SCR === 'detail' && detail.type === 'series') {
+    var ep = detail.currentEpisode();
+    return ep ? { vid: ep.id } : null;
+  }
+  return null;
+}
+function backParams(entry) {
+  var p = {},
+    k;
+  for (k in entry.params) if (Object.prototype.hasOwnProperty.call(entry.params, k)) p[k] = entry.params[k];
+  for (k in entry.focus) if (Object.prototype.hasOwnProperty.call(entry.focus, k)) p[k] = entry.focus[k];
+  p.restored = true;
+  return p;
+}
 function goScr(name, params, noStack) {
   try {
     idleTouch();
   } catch (e) {}
-  if (!noStack && SCR !== name) backStack.push(SCR);
+  if (!noStack && SCR !== name) {
+    backStack.push({ name: SCR, params: scrParams, focus: screenFocus() });
+    if (backStack.length > BACK_LIMIT) backStack.shift();
+  }
+  scrParams = params || null;
   topNav.active = false;
   if (name === 'home') {
     showScr('home');
@@ -57,7 +82,7 @@ function goScr(name, params, noStack) {
     disc.enter();
   } else if (name === 'search') {
     showScr('search');
-    search.enter();
+    search.enter(params);
   } else if (name === 'lib') {
     showScr('lib');
     lib.enter();
@@ -110,7 +135,7 @@ function goBackScr() {
   }
   var prev = backStack.pop();
   if (prev) {
-    goScr(prev, null, true);
+    goScr(prev.name, backParams(prev), true);
     return;
   }
   if (SCR === 'home') {
