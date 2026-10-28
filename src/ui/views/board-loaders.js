@@ -41,6 +41,29 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
       board.rows.push(r0);
       reveal(r0, 70);
     }
+    /* Home also surfaces new episodes of followed series and the titles added to the
+       library, which otherwise only appear in the Library section */
+    var fresh = newEpisodeItems();
+    if (fresh.length) {
+      var rn = buildRow(tx('newEpisodes'), fresh, true);
+      board.rows.push(rn);
+      reveal(rn, 90);
+    }
+    var mine = libGridItems().slice(0, 20),
+      mineMapped = [];
+    for (var mi = 0; mi < mine.length; mi++)
+      mineMapped.push({
+        id: mine[mi]._id,
+        type: mine[mi].type,
+        name: mine[mi].name,
+        poster: mine[mi].poster,
+        background: mine[mi].background
+      });
+    if (mineMapped.length) {
+      var rm = buildRow(tx('myList'), mineMapped, false);
+      board.rows.push(rm);
+      reveal(rm, 110);
+    }
   }
   for (var d = 0; d < defs.length; d++)
     (function (def, di) {

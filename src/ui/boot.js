@@ -58,6 +58,12 @@ function boot() {
         }
       });
     }, 900);
+    /* new episodes of followed series, at most once a day; shown on the next Home build */
+    setTimeout(function () {
+      checkNewEpisodes(function (changed) {
+        if (changed) home.built = false;
+      });
+    }, 8000);
     /* the long-press menu has no visible entry point: explain it once, on Home */
     setTimeout(function () {
       if (lsRaw('holdOkHintShown', '') || SCR !== 'home' || streamsUI.open || cwMenu.open) return;

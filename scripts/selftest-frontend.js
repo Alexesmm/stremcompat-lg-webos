@@ -193,6 +193,15 @@ var afterFail = firstRun.context.__STREMIO_NEXT_AFTER_FAILURE__([
   { addon:'Torrentio', name:'B', title:'good' }
 ], { addon:'Torrentio', text:'A broken' });
 assert.strictEqual(afterFail && afterFail.name, 'B', 'the failed source was offered again');
+var newEp = firstRun.context.__STREMIO_FIRST_NEW_EPISODE__({ videos: [
+  { id:'s:1:1', season:1, episode:1, released:'2020-01-01T00:00:00Z' },
+  { id:'s:2:1', season:2, episode:1, released:'2021-03-01T00:00:00Z' },
+  { id:'s:2:2', season:2, episode:2, released:'2021-03-08T00:00:00Z' },
+  { id:'s:0:5', season:0, episode:5, released:'2021-03-02T00:00:00Z' },
+  { id:'s:2:3', season:2, episode:3, released:'2999-01-01T00:00:00Z' }
+] }, { lastWatched:'2021-02-01T00:00:00Z', watchedEpisodes:['s:2:1'] });
+assert.strictEqual(newEp && newEp.id, 's:2:2', 'new episodes ignored watched, special or unaired rules');
+assert.strictEqual(newEp.count, 1, 'new episode count is wrong');
 var baseEpisodes={videos:[{id:'show:1:1',season:1,episode:1}]};
 assert.strictEqual(firstRun.context.__STREMIO_MERGE_EPISODES__(baseEpisodes,{videos:[{id:'show:1:1',season:1,episode:1,thumbnail:'/still.jpg',overview:'Overview'}]}),true,'metadata enrichment did not report a change');
 assert.strictEqual(baseEpisodes.videos[0].thumbnail,'/still.jpg','metadata enrichment did not fill a missing thumbnail');

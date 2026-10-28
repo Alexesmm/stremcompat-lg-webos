@@ -29,6 +29,7 @@
   "views/card-menu.js",
   "views/similar.js",
   "data/episodes.js",
+  "data/new-episodes.js",
   "views/detail.js",
   "views/detail-episodes.js",
   "views/episode-jump.js",

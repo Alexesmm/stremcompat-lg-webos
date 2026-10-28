@@ -235,6 +235,9 @@ var UI_TEXT = {
     trendingMovies: 'Trending · Movies',
     trendingSeries: 'Trending · Series',
     continueWatching: 'Continue watching',
+    myList: 'My list',
+    newEpisodes: 'New episodes',
+    newEpisodeTag: 'New · S{0} E{1}',
     cwUpNext: 'Up next · S{0} E{1}',
     cwEpisode: 'S{0} E{1}',
     cwLeft: '{0} min left',
@@ -517,6 +520,9 @@ var UI_TEXT = {
     trendingMovies: 'Em alta · Filmes',
     trendingSeries: 'Em alta · Séries',
     continueWatching: 'Continuar assistindo',
+    myList: 'Minha lista',
+    newEpisodes: 'Novos episódios',
+    newEpisodeTag: 'Novo · T{0} E{1}',
     cwUpNext: 'Próximo · T{0} E{1}',
     cwEpisode: 'T{0} E{1}',
     cwLeft: 'faltam {0} min',
@@ -3110,7 +3116,7 @@ function makeCard(it, wide, label, eager) {
     var sub = cwSubtitle(it);
     if (sub) {
       var sl = document.createElement('div');
-      sl.className = 'sub' + (it.upNext ? ' next' : '');
+      sl.className = 'sub' + (it.upNext || it.fresh ? ' next' : '');
       sl.textContent = sub;
       lb.appendChild(sl);
     }
@@ -3134,6 +3140,7 @@ function cwSubtitle(it) {
     var pp = it.videoId.split(':');
     if (pp.length >= 3) {
       if (it.upNext) return tx('cwUpNext', pp[pp.length - 2], pp[pp.length - 1]);
+      if (it.fresh) return tx('newEpisodeTag', pp[pp.length - 2], pp[pp.length - 1]);
       ep = tx('cwEpisode', pp[pp.length - 2], pp[pp.length - 1]);
     }
   }
@@ -3226,6 +3233,29 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
       var r0 = buildRow(tx('continueWatching'), cwMapped, true);
       board.rows.push(r0);
       reveal(r0, 70);
+    }
+    /* Home also surfaces new episodes of followed series and the titles added to the
+       library, which otherwise only appear in the Library section */
+    var fresh = newEpisodeItems();
+    if (fresh.length) {
+      var rn = buildRow(tx('newEpisodes'), fresh, true);
+      board.rows.push(rn);
+      reveal(rn, 90);
+    }
+    var mine = libGridItems().slice(0, 20),
+      mineMapped = [];
+    for (var mi = 0; mi < mine.length; mi++)
+      mineMapped.push({
+        id: mine[mi]._id,
+        type: mine[mi].type,
+        name: mine[mi].name,
+        poster: mine[mi].poster,
+        background: mine[mi].background
+      });
+    if (mineMapped.length) {
+      var rm = buildRow(tx('myList'), mineMapped, false);
+      board.rows.push(rm);
+      reveal(rm, 110);
     }
   }
   for (var d = 0; d < defs.length; d++)
@@ -3898,6 +3928,87 @@ function enrichEpisodeMetadata(type, id, meta, cb) {
 }
 window.__STREMIO_EPISODE_MODEL__ = buildEpisodeModel;
 window.__STREMIO_MERGE_EPISODES__ = mergeEpisodeDetails;
+// Series that gained episodes since they were last watched, for the Home row.
+/* Checked at most once a day, for the few series watched most recently, one metadata
+   request at a time in the background after Home is up. The result is stored and shown
+   the next time Home is built, so a row never appears under the viewer's focus. */
+var NEW_EPISODES_KEY = 'newEpisodes',
+  NEW_EPISODES_EVERY = 24 * 60 * 60 * 1000;
+function newEpisodeItems() {
+  var c = lsJson(NEW_EPISODES_KEY);
+  return c && c.items && c.items.length ? c.items : [];
+}
+/* the first aired, unwatched regular episode released after the series was last watched */
+function firstNewEpisode(meta, state) {
+  var since = Date.parse(state.lastWatched || '') || 0,
+    now = Date.now(),
+    seen = {},
+    best = null,
+    bestAt = 0,
+    count = 0,
+    we = state.watchedEpisodes || [];
+  for (var w = 0; w < we.length; w++) seen[we[w]] = 1;
+  var videos = (meta && meta.videos) || [];
+  for (var i = 0; i < videos.length; i++) {
+    var v = videos[i],
+      at = releasedTime(v);
+    if (!v || !v.id || !(parseInt(v.season, 10) > 0) || seen[v.id]) continue;
+    if (!at || at <= since || at > now) continue;
+    count++;
+    if (!best || at < bestAt) {
+      best = v;
+      bestAt = at;
+    }
+  }
+  return best ? { id: best.id, count: count } : null;
+}
+window.__STREMIO_FIRST_NEW_EPISODE__ = firstNewEpisode;
+function checkNewEpisodes(done) {
+  var cached = lsJson(NEW_EPISODES_KEY);
+  if (cached && cached.at && Date.now() - cached.at < NEW_EPISODES_EVERY) {
+    done(false);
+    return;
+  }
+  var lib = allLib(),
+    series = [];
+  for (var i = 0; i < lib.length; i++) {
+    var it = lib[i],
+      s = it.state || {};
+    if (it.type !== 'series' || !it._id) continue;
+    if (it.removed && !(s.timeOffset > 0) && !(s.watchedEpisodes && s.watchedEpisodes.length)) continue;
+    series.push(it);
+  }
+  series.sort(function (a, b) {
+    return String(b._mtime || '').localeCompare(String(a._mtime || ''));
+  });
+  series = series.slice(0, TV_PROFILE.lowMemory ? 3 : 6);
+  var found = [],
+    at = 0;
+  function next() {
+    if (at >= series.length) {
+      var before = JSON.stringify(newEpisodeItems());
+      lsSet(NEW_EPISODES_KEY, { at: Date.now(), items: found });
+      done(JSON.stringify(found) !== before);
+      return;
+    }
+    var it = series[at++];
+    getMeta('series', it._id, function (m) {
+      var ep = m && firstNewEpisode(m, it.state || {});
+      if (ep)
+        found.push({
+          id: it._id,
+          type: 'series',
+          name: it.name || (m && m.name) || '',
+          poster: it.poster || (m && m.poster) || '',
+          background: it.background || (m && m.background) || '',
+          videoId: ep.id,
+          fresh: true
+        });
+      next();
+    });
+  }
+  next();
+}
 // Title detail screen: actions, seasons, episode ranges and episode list.
 var detail = {
   meta: null,
@@ -6833,6 +6944,12 @@ function boot() {
         }
       });
     }, 900);
+    /* new episodes of followed series, at most once a day; shown on the next Home build */
+    setTimeout(function () {
+      checkNewEpisodes(function (changed) {
+        if (changed) home.built = false;
+      });
+    }, 8000);
     /* the long-press menu has no visible entry point: explain it once, on Home */
     setTimeout(function () {
       if (lsRaw('holdOkHintShown', '') || SCR !== 'home' || streamsUI.open || cwMenu.open) return;

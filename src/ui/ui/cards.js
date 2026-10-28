@@ -89,7 +89,7 @@ function makeCard(it, wide, label, eager) {
     var sub = cwSubtitle(it);
     if (sub) {
       var sl = document.createElement('div');
-      sl.className = 'sub' + (it.upNext ? ' next' : '');
+      sl.className = 'sub' + (it.upNext || it.fresh ? ' next' : '');
       sl.textContent = sub;
       lb.appendChild(sl);
     }
@@ -113,6 +113,7 @@ function cwSubtitle(it) {
     var pp = it.videoId.split(':');
     if (pp.length >= 3) {
       if (it.upNext) return tx('cwUpNext', pp[pp.length - 2], pp[pp.length - 1]);
+      if (it.fresh) return tx('newEpisodeTag', pp[pp.length - 2], pp[pp.length - 1]);
       ep = tx('cwEpisode', pp[pp.length - 2], pp[pp.length - 1]);
     }
   }
