@@ -302,7 +302,8 @@ var settings = {
         window.performance && performance.memory
           ? Math.round(performance.memory.usedJSHeapSize / 1048576)
           : '—',
-      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—';
+      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—',
+      shown = window.__STREMIO_VISIBLE_MS__ ? (window.__STREMIO_VISIBLE_MS__ / 1000).toFixed(1) : '—';
     xhrJson(
       '/diag',
       function (j) {
@@ -314,7 +315,7 @@ var settings = {
           tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
           tx('diagStreaming', j.streamingServer ? tx('diagRunning') : tx('diagStopped')),
-          tx('diagInterface', heap, home),
+          tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
         ];
         var events = j.events || [];

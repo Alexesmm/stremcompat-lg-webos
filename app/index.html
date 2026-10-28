@@ -52,7 +52,7 @@ function openApp() {
     if (finished) return;
     finished = true;
     setProgress(100, 'Ready. Opening…');
-    setTimeout(function () { location.replace('http://127.0.0.1:__APP_PORT__/beta?v=__APP_VERSION__'); }, 250);
+    location.replace('http://127.0.0.1:__APP_PORT__/beta?v=__APP_VERSION__');
 }
 
 function ping() {

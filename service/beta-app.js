@@ -330,7 +330,7 @@ var UI_TEXT = {
     diagStreaming: 'Streaming server: {0}',
     diagRunning: 'running',
     diagStopped: 'stopped',
-    diagInterface: 'Interface: {0} MB of JS · Home loaded in {1} s',
+    diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
     diagPeak: 'Since start: local server peak {0} MB · lowest TV free memory {1} MB',
     diagRecent: 'Recent problems:',
     diagNoProblems: 'No problems recorded since start',
@@ -622,7 +622,7 @@ var UI_TEXT = {
     diagStreaming: 'Servidor de streaming: {0}',
     diagRunning: 'ativo',
     diagStopped: 'parado',
-    diagInterface: 'Interface: {0} MB de JS · Início carregou em {1} s',
+    diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
     diagPeak: 'Desde o início: pico do servidor local {0} MB · menor memória livre da TV {1} MB',
     diagRecent: 'Problemas recentes:',
     diagNoProblems: 'Nenhum problema registrado desde o início',
@@ -5952,7 +5952,8 @@ var settings = {
         window.performance && performance.memory
           ? Math.round(performance.memory.usedJSHeapSize / 1048576)
           : '—',
-      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—';
+      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—',
+      shown = window.__STREMIO_VISIBLE_MS__ ? (window.__STREMIO_VISIBLE_MS__ / 1000).toFixed(1) : '—';
     xhrJson(
       '/diag',
       function (j) {
@@ -5964,7 +5965,7 @@ var settings = {
           tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
           tx('diagStreaming', j.streamingServer ? tx('diagRunning') : tx('diagStopped')),
-          tx('diagInterface', heap, home),
+          tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
         ];
         var events = j.events || [];
@@ -6901,6 +6902,10 @@ function boot() {
       window.__STREMIO_BOOT_DONE__ = true;
       window.__STREMIO_PHASE__('READY');
       $('boot').style.display = 'none';
+      /* shown by Settings > Diagnostics: from opening this page to Home on screen */
+      try {
+        window.__STREMIO_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
+      } catch (e) {}
     }, 120);
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
     setTimeout(function () {

@@ -42,6 +42,10 @@ function boot() {
       window.__STREMIO_BOOT_DONE__ = true;
       window.__STREMIO_PHASE__('READY');
       $('boot').style.display = 'none';
+      /* shown by Settings > Diagnostics: from opening this page to Home on screen */
+      try {
+        window.__STREMIO_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
+      } catch (e) {}
     }, 120);
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
     setTimeout(function () {
