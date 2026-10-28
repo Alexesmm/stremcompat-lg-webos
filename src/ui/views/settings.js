@@ -167,6 +167,15 @@ var settings = {
         d: 'false'
       },
       {
+        k: 'dynamicTint',
+        lb: tx('dynamicTint'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: TV_PROFILE.lowMemory ? 'false' : 'true'
+      },
+      {
         k: 'scrubPreview',
         lb: tx('scrubPreview'),
         opts: [
