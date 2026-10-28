@@ -18,7 +18,7 @@ var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
 var { nextEpisodeId } = require('./episodes');
-var { diagnostics } = require('./diag');
+var { diagnostics, recordEvent } = require('./diag');
 var { cachedAddonJson } = require('./addon-cache');
 
 // Routes every request of the local compatibility server.
@@ -51,6 +51,7 @@ function handleRequest(req, res) {
   } else if (p === '/addon') {
     cachedAddonJson(q.u || '', function (j) {
       if (!j) {
+        recordEvent('addon_unavailable', String(q.u || '').replace(/^https?:\/\/([^/]+).*$/, '$1'));
         res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end('{"error":"addon_unavailable"}');
       } else sendJson(res, j);
@@ -69,7 +70,8 @@ function handleRequest(req, res) {
       'playing',
       'awaySec',
       'tries',
-      'reason'
+      'reason',
+      'addon'
     ];
     var entry = {},
       lm = process.memoryUsage();
@@ -79,6 +81,7 @@ function handleRequest(req, res) {
     entry.rssMiB = Math.round(lm.rss / 1048576);
     entry.heapMiB = Math.round(lm.heapUsed / 1048576);
     dbg('[clientlog] ' + JSON.stringify(entry));
+    recordEvent(entry.ev, [entry.addon, entry.quality].filter(Boolean).join(' '));
     res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
     res.end('ok');
   } else if (p === '/' || p === '/index.html') {

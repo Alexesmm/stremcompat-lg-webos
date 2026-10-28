@@ -117,7 +117,9 @@ v.addEventListener('error', function () {
     code: v.error ? v.error.code : 0,
     ready: v.readyState,
     network: v.networkState,
-    compat: COMPAT
+    compat: COMPAT,
+    addon: ADDON,
+    quality: QUALITY
   });
 });
 // buffering: dim the frozen frame and breathe the art (the same look as initial load)

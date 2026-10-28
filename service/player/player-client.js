@@ -150,6 +150,14 @@ var UI_TEXT = {
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home loaded in {1} s',
+    diagPeak: 'Since start: local server peak {0} MB · lowest TV free memory {1} MB',
+    diagRecent: 'Recent problems:',
+    diagNoProblems: 'No problems recorded since start',
+    evMediaError: 'Source would not play',
+    evSlowStart: 'Source was slow to start, retried',
+    evPrepareFailed: 'Source could not be prepared',
+    evPlayRejected: 'Playback was refused',
+    evAddonDown: 'Addon did not answer',
     reloadingApp: 'Reloading StremCompat…',
     sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
@@ -435,6 +443,14 @@ var UI_TEXT = {
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início carregou em {1} s',
+    diagPeak: 'Desde o início: pico do servidor local {0} MB · menor memória livre da TV {1} MB',
+    diagRecent: 'Problemas recentes:',
+    diagNoProblems: 'Nenhum problema registrado desde o início',
+    evMediaError: 'A fonte não reproduziu',
+    evSlowStart: 'A fonte demorou a iniciar, tentou de novo',
+    evPrepareFailed: 'A fonte não pôde ser preparada',
+    evPlayRejected: 'A reprodução foi recusada',
+    evAddonDown: 'O addon não respondeu',
     reloadingApp: 'Recarregando o StremCompat…',
     sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
@@ -1376,7 +1392,9 @@ v.addEventListener('error', function () {
     code: v.error ? v.error.code : 0,
     ready: v.readyState,
     network: v.networkState,
-    compat: COMPAT
+    compat: COMPAT,
+    addon: ADDON,
+    quality: QUALITY
   });
 });
 // buffering: dim the frozen frame and breathe the art (the same look as initial load)

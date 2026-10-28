@@ -332,6 +332,14 @@ var UI_TEXT = {
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home loaded in {1} s',
+    diagPeak: 'Since start: local server peak {0} MB · lowest TV free memory {1} MB',
+    diagRecent: 'Recent problems:',
+    diagNoProblems: 'No problems recorded since start',
+    evMediaError: 'Source would not play',
+    evSlowStart: 'Source was slow to start, retried',
+    evPrepareFailed: 'Source could not be prepared',
+    evPlayRejected: 'Playback was refused',
+    evAddonDown: 'Addon did not answer',
     reloadingApp: 'Reloading StremCompat…',
     sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
@@ -617,6 +625,14 @@ var UI_TEXT = {
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início carregou em {1} s',
+    diagPeak: 'Desde o início: pico do servidor local {0} MB · menor memória livre da TV {1} MB',
+    diagRecent: 'Problemas recentes:',
+    diagNoProblems: 'Nenhum problema registrado desde o início',
+    evMediaError: 'A fonte não reproduziu',
+    evSlowStart: 'A fonte demorou a iniciar, tentou de novo',
+    evPrepareFailed: 'A fonte não pôde ser preparada',
+    evPlayRejected: 'A reprodução foi recusada',
+    evAddonDown: 'O addon não respondeu',
     reloadingApp: 'Recarregando o StremCompat…',
     sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
@@ -5708,6 +5724,20 @@ function mediaLanguageOptions() {
     ['chi', tx('chinese')]
   ];
 }
+/* one recorded problem as '14:32 · Source would not play (Torrentio 1080p)' */
+function diagEventLine(e) {
+  var d = new Date(e.at),
+    hh = (d.getHours() < 10 ? '0' : '') + d.getHours(),
+    mm = (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(),
+    key = {
+      media_error: 'evMediaError',
+      media_start_retry: 'evSlowStart',
+      streamref_failed: 'evPrepareFailed',
+      play_rejected: 'evPlayRejected',
+      addon_unavailable: 'evAddonDown'
+    }[e.kind];
+  return hh + ':' + mm + '  ·  ' + tx(key || e.kind) + (e.detail ? ' (' + e.detail + ')' : '');
+}
 var settings = {
   idx: 0,
   els: [],
@@ -5995,8 +6025,12 @@ var settings = {
           tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
           tx('diagStreaming', j.streamingServer ? tx('diagRunning') : tx('diagStopped')),
-          tx('diagInterface', heap, home)
+          tx('diagInterface', heap, home),
+          tx('diagPeak', j.peakRssMb, j.minAvailableMb)
         ];
+        var events = j.events || [];
+        lines.push(events.length ? tx('diagRecent') : tx('diagNoProblems'));
+        for (var ev = 0; ev < events.length && ev < 5; ev++) lines.push(diagEventLine(events[ev]));
         box.textContent = '';
         for (var i = 0; i < lines.length; i++) {
           var line = document.createElement('div');
