@@ -17,10 +17,21 @@ function boot() {
     var h = location.hash || '';
     var m = h.match(/^#detail\/([^\/]+)\/([^\/]+)(?:\/(.+))?$/);
     var ms = h.match(/^#sim\/([^\/]+)\/([^\/]+)$/);
+    /* the player leaves a flag when it hands back to the interface */
+    var fromPlayer = false;
+    try {
+      fromPlayer = sessionStorage.getItem('tvBack') === '1';
+      sessionStorage.removeItem('tvBack');
+    } catch (e) {}
     showScr('home');
     home.enter();
     if (m) {
-      goScr('detail', { type: m[1], id: m[2], vid: m[3] ? decodeURIComponent(m[3]) : null });
+      goScr('detail', {
+        type: m[1],
+        id: m[2],
+        vid: m[3] ? decodeURIComponent(m[3]) : null,
+        restored: fromPlayer
+      });
     } else if (ms) {
       goScr('sim', { type: ms[1], id: ms[2] });
     }

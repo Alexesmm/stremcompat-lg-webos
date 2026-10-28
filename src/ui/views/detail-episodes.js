@@ -126,6 +126,27 @@ detail.buildSeasonControls = function () {
   );
   if (this.seasonControlIdx >= this.seasonEls.length) this.seasonControlIdx = 0;
 };
+/* the focused episode: numbering, air date, length and whether it has aired yet */
+function episodeMetaLine(cv) {
+  var bits = [
+      cv._stremAbsolute
+        ? tx('seasonAbsoluteEpisode', cv._stremSeason, cv._stremSeasonEpisode, cv._stremAbsolute)
+        : tx('seasonEpisode', cv._stremSeason, cv._stremSeasonEpisode)
+    ],
+    at = releasedTime(cv);
+  if (at) {
+    var day = '';
+    try {
+      day = new Date(at).toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      day = new Date(at).toISOString().slice(0, 10);
+    }
+    bits.push(day);
+  }
+  if (cv.runtime) bits.push(cv.runtime);
+  if (at > Date.now()) bits.push(tx('badgeSoon'));
+  return bits.join('  ·  ');
+}
 /* Coming soon before release, New during the first week */
 function episodeBadge(v, now) {
   var at = releasedTime(v);

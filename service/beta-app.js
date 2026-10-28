@@ -252,6 +252,8 @@ var UI_TEXT = {
     trailerUnavailable: 'Trailer unavailable',
     noTrailer: 'No trailer available',
     continueLabel: 'Continue',
+    continueEpisode: 'Continue S{0} E{1}',
+    playEpisode: 'Play S{0} E{1}',
     watch: 'Watch',
     details: 'Details',
     similarTitles: 'More like this',
@@ -526,6 +528,8 @@ var UI_TEXT = {
     trailerUnavailable: 'Trailer indisponível',
     noTrailer: 'Trailer indisponível',
     continueLabel: 'Continuar',
+    continueEpisode: 'Continuar T{0} E{1}',
+    playEpisode: 'Assistir T{0} E{1}',
     watch: 'Assistir',
     details: 'Detalhes',
     similarTitles: 'Ver títulos parecidos',
@@ -3972,8 +3976,31 @@ var detail = {
     var self = this;
     this.loadWatched();
     if (this.type === 'series') this.buildSeasons();
-    /* Movies keep an explicit primary action even though sources auto-open. If the
-     viewer dismisses the panel, Watch remains focused and makes recovery obvious. */
+    /* Series: the episode to land on is the deep-linked one, then the one in progress,
+       then the first released one not watched. */
+    var av = null;
+    if (this.type === 'series') {
+      var lib = lsJson(PRE + this.id);
+      av =
+        this.vid ||
+        (lib && lib.state && lib.state.timeOffset > 60000 && lib.state.video_id) ||
+        this.firstUnwatched();
+      this.vid = null;
+    }
+    /* The first button continues or starts what the viewer most likely wants, in one press:
+       "Continue S2 E5 · 12 min left", "Play S1 E9" or, for a film, "Continue · 48 min left". */
+    var resume = this.resumeInfo(),
+      primary = resume && (this.type !== 'series' || !av || resume.videoId === av) ? resume : null;
+    if (primary)
+      this.addBtn(this.resumeLabel(primary), function () {
+        self.playFrom(primary);
+      });
+    else if (this.type === 'series' && av) {
+      var first = { videoId: av, upNext: true };
+      this.addBtn(this.resumeLabel(first), function () {
+        self.openStreams(av);
+      });
+    }
     if (this.type !== 'series')
       this.addBtn(tx('watch'), function () {
         self.openStreams(self.id);
@@ -3990,17 +4017,13 @@ var detail = {
       self.toggleLib();
     });
     this.paint();
-    /* movies auto-open their streams; series just highlight the resume/first-unwatched episode
-     (NO auto-open) so you land on the episode list and pick one yourself */
     if (this.type === 'series') {
-      var lib = lsJson(PRE + this.id);
-      var av =
-        this.vid ||
-        (lib && lib.state && lib.state.timeOffset > 60000 && lib.state.video_id) ||
-        this.firstUnwatched();
-      this.vid = null;
       if (av) {
-        this.selectEpisode(av, true); /* noOpen: highlight only */
+        /* the list scrolls to that episode while the focus stays on the first button */
+        this.selectEpisode(av, true);
+        this.zone = 'btns';
+        this.btnIdx = 0;
+        this.paint();
         if (hasNextSourcePreference(this.id, av)) {
           var nextSelf = this;
           setTimeout(function () {
@@ -4008,11 +4031,40 @@ var detail = {
           }, 250);
         }
       }
-    } else if (!this.restored) {
+    } else if (!this.restored && !primary) {
+      /* a new film opens its sources; one in progress, or one the viewer just came back
+         from, waits on its Continue / Watch buttons instead */
       setTimeout(function () {
         if (SCR === 'detail' && detail.meta === m && !streamsUI.open) self.openStreams(self.id);
       }, 250);
     }
+  },
+  /* saved progress worth offering, in the Continue Watching card shape (account.js) */
+  resumeInfo: function () {
+    var lib = lsJson(PRE + this.id),
+      s = lib && lib.state;
+    if (!s) return null;
+    var c = cwCard(lib);
+    if (c.upNext) return c;
+    if (!(s.timeOffset > 60000) || watchFinished(s.timeOffset, s.duration)) return null;
+    return c;
+  },
+  resumeLabel: function (c) {
+    var pp = String(c.videoId || '').split(':'),
+      ep = pp.length >= 3 ? [pp[pp.length - 2], pp[pp.length - 1]] : null;
+    if (c.upNext) return ep ? tx('playEpisode', ep[0], ep[1]) : tx('watch');
+    var left = c.minutesLeft ? '  ·  ' + tx('cwLeft', c.minutesLeft) : '';
+    return (ep ? tx('continueEpisode', ep[0], ep[1]) : tx('continueLabel')) + left;
+  },
+  /* the same source when it was remembered, otherwise the source list for that video */
+  playFrom: function (c) {
+    var q = resumeSearch(this.id, c.videoId);
+    if (q && !c.upNext)
+      playStored(
+        q,
+        'beta#detail/' + this.type + '/' + this.id + (c.videoId !== this.id ? '/' + c.videoId : '')
+      );
+    else this.openStreams(c.videoId);
   },
   addBtn: function (label, act) {
     var b = document.createElement('div');
@@ -4124,11 +4176,7 @@ var detail = {
       $('dPoster').style.display = 'none';
       $('dBtns').style.display = 'none';
       $('dDesc').style.display = 'block';
-      $('dMeta').textContent = cv
-        ? cv._stremAbsolute
-          ? tx('seasonAbsoluteEpisode', cv._stremSeason, cv._stremSeasonEpisode, cv._stremAbsolute)
-          : tx('seasonEpisode', cv._stremSeason, cv._stremSeasonEpisode)
-        : '';
+      $('dMeta').textContent = cv ? episodeMetaLine(cv) : '';
       $('dDesc').textContent = (cv && (cv.overview || cv.description)) || '';
       if (cv) setBg(episodeImage(cv, this.meta) || episodeFallback(this.meta, false));
       else if (this.meta) setBg(this.meta.background || '');
@@ -4336,6 +4384,27 @@ detail.buildSeasonControls = function () {
   );
   if (this.seasonControlIdx >= this.seasonEls.length) this.seasonControlIdx = 0;
 };
+/* the focused episode: numbering, air date, length and whether it has aired yet */
+function episodeMetaLine(cv) {
+  var bits = [
+      cv._stremAbsolute
+        ? tx('seasonAbsoluteEpisode', cv._stremSeason, cv._stremSeasonEpisode, cv._stremAbsolute)
+        : tx('seasonEpisode', cv._stremSeason, cv._stremSeasonEpisode)
+    ],
+    at = releasedTime(cv);
+  if (at) {
+    var day = '';
+    try {
+      day = new Date(at).toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      day = new Date(at).toISOString().slice(0, 10);
+    }
+    bits.push(day);
+  }
+  if (cv.runtime) bits.push(cv.runtime);
+  if (at > Date.now()) bits.push(tx('badgeSoon'));
+  return bits.join('  ·  ');
+}
 /* Coming soon before release, New during the first week */
 function episodeBadge(v, now) {
   var at = releasedTime(v);
@@ -6624,10 +6693,21 @@ function boot() {
     var h = location.hash || '';
     var m = h.match(/^#detail\/([^\/]+)\/([^\/]+)(?:\/(.+))?$/);
     var ms = h.match(/^#sim\/([^\/]+)\/([^\/]+)$/);
+    /* the player leaves a flag when it hands back to the interface */
+    var fromPlayer = false;
+    try {
+      fromPlayer = sessionStorage.getItem('tvBack') === '1';
+      sessionStorage.removeItem('tvBack');
+    } catch (e) {}
     showScr('home');
     home.enter();
     if (m) {
-      goScr('detail', { type: m[1], id: m[2], vid: m[3] ? decodeURIComponent(m[3]) : null });
+      goScr('detail', {
+        type: m[1],
+        id: m[2],
+        vid: m[3] ? decodeURIComponent(m[3]) : null,
+        restored: fromPlayer
+      });
     } else if (ms) {
       goScr('sim', { type: ms[1], id: ms[2] });
     }
