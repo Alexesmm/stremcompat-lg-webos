@@ -142,7 +142,7 @@ async function main() {
     assert.ok(sourceHas(player.text, 'function dismissNp') && sourceHas(player.text, 'rem<=180'), 'early compact dismissible next-title prompt is missing');
     assert.ok(sourceHas(player.text, 'rememberNextSource') && sourceHas(player.text, 'tvnextpref_'), 'next-episode source preference handoff is missing');
     assert.ok(sourceHas(player.text, 'media_start_retry') && sourceHas(player.text, 'armStartupWatch'), 'single source startup recovery is missing');
-    assert.ok(sourceHas(player.text, 'SEEN=') && sourceHas(player.text, 'SEPT='), 'localized episode line is missing');
+    assert.ok(sourceHas(player.text, 'SEASON=') && sourceHas(player.text, 'EPISODE=') && sourceHas(player.text, 'playerText()'), 'localized episode line is missing');
 
     var proxied = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + ref, headers: { Range: 'bytes=0-99' } });
     var echoed = JSON.parse(proxied.text);

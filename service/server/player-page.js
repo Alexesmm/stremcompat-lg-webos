@@ -65,14 +65,6 @@ function playerPage(stream, ctx) {
   }
   var meta = ctx.meta || {};
   var title = meta.name || cleanTitle(stream);
-  var seLineEn =
-    ctx.season && ctx.episode
-      ? 'Season ' + ctx.season + ' · Episode ' + ctx.episode + (ctx.epTitle ? '  ·  ' + ctx.epTitle : '')
-      : '';
-  var seLinePt =
-    ctx.season && ctx.episode
-      ? 'Temporada ' + ctx.season + ' · Episódio ' + ctx.episode + (ctx.epTitle ? '  ·  ' + ctx.epTitle : '')
-      : '';
   var nextVid = ctx.nextVid || '';
   // "Next episode" returns to the interface detail page, which picks the next source.
   var nextHref = !nextVid
@@ -111,10 +103,12 @@ function playerPage(stream, ctx) {
     safeScriptJson(meta.background || '') +
     ',POSTER=' +
     safeScriptJson(meta.poster || '') +
-    ',SEEN=' +
-    safeScriptJson(seLineEn) +
-    ',SEPT=' +
-    safeScriptJson(seLinePt) +
+    ',SEASON=' +
+    safeScriptJson(ctx.season || '') +
+    ',EPISODE=' +
+    safeScriptJson(ctx.episode || '') +
+    ',EPTITLE=' +
+    safeScriptJson(ctx.epTitle || '') +
     ',NEXTVID=' +
     safeScriptJson(nextVid) +
     ',NEXTHREF=' +

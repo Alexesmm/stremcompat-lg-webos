@@ -1,113 +1,14 @@
-// Player strings (en-US, pt-BR), chosen from the interface language.
-var PBR = false;
-try {
-  PBR = localStorage.getItem('uiLanguage') === 'pt-BR';
-} catch (e) {}
-var SE = PBR ? SEPT : SEEN;
-var P = PBR
-  ? {
-      paused: 'Pausado',
-      nextEpisode: 'Próximo episódio',
-      playNext: 'Reproduzir próximo',
-      dismissHint: 'Cima: selecionar · Voltar: fechar',
-      liked: 'Gostou?',
-      similar: 'Ver algo parecido',
-      findSimilar: 'Encontrar parecidos',
-      playbackError: 'Erro de reprodução',
-      retrying: 'Tentando iniciar a fonte novamente…',
-      resuming: 'Continuando de ',
-      restartHint: 'OK: recomeçar',
-      fromStart: 'Reproduzindo do início',
-      nextLoading: 'Próximo episódio…',
-      subtitlesReady: 'Legendas prontas',
-      subtitleFailed: 'Falha ao extrair legendas',
-      nativeSubs: 'Legendas nativas ativadas',
-      noNative: 'Faixa nativa indisponível — extraindo…',
-      preparingSubs: 'Preparando legendas…',
-      noEmbedded: 'Nenhuma legenda incorporada',
-      defaultAudio: 'Padrão',
-      off: 'Desativadas',
-      embedded: 'Incorporadas',
-      external: 'Externas',
-      selected: 'Selecionada',
-      settings: 'Ajustes',
-      audio: 'Áudio',
-      subtitles: 'Legendas',
-      none: 'Nenhuma',
-      readingTracks: 'Lendo faixas…',
-      noneInFile: 'Nenhuma neste arquivo',
-      style: 'Estilo',
-      delay: 'Atraso',
-      later: 'Mais tarde (+0,5s)',
-      earlier: 'Mais cedo (-0,5s)',
-      reset: 'Redefinir',
-      bigger: 'Aumentar texto',
-      smaller: 'Diminuir texto',
-      colour: 'Cor',
-      background: 'Fundo',
-      on: 'Ativado',
-      white: 'Branco',
-      yellow: 'Amarelo',
-      couldNotResume: 'Não foi possível continuar',
-      controlUnavailable: 'Controle de reprodução indisponível',
-      inactive: 'Reprodução pausada enquanto a TV estava inativa',
-      restoring: 'Restaurando o serviço local…',
-      restoreFailed: 'Não foi possível restaurar o serviço local',
-      ready: 'Prontas',
-      loaded: 'Legendas carregadas',
-      extracting: 'extraindo',
-      language: 'idioma'
-    }
-  : {
-      paused: 'Paused',
-      nextEpisode: 'Next episode',
-      playNext: 'Play next',
-      dismissHint: 'Up: select · Back: dismiss',
-      liked: 'Liked this?',
-      similar: 'Watch something similar',
-      findSimilar: 'Find similar',
-      playbackError: 'Playback error',
-      retrying: 'Retrying this source…',
-      resuming: 'Resuming from ',
-      restartHint: 'OK: start over',
-      fromStart: 'Playing from the start',
-      nextLoading: 'Next episode…',
-      subtitlesReady: 'Subtitles ready',
-      subtitleFailed: 'Subtitle extraction failed',
-      nativeSubs: 'Native subtitles on',
-      noNative: 'No native track — extracting…',
-      preparingSubs: 'Preparing subtitles…',
-      noEmbedded: 'No embedded subtitles',
-      defaultAudio: 'Default',
-      off: 'Off',
-      embedded: 'Embedded',
-      external: 'External',
-      selected: 'Selected',
-      settings: 'Settings',
-      audio: 'Audio',
-      subtitles: 'Subtitles',
-      none: 'None',
-      readingTracks: 'Reading tracks…',
-      noneInFile: 'None in this file',
-      style: 'Style',
-      delay: 'Delay',
-      later: 'Later (+0.5s)',
-      earlier: 'Earlier (-0.5s)',
-      reset: 'Reset',
-      bigger: 'Text bigger',
-      smaller: 'Text smaller',
-      colour: 'Colour',
-      background: 'Background',
-      on: 'On',
-      white: 'White',
-      yellow: 'Yellow',
-      couldNotResume: 'Could not resume playback',
-      controlUnavailable: 'Playback control unavailable',
-      inactive: 'Playback paused while the TV was inactive',
-      restoring: 'Restoring the local service…',
-      restoreFailed: 'Could not restore the local service',
-      ready: 'Subtitles ready',
-      loaded: 'Subtitles loaded',
-      extracting: 'extracting',
-      language: 'language'
-    };
+// Player strings from the shared table, and the season/episode line.
+/* The player strings in the current language, completed from English. */
+function playerText() {
+  var base = UI_TEXT['en-US'].player,
+    cur = (UI_TEXT[UI_LANG] && UI_TEXT[UI_LANG].player) || {},
+    out = {};
+  for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) out[k] = cur[k] || base[k];
+  return out;
+}
+var P = playerText();
+var SE =
+  SEASON && EPISODE
+    ? tx('season', SEASON) + ' · ' + tx('episode', EPISODE) + (EPTITLE ? '  ·  ' + EPTITLE : '')
+    : '';

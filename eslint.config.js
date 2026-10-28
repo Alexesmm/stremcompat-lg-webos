@@ -52,7 +52,7 @@ module.exports = [
         PalmServiceBridge: 'readonly',
         URL: 'readonly', ADDON: 'readonly', QUALITY: 'readonly', TITLE: 'readonly', TYPE: 'readonly',
         ID: 'readonly', VID: 'readonly', LOGO: 'readonly', BG: 'readonly', POSTER: 'readonly',
-        SEEN: 'readonly', SEPT: 'readonly', NEXTVID: 'readonly', NEXTHREF: 'readonly', BACK: 'readonly',
+        SEASON: 'readonly', EPISODE: 'readonly', EPTITLE: 'readonly', NEXTVID: 'readonly', NEXTHREF: 'readonly', BACK: 'readonly',
         NEXTTITLE: 'readonly', NEXTTHUMB: 'readonly', SNAME: 'readonly', CERT: 'readonly',
         COMPAT: 'readonly', SERVICE_ID: 'readonly', APP_PORT: 'readonly'
       })

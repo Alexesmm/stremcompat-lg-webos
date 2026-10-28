@@ -1,4 +1,5 @@
 [
+  "../shared/strings.js",
   "strings.js",
   "core.js",
   "progress.js",
