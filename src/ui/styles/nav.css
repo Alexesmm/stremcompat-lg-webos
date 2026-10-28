@@ -1,0 +1,18 @@
+/* ---------- compact icon-only sidebar ----------
+   A fixed rail never reflows or covers content. The remote focus is communicated by
+   shape, colour and a small accent bar, keeping paint work cheap on old Chromium. */
+#topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(9,11,18,.99),rgba(9,11,18,.88) 78%,rgba(9,11,18,0))}
+#brand{position:absolute;left:37px;top:34px;width:54px;height:54px;object-fit:contain;opacity:.96}
+/* Login is intentionally standalone: navigation and the decorative watermark only
+   become relevant after an account is connected. */
+body.login #topnav,body.login #logobg{display:none}
+.chip{position:relative;width:68px;height:62px;margin:5px 0;border-radius:15px;color:rgba(255,255,255,.58);background:transparent;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-sizing:border-box;transition:background .12s ease,color .12s ease}
+.chip svg{width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;-webkit-flex:none;flex:none}
+.navlabel{display:none}
+.chip.cur{color:#b69cff}
+.chip.f{background:#fff;color:#12101a}
+.chip.f:before{content:"";position:absolute;left:-14px;top:17px;width:4px;height:28px;border-radius:3px;background:#8c5cff}
+
+/* ---------- screens ---------- */
+.scr{position:fixed;top:0;left:0;right:0;bottom:0;display:none}
+.scr.on{display:block}

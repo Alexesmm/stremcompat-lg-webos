@@ -1,42 +1,68 @@
 'use strict';
 
-// Builds service/beta-app.js from the ES5 modules in src/ui.
+// Builds the browser files the service serves from their sources:
 //
-// The modules are plain script fragments concatenated in the order listed by
-// src/ui/modules.json. _prelude.js opens the single strict-mode IIFE and
-// _epilogue.js closes it, so every module shares one scope exactly like a single
-// file: no loader, no runtime cost and nothing Chromium 38 could reject.
+//   src/ui/*.js      -> service/beta-app.js            (order: src/ui/modules.json)
+//   src/player/*.js  -> service/player/player-client.js (order: src/player/modules.json)
+//   src/ui/index.html + src/ui/styles/*.css -> service/beta.html (order: src/ui/styles/styles.json)
 //
-// Usage: node scripts/build-ui.js          write service/beta-app.js
-//        node scripts/build-ui.js --check  fail if service/beta-app.js is stale
+// Scripts are plain fragments concatenated in order. In the interface, _prelude.js
+// opens the single strict-mode IIFE and _epilogue.js closes it; the player is
+// wrapped by server/player-page.js after its per-stream constants. Every module of
+// one bundle shares one scope exactly like a single file: no loader, no runtime cost
+// and nothing Chromium 38 could reject. The generated files are committed.
+//
+// Usage: node scripts/build-ui.js          write the generated files
+//        node scripts/build-ui.js --check  fail if a generated file is stale
 
 var fs = require('fs');
 var path = require('path');
 
 var root = path.resolve(__dirname, '..');
-var srcDir = path.join(root, 'src', 'ui');
-var outFile = path.join(root, 'service', 'beta-app.js');
 
 function lf(text) { return text.replace(/\r\n/g, '\n'); }
+function read(file) { return lf(fs.readFileSync(file, 'utf8')); }
+function list(dir, manifest) { return JSON.parse(read(path.join(dir, manifest))); }
 
-function bundle() {
-  var modules = JSON.parse(fs.readFileSync(path.join(srcDir, 'modules.json'), 'utf8'));
-  return modules.map(function (name) {
-    var text = lf(fs.readFileSync(path.join(srcDir, name), 'utf8'));
-    if (!text.endsWith('\n')) text += '\n';
-    return text;
+function scripts(dir) {
+  return list(dir, 'modules.json').map(function (name) {
+    var text = read(path.join(dir, name));
+    return text.endsWith('\n') ? text : text + '\n';
   }).join('');
 }
 
-var output = bundle();
-if (process.argv.indexOf('--check') >= 0) {
-  var current = fs.existsSync(outFile) ? lf(fs.readFileSync(outFile, 'utf8')) : '';
-  if (current !== output) {
-    console.error('service/beta-app.js is out of date with src/ui. Run: npm run build:ui');
-    process.exit(1);
-  }
-  console.log('OK: service/beta-app.js matches src/ui.');
-} else {
-  fs.writeFileSync(outFile, output);
-  console.log('Built service/beta-app.js from ' + path.relative(root, srcDir) + '.');
+// Style modules are separated by one blank line, as they were inside <style>.
+function page(dir) {
+  var styleDir = path.join(dir, 'styles');
+  var css = list(styleDir, 'styles.json').map(function (name) {
+    return read(path.join(styleDir, name)).replace(/\s+$/, '');
+  }).join('\n\n');
+  var template = read(path.join(dir, 'index.html'));
+  if (template.split('/*@styles*/').length !== 2) throw new Error('src/ui/index.html must contain /*@styles*/ once');
+  return template.replace('/*@styles*/', function () { return css; });
 }
+
+var targets = [
+  { out: 'service/beta-app.js', build: function () { return scripts(path.join(root, 'src', 'ui')); } },
+  { out: 'service/player/player-client.js', build: function () { return scripts(path.join(root, 'src', 'player')); } },
+  { out: 'service/beta.html', build: function () { return page(path.join(root, 'src', 'ui')); } }
+];
+
+var check = process.argv.indexOf('--check') >= 0,
+  stale = [];
+targets.forEach(function (target) {
+  var file = path.join(root, target.out),
+    output = target.build();
+  if (check) {
+    var current = fs.existsSync(file) ? read(file) : '';
+    if (current !== output) stale.push(target.out);
+  } else {
+    fs.writeFileSync(file, output);
+    console.log('Built ' + target.out);
+  }
+});
+if (stale.length) {
+  console.error(stale.join(', ') + ' out of date with src. Run: npm run build:ui');
+  process.exit(1);
+}
+if (check) console.log('OK: generated interface and player files match src.');

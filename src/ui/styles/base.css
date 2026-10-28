@@ -1,0 +1,34 @@
+/* Designed for the 1920x1080 webview. Netflix-like, BIG and clear.
+   RULES LEARNED ON THIS TV: no blurred shadows, no scale animations, transform-only
+   motion, static focus ring, class-based focus (never :focus). */
+html,body{margin:0;padding:0;width:100%;height:100%;background:#090b12;color:#fff;font-family:Arial,"Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+img{border:0}
+
+/* A single cropped hero region makes the deliberately downscaled TV artwork look sharper.
+   The two existing layers are retained only on UM4 for the already-tested crossfade; UJ3
+   still decodes one texture. Static gradients blend the edge without GPU-heavy blur. */
+#bg,#bg2{position:fixed;top:0;left:43%;right:0;height:68%;background-size:cover;background-position:center top;opacity:0;transition:opacity .36s ease}
+#bg.on,#bg2.on{opacity:.86}
+#bgshade{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,rgba(9,11,18,0) 30%,rgba(9,11,18,.76) 57%,#090b12 72%),linear-gradient(to right,#090b12 0%,#090b12 36%,rgba(9,11,18,.93) 43%,rgba(9,11,18,.42) 63%,rgba(9,11,18,.08) 100%);transition:opacity .5s ease}
+/* Details use the same split composition, but allow the art to reach lower behind episodes. */
+body.detail #bg,body.detail #bg2{left:34%;height:100%;background-position:center top}
+body.detail #bg.on,body.detail #bg2.on{opacity:.88}
+body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 52%,rgba(9,11,18,.7) 82%,#090b12 100%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.96) 31%,rgba(9,11,18,.45) 53%,rgba(9,11,18,.05) 100%)}
+
+/* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
+   available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same
+   vignette + smooth edges, so it reads as the cover art coming to life. */
+#topnav,#hero,#rowsClip,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc{transition:opacity .9s ease}
+body.idle #topnav,body.idle #hero,body.idle #rowsClip,body.idle #dWrap{opacity:.82}
+body.trailer #bg.on,body.trailer #bg2.on{opacity:0}
+/* trailer playing: everything on the upper half melts to near-nothing; only the title
+   cover-art/logo stays (~.78). Smooth .9s fades. */
+body.trailer #hero{opacity:1}
+body.trailer #topnav{opacity:.16}
+body.trailer #heroMeta,body.trailer #heroDesc{opacity:.1}
+body.trailer #heroTitle,body.trailer #heroLogo{opacity:.78}
+/* first row overlaps the trailer -> very low; the rows below it stay readable at .75 */
+body.trailer #rowsClip{opacity:1}
+body.trailer #rows .row{opacity:.75}
+body.trailer #rows .row:first-child{opacity:.14}
+body.trailer #dWrap{opacity:.14}

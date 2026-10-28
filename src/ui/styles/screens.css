@@ -1,0 +1,71 @@
+/* ---------- similar ---------- */
+#simWrap{position:absolute;top:58px;left:176px;right:0;bottom:0}
+#simTitle{font-size:44px;font-weight:800;margin-bottom:26px}
+#simClip{position:absolute;top:104px;left:-14px;right:0;bottom:0;overflow:hidden;padding-left:14px}
+#simGrid{padding:16px 0 0 14px;transition:transform .2s ease}
+#simGrid .card{margin-bottom:26px}
+
+/* ---------- idle trailer layer (top area only; #bgshade vignettes it into black) ---------- */
+#bgv{position:fixed;top:0;left:0;width:100%;height:74%;object-fit:cover;opacity:0;transition:opacity 1.2s ease}
+#bgv.on{opacity:1}
+
+/* ---------- discover ---------- */
+#discWrap{position:absolute;top:48px;left:176px;right:48px;bottom:0}
+#discTitle{font-size:52px;font-weight:800;margin-bottom:20px}
+#discFilters{white-space:nowrap;height:66px;overflow:visible;position:relative;z-index:12}
+.frow{display:inline-block;white-space:nowrap;margin-right:14px;position:relative;vertical-align:top}
+.fchip{display:inline-block;padding:13px 54px 13px 30px;margin-right:10px;border-radius:13px;font-size:25px;font-weight:600;background:rgba(255,255,255,.09);color:rgba(255,255,255,.82);position:relative}
+.fchip:after{content:"";position:absolute;right:23px;top:50%;margin-top:-3px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid currentColor;opacity:.72}
+.fchip.open:after{border-top:0;border-bottom:7px solid currentColor}
+.fchip.cur{background:rgba(140,92,255,.4);color:#fff}
+.fchip.f{background:#fff;color:#0c0b11}
+.fmenu{position:absolute;left:0;top:58px;min-width:270px;max-height:420px;overflow:hidden;padding:8px;background:rgba(15,13,29,.99);border:1px solid rgba(166,137,255,.26);border-radius:13px;box-shadow:0 14px 38px rgba(0,0,0,.58);z-index:20;box-sizing:border-box}
+.fopt{position:relative;padding:14px 40px 14px 18px;border-radius:9px;font-size:23px;color:rgba(255,255,255,.86)}
+.fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#8c5cff}
+.fopt.f{background:#fff;color:#0c0b11}
+#discGridClip{position:absolute;top:142px;left:-7px;right:0;bottom:0;overflow:hidden;padding:7px}
+#discGrid{transition:transform .2s ease}
+#discGrid .card{margin-bottom:24px}
+
+/* ---------- search ---------- */
+#sWrap{position:absolute;top:58px;left:176px;right:48px;bottom:0}
+#sBox{width:760px;padding:22px 32px;font-size:34px;border:0;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;outline:none;box-sizing:border-box}
+#sBox.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
+#sHint{margin-top:16px;font-size:25px;color:rgba(255,255,255,.58)}
+#sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
+#spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#bda6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spDesc{margin-top:9px;font-size:20px;line-height:1.35;color:rgba(255,255,255,.72);max-height:54px;overflow:hidden}
+#sRowsClip{position:absolute;top:156px;left:0;right:0;bottom:0;overflow:hidden}
+#sRows{position:absolute;top:0;left:-48px;right:0;padding-top:26px}
+
+/* ---------- settings / account ---------- */
+#setWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
+#setInner{transition:transform .2s ease}
+#setAcct{padding:20px 26px;border-radius:16px;background:rgba(255,255,255,.06);margin-bottom:26px;max-width:1100px}
+#setAcct .em{font-size:32px;font-weight:700}
+#setAcct .pl{margin-top:8px;font-size:24px;color:rgba(255,255,255,.6)}
+.set{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;max-width:1100px;padding:19px 26px;border-radius:14px;margin-bottom:8px;transition:background .12s ease}
+.set .lb{font-size:29px;font-weight:600;-webkit-flex:1;flex:1}
+.set .vl{font-size:26px;color:#c9b8ff;font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(140,92,255,.10)}
+.set.f{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 3px #fff}
+.set.editing{background:rgba(140,92,255,.24);box-shadow:inset 0 0 0 3px #a98fff}
+.set.editing .vl{background:#8c5cff;color:#fff}
+.set.act .vl{color:#ff9a9a}
+.sethint{margin:18px 0 0 26px;font-size:22px;color:rgba(255,255,255,.45)}
+.setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#a98fff;margin:30px 0 12px 26px}
+#setItems > .setgrp:first-child{margin-top:6px}
+
+/* ---------- addons ---------- */
+#aWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
+#aHead{height:112px;border-bottom:1px solid rgba(255,255,255,.10);position:relative;padding-right:260px;box-sizing:border-box}
+#aTitle{font-size:50px;font-weight:800;margin-bottom:8px}
+#aHelp{font-size:24px;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(140,92,255,.32)}
+#aSync.f{background:#fff;color:#0c0b11}
+#aClip{position:absolute;top:128px;left:0;right:0;bottom:0;overflow:hidden}
+#aInner{transition:transform .16s ease}
+.addon{max-width:1080px;padding:20px 25px;border-radius:13px;margin-bottom:9px;background:rgba(255,255,255,.045)}
+.addon .an{font-size:29px;font-weight:700}
+.addon .ai{font-size:21px;color:rgba(255,255,255,.5);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.addon.f{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 3px #fff}

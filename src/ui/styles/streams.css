@@ -1,0 +1,27 @@
+/* ---------- streams overlay ---------- */
+#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 30px;box-sizing:border-box}
+#streams h3{margin:0 0 8px;font-size:38px}
+#stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px}
+#stChips{white-space:nowrap;overflow:hidden;margin-bottom:8px}
+.stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
+.stchip.cur{background:rgba(140,92,255,.4);color:#fff}
+.stchip.f{background:#fff;color:#0c0b11}
+#stClip{position:absolute;top:224px;left:30px;right:30px;bottom:30px;overflow:hidden}
+#stInner{transition:transform .16s ease}
+.st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
+.st .a{font-size:29px;font-weight:700;color:#c9b8ff}
+.st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
+.st.f .a,.st.f .b{color:#fff}
+.st.f .compat{color:#fff}
+.st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.92);max-height:112px;overflow:hidden;white-space:normal;word-break:break-word}
+.st.f{background:#8c5cff}
+.stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.65)}
+.chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang{cursor:pointer}
+
+/* ---------- continue-watching long-press menu ---------- */
+#cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(16,14,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
+#cwmTitle{font-size:40px;font-weight:800;margin-bottom:8px;max-height:110px;overflow:hidden}
+#cwmSub{font-size:24px;color:rgba(255,255,255,.55);margin-bottom:34px}
+.cwmi{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:23px 30px;border-radius:12px;font-size:30px;font-weight:600;margin-bottom:10px;background:rgba(255,255,255,.05);transition:background .12s ease}
+.cwmi svg{width:34px;height:34px;margin-right:22px;-webkit-flex:none;flex:none;fill:currentColor;opacity:.92}
+.cwmi.f{background:#8c5cff}

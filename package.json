@@ -6,8 +6,8 @@
   "scripts": {
     "build:ui": "node ./scripts/build-ui.js",
     "lint": "eslint service scripts eslint.config.js",
-    "format": "prettier --write \"src/ui/**/*.js\" \"service/player/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
-    "format:check": "prettier --check \"src/ui/**/*.js\" \"service/player/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
+    "format": "prettier --write \"src/ui/**/*.js\" \"src/player/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
+    "format:check": "prettier --check \"src/ui/**/*.js\" \"src/player/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
     "runtime": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-runtime.ps1",
     "build": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7 -SkipPackage",
     "build:uj3-native": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7 -SkipPackage",

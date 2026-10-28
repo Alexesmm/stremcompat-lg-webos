@@ -1,5 +1,7 @@
 # Generated or vendored files
 service/beta-app.js
+service/player/player-client.js
+service/beta.html
 service/server.js
 service/bin/
 .build/

@@ -8,13 +8,11 @@
 html,body{width:100%;height:100%;overflow:hidden}
 body{margin:0;background:#090b12;color:#fff;font-family:Arial,sans-serif}
 .backdrop{position:fixed;inset:0;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 43%,rgba(102,62,202,.2),transparent 34%),#090b12}
-.shade{display:none}
 .stage{position:fixed;left:0;right:0;top:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;text-align:center}
 .brand{width:560px}
 .mark{width:94px;height:94px;margin:0 auto 22px;background:url(icon.png) center/contain no-repeat;animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.72}50%{opacity:1}}
 h1{font-size:38px;line-height:1;margin:0;font-weight:700;letter-spacing:.4px}
-.lead{display:none}
 .boot{margin:62px auto 0;width:420px}
 .status{font-size:20px;color:rgba(255,255,255,.76);margin-bottom:18px}
 .track{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
@@ -26,11 +24,10 @@ button{font-size:21px;font-weight:700;padding:16px 30px;color:#0b0910;background
 </style>
 </head>
 <body>
-<div class="backdrop"></div><div class="shade"></div>
+<div class="backdrop"></div>
 <div class="stage"><div class="brand">
   <div class="mark"></div>
   <h1>StremCompat</h1>
-  <div class="lead">Movies, series and all your addons in an experience built for the big screen.</div>
   <div class="boot">
     <div id="status" class="status">Starting the playback system…</div>
     <div class="track"><div id="fill" class="fill"></div></div>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Stremio</title>
+<style>
+/*@styles*/
+</style>
+</head>
+<body>
+<div id="bg"></div><div id="bg2"></div><div id="logobg"></div><div id="bgshade"></div>
+
+<div id="topnav">
+  <img id="brand" src="/logo.png">
+  <div class="chip" id="chipSearch"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navlabel">Search</span></div>
+  <div class="chip" id="chipHome"><svg viewBox="0 0 24 24"><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg><span class="navlabel">Home</span></div>
+  <div class="chip" id="chipDisc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M15.7 8.3l-2.2 5.2-5.2 2.2 2.2-5.2z"/></svg><span class="navlabel">Discover</span></div>
+  <div class="chip" id="chipLib"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 3h8M8 10h8"/></svg><span class="navlabel">Library</span></div>
+  <div class="chip" id="chipAddons"><svg viewBox="0 0 24 24"><path d="M4 4h6v3a2 2 0 104 0V4h6v6h-3a2 2 0 100 4h3v6h-6v-3a2 2 0 10-4 0v3H4v-6h3a2 2 0 100-4H4z"/></svg><span class="navlabel">Addons</span></div>
+  <div class="chip" id="chipSet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.4 1A7 7 0 0015 6.2L14.6 3h-5L9 6.2a7 7 0 00-1.5.9l-2.4-1-2 3.4L5.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.4-1a7 7 0 001.5.9l.6 3.2h5l.4-3.2a7 7 0 001.5-.9l2.4 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg><span class="navlabel">Settings</span></div>
+</div>
+
+<!-- Home and Library share the cinematic hero/rows layer. Discover has its own grid. -->
+<div class="scr" id="scrBoard">
+  <div id="hero"><img id="heroLogo"><div id="heroTitle"></div><div id="heroMeta"></div><div id="heroDesc"></div></div>
+  <div id="rowsClip"><div id="rows"></div></div>
+</div>
+
+<div class="scr" id="scrDisc">
+  <div id="discWrap">
+    <div id="discTitle">Discover</div>
+    <div id="discFilters"><div class="frow" id="discType"></div><div class="frow" id="discCatalog"></div><div class="frow" id="discGenre"></div></div>
+    <div id="discGridClip"><div id="discGrid"></div></div>
+  </div>
+</div>
+
+<div class="scr" id="scrDetail">
+  <div id="dWrap">
+    <img id="dPoster">
+    <img id="dLogo"><div id="dTitle"></div><div id="dMeta"></div><div id="dInfo"></div><div id="dDesc"></div>
+    <div id="dBtns"></div>
+    <div id="dSeasons"></div>
+    <div id="dEps"><div id="dEpsInner"></div></div>
+  </div>
+</div>
+
+<div class="scr" id="scrSearch">
+  <div id="sWrap">
+    <input id="sBox" placeholder="Search movies and series">
+    <div id="sHint">Press OK to type, then press Down to browse results</div>
+    <div id="sPreview"><div id="spTitle"></div><div id="spMeta"></div><div id="spDesc"></div></div>
+    <div id="sRowsClip"><div id="sRows"></div></div>
+  </div>
+</div>
+
+<div class="scr" id="scrSet">
+  <div id="setWrap"><div id="setInner">
+    <div id="setAcct"><div class="em"></div><div class="pl"></div></div>
+    <div id="setItems"></div>
+    <div class="sethint" id="setHint">Use Left/Right to change · changes apply immediately</div>
+  </div></div>
+</div>
+
+<div class="scr" id="scrAddons">
+  <div id="aWrap">
+    <div id="aHead"><div id="aTitle">Addons</div><div id="aHelp">Addons synchronized with your Stremio account</div><div id="aSync">Sync</div></div>
+    <div id="aClip"><div id="aInner"></div></div>
+  </div>
+</div>
+
+<div class="scr" id="scrLogin">
+  <div id="lgLang">Language: English&nbsp;&nbsp;‹ ›</div>
+  <div id="lgWrap"><div id="lgBox">
+    <div id="lgQr"><h2 id="lgQrTitle">Sign in with your phone</h2><div class="s" id="lgQrHelp">Scan the code with your camera</div><img id="lgQrImg"><div id="lgCode"></div><div id="lgStat">Generating code…</div></div>
+    <div id="lgForm"><h2 id="lgEmailTitle">Or use your email</h2>
+      <input class="lgin" id="lgEmail" placeholder="Email">
+      <input class="lgin" id="lgPass" placeholder="Password" type="password">
+      <div id="lgBtn">Sign in</div>
+      <div id="lgErr"></div>
+    </div>
+  </div></div>
+</div>
+
+<div class="scr" id="scrSim">
+  <div id="simWrap"><div id="simTitle"></div><div id="simClip"><div id="simGrid"></div></div></div>
+</div>
+
+<div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
+<div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
+<div id="episodeJump"><div id="ejBox"><div id="ejTitle"></div><div id="ejValue"></div><div id="ejKeys"></div><div id="ejHint"></div></div></div>
+<div id="toast"></div>
+<div id="boot"><div class="bootbox"><img class="lg" src="/logo.png"><div class="bt">StremCompat</div><div class="btrack"><div class="bfill"></div></div></div></div>
+
+<script>
+/* Kept separate from the application script: syntax/runtime failures in the main
+   bundle must still produce a readable error on old TV engines. */
+(function(){
+  window.__STREMIO_BOOT_DONE__=false;
+  window.__STREMIO_BOOT_FAILED__=false;
+  window.__STREMIO_BOOT_PHASE__='G0';
+  var phase=document.createElement('div');
+  phase.id='bootPhase';
+  phase.style.cssText='position:absolute;left:0;right:0;bottom:42px;text-align:center;color:#837d91;font:16px Arial,sans-serif;letter-spacing:1px';
+  phase.innerHTML='Starting G0';
+  document.getElementById('boot').appendChild(phase);
+  window.__STREMIO_PHASE__=function(code){
+    if(window.__STREMIO_BOOT_FAILED__)return;
+    window.__STREMIO_BOOT_PHASE__=String(code||'UNKNOWN');
+    var p=document.getElementById('bootPhase');if(p)p.innerHTML='Starting '+window.__STREMIO_BOOT_PHASE__;
+  };
+  window.__STREMIO_SCRIPT_LOADED__=function(){
+    if(window.__STREMIO_BOOT_PHASE__==='G0')window.__STREMIO_PHASE__('SCRIPT_LOADED_NO_ENTRY');
+  };
+  window.__STREMIO_BOOT_ERROR__=function(message,line){
+    window.__STREMIO_BOOT_FAILED__=true;
+    window.__STREMIO_BOOT_MESSAGE__=String(message||'Unknown startup error');
+    window.__STREMIO_BOOT_LINE__=String(line||'');
+    var b=document.getElementById('boot');if(!b)return;
+    b.style.background='#08070d';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
+    b.style.textAlign='center';b.style.paddingTop='28vh';b.style.boxSizing='border-box';
+    b.innerHTML='<div style="font-size:42px;font-weight:bold;margin-bottom:20px">Stremio could not finish loading</div>'+
+      '<div style="font-size:23px;color:#c8c4d5;margin:0 auto 26px;max-width:1100px">'+String(message||'Unknown startup error').replace(/</g,'&lt;')+'</div>'+
+      '<div style="font-size:17px;color:#8f899d">UJ3_BOOT '+(line||'')+' / '+window.__STREMIO_BOOT_PHASE__+' · press BACK, then open the app again</div>';
+  };
+  window.onerror=function(message,source,line){window.__STREMIO_BOOT_ERROR__(message,line);return false;};
+  setTimeout(function(){
+    if(!window.__STREMIO_BOOT_DONE__&&!window.__STREMIO_BOOT_FAILED__)window.__STREMIO_BOOT_ERROR__('Startup timed out before the home or login screen was ready.','T25');
+  },25000);
+})();
+</script>
+<!--@profile-->
+<script src="/beta-app.js?v=__APP_VERSION__" onload="window.__STREMIO_SCRIPT_LOADED__()" onerror="window.__STREMIO_BOOT_ERROR__('Application script could not be loaded or parsed.','SCRIPT_LOAD')"></script>
+</body>
+</html>

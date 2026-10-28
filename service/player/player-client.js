@@ -1,3 +1,4 @@
+// Player strings (en-US, pt-BR), chosen from the interface language.
 var PBR = false;
 try {
   PBR = localStorage.getItem('uiLanguage') === 'pt-BR';
@@ -106,6 +107,7 @@ var P = PBR
       extracting: 'extracting',
       language: 'language'
     };
+// Element references, XHR helper, loading artwork and the startup watchdog.
 var v = document.getElementById('v'),
   bar = document.getElementById('bar'),
   fill = document.getElementById('fill'),
@@ -204,6 +206,7 @@ v.addEventListener('loadedmetadata', mediaReady);
 v.addEventListener('playing', mediaReady);
 v.src = URL;
 armStartupWatch();
+// Resume, Continue Watching progress, account library sync and binge-to-next.
 // ---- resume + Continue Watching (shared with the interface via same-origin localStorage) ----
 // The interface keeps watch progress as lib_<first4 of user._id>_<id> items with state.timeOffset
 // (ms). We read it to resume and write it so Continue Watching updates after our bare player.
@@ -388,6 +391,7 @@ v.addEventListener('ended', function () {
     }, 600);
   }
 });
+// Subtitle and audio preferences, external and embedded subtitle tracks and the overlay.
 // ---- external subtitles (English first) ----
 var extSubs = [],
   cues = null,
@@ -664,6 +668,7 @@ function renderSub() {
     }
   }
 }
+// Control bar, buffering state, toasts, diagnostics and local service recovery.
 function updatePP() {
   var b = document.getElementById('b_pp');
   b.innerHTML = v.paused ? '<i class=ic-play></i>' : '<i class=ic-pause></i>';
@@ -958,6 +963,7 @@ function recoverPlayerRuntime() {
     true
   );
 })();
+// Accumulated seeking, exit and the Back history entry.
 // seeks accumulate while you keep pressing (+10, +20, ...) and only commit ~0.5s after
 // you stop, so the bar/knob glide to the target and we buffer once instead of every press.
 function fmtDelta(d) {
@@ -1085,6 +1091,7 @@ function goBack() {
     exit();
   }
 }
+// Settings menu: audio, subtitles, embedded tracks and subtitle style.
 // This TV delivers Back as a history pop. We keep ONE dummy entry: popstate closes the
 // menu/controls (re-pushing to stay), or exits when nothing is open.
 try {
@@ -1313,6 +1320,7 @@ function closeMenu() {
   paintBtns();
   showBar();
 }
+// Paused vignette: title and technical badges.
 // ---- paused vignette: title + tech badges (ffprobe via /probe, stream-name text as instant fallback) ----
 var pv = document.getElementById('pv');
 // title = the cover-art LOGO image when we have one (Netflix-style), else clean text; no S/E up here
@@ -1383,6 +1391,7 @@ v.addEventListener('play', function () {
   if (pvT) clearTimeout(pvT);
   pv.className = '';
 });
+// End-of-title popup: next episode or something similar.
 // ---- end-of-title popup (last 3 min): series -> next episode; movie -> "watch something similar" ----
 var SIMHREF =
   BACK.indexOf('beta') === 0 && TYPE && ID && !NEXTHREF
@@ -1451,6 +1460,7 @@ function checkNp() {
   }
 }
 v.addEventListener('timeupdate', checkNp);
+// Scrub previews and pointer input.
 // ---- scrub previews: /frame grabs one small jpeg at the seek target (debounced) ----
 // Centered Netflix-style preview: shimmer while a frame loads, keep the LAST frame instead of
 // flashing black, and only re-fetch per 10s bucket. spvi loads async; on load it reveals.
@@ -1599,6 +1609,7 @@ document.addEventListener('click', function (e) {
     e.preventDefault();
   }
 });
+// Remote key handling and the remote-debug hook.
 // ---- key handling ----
 document.addEventListener(
   'keydown',

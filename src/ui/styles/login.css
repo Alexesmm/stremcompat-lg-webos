@@ -1,0 +1,19 @@
+/* ---------- login ---------- */
+#lgWrap{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
+#lgLang{position:fixed;top:34px;right:42px;padding:12px 22px;border-radius:24px;font-size:22px;color:rgba(255,255,255,.78);background:rgba(255,255,255,.08);z-index:3}
+#lgLang.f{background:#fff;color:#0c0b11;font-weight:700}
+#lgBox{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+#lgQr{text-align:center;padding-right:90px;border-right:1px solid rgba(255,255,255,.14)}
+#lgQr h2{font-size:40px;margin:0 0 10px}
+#lgQr .s{font-size:24px;color:rgba(255,255,255,.6);margin-bottom:26px}
+#lgQrImg{width:300px;height:300px;background:#fff;border-radius:18px;padding:12px;box-sizing:border-box}
+#lgCode{font-size:46px;letter-spacing:9px;font-weight:800;margin-top:20px}
+#lgStat{margin:18px auto 0;min-height:30px;line-height:30px;font-size:22px;text-align:center;color:rgba(255,255,255,.6)}
+#lgStat.loading:after{content:"  ·  ·  ·";display:inline-block;margin-left:14px;color:#a98fff;letter-spacing:4px}
+#lgForm{padding-left:90px}
+#lgForm h2{font-size:40px;margin:0 0 22px}
+.lgin{display:block;width:520px;padding:18px 24px;margin-bottom:16px;font-size:28px;border:0;border-radius:12px;background:rgba(255,255,255,.10);color:#fff;outline:none}
+.lgin.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
+#lgBtn{display:inline-block;padding:16px 54px;border-radius:12px;font-size:29px;font-weight:700;background:rgba(255,255,255,.14)}
+#lgBtn.f{background:#fff;color:#0c0b11}
+#lgErr{margin-top:16px;font-size:23px;color:#ff9a9a;min-height:28px}

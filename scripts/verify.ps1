@@ -48,7 +48,7 @@ foreach ($script in 'tvserver.js', 'server.js') {
 }
 
 & node.exe (Join-Path $PSScriptRoot 'build-ui.js') --check
-if ($LASTEXITCODE -ne 0) { throw 'service/beta-app.js esta desatualizado em relacao a src/ui.' }
+if ($LASTEXITCODE -ne 0) { throw 'Arquivos gerados (beta-app.js, beta.html, player-client.js) estao desatualizados em relacao a src. Rode: npm run build:ui' }
 
 & node.exe (Join-Path $PSScriptRoot 'verify-frontend.js') (Join-Path $projectRoot 'service') chrome38
 if ($LASTEXITCODE -ne 0) { throw 'O shell nao e compativel com a sintaxe ES5 exigida pelo Chromium 38.' }

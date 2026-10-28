@@ -82,14 +82,15 @@ Changes that affect the webOS 3 interface must remain compatible with Chromium 3
 | `service/launch.js`, `service/profile.js` | System Node.js 0.12 (ES5) | Luna service that spawns the bundled Node 18 runtime; the profile loader is shared with the server. |
 | `service/tvserver.js` | Bundled Node 18 | Server bootstrap: starts the streaming server and the HTTP routes. |
 | `service/server/*.js` | Bundled Node 18 | Server modules: `routes.js` maps URLs to the bridges (`proxy`, `stream-refs`, `stremio-api`, `subtitles`, `youtube`, `media`, `images`, `ui-assets`, `player-page`). `embedded.js` receives the embedded copies at build time. |
-| `service/player/` | TV browser (ES5) | Bare player page: `player.css`, `player-body.html` (one rule or element per line) and `player-client.js`. |
+| `service/player/` | TV browser (ES5) | Bare player page: `player.css` and `player-body.html` (one rule or element per line) and the generated `player-client.js`. |
+| `src/player/*.js` | TV browser (ES5) | Player modules. `scripts/build-ui.js` concatenates them, in the order of `src/player/modules.json`, into `service/player/player-client.js`; `server/player-page.js` wraps it in an IIFE after the per-stream constants. |
 | `src/ui/**/*.js` | TV browser (ES5) | Interface modules. `scripts/build-ui.js` concatenates them, in the order of `src/ui/modules.json`, into one strict-mode IIFE: `service/beta-app.js`. |
-| `service/beta.html` | TV browser | Interface markup and styles. `tvserver.js` fills `__APP_VERSION__` and the `<!--@profile-->` marker when serving it. |
+| `src/ui/index.html`, `src/ui/styles/*.css` | TV browser | Interface markup and styles, one stylesheet per area in the order of `src/ui/styles/styles.json`. The build writes them to `service/beta.html`, where `tvserver.js` fills `__APP_VERSION__` and the `<!--@profile-->` marker when serving it. |
 | `profiles/*.json` | Build | One file per published package: identity, port, graphics mode and memory limits. The build writes it to `service/profile.json`. |
 
 Working rules:
 
-- Edit the interface in `src/ui`, then run `npm run build:ui`. Commit the regenerated `service/beta-app.js`; `npm run verify` fails when it is stale. The modules share one scope, so a new top-level name must not collide with an existing one.
+- Edit the interface in `src/ui` and the player in `src/player`, then run `npm run build:ui`. Commit the regenerated `service/beta-app.js`, `service/beta.html` and `service/player/player-client.js`; `npm run verify` fails when one of them is stale. The modules share one scope, so a new top-level name must not collide with an existing one.
 - Keep browser code ES5: `var`, function declarations only at the top of a file or function, no arrow functions, template literals, `let`/`const` or trailing commas in calls.
 - Run `npm run format` and `npm run lint` before committing. The lint reports undefined, unused and redeclared names, which is what usually breaks only on the television.
 - Profile values (port, identity, caps, backdrop limits) belong in `profiles/*.json`, never as literals in source.

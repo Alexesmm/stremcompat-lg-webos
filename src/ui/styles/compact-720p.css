@@ -1,0 +1,75 @@
+/* The 1280x720 package has fewer vertical pixels than the original 1080p layout.
+   Keep the same DOM and navigation logic, but size the shared cards and hero to the
+   actual application surface so a focused catalog card never sits below the viewport. */
+@media (max-height:800px){
+  #topnav{width:86px}
+  #brand{left:25px;top:20px;width:36px;height:36px}
+  .chip{width:50px;height:46px;margin:3px 0;border-radius:10px}
+  .chip svg{width:23px;height:23px}
+  .chip.f:before{left:-9px;top:13px;width:3px;height:20px}
+  #bg,#bg2{left:45%;height:66%}
+  body.detail #bg,body.detail #bg2{left:37%;height:100%}
+  #hero{top:38px;left:112px;width:39%}
+  #heroLogo{max-width:320px;max-height:88px}
+  #heroTitle{font-size:45px;max-height:94px}
+  #heroMeta{margin-top:9px;font-size:18px}
+  #heroDesc{margin-top:7px;font-size:17px;line-height:1.34;max-height:46px}
+  #rowsClip{top:258px;left:86px}
+  .row{padding:10px 0 22px 26px;transform:translateY(10px)}
+  .rowtitle{font-size:24px;margin:0 0 12px 3px}
+  .card{width:176px;height:264px;margin-right:16px;border-radius:9px}
+  .card img{border-radius:9px}
+  .card .nm{padding:10px;font-size:18px}
+  .titlelabel{padding:23px 10px 9px;font-size:17px}
+  .card.f{box-shadow:0 0 0 3px #fff,0 5px 15px rgba(0,0,0,.3) !important;transform:translateY(-4px) scale(1.025)}
+  .card.wide{width:287px;height:161px}
+  .pbar{height:6px}
+  .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}
+  .wbadge{top:8px;right:8px;width:31px;height:31px}
+  .wbadge svg{width:19px;height:19px}
+  #streams{top:70px;width:620px;padding:20px}
+  #streams h3{font-size:30px}
+  #stSub{font-size:20px;margin-bottom:10px}
+  .stchip{padding:9px 20px;margin-right:8px;font-size:19px}
+  #stClip{top:176px;left:20px;right:20px;bottom:18px}
+  .st{padding:14px 18px;margin-bottom:8px}
+  .st .a{font-size:22px}
+  .st .compat{margin-top:4px;font-size:16px}
+  .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
+  #dWrap{top:32px;left:112px;right:30px}
+  #dPoster{top:12px;width:220px;height:330px;border-radius:11px}
+  #dLogo{max-width:380px;max-height:112px}
+  #dTitle{font-size:52px;max-height:108px}
+  #dMeta{margin-top:10px;font-size:21px}
+  #dInfo{margin-top:10px;font-size:18px}.dlbl{width:128px;font-size:16px}
+  #dDesc{margin-top:8px;font-size:19px;line-height:1.35;max-height:78px}
+  #dBtns{margin-top:16px}.btn{padding:12px 30px;margin-right:12px;border-radius:9px;font-size:21px}
+  #dSeasons{margin-top:17px}.schip{padding:9px 21px;margin-right:9px;font-size:19px}
+  #simWrap,#discWrap,#sWrap,#setWrap,#aWrap{top:30px;left:112px;right:30px}
+  #discTitle{font-size:34px;margin-bottom:12px}
+  #discFilters{height:47px}
+  .frow{margin-right:8px}.fchip{padding:9px 38px 9px 18px;margin-right:7px;border-radius:9px;font-size:18px}.fchip:after{right:16px;border-left-width:5px;border-right-width:5px;border-top-width:6px}.fchip.open:after{border-top:0;border-bottom-width:6px}
+  .fmenu{top:42px;min-width:190px;max-height:300px;padding:6px;border-radius:9px}.fopt{padding:10px 31px 10px 13px;font-size:17px}.fopt.cur:after{right:13px;width:7px;height:7px;margin-top:-4px}
+  #discGridClip{top:92px}
+  #sBox{width:500px;padding:15px 21px;font-size:23px;border-radius:10px}
+  #sHint{margin-top:9px;font-size:17px}
+  #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
+  #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
+  #sRowsClip{top:110px}
+  #dEps{height:224px;margin-top:12px;padding:5px 5px 0}
+  .ep{width:287px;height:202px;margin-right:16px;border-radius:9px}
+  .ep .th{width:287px;height:161px;border-radius:8px}.ep .th img{border-radius:8px}
+  .ep .bd{padding:8px 10px}.ep .t{font-size:18px}.ep.f{box-shadow:0 0 0 3px #fff;transform:translateY(-3px)}
+  body.series-episode #dLogo{max-width:310px;max-height:76px}
+  body.series-episode #dTitle{font-size:38px}
+  body.series-episode #dMeta{margin-top:8px;font-size:20px}
+  body.series-episode #dDesc{margin-top:6px;max-height:48px;font-size:17px;line-height:1.35}
+  body.series-episode #dSeasons{margin-top:12px}
+  #aHead{height:78px;padding-right:175px}
+  #aTitle{font-size:36px;margin-bottom:6px}
+  #aHelp{font-size:18px}
+  #aSync{padding:10px 19px;font-size:18px;top:5px}
+  #aClip{top:90px}
+  .addon{padding:12px 17px;margin-bottom:6px}
+  .addon .an{font-size:21px}.addon .ai{font-size:16px}
+}

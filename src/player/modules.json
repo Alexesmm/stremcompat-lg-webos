@@ -1,0 +1,13 @@
+[
+  "strings.js",
+  "core.js",
+  "progress.js",
+  "subtitles.js",
+  "controls.js",
+  "seek.js",
+  "menus.js",
+  "paused.js",
+  "up-next.js",
+  "previews.js",
+  "keys.js"
+]
