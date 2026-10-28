@@ -11,15 +11,16 @@ var path = require('path');
 var net = require('net');
 var fs = require('fs');
 var spawn = require('child_process').spawn;
+var PROFILE = require('./profile').current;
 
 var DIR = __dirname;
 var LOADER = '/lib/ld-linux.so.3';
 var NODE = path.join(DIR, 'bin', 'node18');
 var LIB = path.join(DIR, 'bin', 'lib');
 var SUPERVISOR = path.join(DIR, 'tvserver.js');
-var APP_PORT = 8082;
-var APP_VERSION = '1.2.5';
-var service = new Service('io.strem.tv.server');
+var APP_PORT = PROFILE.port;
+var APP_VERSION = PROFILE.version;
+var service = new Service(PROFILE.serviceId);
 var spawned = false;
 
 function log(message) {
@@ -111,7 +112,7 @@ service.register('start', function (message) {
                 ready: ready,
                 version: APP_VERSION,
                 runtime: 'bundled-node18-armv7',
-                target: 'LG 50UM7500PSB / webOS 4.x'
+                target: PROFILE.targetLabel
             });
         });
     });

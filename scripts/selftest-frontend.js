@@ -4,6 +4,7 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var vm = require('vm');
+var sourceHas = require('./lib/source-check').sourceHas;
 
 var source = fs.readFileSync(path.join(__dirname, '..', 'service', 'beta-app.js'), 'utf8');
 
@@ -131,14 +132,14 @@ assert.ok(compacted.items.length <= 12, 'global source budget was exceeded');
 qualities.forEach(function (quality) {
   assert.ok(compacted.items.some(function (item) { return item.quality === quality; }), 'source sampling lost ' + quality);
 });
-assert.ok(source.indexOf("location.assign('/play?u='") < 0, 'beta player fallback leaked a source URL into browser history');
-assert.ok(source.indexOf('self.poll=setInterval') < 0, 'QR polling still allows overlapping interval requests');
-assert.ok(source.indexOf("if(this.type!=='series')this.addBtn(tx('watch')") >= 0, 'movie details do not expose an explicit Watch action');
-assert.ok(source.indexOf("$('dPoster')._detailId===this.id") >= 0, 'detail poster is not tied to the current title');
-assert.ok(source.indexOf('detail.meta===m&&detail.id===mediaId') >= 0, 'late detail artwork can overwrite the current title');
-assert.ok(source.indexOf('function queuePointerHover(target)') >= 0, 'Magic Remote hover navigation is not debounced');
-assert.ok(source.indexOf("def.k==='__reload'") >= 0, 'Settings recovery action is not wired');
-assert.ok(source.indexOf("$('bg2').style.backgroundImage='none'") >= 0, 'inactive backdrop texture is not released');
+assert.ok(!sourceHas(source, "location.assign('/play?u='"), 'beta player fallback leaked a source URL into browser history');
+assert.ok(!sourceHas(source, 'self.poll=setInterval'), 'QR polling still allows overlapping interval requests');
+assert.ok(sourceHas(source, "if(this.type!=='series')this.addBtn(tx('watch')"), 'movie details do not expose an explicit Watch action');
+assert.ok(sourceHas(source, "$('dPoster')._detailId===this.id"), 'detail poster is not tied to the current title');
+assert.ok(sourceHas(source, 'detail.meta===m&&detail.id===mediaId'), 'late detail artwork can overwrite the current title');
+assert.ok(sourceHas(source, 'function queuePointerHover(target)'), 'Magic Remote hover navigation is not debounced');
+assert.ok(sourceHas(source, "def.k==='__reload'"), 'Settings recovery action is not wired');
+assert.ok(sourceHas(source, "$('bg2').style.backgroundImage='none'"), 'inactive backdrop texture is not released');
 var episodeModel = firstRun.context.__STREMIO_EPISODE_MODEL__([
   { id:'show:2:2',season:2,episode:2,title:'Later' },
   { id:'show:0:1',season:0,episode:1,title:'Special' },
@@ -153,7 +154,7 @@ assert.strictEqual(episodeModel.linear[0]._stremAbsolute, 1, 'continuous numberi
 assert.strictEqual(episodeModel.linear[2]._stremAbsolute, 101, 'provider absolute episode number was not preserved');
 assert.strictEqual(firstRun.context.__STREMIO_EPISODE_INDEX__(episodeModel.linear,101),2,'overall episode lookup did not find the requested episode');
 assert.strictEqual(firstRun.context.__STREMIO_EPISODE_INDEX__(episodeModel.linear,999),-1,'overall episode lookup accepted a missing episode');
-assert.ok(source.indexOf('window.prompt(')<0,'episode jump still depends on an unsupported browser prompt');
+assert.ok(!sourceHas(source, 'window.prompt('),'episode jump still depends on an unsupported browser prompt');
 assert.strictEqual(typeof firstRun.context.__STREMIO_EPISODE_JUMP__,'object','in-app episode keypad is missing');
 firstRun.context.__STREMIO_EPISODE_JUMP__.show(12);
 firstRun.context.__STREMIO_EPISODE_JUMP__.press(6);

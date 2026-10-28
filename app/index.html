@@ -55,18 +55,18 @@ function openApp() {
     if (finished) return;
     finished = true;
     setProgress(100, 'Ready. Opening…');
-    setTimeout(function () { location.replace('http://127.0.0.1:8082/beta?v=1.2.5'); }, 250);
+    setTimeout(function () { location.replace('http://127.0.0.1:__APP_PORT__/beta?v=__APP_VERSION__'); }, 250);
 }
 
 function ping() {
     if (finished) return;
     try {
         var request = new XMLHttpRequest();
-        request.open('GET', 'http://127.0.0.1:8082/health?t=' + Date.now(), true);
+        request.open('GET', 'http://127.0.0.1:__APP_PORT__/health?t=' + Date.now(), true);
         request.timeout = 1500;
         request.onreadystatechange = function () {
             if (request.readyState === 4 && request.status === 200) {
-                try { var health = JSON.parse(request.responseText);if (health.version === '1.2.5') openApp(); } catch (ignore) {}
+                try { var health = JSON.parse(request.responseText);if (health.version === '__APP_VERSION__') openApp(); } catch (ignore) {}
             }
         };
         request.onerror = function () {};
@@ -76,7 +76,7 @@ function ping() {
 
     var elapsed = Date.now() - startedAt;
     if (elapsed > 90000) {
-        document.getElementById('status').innerHTML = 'The runtime did not respond. Restart the TV and reinstall version 1.2.5.';
+        document.getElementById('status').innerHTML = 'The runtime did not respond. Restart the TV and reinstall version __APP_VERSION__.';
         document.getElementById('hint').innerHTML = 'This package includes its own ARMv7 Node 18 runtime; this error does not mean that the wrong ARM edition was installed.';
         document.getElementById('error').style.display = 'block';
         return;
@@ -96,7 +96,7 @@ try {
             if (data.ready) openApp();
         } catch (ignore) {}
     };
-    bridge.call('luna://io.strem.tv.server/start', '{}');
+    bridge.call('luna://__SERVICE_ID__/start', '{}');
 } catch (ignore) {}
 
 ping();

@@ -9,8 +9,9 @@ if ($serviceInfo.name -ne 'io.strem.tv.server' -or $serviceInfo.version -ne $app
 
 $required = @(
     'app\index.html', 'app\icon.png', 'app\splash.png', 'app\services.json',
-    'service\launch.js', 'service\tvserver.js', 'service\beta.html', 'service\beta-app.js',
+    'service\launch.js', 'service\profile.js', 'service\tvserver.js', 'service\beta.html', 'service\beta-app.js',
     'service\server.js', 'service\services.json', 'service\stremio-logo.png',
+    'service\player\player.css', 'service\player\player-body.html', 'service\player\player-client.js',
     'service\bin\node18', 'service\bin\ffmpeg', 'service\bin\ffprobe',
     'service\bin\lib\libcrypto.so.3', 'service\bin\lib\libssl.so.3',
     'service\bin\lib\libstdc++.so.6', 'service\bin\lib\libuv.so.1'
@@ -36,35 +37,26 @@ foreach ($binary in 'node18', 'ffmpeg', 'ffprobe') {
     if ($machine -ne 40) { throw "$binary nao e ARM32 (e_machine=$machine)." }
 }
 
-& node.exe (Join-Path $PSScriptRoot 'verify-es5.js') (Join-Path $projectRoot 'service\launch.js')
-if ($LASTEXITCODE -ne 0) { throw 'O bootstrap nao e compativel com Node.js 0.12/ES5.' }
+foreach ($bootstrap in 'launch.js', 'profile.js') {
+    & node.exe (Join-Path $PSScriptRoot 'verify-es5.js') (Join-Path $projectRoot "service\$bootstrap")
+    if ($LASTEXITCODE -ne 0) { throw "$bootstrap nao e compativel com Node.js 0.12/ES5." }
+}
 
-& node.exe --check (Join-Path $projectRoot 'service\tvserver.js')
-if ($LASTEXITCODE -ne 0) { throw 'tvserver.js contem erro de sintaxe.' }
-& node.exe --check (Join-Path $projectRoot 'service\server.js')
-if ($LASTEXITCODE -ne 0) { throw 'server.js contem erro de sintaxe.' }
+foreach ($script in 'tvserver.js', 'server.js') {
+    & node.exe --check (Join-Path $projectRoot "service\$script")
+    if ($LASTEXITCODE -ne 0) { throw "$script contem erro de sintaxe." }
+}
+
+& node.exe (Join-Path $PSScriptRoot 'build-ui.js') --check
+if ($LASTEXITCODE -ne 0) { throw 'service/beta-app.js esta desatualizado em relacao a src/ui.' }
 
 & node.exe (Join-Path $PSScriptRoot 'verify-frontend.js') (Join-Path $projectRoot 'service') chrome38
 if ($LASTEXITCODE -ne 0) { throw 'O shell nao e compativel com a sintaxe ES5 exigida pelo Chromium 38.' }
 
-if ((Get-Content -LiteralPath (Join-Path $projectRoot 'service\tvserver.js') -Raw) -match 'io\.strem\.tv\.beta') {
-    throw 'tvserver.js ainda contem o ID beta antigo.'
-}
+& npx.cmd --no-install eslint service scripts eslint.config.js
+if ($LASTEXITCODE -ne 0) { throw 'ESLint encontrou nomes indefinidos, nao usados ou redeclarados.' }
 
-$launchSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\launch.js') -Raw
-$serverSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\tvserver.js') -Raw
-$shellSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\beta.html') -Raw
-$applicationSource = Get-Content -LiteralPath (Join-Path $projectRoot 'service\beta-app.js') -Raw
-$appSource = Get-Content -LiteralPath (Join-Path $projectRoot 'app\index.html') -Raw
-if ($launchSource -notmatch "APP_PORT = 8082" -or $serverSource -notmatch "PORT = 8082" -or $appSource -notmatch "127\.0\.0\.1:8082") { throw 'Porta local 8082 inconsistente.' }
-if ($serverSource -notmatch "APP_VERSION = '1\.2\.5'" -or $launchSource -notmatch "APP_VERSION = '1\.2\.5'") { throw 'Health/versionamento do runtime inconsistente.' }
-if ($appSource -notmatch '<html lang="en">' -or $appSource -notmatch 'beta\?v=1\.2\.5') { throw 'Bootstrap inicial em ingles ou versao do shell inconsistente.' }
-if ($serverSource -notmatch "p === '/streamref'" -or $serverSource -notmatch "p === '/addon'" -or $applicationSource -notmatch "postJson\('/streamref'") { throw 'Ponte segura de addons/player ausente.' }
-if ($applicationSource -notmatch 'rowReady:function' -or $applicationSource -notmatch 'findRow:function' -or $applicationSource -notmatch 'catalogRowsCap') { throw 'Navegacao tolerante a falhas de catalogo ausente.' }
-if ($applicationSource -notmatch 'streamCompatibility' -or $applicationSource -notmatch 'webkitvisibilitychange' -or $applicationSource -notmatch 'PalmServiceBridge') { throw 'Avisos de codec ou recuperacao do runtime ausentes.' }
-if ($applicationSource -notmatch 'function pointerUI' -or $applicationSource -notmatch "on\(document,'click'") { throw 'Suporte ao Magic Remote na interface ausente.' }
-if ($serverSource -notmatch 'player_resume_recovered' -or $serverSource -notmatch 'process\.memoryUsage' -or $serverSource -notmatch "dbg\('\[clientlog\]") { throw 'Diagnosticos ou recuperacao do player ausentes.' }
-if ($serverSource -notmatch 'MediaPlayPause' -or $serverSource -notmatch 'mode===\"seek\"' -or $serverSource -notmatch 'function audioName') { throw 'Controles ou indicadores ativos do player ausentes.' }
-if ($shellSource -notmatch '@media \(max-height:800px\)') { throw 'Layout compacto para a superficie 720p ausente.' }
+& node.exe (Join-Path $PSScriptRoot 'verify-source.js') $projectRoot
+if ($LASTEXITCODE -ne 0) { throw 'Recursos obrigatorios ausentes nas fontes.' }
 
 Write-Host 'OK: shell, manifests, bootstrap ES5, runtime Node 18 e binarios ARMv7 validados.'

@@ -1,0 +1,11 @@
+# Generated or vendored files
+service/beta-app.js
+service/server.js
+service/bin/
+.build/
+.cache/
+dist/
+node_modules/
+# Fragments that open and close the interface IIFE are not standalone programs
+src/ui/_prelude.js
+src/ui/_epilogue.js

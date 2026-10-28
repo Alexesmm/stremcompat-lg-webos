@@ -71,7 +71,7 @@ First choose UJ3 for webOS 3.x or UM4 for webOS 4.x. Then choose the graphics mo
 
 LG officially supports `1920x1080` and `1280x720` as web-application graphics resolutions and recommends separate packages where both modes are needed. See [LG Supported App Resolution](https://webostv.developer.lge.com/develop/specifications/app-resolution) and the [`appinfo.json` resolution reference](https://webostv.developer.lge.com/develop/references/appinfo-json).
 
-The older `uj3-armv7` 0.9.3 profile is retained only as development history. It was replaced by `uj3-native-armv7` and is not a recommended release.
+The older `uj3-armv7` 0.9.3 profile is retained only as development history in `profiles/archive/`. It was replaced by `uj3-native-armv7` and is not a recommended release.
 
 Do not use these packages on ARM64-only televisions or webOS 1.x/2.x. Televisions using webOS 5 or newer should normally use the official Stremio application when it is available.
 

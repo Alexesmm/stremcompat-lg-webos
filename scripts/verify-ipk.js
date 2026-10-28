@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var zlib = require('zlib');
+var sourceHas = require('./lib/source-check').sourceHas;
 
 var file = process.argv[2];
 var profileFile = process.argv[3];
@@ -60,24 +61,46 @@ if (JSON.parse(serviceInfo.data.toString('utf8')).version !== profile.version) t
   if (!entry) throw new Error(name + ' ausente no IPK.');
   if ((entry.mode & 73) !== 73) throw new Error(name + ' nao esta executavel: ' + entry.mode.toString(8));
 });
-['launch.js', 'tvserver.js', 'beta.html', 'beta-app.js'].forEach(function (name) {
-  if (!find(entries, new RegExp('/' + name.replace('.', '\\.') + '$'))) throw new Error(name + ' ausente no IPK.');
-});
-var packedLaunch = find(entries, /\/launch\.js$/).data.toString('utf8');
-var packedServer = find(entries, /\/tvserver\.js$/).data.toString('utf8');
-var packedShell = find(entries, /\/beta\.html$/).data.toString('utf8');
-var packedApplication = find(entries, /\/beta-app\.js$/).data.toString('utf8');
-if (packedLaunch.indexOf('APP_PORT = ' + profile.port) < 0 || packedServer.indexOf('PORT = ' + profile.port) < 0) throw new Error('Porta do perfil ausente no IPK.');
-if (packedServer.indexOf("p === '/streamref'") < 0 || packedServer.indexOf('rewriteHls') < 0) throw new Error('Proxy seguro/HLS ausente no IPK.');
-if (packedApplication.indexOf("postJson('/streamref'") < 0 || packedApplication.indexOf('compact:function()') < 0) throw new Error('Shell otimizado ausente no IPK.');
-if (packedApplication.indexOf('function viewportWidth()') < 0 || packedApplication.indexOf('function contentWidth()') < 0 || packedApplication.indexOf('Math.floor(contentWidth()/w)') < 0) throw new Error('Layout responsivo ausente no IPK.');
-if (packedApplication.indexOf("'/stremioapi?path='") < 0 || packedServer.indexOf("p === '/stremioapi'") < 0 || packedServer.indexOf("'/api/login': true") < 0) throw new Error('Bridge de conta Stremio ausente no IPK.');
-if (packedServer.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || packedServer.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Assets incorporados nao foram gerados.');
+var REQUIRED = [
+  'launch.js', 'profile.js', 'profile.json', 'tvserver.js', 'beta.html', 'beta-app.js',
+  'server/routes.js', 'server/embedded.js', 'server/proxy.js', 'server/config.js',
+  'player/player.css', 'player/player-body.html', 'player/player-client.js'
+];
+function serviceFile(rel) {
+  var entry = find(entries, new RegExp('/services/' + profile.serviceId.replace(/\./g, '\\.') + '/' + rel.replace(/[.\/]/g, '\\$&') + '$'));
+  if (!entry) throw new Error(rel + ' ausente no IPK.');
+  return entry.data.toString('utf8');
+}
+REQUIRED.forEach(serviceFile);
+
+var packedProfile = JSON.parse(serviceFile('profile.json'));
+if (packedProfile.port !== profile.port || packedProfile.version !== profile.version || packedProfile.serviceId !== profile.serviceId) throw new Error('Perfil empacotado difere do perfil do build.');
+var packedServer = entries.filter(function (e) { return /\/server\/[^\/]+\.js$/.test(e.name); })
+  .map(function (e) { return e.data.toString('utf8'); }).join('\n');
+var packedEmbedded = serviceFile('server/embedded.js');
+var packedShell = serviceFile('beta.html');
+var packedApplication = serviceFile('beta-app.js');
+[
+  [packedServer, "p === '/streamref'", 'Proxy seguro ausente no IPK.'],
+  [packedServer, 'rewriteHls', 'Reescrita HLS ausente no IPK.'],
+  [packedServer, "p === '/stremioapi'", 'Bridge de conta Stremio ausente no IPK.'],
+  [packedServer, "'/api/login': true", 'Bridge de conta Stremio ausente no IPK.'],
+  [packedApplication, "postJson('/streamref'", 'Shell otimizado ausente no IPK.'],
+  [packedApplication, 'compact:function()', 'Shell otimizado ausente no IPK.'],
+  [packedApplication, 'function viewportWidth()', 'Layout responsivo ausente no IPK.'],
+  [packedApplication, 'Math.floor(contentWidth()/w)', 'Layout responsivo ausente no IPK.'],
+  [packedApplication, "'/stremioapi?path='", 'Bridge de conta Stremio ausente no IPK.']
+].forEach(function (check) { if (!sourceHas(check[0], check[1])) throw new Error(check[2]); });
+if (/__EMBEDDED_[A-Z_]+_B64__/.test(packedEmbedded)) throw new Error('Assets incorporados nao foram gerados.');
 function embedded(name) {
-  var match = packedServer.match(new RegExp("var " + name + " = '([^']+)'"));
+  var match = packedEmbedded.match(new RegExp("var " + name + " = '([^']+)'"));
   if (!match) throw new Error('Asset incorporado ausente: ' + name);
   return Buffer.from(match[1], 'base64').toString('utf8');
 }
 if (embedded('EMBEDDED_BETA_HTML_B64') !== packedShell || embedded('EMBEDDED_BETA_APP_B64') !== packedApplication) throw new Error('Assets incorporados diferem dos arquivos empacotados.');
+var packedPlayer = JSON.parse(embedded('EMBEDDED_PLAYER_B64'));
+['player.css', 'player-body.html', 'player-client.js'].forEach(function (name) {
+  if (packedPlayer[name] !== serviceFile('player/' + name)) throw new Error('Player incorporado difere do empacotado: ' + name);
+});
 
 console.log('OK: IPK ' + profile.profile + ' ' + profile.version + ', manifests, shell, servidor e executaveis ARM presentes.');

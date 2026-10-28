@@ -4,15 +4,17 @@
   "private": true,
   "description": "Stremio community compatibility ports for legacy LG webOS 3.x and 4.x televisions",
   "scripts": {
+    "build:ui": "node ./scripts/build-ui.js",
+    "lint": "eslint service scripts eslint.config.js",
+    "format": "prettier --write \"src/ui/**/*.js\" \"service/player/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
+    "format:check": "prettier --check \"src/ui/**/*.js\" \"service/player/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
     "runtime": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-runtime.ps1",
     "build": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7 -SkipPackage",
-    "build:uj3": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-armv7 -SkipPackage",
     "build:uj3-native": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7 -SkipPackage",
     "build:um4-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7-hd -SkipPackage",
     "build:uj3-native-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7-hd -SkipPackage",
     "package": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7",
     "package:um4": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7",
-    "package:uj3": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-armv7",
     "package:uj3-native": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7",
     "package:um4-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7-hd",
     "package:uj3-native-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7-hd",
@@ -25,6 +27,9 @@
   "devDependencies": {
     "@webos-tools/cli": "3.2.6",
     "acorn": "8.15.0",
-    "esbuild": "0.25.10"
+    "esbuild": "0.25.10",
+    "eslint": "9.12.0",
+    "globals": "15.11.0",
+    "prettier": "3.3.3"
   }
 }

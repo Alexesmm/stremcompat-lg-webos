@@ -6,10 +6,12 @@ var fs = require('fs');
 var http = require('http');
 var os = require('os');
 var path = require('path');
+var sourceHas = require('./lib/source-check').sourceHas;
 
 var root = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(__dirname, '..');
-var appPort = parseInt(process.argv[3], 10) || 8082;
-var appVersion = process.argv[4] || '1.2.5';
+var profile = require(path.join(root, 'service', 'profile.js')).current;
+var appPort = parseInt(process.argv[3], 10) || profile.port;
+var appVersion = process.argv[4] || profile.version;
 var forceEmbedded = process.argv[5] === 'embedded';
 var childLogGlobal = '';
 
@@ -75,14 +77,22 @@ async function main() {
     assert.ok(persistedLog.indexOf('"compat":"AV1"') >= 0, 'codec hint was not persisted');
     assert.ok(persistedLog.indexOf('secret') < 0, 'unapproved diagnostic field was persisted');
 
+    var rootPage = await request({ hostname: '127.0.0.1', port: appPort, path: '/' });
+    assert.strictEqual(rootPage.status, 302);
+    assert.strictEqual(rootPage.headers.location, '/beta?v=' + appVersion, 'root does not open the television interface');
+    var unknown = await request({ hostname: '127.0.0.1', port: appPort, path: '/shell-v4.4/unknown.js' });
+    assert.strictEqual(unknown.status, 404, 'unknown routes must not be forwarded upstream');
+
     var shell = await request({ hostname: '127.0.0.1', port: appPort, path: '/beta?v=' + appVersion });
     assert.strictEqual(shell.status, 200);
     assert.ok(shell.text.indexOf('/beta-app.js?v=' + appVersion) >= 0);
+    assert.ok(shell.text.indexOf('__APP_VERSION__') < 0 && shell.text.indexOf('<!--@profile-->') < 0, 'interface template markers were not rendered');
+    assert.ok(shell.text.indexOf('window.__STREMIO_PROFILE__=') >= 0 && shell.text.indexOf('"id":"' + profile.profile + '"') >= 0, 'interface profile was not injected');
     var application = await request({ hostname: '127.0.0.1', port: appPort, path: '/beta-app.js?v=' + appVersion });
     assert.strictEqual(application.status, 200);
     assert.ok(/^application\/javascript/.test(application.headers['content-type'] || ''));
-    assert.ok(application.text.indexOf("window.__STREMIO_PHASE__('M0')") >= 0);
-    assert.ok(application.text.indexOf("'/stremioapi?path='") >= 0);
+    assert.ok(sourceHas(application.text, "window.__STREMIO_PHASE__('M0')"));
+    assert.ok(sourceHas(application.text, "'/stremioapi?path='"));
 
     var blockedApiPayload = JSON.stringify({ test: true });
     var blockedApi = await request({ hostname: '127.0.0.1', port: appPort, path: '/stremioapi?path=' + encodeURIComponent('/api/notAllowed'), method: 'POST', headers: {
@@ -106,18 +116,18 @@ async function main() {
 
     var player = await request({ hostname: '127.0.0.1', port: appPort, path: '/play?ref=' + ref + '&back=beta' });
     assert.strictEqual(player.status, 200);
-    assert.ok(player.text.indexOf('COMPAT="DTS"') >= 0, 'player did not receive the sanitized compatibility hint');
-    assert.ok(player.text.indexOf('webkitvisibilitychange') >= 0, 'player lifecycle recovery is missing');
-    assert.ok(player.text.indexOf('PalmServiceBridge') >= 0, 'player runtime restart bridge is missing');
-    assert.ok(player.text.indexOf('MediaPlayPause') >= 0 && player.text.indexOf('mode==="seek"') >= 0, 'player media keys or focus zones are missing');
-    assert.ok(player.text.indexOf('function audioName') >= 0 && player.text.indexOf('function subtitleName') >= 0, 'active track labels are missing');
-    assert.ok(player.text.indexOf('document.addEventListener("click"') >= 0, 'Magic Remote player clicks are missing');
-    assert.ok(player.text.indexOf('</script><script>globalThis.__injected') < 0, 'external player text escaped the script context');
-    assert.ok(player.text.indexOf('\\u003c/script\\u003e') >= 0, 'external player text was not encoded safely');
-    assert.ok(player.text.indexOf('function dismissNp') >= 0 && player.text.indexOf('rem<=180') >= 0, 'early compact dismissible next-title prompt is missing');
-    assert.ok(player.text.indexOf('rememberNextSource') >= 0 && player.text.indexOf('tvnextpref_') >= 0, 'next-episode source preference handoff is missing');
-    assert.ok(player.text.indexOf('media_start_retry') >= 0 && player.text.indexOf('armStartupWatch') >= 0, 'single source startup recovery is missing');
-    assert.ok(player.text.indexOf('SEEN=') >= 0 && player.text.indexOf('SEPT=') >= 0, 'localized episode line is missing');
+    assert.ok(sourceHas(player.text, 'COMPAT="DTS"'), 'player did not receive the sanitized compatibility hint');
+    assert.ok(sourceHas(player.text, 'webkitvisibilitychange'), 'player lifecycle recovery is missing');
+    assert.ok(sourceHas(player.text, 'PalmServiceBridge'), 'player runtime restart bridge is missing');
+    assert.ok(sourceHas(player.text, 'MediaPlayPause') && sourceHas(player.text, 'mode==="seek"'), 'player media keys or focus zones are missing');
+    assert.ok(sourceHas(player.text, 'function audioName') && sourceHas(player.text, 'function subtitleName'), 'active track labels are missing');
+    assert.ok(sourceHas(player.text, 'document.addEventListener("click"'), 'Magic Remote player clicks are missing');
+    assert.ok(!sourceHas(player.text, '</script><script>globalThis.__injected'), 'external player text escaped the script context');
+    assert.ok(sourceHas(player.text, '\\u003c/script\\u003e'), 'external player text was not encoded safely');
+    assert.ok(sourceHas(player.text, 'function dismissNp') && sourceHas(player.text, 'rem<=180'), 'early compact dismissible next-title prompt is missing');
+    assert.ok(sourceHas(player.text, 'rememberNextSource') && sourceHas(player.text, 'tvnextpref_'), 'next-episode source preference handoff is missing');
+    assert.ok(sourceHas(player.text, 'media_start_retry') && sourceHas(player.text, 'armStartupWatch'), 'single source startup recovery is missing');
+    assert.ok(sourceHas(player.text, 'SEEN=') && sourceHas(player.text, 'SEPT='), 'localized episode line is missing');
 
     var proxied = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + ref, headers: { Range: 'bytes=0-99' } });
     var echoed = JSON.parse(proxied.text);

@@ -59,6 +59,8 @@ function validateLegacyFunctionPlacement(name, ast) {
 });
 
 validate('beta-app.js', fs.readFileSync(path.resolve(root, 'beta-app.js'), 'utf8'));
+// The player client runs inside the IIFE that tvserver.js wraps around it.
+validate('player/player-client.js', '(function(){var URL;' + fs.readFileSync(path.resolve(root, 'player', 'player-client.js'), 'utf8') + '\n})();');
 
 if (failed) process.exit(1);
 console.log('OK: shell validado no nivel de sintaxe do ' + target + '.');

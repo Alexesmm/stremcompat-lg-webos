@@ -1,0 +1,359 @@
+// Settings and account screen.
+/* ================= SETTINGS + ACCOUNT ================= */
+function mediaLanguageOptions() {
+  return [
+    ['', tx('disabled')],
+    ['por', tx('portugueseBrazil')],
+    ['eng', tx('english')],
+    ['spa', tx('spanish')],
+    ['fre', tx('french')],
+    ['ita', tx('italian')],
+    ['ger', tx('german')],
+    ['ara', tx('arabic')],
+    ['rus', tx('russian')],
+    ['tur', tx('turkish')],
+    ['pol', tx('polish')],
+    ['dut', tx('dutch')],
+    ['swe', tx('swedish')],
+    ['heb', tx('hebrew')],
+    ['hin', tx('hindi')],
+    ['jpn', tx('japanese')],
+    ['kor', tx('korean')],
+    ['chi', tx('chinese')]
+  ];
+}
+var settings = {
+  idx: 0,
+  els: [],
+  defs: [],
+  editing: false,
+  editOriginal: null,
+  enter: function (preserveEdit) {
+    if (!preserveEdit) {
+      this.editing = false;
+      this.editOriginal = null;
+    }
+    var u = user() || {};
+    $('setAcct').getElementsByClassName('em')[0].textContent = u.email || tx('connectedAccount');
+    var prem = tx('freeAccount');
+    if (u.premium_expire && String(u.premium_expire).indexOf('000') !== 0) {
+      var d = new Date(u.premium_expire);
+      if (d.getTime() > Date.now()) prem = tx('premiumUntil', d.toLocaleDateString());
+    }
+    $('setAcct').getElementsByClassName('pl')[0].textContent = prem;
+    var langOpts = mediaLanguageOptions(),
+      audioOpts = langOpts.slice(1);
+    this.defs = [
+      { head: tx('interfaceGroup') },
+      {
+        k: UI_LANG_KEY,
+        lb: tx('interfaceLanguage'),
+        opts: [
+          ['en-US', tx('english')],
+          ['pt-BR', tx('portugueseBrazil')]
+        ],
+        d: 'en-US'
+      },
+      { head: tx('maintenanceGroup') },
+      { k: '__reload', lb: tx('reloadApp'), action: true },
+      { head: tx('sourceGroup') },
+      {
+        k: 'preferredSourceQuality',
+        lb: tx('preferredQuality'),
+        opts: [
+          ['Auto', tx('automatic')],
+          ['4K', '4K'],
+          ['1080p', '1080p'],
+          ['720p', '720p'],
+          ['SD', 'SD']
+        ],
+        d: 'Auto'
+      },
+      { head: tx('subtitlesGroup') },
+      {
+        k: 'subtitleSize',
+        lb: tx('subtitleSize'),
+        opts: [
+          ['0', '72%'],
+          ['1', '80%'],
+          ['2', '100%'],
+          ['3', '120%'],
+          ['4', '140%'],
+          ['5', '160%'],
+          ['6', '180%']
+        ],
+        d: '2'
+      },
+      { k: 'subsLang', lb: tx('defaultLanguage'), opts: langOpts, d: 'por' },
+      {
+        k: 'subsColor',
+        lb: tx('subtitleColor'),
+        opts: [
+          ['#ffffff', tx('white')],
+          ['#ffe600', tx('yellow')],
+          ['#00e5ff', tx('cyan')]
+        ],
+        d: '#ffffff'
+      },
+      {
+        k: 'subsOutlineColor',
+        lb: tx('subtitleOutline'),
+        opts: [
+          ['#000000', tx('black')],
+          ['#ffffff', tx('white')]
+        ],
+        d: '#000000'
+      },
+      {
+        k: 'subsBgStyle',
+        lb: tx('subtitleBackground'),
+        opts: [
+          ['0', tx('none')],
+          ['1', tx('solid')],
+          ['.6', tx('transparent')]
+        ],
+        d: '0'
+      },
+      {
+        k: 'embSubsMode',
+        lb: tx('embeddedSubtitles'),
+        opts: [
+          ['server', tx('extractRecommended')],
+          ['native', tx('tvNative')]
+        ],
+        d: 'server'
+      },
+      { head: tx('audioGroup') },
+      {
+        k: 'enableDefaultAudioTrack',
+        lb: tx('autoAudio'),
+        opts: [
+          ['true', tx('enabled')],
+          ['false', tx('disabled')]
+        ],
+        d: 'false'
+      },
+      { k: 'defaultAudioTrack', lb: tx('defaultAudio'), opts: audioOpts, d: 'por' },
+      { head: tx('playbackGroup') },
+      {
+        k: 'seekStep',
+        lb: tx('seekInterval'),
+        opts: [
+          ['5', '5s'],
+          ['10', '10s'],
+          ['15', '15s'],
+          ['20', '20s'],
+          ['30', '30s']
+        ],
+        d: '10'
+      },
+      {
+        k: 'bingeWatch',
+        lb: tx('nextEpisode'),
+        opts: [
+          ['true', tx('enabled')],
+          ['false', tx('disabled')]
+        ],
+        d: 'true'
+      },
+      {
+        k: 'bgTrailer',
+        lb: tx('backgroundTrailers'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: 'false'
+      },
+      {
+        k: 'scrubPreview',
+        lb: tx('scrubPreview'),
+        opts: [
+          ['true', tx('enabled')],
+          ['false', tx('disabled')]
+        ],
+        d: 'false'
+      },
+      { head: tx('addonsGroup') },
+      { k: '__sync', lb: tx('syncAddons'), action: true },
+      { head: tx('accountGroup') },
+      { k: '__logout', lb: tx('signOut'), action: true }
+    ];
+    var host = $('setItems');
+    host.innerHTML = '';
+    this.els = [];
+    this.fdefs = [];
+    this.idx = 0;
+    for (var i = 0; i < this.defs.length; i++) {
+      var def = this.defs[i];
+      if (def.head) {
+        var hd = document.createElement('div');
+        hd.className = 'setgrp';
+        hd.textContent = def.head;
+        host.appendChild(hd);
+        continue;
+      }
+      var d = document.createElement('div');
+      d.className = 'set' + (def.action ? ' act' : '');
+      var l = document.createElement('div');
+      l.className = 'lb';
+      l.textContent = def.lb;
+      d.appendChild(l);
+      var v = document.createElement('div');
+      v.className = 'vl';
+      v.textContent = def.action ? '' : this.valLabel(def);
+      d.appendChild(v);
+      host.appendChild(d);
+      this.els.push(d);
+      this.fdefs.push(def);
+    }
+    this.paint();
+    animIn($('setWrap'));
+  },
+  syncNow: function () {
+    toast(tx('syncing'));
+    pullLib(function () {
+      invalidateBoards();
+    });
+    syncAddons(function (changed) {
+      toast(changed ? tx('addonsUpdated') : tx('addonsCurrent'));
+      if (changed) buildHomeRows(true);
+    });
+  },
+  reloadNow: function () {
+    manualRecover();
+  },
+  valLabel: function (def) {
+    var cur = lsRaw(def.k, def.d);
+    for (var i = 0; i < def.opts.length; i++) if (def.opts[i][0] === cur) return def.opts[i][1] + '  ›';
+    return def.opts[0][1] + '  ›';
+  },
+  cycle: function (def, dir) {
+    var cur = lsRaw(def.k, def.d),
+      ci = 0;
+    for (var i = 0; i < def.opts.length; i++) if (def.opts[i][0] === cur) ci = i;
+    ci = (ci + dir + def.opts.length) % def.opts.length;
+    lsRawSet(def.k, def.opts[ci][0]);
+    if (def.k === UI_LANG_KEY) {
+      var keep = this.idx;
+      setUILanguage(def.opts[ci][0]);
+      this.enter(true);
+      this.idx = Math.min(keep, this.els.length - 1);
+      this.paint();
+      return true;
+    }
+    if (def.k === 'bingeWatch') lsRawSet('enableNextVideo', def.opts[ci][0]);
+    return false;
+  },
+  startEdit: function () {
+    var def = this.fdefs[this.idx];
+    if (!def || def.action) return;
+    this.editing = true;
+    this.editOriginal = { k: def.k, v: lsRaw(def.k, def.d) };
+    this.paint();
+  },
+  finishEdit: function () {
+    this.editing = false;
+    this.editOriginal = null;
+    this.paint();
+  },
+  cancelEdit: function () {
+    if (!this.editing) return;
+    var old = this.editOriginal,
+      idx = this.idx;
+    this.editing = false;
+    this.editOriginal = null;
+    if (old) {
+      lsRawSet(old.k, old.v);
+      if (old.k === UI_LANG_KEY) {
+        setUILanguage(old.v);
+        this.enter();
+        this.idx = Math.min(idx, this.els.length - 1);
+      }
+    }
+    this.paint();
+  },
+  logout: function () {
+    var ak = authKey();
+    toast(tx('signingOut'));
+    postJson(API + '/api/logout', { authKey: ak }, function () {}, 4000);
+    var kill = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (
+        k === 'authKey' ||
+        k === 'user' ||
+        k === 'addons' ||
+        k === 'addonsLastModified' ||
+        k === 'blib_migrated' ||
+        k.indexOf('lib_') === 0 ||
+        k.indexOf('blib_') === 0 ||
+        k.indexOf('subs_') === 0 ||
+        k.indexOf('tvstream_') === 0 ||
+        k.indexOf('beta_') === 0
+      )
+        kill.push(k);
+    }
+    for (var j = 0; j < kill.length; j++) {
+      try {
+        localStorage.removeItem(kill[j]);
+      } catch (e) {}
+    }
+    setTimeout(function () {
+      location.reload();
+    }, 400);
+  },
+  focusTop: function () {
+    this.editing = false;
+    this.editOriginal = null;
+    this.idx = 0;
+    this.paint();
+  },
+  paint: function () {
+    setF(this.els, topNav.active ? -1 : this.idx);
+    for (var c = 0; c < this.els.length; c++)
+      this.els[c].className =
+        this.els[c].className.replace(/ ?\bediting\b/, '') +
+        (this.editing && c === this.idx ? ' editing' : '');
+    if ($('setHint')) $('setHint').textContent = tx(this.editing ? 'settingsEditing' : 'settingsHint');
+    var el = this.els[this.idx],
+      y = 0;
+    if (el && el.offsetTop > 620) y = el.offsetTop - 620;
+    $('setInner').style.transform = 'translateY(-' + y + 'px)';
+    $('setInner').style.webkitTransform = 'translateY(-' + y + 'px)';
+  },
+  key: function (k) {
+    var def = this.fdefs[this.idx];
+    if (this.editing) {
+      if ((k === 37 || k === 39) && def && !def.action) {
+        var changed = this.cycle(def, k === 39 ? 1 : -1);
+        if (!changed && this.els[this.idx])
+          this.els[this.idx].getElementsByClassName('vl')[0].textContent = this.valLabel(def);
+      } else if (k === 13) this.finishEdit();
+      this.paint();
+      return true;
+    }
+    if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
+    else if (k === 38) {
+      if (this.idx > 0) this.idx--;
+      else {
+        topNav.focus();
+        return true;
+      }
+    } else if (k === 37) {
+      topNav.focus();
+      return true;
+    } else if (k === 13 && def) {
+      if (def.action) {
+        if (def.k === '__sync') this.syncNow();
+        else if (def.k === '__reload') this.reloadNow();
+        else if (def.k === '__logout') this.logout();
+        return true;
+      }
+      this.startEdit();
+      return true;
+    }
+    this.paint();
+    return true;
+  }
+};

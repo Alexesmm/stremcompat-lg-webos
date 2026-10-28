@@ -1,0 +1,224 @@
+// Board engine shared by Home and Library: hero plus horizontally scrolling rows.
+/* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
+function makeBoard(loader) {
+  return {
+    rows: [],
+    rowIdx: 0,
+    built: false,
+    heroT: null,
+    loader: loader,
+    enter: function () {
+      var fresh = !this.built;
+      if (fresh) {
+        this.built = true;
+        this.loader(this, false);
+      }
+      this.mount();
+      if (home !== this) unloadBoard(home);
+      if (disc !== this) unloadBoard(disc);
+      if (lib !== this) unloadBoard(lib);
+      this._act = null;
+      if (!fresh) this.reveal();
+      this.paint(true);
+      this.hero();
+    },
+    rebuild: function () {
+      this.built = true;
+      this.loader(this, true);
+      this.mount();
+      this._act = null;
+      if (curBoard() === this) {
+        this.paint(true);
+        this.hero();
+      }
+    },
+    mount: function () {
+      var host = $('rows');
+      host.innerHTML = '';
+      for (var i = 0; i < this.rows.length; i++) host.appendChild(this.rows[i].el);
+    },
+    /* replay the staggered entrance every time the board is (re)shown, not just first build */
+    reveal: function () {
+      var rows = this.rows,
+        i;
+      for (i = 0; i < rows.length; i++) {
+        if (rows[i].el.style.display !== 'none') rows[i].el.className = 'row';
+      }
+      void $('rows').offsetHeight;
+      var d = 0;
+      for (i = 0; i < rows.length; i++) {
+        if (rows[i].el.style.display === 'none') continue;
+        (function (el, delay) {
+          setTimeout(function () {
+            el.className = 'row in';
+          }, delay);
+        })(rows[i].el, d);
+        d += 70;
+      }
+    },
+    paintRow: function (r, active) {
+      var row = this.rows[r];
+      if (!row || !row.cardEls) return;
+      setFRow(row, active ? row.col : -1);
+      this.slideRow(row);
+    },
+    rowReady: function (row) {
+      return !!(row && row.items && row.items.length && row.el.style.display !== 'none');
+    },
+    findRow: function (from, dir) {
+      for (var i = from; i >= 0 && i < this.rows.length; i += dir) if (this.rowReady(this.rows[i])) return i;
+      return -1;
+    },
+    settleRow: function () {
+      if (this.rowReady(this.rows[this.rowIdx])) return this.rowIdx;
+      var next = this.findRow(this.rowIdx, 1);
+      if (next < 0) next = this.findRow(this.rowIdx - 1, -1);
+      if (next >= 0) this.rowIdx = next;
+      return next;
+    },
+    paint: function (all) {
+      /* O(2 rows) per move — full repaint only when asked */
+      if (this.rowIdx >= this.rows.length) this.rowIdx = Math.max(0, this.rows.length - 1);
+      var focusOn = curBoard() === this && !topNav.active;
+      var settled = this.settleRow();
+      var act = focusOn && settled >= 0 ? this.rowIdx : -1;
+      if (all || this._act == null) {
+        for (var r = 0; r < this.rows.length; r++) this.paintRow(r, r === act);
+      } else if (this._act !== act) {
+        this.paintRow(this._act, false);
+        if (act >= 0) this.paintRow(act, true);
+      } else if (act >= 0) this.slideRow(this.rows[act]);
+      this._act = act;
+      var y = 0;
+      for (var i2 = 0; i2 < this.rowIdx; i2++) y += this.rows[i2].el.offsetHeight;
+      var t = focusOn ? y : 0;
+      $('rows').style.transform = 'translateY(-' + t + 'px)';
+      $('rows').style.webkitTransform = 'translateY(-' + t + 'px)';
+      virtualizeBoard(this, this.rowIdx, true);
+      var self = this;
+      if (this._vt) clearTimeout(this._vt);
+      this._vt = setTimeout(function () {
+        virtualizeBoard(self, self.rowIdx, false);
+      }, 260);
+    },
+    slideRow: function (row) {
+      var w = row.wide ? 454 : 288;
+      if (row.cardEls && row.cardEls.length > 1) {
+        var measured = row.cardEls[1].offsetLeft - row.cardEls[0].offsetLeft;
+        if (measured > 0) w = measured;
+      }
+      var vis = Math.max(2, Math.floor(contentWidth() / w));
+      var off = Math.max(0, row.col - (vis - 2)) * w;
+      if (row.col <= 0) off = 0;
+      row.cardsEl.style.transform = 'translateX(-' + off + 'px)';
+      row.cardsEl.style.webkitTransform = 'translateX(-' + off + 'px)';
+    },
+    moveH: function (dir) {
+      var row = this.rows[this.rowIdx];
+      if (!row) return;
+      var st = hstep(dir, row.cardsEl);
+      var old = row.col;
+      row.col = dir > 0 ? Math.min(row.items.length - 1, row.col + st) : Math.max(0, row.col - st);
+      if (row.col === old) return;
+      setFRow(row, row.col);
+      this.slideRow(row);
+      this.hero();
+    },
+    hero: function () {
+      var self = this;
+      if (this.heroT) clearTimeout(this.heroT);
+      this.heroT = setTimeout(function () {
+        self.heroApply();
+      }, 260);
+      prewarmNeighbors(this.rows[this.rowIdx]);
+    },
+    heroApply: function () {
+      if (curBoard() !== this) return; /* a debounced hero must not paint after we left this board */
+      var it = this.focusedItem();
+      if (!it) {
+        return;
+      }
+      var lg = $('heroLogo'),
+        tt = $('heroTitle');
+      var self = this;
+      /* NEVER flash plain text: keep the previous title until the new item's logo either loads
+       (show logo) or fails (only then show text). Logos are prewarmed so this is instant. */
+      if (isImdb(it.id)) {
+        var lu = 'https://images.metahub.space/logo/medium/' + it.id + '/img';
+        var im = new Image();
+        im.onload = function () {
+          if (self.focusedItem() === it) {
+            lg.src = lu;
+            lg.style.display = 'block';
+            tt.style.display = 'none';
+          }
+        };
+        im.onerror = function () {
+          if (self.focusedItem() === it) {
+            tt.textContent = it.name || '';
+            tt.style.display = 'block';
+            lg.style.display = 'none';
+          }
+        };
+        im.src = lu;
+      } else {
+        tt.textContent = it.name || '';
+        tt.style.display = 'block';
+        lg.style.display = 'none';
+      }
+      $('heroMeta').textContent = it.metaLine || '';
+      $('heroDesc').textContent = it.description || '';
+      setBg(bgMid(it));
+      if (!it.description && it.id) {
+        getMeta(it.type, it.id, function (m) {
+          if (!m) return;
+          it.description = m.description || '';
+          it.metaLine = [m.releaseInfo || m.year, m.runtime, m.imdbRating ? 'IMDb ' + m.imdbRating : '']
+            .join('   ')
+            .replace(/\s+/g, ' ');
+          if (self.focusedItem() === it) {
+            $('heroDesc').textContent = it.description;
+            $('heroMeta').textContent = it.metaLine;
+          }
+        });
+      }
+    },
+    focusedItem: function () {
+      if (this.settleRow() < 0) return null;
+      var row = this.rows[this.rowIdx];
+      return row.items[row.col] || null;
+    },
+    key: function (k) {
+      if (this.settleRow() < 0) {
+        if (k === 38) topNav.focus();
+        return true;
+      }
+      var row = this.rows[this.rowIdx];
+      if (k === 39) this.moveH(1);
+      else if (k === 37) {
+        if (row.col === 0) topNav.focus();
+        else this.moveH(-1);
+      } else if (k === 40) {
+        var next = this.findRow(this.rowIdx + 1, 1);
+        if (next >= 0) {
+          this.rowIdx = next;
+          this.paint();
+          this.hero();
+        }
+      } else if (k === 38) {
+        var prev = this.findRow(this.rowIdx - 1, -1);
+        if (prev >= 0) {
+          this.rowIdx = prev;
+          this.paint();
+          this.hero();
+        } else {
+          topNav.focus();
+        }
+      } else if (k === 13) {
+        var it = this.focusedItem();
+        if (it) openItem(it);
+      }
+      return true;
+    }
+  };
+}

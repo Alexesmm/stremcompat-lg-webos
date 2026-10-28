@@ -74,6 +74,27 @@ npm run test:visual:layouts
 
 Changes that affect the webOS 3 interface must remain compatible with Chromium 38 and the Node.js 0.12 launcher. Do not introduce modern JavaScript syntax into files that the legacy launcher or television browser executes directly.
 
+## Where the code lives
+
+| Path | Runs on | Purpose |
+|---|---|---|
+| `app/index.html` | TV browser (ES5) | Packaged launcher. Starts the Luna service and opens the interface. `__APP_PORT__`, `__APP_VERSION__` and `__SERVICE_ID__` are filled in by the build. |
+| `service/launch.js`, `service/profile.js` | System Node.js 0.12 (ES5) | Luna service that spawns the bundled Node 18 runtime; the profile loader is shared with the server. |
+| `service/tvserver.js` | Bundled Node 18 | Server bootstrap: starts the streaming server and the HTTP routes. |
+| `service/server/*.js` | Bundled Node 18 | Server modules: `routes.js` maps URLs to the bridges (`proxy`, `stream-refs`, `stremio-api`, `subtitles`, `youtube`, `media`, `images`, `ui-assets`, `player-page`). `embedded.js` receives the embedded copies at build time. |
+| `service/player/` | TV browser (ES5) | Bare player page: `player.css`, `player-body.html` (one rule or element per line) and `player-client.js`. |
+| `src/ui/**/*.js` | TV browser (ES5) | Interface modules. `scripts/build-ui.js` concatenates them, in the order of `src/ui/modules.json`, into one strict-mode IIFE: `service/beta-app.js`. |
+| `service/beta.html` | TV browser | Interface markup and styles. `tvserver.js` fills `__APP_VERSION__` and the `<!--@profile-->` marker when serving it. |
+| `profiles/*.json` | Build | One file per published package: identity, port, graphics mode and memory limits. The build writes it to `service/profile.json`. |
+
+Working rules:
+
+- Edit the interface in `src/ui`, then run `npm run build:ui`. Commit the regenerated `service/beta-app.js`; `npm run verify` fails when it is stale. The modules share one scope, so a new top-level name must not collide with an existing one.
+- Keep browser code ES5: `var`, function declarations only at the top of a file or function, no arrow functions, template literals, `let`/`const` or trailing commas in calls.
+- Run `npm run format` and `npm run lint` before committing. The lint reports undefined, unused and redeclared names, which is what usually breaks only on the television.
+- Profile values (port, identity, caps, backdrop limits) belong in `profiles/*.json`, never as literals in source.
+- A pure refactor can be proved with `node scripts/ast-equal.js before.js after.js`, which compares syntax trees and ignores formatting and comments.
+
 ## Pull requests
 
 - Keep each pull request focused on one problem.

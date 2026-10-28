@@ -7,3 +7,4 @@ dist/
 node_modules/
 /public-repo/
 service/*.log
+service/profile.json

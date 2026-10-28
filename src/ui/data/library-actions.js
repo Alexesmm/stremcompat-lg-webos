@@ -1,0 +1,78 @@
+// Library add/remove and watched state.
+/* ================= library helpers (explicit add only — watching never adds) ================= */
+function libHas(id) {
+  var it = lsJson(PRE + id);
+  return !!(it && it.removed === false);
+}
+/* a movie counts as watched if it's in watchedEpisodes or finished (>=90%) */
+function itemWatched(it) {
+  if (!it || !it.id || it.type === 'series') return false;
+  var lib = lsJson(PRE + it.id);
+  if (!lib || !lib.state) return false;
+  var s = lib.state;
+  var vid = it.videoId || it.id;
+  if (s.watchedEpisodes)
+    for (var i = 0; i < s.watchedEpisodes.length; i++) if (s.watchedEpisodes[i] === vid) return true;
+  if (s.flaggedWatched && s.duration && s.timeOffset >= s.duration * 0.9) return true;
+  return false;
+}
+function libToggle(item) {
+  var now = new Date().toISOString();
+  var it = lsJson(PRE + item.id);
+  if (it && it.removed === false) {
+    it.removed = true;
+    it._mtime = now;
+    lsSet(PRE + item.id, it);
+    toast(tx('removedLibrary'));
+  } else {
+    if (!it)
+      it = {
+        state: {
+          lastWatched: now,
+          timeOffset: 0,
+          timeWatched: 0,
+          overallTimeWatched: 0,
+          timesWatched: 0,
+          flaggedWatched: 0,
+          duration: 0,
+          video_id: item.id,
+          watched: '',
+          noNotif: false,
+          season: 0,
+          episode: 0,
+          watchedEpisodes: []
+        },
+        _id: item.id,
+        _ctime: now
+      };
+    it.removed = false;
+    it.temp = false;
+    it._mtime = now;
+    it.name = item.name || it.name || '';
+    it.type = item.type;
+    it.poster = item.poster || it.poster || '';
+    it.posterShape = 'poster';
+    it.background = item.background || it.background || '';
+    lsSet(PRE + item.id, it);
+    toast(tx('addedLibrary'));
+  }
+  pushLib(lsJson(PRE + item.id));
+  invalidateBoards();
+}
+function markCwWatched(it) {
+  var lib2 = lsJson(PRE + it.id);
+  if (!lib2) return;
+  var s2 = lib2.state || {};
+  var vid = s2.video_id || it.videoId || it.id;
+  if (!s2.watchedEpisodes) s2.watchedEpisodes = [];
+  var f = false;
+  for (var i = 0; i < s2.watchedEpisodes.length; i++) if (s2.watchedEpisodes[i] === vid) f = true;
+  if (!f) s2.watchedEpisodes.push(vid);
+  s2.flaggedWatched = 1;
+  s2.timeOffset = 0;
+  lib2.state = s2;
+  lib2._mtime = new Date().toISOString();
+  lsSet(PRE + it.id, lib2);
+  pushLib(lib2);
+  invalidateBoards();
+}
