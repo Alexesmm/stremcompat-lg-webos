@@ -154,21 +154,43 @@ The confirmed UJ3 package was tested with the official Chromium 38 snapshot. Sta
 
 ## Features
 
+**Account and library**
+
 - Stremio account login by email or mobile pairing code.
 - English first-run interface with Brazilian Portuguese selectable on the login screen or under Settings. The choice is stored on the television and remains independent from account, subtitle and audio preferences.
-- Account library, watched state and progress synchronization.
-- Account addon synchronization.
+- Account library, watched state and progress synchronization, and account addon synchronization.
+- Continue Watching shows the episode and the minutes left; a finished episode becomes its next episode (Up next · S1 E9) and a finished film leaves the row. One rule decides when a title is finished: at most two minutes or 5 % left, past half of the video.
+- Home rows for New episodes of followed series (checked once a day in the background) and My list (titles added to the library).
+- Recent searches and Continue Watching can be cleared under Settings > History; a single title can be removed from Continue Watching with the hold-OK menu.
+
+**Browsing**
+
 - Addon-driven Home, Discover, Search and Library screens. Discover exposes compatible catalogs and genre options declared by the addons synchronized with the account, then loads additional pages as the user approaches the end of the grid.
-- A fixed icon-only television sidebar, an independent filterable Discover grid and metadata previews while browsing Home and Search.
-- Directional-pad and LG Magic Remote navigation designed specifically for a ten-foot television interface.
-- Catalog fault isolation: unavailable or empty addon rows are skipped without trapping remote focus or blocking the remaining Home rows.
-- Quality filters for 4K, 1440p, 1080p, 720p, SD and unknown quality.
-- Duplicate source removal.
-- Descending seeder sorting when an addon exposes a recognizable seeder count.
-- Direct video and HLS playback through the local stream bridge.
-- Forwarding of required authorization, referer and range headers.
-- Audio-track selection, subtitles, resume and watched progress.
+- Catalog rows end with a See all card that opens the same catalog in Discover.
+- Search has its own on-screen keyboard with results that follow the typing; the system keyboard stays available one key above it.
+- The title page starts with one-press actions such as Continue S2 E5 · 32 min left or Play S1 E9, and shows the overall number, air date and length of the focused episode.
+- Reliable episode order and overall numbering on Chromium 38/53 (whose sort is not stable), including unnumbered or repeated episodes, series without season fields and ranges labelled with the numbers their cards show.
+- A side menu whose labels appear while it has focus, the Inter typeface, and a Larger interface text option under Settings.
+- Directional-pad and LG Magic Remote navigation designed specifically for a ten-foot television interface. Back returns to the same title and card.
+- Catalog fault isolation: unavailable or empty addon rows are skipped without trapping remote focus. When every catalog fails, Home says so and OK retries.
+
+**Sources and playback**
+
+- Quality filters for 4K, 1440p, 1080p, 720p, SD and unknown quality, duplicate source removal and seeder sorting when an addon exposes a recognizable seeder count.
+- Each source shows short tags read from its text (quality, HDR/DV, codec, audio, size and seeders); the first one without compatibility warnings is marked as recommended for the television.
+- Addons that do not answer are named in the source list, and OK retries them.
+- When a source will not play, the player offers Try another source, which plays the next source in the list.
+- Direct video and HLS playback through the local stream bridge, with forwarding of required authorization, referer and range headers.
+- Audio-track selection, subtitles, resume and watched progress. The audio language, subtitle language and subtitle delay chosen for a title are remembered for its next episodes.
+- After an automatic resume, OK starts over while the hint is on screen. At the end of an episode the next one starts after a 10-second countdown (OK now, Back cancels); after three in a row with no key pressed it asks whether anyone is still watching. Its sources are requested during the end credits so the next title page opens with them ready.
+- LG remote shortcuts in the player: red subtitles, green audio, yellow skips 85 seconds, blue settings, and the digits 0 to 9 jump to 0-90 % of the video.
+
+**Television resources**
+
 - Low-memory behavior tuned separately per profile.
+- The ffmpeg/ffprobe helpers run at a lower CPU priority than playback, and the local server runs with a smaller young generation (`serverSemiSpaceMB` per profile).
+- The local server restarts on its own if it exits, at most five times in ten minutes.
+- Settings > Diagnostics shows the local server memory and its peak, the television's available memory and its lowest value since start, CPU load, the streaming server state, how long Home took to appear and the most recent playback or addon problems.
 
 ## Performance profile and image-quality trade-offs
 
