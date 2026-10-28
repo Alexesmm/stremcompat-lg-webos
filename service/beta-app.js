@@ -208,6 +208,8 @@ var UI_TEXT = {
     all: 'All',
     recent: 'Recent',
     recentSearches: 'Recent searches',
+    seeAll: 'See all ›',
+    seeAllHint: 'Open the whole catalog in Discover',
     keySpace: 'space',
     keyDelete: 'delete',
     keyClear: 'clear',
@@ -468,6 +470,8 @@ var UI_TEXT = {
     all: 'Todas',
     recent: 'Recente',
     recentSearches: 'Buscas recentes',
+    seeAll: 'Ver tudo ›',
+    seeAllHint: 'Abrir o catálogo completo em Descobrir',
     keySpace: 'espaço',
     keyDelete: 'apagar',
     keyClear: 'limpar',
@@ -2513,6 +2517,26 @@ var disc = {
     } else this.paint();
     animIn($('discWrap'));
   },
+  /* from a Home row's See all card: the same catalog, all genres */
+  openCatalog: function (def) {
+    var m = String((def && def.url) || '').match(/^(.*)\/catalog\/([^\/]+)\/([^\/]+)\.json$/);
+    this.types = discoverTypes();
+    for (var t = 0; t < this.types.length; t++) if (this.types[t].value === def.type) this.typeIdx = t;
+    this.catalogs = discoverCatalogs(def.type);
+    this.catalogIdx = 0;
+    if (m)
+      for (var c = 0; c < this.catalogs.length; c++)
+        if (
+          this.catalogs[c].id === decodeURIComponent(m[3]) &&
+          (this.catalogs[c].base === m[1] || this.catalogs[c].base === CIN)
+        )
+          this.catalogIdx = c;
+    this.genreIdx = 0;
+    this.idx = 0;
+    this.built = false;
+    topNav.idx = 2;
+    goScr('disc');
+  },
   focusTop: function () {
     this.zone = 'filters';
     this.filterIdx = 0;
@@ -3048,7 +3072,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           /* shown by Settings > Diagnostics */
           if (!waiting && board === home) window.__STREMIO_HOME_LOAD_MS__ = Date.now() - started;
         }
-        row.items = items;
+        row.items = items.slice(0);
         row.cardsEl.innerHTML = '';
         row.cardEls = [];
         for (var i = 0; i < items.length; i++) {
@@ -3056,6 +3080,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           row.cardsEl.appendChild(cd);
           row.cardEls.push(cd);
         }
+        if (items.length >= 6) addSeeAll(row, def);
         row.el.style.display = items.length ? '' : 'none';
         if (items.length) reveal(row, 180 + di * 120);
         if (row.col >= items.length) row.col = 0;
@@ -3072,6 +3097,19 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     for (var j = 0; j < board.rows.length && j < oldCols.length; j++)
       board.rows[j].col = Math.min(oldCols[j] || 0, Math.max(0, board.rows[j].items.length - 1));
   } else board.rowIdx = 0;
+}
+/* the last card of a catalog row opens the whole catalog in Discover */
+function addSeeAll(row, def) {
+  var it = { more: true, catalog: def, type: def.type, name: def.title, description: tx('seeAllHint') };
+  var cd = document.createElement('div');
+  cd.className = 'card more';
+  var lb = document.createElement('div');
+  lb.className = 'morelbl';
+  lb.textContent = tx('seeAll');
+  cd.appendChild(lb);
+  row.items.push(it);
+  row.cardsEl.appendChild(cd);
+  row.cardEls.push(cd);
 }
 /* HOME rows = YOUR addon catalogs (in order); Cinemeta defaults if none configured */
 function homeDefs() {
@@ -3159,6 +3197,10 @@ function buildHomeRows(keep) {
 }
 
 function openItem(it) {
+  if (it.more) {
+    disc.openCatalog(it.catalog);
+    return;
+  }
   if (it.cw) {
     var q = resumeSearch(it.id, it.videoId);
     var backHash =
@@ -6360,7 +6402,7 @@ on(
     }
     if (k === 13) {
       var fi = currentFocusedItem();
-      if (fi) {
+      if (fi && !fi.more) {
         if (!okHold.down) {
           okHold.down = true;
           okHold.rep = 0;

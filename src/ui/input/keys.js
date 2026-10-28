@@ -58,7 +58,7 @@ on(
     }
     if (k === 13) {
       var fi = currentFocusedItem();
-      if (fi) {
+      if (fi && !fi.more) {
         if (!okHold.down) {
           okHold.down = true;
           okHold.rep = 0;

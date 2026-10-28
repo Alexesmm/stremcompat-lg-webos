@@ -44,6 +44,26 @@ var disc = {
     } else this.paint();
     animIn($('discWrap'));
   },
+  /* from a Home row's See all card: the same catalog, all genres */
+  openCatalog: function (def) {
+    var m = String((def && def.url) || '').match(/^(.*)\/catalog\/([^\/]+)\/([^\/]+)\.json$/);
+    this.types = discoverTypes();
+    for (var t = 0; t < this.types.length; t++) if (this.types[t].value === def.type) this.typeIdx = t;
+    this.catalogs = discoverCatalogs(def.type);
+    this.catalogIdx = 0;
+    if (m)
+      for (var c = 0; c < this.catalogs.length; c++)
+        if (
+          this.catalogs[c].id === decodeURIComponent(m[3]) &&
+          (this.catalogs[c].base === m[1] || this.catalogs[c].base === CIN)
+        )
+          this.catalogIdx = c;
+    this.genreIdx = 0;
+    this.idx = 0;
+    this.built = false;
+    topNav.idx = 2;
+    goScr('disc');
+  },
   focusTop: function () {
     this.zone = 'filters';
     this.filterIdx = 0;

@@ -57,7 +57,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           /* shown by Settings > Diagnostics */
           if (!waiting && board === home) window.__STREMIO_HOME_LOAD_MS__ = Date.now() - started;
         }
-        row.items = items;
+        row.items = items.slice(0);
         row.cardsEl.innerHTML = '';
         row.cardEls = [];
         for (var i = 0; i < items.length; i++) {
@@ -65,6 +65,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           row.cardsEl.appendChild(cd);
           row.cardEls.push(cd);
         }
+        if (items.length >= 6) addSeeAll(row, def);
         row.el.style.display = items.length ? '' : 'none';
         if (items.length) reveal(row, 180 + di * 120);
         if (row.col >= items.length) row.col = 0;
@@ -81,6 +82,19 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
     for (var j = 0; j < board.rows.length && j < oldCols.length; j++)
       board.rows[j].col = Math.min(oldCols[j] || 0, Math.max(0, board.rows[j].items.length - 1));
   } else board.rowIdx = 0;
+}
+/* the last card of a catalog row opens the whole catalog in Discover */
+function addSeeAll(row, def) {
+  var it = { more: true, catalog: def, type: def.type, name: def.title, description: tx('seeAllHint') };
+  var cd = document.createElement('div');
+  cd.className = 'card more';
+  var lb = document.createElement('div');
+  lb.className = 'morelbl';
+  lb.textContent = tx('seeAll');
+  cd.appendChild(lb);
+  row.items.push(it);
+  row.cardsEl.appendChild(cd);
+  row.cardEls.push(cd);
 }
 /* HOME rows = YOUR addon catalogs (in order); Cinemeta defaults if none configured */
 function homeDefs() {
@@ -168,6 +182,10 @@ function buildHomeRows(keep) {
 }
 
 function openItem(it) {
+  if (it.more) {
+    disc.openCatalog(it.catalog);
+    return;
+  }
   if (it.cw) {
     var q = resumeSearch(it.id, it.videoId);
     var backHash =

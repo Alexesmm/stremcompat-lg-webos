@@ -24,6 +24,7 @@
   .titlelabel{padding:23px 10px 9px;font-size:17px}
   .card.f{box-shadow:0 0 0 2px #090b12,0 0 0 5px #fff !important;transform:translateY(-5px)}
   .card.wide{width:287px;height:161px}
+  .morelbl{margin-top:-13px;font-size:20px}
   .pbar{height:6px}
   .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}
   .cwlabel .sub{margin-top:1px;font-size:13px}
