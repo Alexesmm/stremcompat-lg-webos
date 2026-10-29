@@ -101,14 +101,12 @@ function goScr(name, params, noStack) {
   }
 }
 function goBackScr() {
-  if (SCR === 'login') {
-    try {
-      window.close();
-    } catch (e) {}
-    return;
-  }
   if (cwMenu.open) {
     cwMenu.close();
+    return;
+  }
+  if (SCR === 'login') {
+    cwMenu.confirmExit();
     return;
   }
   if (streamsUI.open) {
@@ -131,11 +129,7 @@ function goBackScr() {
       search.reset();
       goScr('home', null, true);
       topNav.active = false;
-    } else {
-      try {
-        window.close();
-      } catch (e) {}
-    }
+    } else cwMenu.confirmExit();
     return;
   }
   var prev = backStack.pop();
@@ -153,9 +147,7 @@ function goBackScr() {
     goScr('home', null, true);
     return;
   }
-  try {
-    window.close();
-  } catch (e) {}
+  cwMenu.confirmExit();
 }
 
 var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chipAddons'), $('chipSet')];

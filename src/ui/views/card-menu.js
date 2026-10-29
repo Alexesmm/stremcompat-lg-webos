@@ -6,29 +6,53 @@ var cwMenu = {
   els: [],
   acts: [],
   it: null,
-  show: function (it) {
-    this.it = it;
+  /* the panel with a title, a subtitle and no entries yet (show, confirmExit) */
+  begin: function (title, sub) {
     this.open = true;
     this.idx = 0;
-    var host = $('cwmItems');
-    host.innerHTML = '';
+    $('cwmItems').innerHTML = '';
     this.els = [];
     this.acts = [];
+    $('cwmTitle').textContent = title || '';
+    $('cwmSub').textContent = sub;
+  },
+  add: function (ic, lb, fn) {
+    var d = document.createElement('div');
+    d.className = 'cwmi';
+    d.innerHTML = ic + '<span>' + esc(lb) + '</span>';
+    $('cwmItems').appendChild(d);
+    this.els.push(d);
+    this.acts.push(fn);
+  },
+  /* Back on the last screen asks before leaving the app, so a few presses too many
+     do not close Stremio by accident */
+  confirmExit: function () {
     var self = this;
-    $('cwmTitle').textContent = it.name || '';
+    this.it = null;
+    this.begin(tx('exitTitle'), tx('exitSub'));
+    this.add(ICON.check, tx('exitStay'), function () {
+      self.close();
+    });
+    this.add(ICON.exit, tx('exitLeave'), function () {
+      self.close();
+      try {
+        window.close();
+      } catch (e) {}
+    });
+    $('cwm').style.display = 'block';
+    this.paint();
+  },
+  show: function (it) {
+    this.it = it;
+    var self = this;
     var sub = it.type === 'series' ? tx('seriesOne') : tx('movie');
     if (it.cw && it.videoId && it.videoId.indexOf(':') > 0) {
       var pp = it.videoId.split(':');
       sub = tx('seasonEpisode', pp[pp.length - 2], pp[pp.length - 1]);
     }
-    $('cwmSub').textContent = sub;
+    this.begin(it.name, sub);
     function add(ic, lb, fn) {
-      var d = document.createElement('div');
-      d.className = 'cwmi';
-      d.innerHTML = ic + '<span>' + esc(lb) + '</span>';
-      host.appendChild(d);
-      self.els.push(d);
-      self.acts.push(fn);
+      self.add(ic, lb, fn);
     }
     add(ICON.play, it.cw ? tx('continueLabel') : tx('watch'), function () {
       self.close();

@@ -228,6 +228,10 @@ var UI_TEXT = {
     keyClear: 'clear',
     clearHistory: 'Clear history',
     removeFromCw: 'Remove from Continue watching',
+    exitTitle: 'Leave Stremio?',
+    exitSub: 'Choose an option',
+    exitStay: 'Stay',
+    exitLeave: 'Leave the app',
     removedFromCw: 'Removed from Continue watching',
     historyGroup: 'History',
     clearSearches: 'Clear recent searches',
@@ -529,6 +533,10 @@ var UI_TEXT = {
     keyClear: 'limpar',
     clearHistory: 'Limpar histórico',
     removeFromCw: 'Remover de Continuar assistindo',
+    exitTitle: 'Sair do Stremio?',
+    exitSub: 'Escolha uma opção',
+    exitStay: 'Continuar no app',
+    exitLeave: 'Sair do app',
     removedFromCw: 'Removido de Continuar assistindo',
     historyGroup: 'Histórico',
     clearSearches: 'Limpar buscas recentes',
@@ -1151,6 +1159,7 @@ function posterOf(it) {
   return isImdb(it.id) ? 'https://images.metahub.space/poster/small/' + it.id + '/img' : '';
 }
 var ICON = {
+  exit: '<svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5zM4 3h8v2H4v14h8v2H4a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>',
   play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
   info: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>',
   similar: '<svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>',
@@ -2382,14 +2391,12 @@ function goScr(name, params, noStack) {
   }
 }
 function goBackScr() {
-  if (SCR === 'login') {
-    try {
-      window.close();
-    } catch (e) {}
-    return;
-  }
   if (cwMenu.open) {
     cwMenu.close();
+    return;
+  }
+  if (SCR === 'login') {
+    cwMenu.confirmExit();
     return;
   }
   if (streamsUI.open) {
@@ -2412,11 +2419,7 @@ function goBackScr() {
       search.reset();
       goScr('home', null, true);
       topNav.active = false;
-    } else {
-      try {
-        window.close();
-      } catch (e) {}
-    }
+    } else cwMenu.confirmExit();
     return;
   }
   var prev = backStack.pop();
@@ -2434,9 +2437,7 @@ function goBackScr() {
     goScr('home', null, true);
     return;
   }
-  try {
-    window.close();
-  } catch (e) {}
+  cwMenu.confirmExit();
 }
 
 var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chipAddons'), $('chipSet')];
@@ -2533,9 +2534,12 @@ var topNav = {
     }
     this.paint();
   },
+  /* OK on a section while a title page is open goes to that section, e.g. Home from a
+     series opened on Home, instead of staying on the series */
   key: function (k) {
     if (k === 38) this.switchTo(this.idx - 1);
     else if (k === 40) this.switchTo(this.idx + 1);
+    else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
     else if (k === 39 || k === 13) this.enterContent();
     return true;
   }
@@ -3725,29 +3729,53 @@ var cwMenu = {
   els: [],
   acts: [],
   it: null,
-  show: function (it) {
-    this.it = it;
+  /* the panel with a title, a subtitle and no entries yet (show, confirmExit) */
+  begin: function (title, sub) {
     this.open = true;
     this.idx = 0;
-    var host = $('cwmItems');
-    host.innerHTML = '';
+    $('cwmItems').innerHTML = '';
     this.els = [];
     this.acts = [];
+    $('cwmTitle').textContent = title || '';
+    $('cwmSub').textContent = sub;
+  },
+  add: function (ic, lb, fn) {
+    var d = document.createElement('div');
+    d.className = 'cwmi';
+    d.innerHTML = ic + '<span>' + esc(lb) + '</span>';
+    $('cwmItems').appendChild(d);
+    this.els.push(d);
+    this.acts.push(fn);
+  },
+  /* Back on the last screen asks before leaving the app, so a few presses too many
+     do not close Stremio by accident */
+  confirmExit: function () {
     var self = this;
-    $('cwmTitle').textContent = it.name || '';
+    this.it = null;
+    this.begin(tx('exitTitle'), tx('exitSub'));
+    this.add(ICON.check, tx('exitStay'), function () {
+      self.close();
+    });
+    this.add(ICON.exit, tx('exitLeave'), function () {
+      self.close();
+      try {
+        window.close();
+      } catch (e) {}
+    });
+    $('cwm').style.display = 'block';
+    this.paint();
+  },
+  show: function (it) {
+    this.it = it;
+    var self = this;
     var sub = it.type === 'series' ? tx('seriesOne') : tx('movie');
     if (it.cw && it.videoId && it.videoId.indexOf(':') > 0) {
       var pp = it.videoId.split(':');
       sub = tx('seasonEpisode', pp[pp.length - 2], pp[pp.length - 1]);
     }
-    $('cwmSub').textContent = sub;
+    this.begin(it.name, sub);
     function add(ic, lb, fn) {
-      var d = document.createElement('div');
-      d.className = 'cwmi';
-      d.innerHTML = ic + '<span>' + esc(lb) + '</span>';
-      host.appendChild(d);
-      self.els.push(d);
-      self.acts.push(fn);
+      self.add(ic, lb, fn);
     }
     add(ICON.play, it.cw ? tx('continueLabel') : tx('watch'), function () {
       self.close();

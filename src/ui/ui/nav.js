@@ -79,9 +79,12 @@ var topNav = {
     }
     this.paint();
   },
+  /* OK on a section while a title page is open goes to that section, e.g. Home from a
+     series opened on Home, instead of staying on the series */
   key: function (k) {
     if (k === 38) this.switchTo(this.idx - 1);
     else if (k === 40) this.switchTo(this.idx + 1);
+    else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
     else if (k === 39 || k === 13) this.enterContent();
     return true;
   }
