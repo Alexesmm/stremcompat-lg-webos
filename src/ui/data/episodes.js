@@ -211,7 +211,7 @@ function enrichEpisodeMetadata(type, id, meta, cb) {
     }
     var b = queue[at++];
     xhrJson(
-      b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json',
+      b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json' + addonQueryFor(addons(), b),
       function (j) {
         if (j && j.meta) changed = mergeEpisodeDetails(meta, j.meta) || changed;
         next();

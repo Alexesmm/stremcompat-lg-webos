@@ -2,6 +2,14 @@
 function addonBase(a) {
   return String(a.transportUrl || '').replace(/\/manifest\.json.*$/, '');
 }
+/* Whatever follows /manifest.json in the installed link (a ?key=... some addons give each
+   user). Official Stremio replaces only /manifest.json when it builds a request, so the
+   query string reaches every catalog, meta and stream request (stremio-core
+   http_transport.rs); dropping it made such addons answer nothing here. */
+function addonQuery(a) {
+  var m = String((a && a.transportUrl) || '').match(/\/manifest\.json(\?[^#]*)/);
+  return m ? m[1] : '';
+}
 function streamAddonsIn(a, type) {
   var out = [];
   a = a || [];
@@ -27,10 +35,10 @@ function streamAddonsIn(a, type) {
       }
       if (!allow) continue;
     }
-    out.push({ name: m.name || 'Addon', base: addonBase(a[i]) });
+    out.push({ name: m.name || 'Addon', base: addonBase(a[i]), query: addonQuery(a[i]) });
   }
   return out;
 }
-function streamUrl(base, type, vid) {
-  return base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json';
+function streamUrl(ad, type, vid) {
+  return ad.base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json' + (ad.query || '');
 }

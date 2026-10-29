@@ -79,17 +79,20 @@ function getMeta(type, id, cb) {
       return;
     }
     var b = bases[bi++];
-    xhrJson(b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json', function (j) {
-      var m = j && j.meta;
-      if (!m) {
-        tryNext();
-        return;
+    xhrJson(
+      b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json' + addonQueryFor(addons(), b),
+      function (j) {
+        var m = j && j.meta;
+        if (!m) {
+          tryNext();
+          return;
+        }
+        putMetaMem(k, m);
+        lsSet('beta_meta_' + k, { t: Date.now(), meta: m });
+        capMetaCache(k);
+        if (!fresh) cb(m);
       }
-      putMetaMem(k, m);
-      lsSet('beta_meta_' + k, { t: Date.now(), meta: m });
-      capMetaCache(k);
-      if (!fresh) cb(m);
-    });
+    );
   }
   tryNext();
 }

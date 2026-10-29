@@ -1,5 +1,11 @@
 // Catalog discovery from installed addons (Home rows, Discover filters).
 /* ================= addon-driven catalogs ================= */
+/* the query string of the installed addon whose base is `base` ('' for Cinemeta or none) */
+function addonQueryFor(list, base) {
+  for (var i = 0; i < (list || []).length; i++)
+    if (list[i] && addonBase(list[i]) === base) return addonQuery(list[i]);
+  return '';
+}
 function typeLabel(t) {
   var value = String(t || '');
   if (value === 'movie') return tx('movies');
@@ -83,7 +89,7 @@ function homeCatalogs() {
       out.push({
         title: (cat.name ? cat.name + ' · ' : '') + typeLabel(cat.type),
         type: cat.type,
-        url: base + '/catalog/' + cat.type + '/' + encodeURIComponent(cat.id) + '.json',
+        url: base + '/catalog/' + cat.type + '/' + encodeURIComponent(cat.id) + '.json' + addonQuery(a[i]),
         key: catalogCacheKey(a[i], cat)
       });
       if (out.length >= maxRows) return out;
@@ -112,6 +118,7 @@ function discoverCatalogs(type) {
         type: type,
         id: String(cat.id),
         base: base,
+        query: addonQuery(a[i]),
         key: catalogCacheKey(a[i], cat),
         genres: info.genreOptions,
         genreRequired: info.genreRequired

@@ -185,7 +185,8 @@ var disc = {
       '/' +
       encodeURIComponent(cat.id) +
       (extra.length ? '/' + extra.join('&') : '') +
-      '.json'
+      '.json' +
+      (cat.query || '')
     );
   },
   load: function () {

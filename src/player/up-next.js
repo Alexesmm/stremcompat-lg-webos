@@ -82,7 +82,7 @@ function prefetchNext() {
   } catch (e) {}
   var ads = streamAddonsIn(list, TYPE || 'series');
   for (var i = 0; i < ads.length; i++)
-    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[i].base, TYPE || 'series', NEXTVID)), function () {});
+    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[i], TYPE || 'series', NEXTVID)), function () {});
 }
 /* When an episode ends the next one starts after a countdown: OK starts it now, Back
    cancels it. After three episodes in a row with nobody touching the remote it asks

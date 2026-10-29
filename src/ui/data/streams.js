@@ -196,7 +196,7 @@ function fetchStreams(type, vid, onPart, onDone) {
   for (var i = 0; i < list.length; i++)
     (function (ad, idx) {
       xhrJson(
-        streamUrl(ad.base, type, vid),
+        streamUrl(ad, type, vid),
         function (j, failure) {
           if (failure) failed.push(ad.name);
           var st = (j && j.streams) || [];

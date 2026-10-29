@@ -808,6 +808,14 @@ function watchFinished(offsetMs, durationMs) {
 function addonBase(a) {
   return String(a.transportUrl || '').replace(/\/manifest\.json.*$/, '');
 }
+/* Whatever follows /manifest.json in the installed link (a ?key=... some addons give each
+   user). Official Stremio replaces only /manifest.json when it builds a request, so the
+   query string reaches every catalog, meta and stream request (stremio-core
+   http_transport.rs); dropping it made such addons answer nothing here. */
+function addonQuery(a) {
+  var m = String((a && a.transportUrl) || '').match(/\/manifest\.json(\?[^#]*)/);
+  return m ? m[1] : '';
+}
 function streamAddonsIn(a, type) {
   var out = [];
   a = a || [];
@@ -833,12 +841,12 @@ function streamAddonsIn(a, type) {
       }
       if (!allow) continue;
     }
-    out.push({ name: m.name || 'Addon', base: addonBase(a[i]) });
+    out.push({ name: m.name || 'Addon', base: addonBase(a[i]), query: addonQuery(a[i]) });
   }
   return out;
 }
-function streamUrl(base, type, vid) {
-  return base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json';
+function streamUrl(ad, type, vid) {
+  return ad.base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json' + (ad.query || '');
 }
 // Applying the interface language to the static markup and switching it.
 function applyTextSize() {
@@ -1346,6 +1354,12 @@ function syncAddons(cb) {
 }
 // Catalog discovery from installed addons (Home rows, Discover filters).
 /* ================= addon-driven catalogs ================= */
+/* the query string of the installed addon whose base is `base` ('' for Cinemeta or none) */
+function addonQueryFor(list, base) {
+  for (var i = 0; i < (list || []).length; i++)
+    if (list[i] && addonBase(list[i]) === base) return addonQuery(list[i]);
+  return '';
+}
 function typeLabel(t) {
   var value = String(t || '');
   if (value === 'movie') return tx('movies');
@@ -1429,7 +1443,7 @@ function homeCatalogs() {
       out.push({
         title: (cat.name ? cat.name + ' · ' : '') + typeLabel(cat.type),
         type: cat.type,
-        url: base + '/catalog/' + cat.type + '/' + encodeURIComponent(cat.id) + '.json',
+        url: base + '/catalog/' + cat.type + '/' + encodeURIComponent(cat.id) + '.json' + addonQuery(a[i]),
         key: catalogCacheKey(a[i], cat)
       });
       if (out.length >= maxRows) return out;
@@ -1458,6 +1472,7 @@ function discoverCatalogs(type) {
         type: type,
         id: String(cat.id),
         base: base,
+        query: addonQuery(a[i]),
         key: catalogCacheKey(a[i], cat),
         genres: info.genreOptions,
         genreRequired: info.genreRequired
@@ -1723,7 +1738,7 @@ function fetchStreams(type, vid, onPart, onDone) {
   for (var i = 0; i < list.length; i++)
     (function (ad, idx) {
       xhrJson(
-        streamUrl(ad.base, type, vid),
+        streamUrl(ad, type, vid),
         function (j, failure) {
           if (failure) failed.push(ad.name);
           var st = (j && j.streams) || [];
@@ -2092,17 +2107,20 @@ function getMeta(type, id, cb) {
       return;
     }
     var b = bases[bi++];
-    xhrJson(b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json', function (j) {
-      var m = j && j.meta;
-      if (!m) {
-        tryNext();
-        return;
+    xhrJson(
+      b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json' + addonQueryFor(addons(), b),
+      function (j) {
+        var m = j && j.meta;
+        if (!m) {
+          tryNext();
+          return;
+        }
+        putMetaMem(k, m);
+        lsSet('beta_meta_' + k, { t: Date.now(), meta: m });
+        capMetaCache(k);
+        if (!fresh) cb(m);
       }
-      putMetaMem(k, m);
-      lsSet('beta_meta_' + k, { t: Date.now(), meta: m });
-      capMetaCache(k);
-      if (!fresh) cb(m);
-    });
+    );
   }
   tryNext();
 }
@@ -2812,7 +2830,8 @@ var disc = {
       '/' +
       encodeURIComponent(cat.id) +
       (extra.length ? '/' + extra.join('&') : '') +
-      '.json'
+      '.json' +
+      (cat.query || '')
     );
   },
   load: function () {
@@ -3940,7 +3959,7 @@ function enrichEpisodeMetadata(type, id, meta, cb) {
     }
     var b = queue[at++];
     xhrJson(
-      b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json',
+      b + '/meta/' + type + '/' + encodeURIComponent(id) + '.json' + addonQueryFor(addons(), b),
       function (j) {
         if (j && j.meta) changed = mergeEpisodeDetails(meta, j.meta) || changed;
         next();

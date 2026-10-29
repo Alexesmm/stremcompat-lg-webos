@@ -83,4 +83,13 @@ assert.strictEqual(remembered.aud, 'jpn', 'the audio chosen for this title did n
 assert.strictEqual(remembered.sub, '', 'subtitles turned off for this title came back on');
 assert.strictEqual(remembered.delay, 1.5, 'the subtitle delay for this title was not restored');
 
-console.log('OK: next-episode countdown, still-watching prompt and per-title audio, subtitles and delay.');
+// ---- addon request URLs keep the installed link's query string (shared/stream-addons.js) ----
+var shared = {};
+vm.runInNewContext(src('shared/stream-addons.js'), shared);
+var keyed = { transportUrl: 'https://latam.example/manifest.json?token=ABC', manifest: { name: 'Latam', resources: ['stream'], types: ['movie'] } };
+var pathed = { transportUrl: 'https://torrentio.example/qualityfilter=4k/manifest.json', manifest: { name: 'Torrentio', resources: ['stream'], types: ['movie'] } };
+var urls = shared.streamAddonsIn([keyed, pathed], 'movie').map(function (ad) { return shared.streamUrl(ad, 'movie', 'tt1'); });
+assert.strictEqual(urls[0], 'https://latam.example/stream/movie/tt1.json?token=ABC', 'an addon key after manifest.json was dropped');
+assert.strictEqual(urls[1], 'https://torrentio.example/qualityfilter=4k/stream/movie/tt1.json', 'a path-configured addon URL changed');
+
+console.log('OK: next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs.');
