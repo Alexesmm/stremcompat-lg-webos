@@ -31,8 +31,7 @@ function rememberNextSource() {
 function nextEp() {
   if (NEXTHREF) {
     try {
-      saveProgress();
-      markWatchedLocal();
+      finishSession(true);
       rememberNextSource();
     } catch (e) {}
     location.replace(NEXTHREF);

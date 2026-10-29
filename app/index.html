@@ -5,53 +5,88 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Stremio</title>
 <style>
+/* Same look as the interface's own start screen (#boot in src/ui/styles/misc.css), so the
+   launcher and the interface read as one continuous loading screen. */
+@font-face{font-family:Inter;src:url(fonts/inter-latin-400.woff) format("woff");font-weight:400;font-style:normal}
+@font-face{font-family:Inter;src:url(fonts/inter-latin-700.woff) format("woff");font-weight:700;font-style:normal}
 html,body{width:100%;height:100%;overflow:hidden}
-body{margin:0;background:#090b12;color:#fff;font-family:Arial,sans-serif}
-.backdrop{position:fixed;inset:0;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 43%,rgba(102,62,202,.2),transparent 34%),#090b12}
-.stage{position:fixed;left:0;right:0;top:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;text-align:center}
-.brand{width:560px}
-.mark{width:94px;height:94px;margin:0 auto 22px;background:url(icon.png) center/contain no-repeat;animation:pulse 1.8s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.72}50%{opacity:1}}
-h1{font-size:38px;line-height:1;margin:0;font-weight:700;letter-spacing:.4px}
-.boot{margin:62px auto 0;width:420px}
-.status{font-size:20px;color:rgba(255,255,255,.76);margin-bottom:18px}
-.track{height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
-.fill{height:100%;width:8%;border-radius:4px;background:#9c76ff;transition:width .45s ease}
-.hint{font-size:15px;color:rgba(255,255,255,.34);margin-top:15px}
-.error{margin-top:28px;display:none}
-button{font-size:21px;font-weight:700;padding:16px 30px;color:#0b0910;background:#fff;border:0;border-radius:12px}
-.code{font-size:15px;color:rgba(255,255,255,.4);margin:15px 0}
+body{margin:0;background:#090b12;color:#fff;font-family:Inter,Arial,sans-serif}
+.stage{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(93,57,184,.18),rgba(9,11,18,0) 38%),#090b12;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;text-align:center}
+.box{width:560px;position:relative}
+.lg{display:block;width:94px;height:94px;margin:0 auto;-webkit-animation:bb 1.8s ease-in-out infinite;animation:bb 1.8s ease-in-out infinite}
+.bt{margin-top:18px;font-size:27px;font-weight:700;letter-spacing:.6px}
+.btrack{height:3px;margin:28px auto 0;width:220px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.bfill{height:100%;width:34%;border-radius:3px;background:#9c76ff;-webkit-animation:loadline 1.45s ease-in-out infinite;animation:loadline 1.45s ease-in-out infinite}
+@-webkit-keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
+@keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
+@-webkit-keyframes loadline{0%{-webkit-transform:translateX(-120%)}100%{-webkit-transform:translateX(330%)}}
+@keyframes loadline{0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
+/* status and hint sit below the centred block, so changing text never moves the logo */
+.info{position:absolute;top:100%;left:0;right:0;margin-top:22px}
+.status{min-height:24px;font-size:19px;color:rgba(255,255,255,.55)}
+.hint{margin-top:10px;font-size:16px;line-height:1.4;color:rgba(255,255,255,.34);visibility:hidden}
+.error{display:none;margin-top:24px}
+.error button{font-family:inherit;font-size:21px;font-weight:700;padding:14px 34px;color:#0c0b11;background:#fff;border:0;border-radius:12px}
+.code{margin-top:14px;font-size:15px;color:rgba(255,255,255,.34);letter-spacing:.5px}
+.failed .btrack{visibility:hidden}
+.failed .lg{-webkit-animation:none;animation:none;opacity:.72}
+.failed .status{color:#ff9a9a}
 </style>
 </head>
 <body>
-<div class="backdrop"></div>
-<div class="stage"><div class="brand">
-  <div class="mark"></div>
-  <h1>StremCompat</h1>
-  <div class="boot">
-    <div id="status" class="status">Starting the playback system…</div>
-    <div class="track"><div id="fill" class="fill"></div></div>
-    <div id="hint" class="hint">On the first launch, the runtime may take a few seconds.</div>
+<div class="stage"><div id="box" class="box">
+  <img class="lg" src="logo.png" alt="">
+  <div class="bt">StremCompat</div>
+  <div class="btrack"><div class="bfill"></div></div>
+  <div class="info">
+    <div id="status" class="status"></div>
+    <div id="hint" class="hint"></div>
     <div id="error" class="error">
-      <button onclick="location.reload()">Try again</button>
-      <div class="code">Code: RUNTIME_START_TIMEOUT</div>
+      <button id="retry" onclick="location.reload()"></button>
+      <div class="code">RUNTIME_START_TIMEOUT · __APP_VERSION__</div>
     </div>
   </div>
 </div></div>
 <script>
+/* The interface language lives on the local server's origin, which this file:// page
+   cannot read, so the TV language decides: Portuguese or English. */
+var PT = /^pt/i.test(navigator.language || '');
+var TEXT = PT ? {
+    starting: 'Iniciando…',
+    server: 'Preparando o servidor local…',
+    almost: 'Quase pronto…',
+    opening: 'Abrindo…',
+    hint: 'Na primeira abertura depois de instalar, isso pode levar alguns segundos.',
+    failed: 'O serviço do app não respondeu.',
+    failedHint: 'Desligue a TV da tomada por 30 segundos e abra o app de novo. Se continuar, reinstale a versão __APP_VERSION__.',
+    retry: 'Tentar de novo'
+} : {
+    starting: 'Starting…',
+    server: 'Preparing the local server…',
+    almost: 'Almost ready…',
+    opening: 'Opening…',
+    hint: 'The first launch after installing can take a few seconds.',
+    failed: 'The app service did not respond.',
+    failedHint: 'Unplug the TV for 30 seconds and open the app again. If it keeps happening, reinstall version __APP_VERSION__.',
+    retry: 'Try again'
+};
 var finished = false;
 var startedAt = Date.now();
-var serviceAnswered = false;
+var shown = '';
 
-function setProgress(value, text) {
-    document.getElementById('fill').style.width = value + '%';
-    if (text) document.getElementById('status').innerHTML = text;
+function $(id) { return document.getElementById(id); }
+function setStatus(text) {
+    if (text === shown) return;
+    shown = text;
+    $('status').innerHTML = text;
 }
+$('retry').innerHTML = TEXT.retry;
+setStatus(TEXT.starting);
 
 function openApp() {
     if (finished) return;
     finished = true;
-    setProgress(100, 'Ready. Opening…');
+    setStatus(TEXT.opening);
     location.replace('http://127.0.0.1:__APP_PORT__/beta?v=__APP_VERSION__');
 }
 
@@ -73,21 +108,25 @@ function ping() {
 
     var elapsed = Date.now() - startedAt;
     if (elapsed > 90000) {
-        document.getElementById('status').innerHTML = 'The runtime did not respond. Restart the TV and reinstall version __APP_VERSION__.';
-        document.getElementById('hint').innerHTML = 'This package includes its own ARMv7 Node 18 runtime; this error does not mean that the wrong ARM edition was installed.';
-        document.getElementById('error').style.display = 'block';
+        $('box').className = 'box failed';
+        setStatus(TEXT.failed);
+        $('hint').innerHTML = TEXT.failedHint;
+        $('hint').style.visibility = 'visible';
+        $('error').style.display = 'block';
         return;
     }
-    if (elapsed > 20000) setProgress(72, 'Finishing media services…');
-    else if (elapsed > 7000) setProgress(48, 'Loading the optimized player…');
-    else if (elapsed > 2000) setProgress(26, 'Preparing your experience…');
+    if (elapsed > 20000) setStatus(TEXT.almost);
+    else if (elapsed > 3000) setStatus(TEXT.server);
+    if (elapsed > 8000 && $('hint').style.visibility !== 'visible') {
+        $('hint').innerHTML = TEXT.hint;
+        $('hint').style.visibility = 'visible';
+    }
     setTimeout(ping, 400);
 }
 
 try {
     var bridge = new PalmServiceBridge();
     bridge.onservicecallback = function (response) {
-        serviceAnswered = true;
         try {
             var data = JSON.parse(response);
             if (data.ready) openApp();

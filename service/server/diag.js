@@ -1,6 +1,7 @@
 // Runtime numbers for the Settings diagnostics: this server, the television and the streaming server.
 
 var fs = require('fs');
+var https = require('https');
 var os = require('os');
 var { APP_VERSION, PROFILE, SERVER_PORT } = require('./config');
 var { sendJson } = require('./http-util');
@@ -49,7 +50,8 @@ var EVENT_KINDS = {
     media_start_retry: 1,
     streamref_failed: 1,
     play_rejected: 1,
-    addon_unavailable: 1
+    addon_unavailable: 1,
+    network_unreachable: 1
   },
   events = [];
 function recordEvent(kind, detail) {
@@ -77,7 +79,50 @@ function diagnostics(res) {
   });
 }
 
+/* Can this TV reach Stremio? Asked by the interface only after a request failed, so it can
+   say why (no internet, DNS, a broken IPv6 route, a blocked certificate) instead of
+   showing an empty screen. Any HTTP answer counts as reachable. */
+var NETCHECK_URLS = ['https://api.strem.io/', 'https://v3-cinemeta.strem.io/manifest.json'];
+function reach(u, cb) {
+  var done = false;
+  function finish(code) {
+    if (done) return;
+    done = true;
+    cb(code);
+  }
+  try {
+    var req = https.get(u, function (r) {
+      r.resume();
+      finish('');
+    });
+    req.setTimeout(6000, function () {
+      req.destroy();
+      finish('ETIMEDOUT');
+    });
+    req.on('error', function (e) {
+      finish((e && e.code) || 'ERROR');
+    });
+  } catch (e) {
+    finish('ERROR');
+  }
+}
+function netcheck(res) {
+  var left = NETCHECK_URLS.length,
+    code = '',
+    ok = false;
+  NETCHECK_URLS.forEach(function (u) {
+    reach(u, function (c) {
+      if (!c) ok = true;
+      else if (!code) code = c;
+      if (--left) return;
+      if (!ok) recordEvent('network_unreachable', code);
+      sendJson(res, { ok: ok, code: ok ? '' : code });
+    });
+  });
+}
+
 module.exports = {
   diagnostics: diagnostics,
+  netcheck: netcheck,
   recordEvent: recordEvent
 };

@@ -185,8 +185,17 @@ var done = cwCard({ _id:'tt5', type:'series', name:'Show', state:{ video_id:'tt5
 assert.strictEqual(done.upNext && done.videoId, 'tt5:2:6', 'a finished episode did not become its next episode');
 assert.strictEqual(cwCard({ _id:'m', type:'movie', state:{ video_id:'m', timeOffset:movie - 10 * 60000, duration:movie } }).upNext, false, 'ten minutes before the end of a film counted as finished');
 assert.strictEqual(cwCard({ _id:'c', type:'movie', state:{ video_id:'c', timeOffset:65000, duration:600000 } }).minutesLeft, 9, 'minutes left were not rounded');
+var pointer = cwCard({ _id:'tt8', type:'series', name:'Other', state:{ video_id:'tt8:1:4', timeOffset:1, duration:0 } });
+assert.strictEqual(pointer.upNext && pointer.videoId, 'tt8:1:4', 'the next episode set by another Stremio app was not offered');
+assert.strictEqual(cwCard({ _id:'m2', type:'movie', state:{ video_id:'m2', timeOffset:1, duration:0 } }).upNext, false, 'a film at the start became an up next card');
 var tagText = firstRun.context.__STREMIO_SOURCE_TAGS__({ name:'Torrentio 4k', title:'Show.2160p.WEB-DL.DDP5.1.DV.HDR10.HEVC 24.5 GB', quality:'4K', seeders:532 }).map(function (x) { return x.t; }).join(',');
 assert.strictEqual(tagText, '4K,HDR,DV,HEVC,DD+,24.5 GB,532 seeds', 'source tags were not read from the stream text');
+var langsOf = function (title, name) { return firstRun.context.__STREMIO_STREAM_LANGUAGES__({ name: name || 'Torrentio', title: title }).join(','); };
+assert.strictEqual(langsOf('Show.S01E01.1080p\n👤 12 💾 1.2 GB\nMulti Audio / 🇬🇧 / 🇮🇹'), 'en,it,multi', 'flags and multi audio were not read');
+assert.strictEqual(langsOf('Filme.2023.1080p.WEB-DL.DUAL.5.1 Dublado'), 'pt-BR,multi', 'a Brazilian dubbed release was not detected');
+assert.strictEqual(langsOf('Pelicula 1080p 🇲🇽 Latino', 'Latam'), 'es-419', 'Latin American Spanish was not detected');
+assert.strictEqual(langsOf('The.Movie.2160p.WEB-DL.DDP5.1.HEVC'), '', 'a release without language words got a language');
+assert.strictEqual(langsOf('Lost.Italy.Germany.1080p'), '', 'country names in a title were read as languages');
 var afterFail = firstRun.context.__STREMIO_NEXT_AFTER_FAILURE__([
   { stored:'q', addon:'Last' },
   { addon:'Torrentio', name:'A', title:'broken' },

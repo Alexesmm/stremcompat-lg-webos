@@ -158,7 +158,7 @@ var detail = {
       var lib = lsJson(PRE + this.id);
       av =
         this.vid ||
-        (lib && lib.state && lib.state.timeOffset > 60000 && lib.state.video_id) ||
+        (lib && lib.state && (upNextPointer(lib) || (lib.state.timeOffset > 60000 && lib.state.video_id))) ||
         this.firstUnwatched();
       this.vid = null;
     }

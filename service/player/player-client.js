@@ -124,6 +124,10 @@ var UI_TEXT = {
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
+    noConnection:
+      "Can't reach Stremio. Check the TV's internet connection. If other apps work, turn off IPv6 in the TV's network settings. ({0})",
+    noConnectionShort: 'No connection to Stremio',
+    evNoNetwork: 'Stremio could not be reached',
     lastSource: 'Last source',
     continuePlayback: 'Continue playback',
     sameSource: 'The same source used previously',
@@ -160,6 +164,11 @@ var UI_TEXT = {
     reloadingApp: 'Reloading StremCompat…',
     sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
+    preferredLanguage: 'Preferred source language',
+    anyLanguage: 'Any',
+    langFilter: 'Language: {0}',
+    langAll: 'All',
+    langOther: 'Other',
     automatic: 'Automatic',
     subtitlesGroup: 'Subtitles',
     subtitleSize: 'Subtitle size',
@@ -416,6 +425,10 @@ var UI_TEXT = {
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
+    noConnection:
+      'Não foi possível conectar ao Stremio. Verifique a internet da TV. Se outros apps funcionam, desative o IPv6 nas configurações de rede da TV. ({0})',
+    noConnectionShort: 'Sem conexão com o Stremio',
+    evNoNetwork: 'O Stremio não pôde ser alcançado',
     lastSource: 'Última fonte',
     continuePlayback: 'Continuar reprodução',
     sameSource: 'A mesma fonte usada anteriormente',
@@ -452,6 +465,11 @@ var UI_TEXT = {
     reloadingApp: 'Recarregando o StremCompat…',
     sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
+    preferredLanguage: 'Idioma preferido das fontes',
+    anyLanguage: 'Qualquer',
+    langFilter: 'Idioma: {0}',
+    langAll: 'Todos',
+    langOther: 'Outros',
     automatic: 'Automática',
     subtitlesGroup: 'Legendas',
     subtitleSize: 'Tamanho da legenda',
@@ -612,15 +630,12 @@ function tx(key) {
   });
 }
 // When a title counts as finished, shared by the interface and the player.
-/* Without credit markers, "finished" means little is left: at most 2 minutes or 5% of
-   the video, whichever is longer, and only past half of it so a short clip is not
-   finished as soon as it starts. Continue Watching, the watched mark and the next
-   episode all use this one rule. */
-var FINISHED_MIN_LEFT_MS = 120000,
-  FINISHED_MIN_LEFT_RATIO = 0.05;
+/* As the official Stremio apps (stremio-core): finished once the position passes 90 %,
+   where credits usually start. Continue Watching, the resume offer and the next episode
+   all use this rule; the player marks a video watched at 70 % really played. */
+var CREDITS_THRESHOLD = 0.9;
 function watchFinished(offsetMs, durationMs) {
-  if (!(durationMs > 0) || !(offsetMs > 0) || offsetMs < durationMs / 2) return false;
-  return durationMs - offsetMs <= Math.max(FINISHED_MIN_LEFT_MS, durationMs * FINISHED_MIN_LEFT_RATIO);
+  return durationMs > 0 && offsetMs > durationMs * CREDITS_THRESHOLD;
 }
 // Which installed addons answer stream requests; shared by the interface and the player.
 function addonBase(a) {
@@ -879,7 +894,7 @@ function readLib() {
 // Stremio auto-watch semantics: removed:false + temp:true (shows in Library + Continue
 // Watching and syncs everywhere). An explicit + Library later flips temp:false.
 function saveProgress() {
-  if (!v.duration || !ID) return;
+  if (!v.duration || !ID || sessionDone) return;
   var now = new Date().toISOString();
   var it = readLib();
   if (!it || !it.state) {
@@ -903,13 +918,28 @@ function saveProgress() {
     if (!it.type && TYPE) it.type = TYPE;
     if (!it.posterShape) it.posterShape = 'poster';
   }
-  var s = it.state;
-  s.timeOffset = Math.round(v.currentTime * 1000);
+  var s = it.state,
+    vid = VID || ID,
+    pos = Math.round(v.currentTime * 1000);
+  /* as stremio-core: time watched counts real playback of this video only (a seek is not
+     watching), and starts again when another episode takes over the item */
+  if (s.video_id !== vid) {
+    s.video_id = vid;
+    s.timeWatched = 0;
+    s.flaggedWatched = 0;
+    lastPos = -1;
+  }
+  var step = lastPos >= 0 ? pos - lastPos : 0;
+  lastPos = pos;
+  if (step > 0 && step <= 15000) {
+    s.timeWatched = (s.timeWatched || 0) + step;
+    s.overallTimeWatched = (s.overallTimeWatched || 0) + step;
+  }
+  s.timeOffset = pos;
   s.duration = Math.round(v.duration * 1000);
-  s.video_id = VID || ID;
   s.lastWatched = now;
-  s.timeWatched = s.timeOffset;
-  if (s.overallTimeWatched == null) s.overallTimeWatched = s.timeOffset;
+  if (s.timeWatched == null) s.timeWatched = 0;
+  if (s.overallTimeWatched == null) s.overallTimeWatched = 0;
   if (s.timesWatched == null) s.timesWatched = 0;
   if (s.flaggedWatched == null) s.flaggedWatched = 0;
   if (s.season == null) s.season = 0;
@@ -927,7 +957,20 @@ function saveProgress() {
   try {
     localStorage.setItem(LIBKEY, JSON.stringify(it));
   } catch (e) {}
+  if (s.timeWatched > s.duration * WATCHED_THRESHOLD && !s.flaggedWatched) markWatchedLocal();
 }
+/* watched once 70 % was really played, as stremio-core (markWatchedLocal) */
+var WATCHED_THRESHOLD = 0.7;
+/* last saved position, to tell playback from seeks (saveProgress) */
+var lastPos = -1,
+  sessionDone = false;
+/* playing again after the end resumes saving this video (finishSession) */
+v.addEventListener('play', function () {
+  sessionDone = false;
+});
+v.addEventListener('seeking', function () {
+  lastPos = -1;
+});
 var didResume = false;
 /* After an automatic resume, OK starts over for as long as the hint is on screen;
    any other toast replaces the hint and withdraws the offer. */
@@ -963,43 +1006,91 @@ setInterval(function () {
   if (!v.paused) {
     saveProgress();
     pushLib(false);
-    if (v.duration && watchFinished(v.currentTime * 1000, v.duration * 1000)) markWatchedLocal();
   }
 }, 10000);
 v.addEventListener('pause', function () {
   saveProgress();
   pushLib(true);
 });
-v.addEventListener('ended', function () {
-  saveProgress();
-  pushLib(true);
-});
-// local watched flag: add this video id to state.watchedEpisodes (drives the beta checkmarks)
-/* once this episode is finished, Continue Watching offers the next one (account.js) */
+/* once this episode is finished, Continue Watching offers the next one (account.js);
+   kept for items saved by older versions, the account item now points at it itself */
 function rememberUpNext() {
   if (!ID || !VID || !NEXTVID) return;
   try {
     localStorage.setItem('tvnext_' + ID + '_' + VID, NEXTVID);
   } catch (e) {}
 }
+/* Watched like the official apps once 70 % was really watched: the watched flag, one more
+   time watched and, for an episode, its bit in state.watched so every Stremio app shows
+   it; state.watchedEpisodes keeps the local mark until the field comes back. */
 function markWatchedLocal() {
-  rememberUpNext();
+  var it = readLib();
+  if (!it || !it.state) return;
+  var s = it.state,
+    wv = VID || ID;
+  if (s.video_id !== wv || s.flaggedWatched) return;
+  s.flaggedWatched = 1;
+  s.timesWatched = (s.timesWatched || 0) + 1;
+  if (!s.watchedEpisodes) s.watchedEpisodes = [];
+  if (s.watchedEpisodes.indexOf(wv) < 0) s.watchedEpisodes.push(wv);
+  it._mtime = new Date().toISOString();
   try {
-    var it = readLib();
-    if (!it || !it.state) return;
-    var wv = VID || ID;
-    if (!it.state.watchedEpisodes) it.state.watchedEpisodes = [];
-    for (var i = 0; i < it.state.watchedEpisodes.length; i++) if (it.state.watchedEpisodes[i] === wv) return;
-    it.state.watchedEpisodes.push(wv);
-    it.state.flaggedWatched = 1;
-    it._mtime = new Date().toISOString();
     localStorage.setItem(LIBKEY, JSON.stringify(it));
-    pushLib(true);
+  } catch (e) {}
+  pushLib(true);
+  if (TYPE !== 'series' || !VID) return;
+  xhr(
+    '/watchedset?id=' +
+      encodeURIComponent(ID) +
+      '&vid=' +
+      encodeURIComponent(VID) +
+      '&f=' +
+      encodeURIComponent(s.watched || ''),
+    function (j) {
+      var cur = readLib();
+      if (!j || !j.watched || !cur || !cur.state) return;
+      cur.state.watched = j.watched;
+      cur._mtime = new Date().toISOString();
+      try {
+        localStorage.setItem(LIBKEY, JSON.stringify(cur));
+      } catch (e) {}
+      pushLib(true);
+    }
+  );
+}
+/* Leaving after the credits started (90 %), as stremio-core: the position goes back to the
+   start and a series moves on to its next episode, which Continue Watching then offers on
+   every device. `toNext` (the Next button) moves on even before the credits. */
+function finishSession(toNext) {
+  if (!v.duration) return;
+  saveProgress();
+  var it = readLib();
+  if (!it || !it.state || it.state.video_id !== (VID || ID)) return;
+  var s = it.state;
+  if (!toNext && !watchFinished(s.timeOffset, s.duration)) return;
+  rememberUpNext();
+  s.timeOffset = 0;
+  if (TYPE === 'series' && NEXTVID) {
+    s.video_id = NEXTVID;
+    s.timeOffset = 1;
+    s.timeWatched = 0;
+    s.flaggedWatched = 0;
+    var pp = NEXTVID.split(':');
+    if (pp.length >= 3) {
+      s.season = parseInt(pp[pp.length - 2], 10) || 0;
+      s.episode = parseInt(pp[pp.length - 1], 10) || 0;
+    }
+  }
+  sessionDone = true;
+  it._mtime = new Date().toISOString();
+  try {
+    localStorage.setItem(LIBKEY, JSON.stringify(it));
   } catch (e) {}
 }
 // binge: when the episode ends, count down to the next one (up-next.js)
 v.addEventListener('ended', function () {
-  markWatchedLocal();
+  finishSession(false);
+  pushLib(true);
   var binge = lsGet('bingeWatch', 'true') !== 'false' && lsGet('enableNextVideo', 'true') !== 'false';
   if (binge && NEXTHREF && !npDismissed) startAutoNext();
 });
@@ -1358,8 +1449,7 @@ function rememberNextSource() {
 function nextEp() {
   if (NEXTHREF) {
     try {
-      saveProgress();
-      markWatchedLocal();
+      finishSession(true);
       rememberNextSource();
     } catch (e) {}
     location.replace(NEXTHREF);
@@ -1758,6 +1848,7 @@ function exit() {
   }
   setTimeout(leave, 900);
   try {
+    finishSession(false);
     saveProgress();
     pushLib(true, leave);
   } catch (e) {

@@ -1,7 +1,6 @@
 // HTTP routing for the local compatibility server.
 
 var urlmod = require('url');
-var zlib = require('zlib');
 var { APP_VERSION, PORT } = require('./config');
 var { dbg } = require('./log');
 var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
@@ -18,8 +17,9 @@ var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
 var { nextEpisodeId } = require('./episodes');
-var { diagnostics, recordEvent } = require('./diag');
+var { diagnostics, netcheck, recordEvent } = require('./diag');
 var { cachedAddonJson } = require('./addon-cache');
+var { decodeField, rememberVideos, seriesVideos, setWatched } = require('./watched');
 
 // Routes every request of the local compatibility server.
 function handleRequest(req, res) {
@@ -36,6 +36,8 @@ function handleRequest(req, res) {
     });
   } else if (p === '/diag') {
     diagnostics(res);
+  } else if (p === '/netcheck') {
+    netcheck(res);
   } else if (p === '/ping') {
     // Instant readiness probe for the app launcher — proves the app port is bound so it can
     // redirect here instead of guessing on a timer (which races a cold node start).
@@ -191,6 +193,7 @@ function handleRequest(req, res) {
             ctx.episode = pp[pp.length - 1];
             ctx.season = pp[pp.length - 2];
             ctx.nextVid = nextEpisodeId(m.videos, vid);
+            rememberVideos(ctx.id, m.videos);
             if (m.videos) {
               for (var i = 0; i < m.videos.length; i++) {
                 var mv = m.videos[i];
@@ -285,20 +288,14 @@ function handleRequest(req, res) {
       refStream ? String(q.ref) : ''
     );
   } else if (p === '/watchedbits') {
-    // Decode Stremio's watched bitfield: "<anchorVideoId>:<anchorLen>:<zlib-b64>".
-    // The browser has no zlib, so we inflate here and hand back raw bits.
-    var wf = String(q.f || '');
-    var wparts = wf.split(':');
-    var wb64 = wparts.pop();
-    var walen = parseInt(wparts.pop(), 10) || 0;
-    var wanchor = wparts.join(':');
-    var wbits = [];
-    try {
-      var wbuf = zlib.inflateSync(Buffer.from(wb64, 'base64'));
-      // least significant bit first, as stremio-watched-bitfield's BitField8::get
-      for (var wi = 0; wi < wbuf.length * 8; wi++) wbits.push((wbuf[wi >> 3] >> wi % 8) & 1);
-    } catch (e) {}
-    sendJson(res, { anchor: wanchor, alen: walen, bits: wbits });
+    // Decode Stremio's watched field; the browser has no zlib, so hand back raw bits.
+    sendJson(res, decodeField(q.f));
+  } else if (p === '/watchedset') {
+    // Mark one episode in the watched field, as the official apps write it.
+    seriesVideos(String(q.id || ''), function (videos) {
+      var field = videos ? setWatched(String(q.f || ''), videos, String(q.vid || ''), q.w !== '0') : '';
+      sendJson(res, field ? { watched: field } : { error: 'unknown_video' });
+    });
   } else if (p === '/logo.png') {
     if (logoPng()) {
       res.writeHead(200, {

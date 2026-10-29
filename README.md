@@ -41,10 +41,10 @@ Download the IPK that matches your television's webOS generation and graphics mo
 
 | Package | For | Status | App name on the TV |
 |---|---|---|---|
-| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.22.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | Stremio |
-| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.22.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | Stremio HD |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.19.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | Stremio UJ3 |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.19.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | Stremio UJ3 HD |
+| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.23.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | Stremio |
+| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.23.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | Stremio HD |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.20.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | Stremio UJ3 |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.20.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | Stremio UJ3 HD |
 
 How to choose:
 
@@ -82,8 +82,8 @@ The IPK is about 46 MiB and uses about 92 MiB once installed. Developer Mode ins
 **Account and library**
 
 - Login by email or phone pairing code; English or Brazilian Portuguese interface.
-- Library, watched state, progress and addon synchronization with the Stremio account, including episodes watched on other Stremio apps.
-- Continue Watching with the episode and minutes left; a finished episode becomes the next one.
+- Library, watched state, progress and addon synchronization with the Stremio account, in both directions: episodes and films watched on the TV show as watched in the other Stremio apps, and the other way round.
+- Continue Watching with the episode and minutes left; a finished episode becomes the next one, also when it was finished on another device.
 - Home rows for New episodes of followed series and My list.
 - History controls to clear recent searches or Continue Watching.
 
@@ -96,7 +96,8 @@ The IPK is about 46 MiB and uses about 92 MiB once installed. Developer Mode ins
 
 **Sources and playback**
 
-- Quality filters, duplicate removal and source tags (quality, HDR/DV, codec, audio, size, seeders), with a recommended source for the TV.
+- Quality filters, duplicate removal and source tags (quality, language, HDR/DV, codec, audio, size, seeders), with a recommended source for the TV.
+- Optional preferred source language that lists sources in that language first, and a language filter when the sources come in several languages.
 - Addons that do not answer are named, and a source that will not play offers another one.
 - Direct, debrid, torrent and HLS playback through the local bridge, using the TV's hardware decoder.
 - Subtitles and audio-track selection, remembered per title along with the subtitle delay.
@@ -117,7 +118,7 @@ webOS 3 and 4 need separate packages because they ship different browser engines
 
 ## Troubleshooting
 
-- **Nothing loads (login QR code, email login or catalogs) while other TV apps and Stremio on a phone work:** your network probably hands out IPv6 without a working IPv6 connection. Update to 1.2.3 or later, which tries IPv4 first. On older versions, turn IPv6 off on the television (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router.
+- **"Can't reach Stremio" message, or nothing loads (login QR code, email login or catalogs) while other TV apps and Stremio on a phone work:** your network probably hands out IPv6 without a working IPv6 connection. Update to 1.2.3 or later, which tries IPv4 first. On older versions, turn IPv6 off on the television (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router.
 - **Check that the app's local service is running** by opening `http://127.0.0.1:<port>/health` in the TV browser, with port `8082` (UM4 1920x1080), `8084` (UM4 1280x720), `8093` (UJ3 1920x1080) or `8094` (UJ3 1280x720). A JSON answer means it is running.
 - **App stuck after an update:** power cycle the television as described in [Installation](#installation).
 - **Interface only in the upper-left part of the screen:** install the `graphics-1280x720` package.

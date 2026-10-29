@@ -51,6 +51,12 @@ function pointerUI(target, activate) {
     return true;
   }
   if (streamsUI.open) {
+    if (target && target.id === 'stLang') {
+      streamsUI.zone = 'lang';
+      streamsUI.paint();
+      if (activate) streamsUI.nextLang();
+      return true;
+    }
     i = pointerIndex(target, streamsUI.chipEls);
     if (i >= 0) {
       streamsUI.zone = 'chips';

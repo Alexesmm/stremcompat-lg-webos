@@ -108,6 +108,19 @@ function xhrJson(u, cb, tmo) {
     return null;
   }
 }
+/* After a request failed: asks the local server whether Stremio answers at all, so the
+   screen can say the TV has no connection instead of a vague error. cb(code) gets the
+   network error (such as ENOTFOUND or ETIMEDOUT), or '' when Stremio is reachable or
+   the local server itself did not answer. Never runs while things work. */
+function checkConnection(cb) {
+  xhrJson(
+    '/netcheck',
+    function (j) {
+      cb(j && j.ok === false ? String(j.code || 'ERROR') : '');
+    },
+    15000
+  );
+}
 function apiPostUrl(u) {
   var p = API + '/api/';
   return String(u || '').indexOf(p) === 0
@@ -306,6 +319,10 @@ var UI_TEXT = {
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
+    noConnection:
+      "Can't reach Stremio. Check the TV's internet connection. If other apps work, turn off IPv6 in the TV's network settings. ({0})",
+    noConnectionShort: 'No connection to Stremio',
+    evNoNetwork: 'Stremio could not be reached',
     lastSource: 'Last source',
     continuePlayback: 'Continue playback',
     sameSource: 'The same source used previously',
@@ -342,6 +359,11 @@ var UI_TEXT = {
     reloadingApp: 'Reloading StremCompat…',
     sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
+    preferredLanguage: 'Preferred source language',
+    anyLanguage: 'Any',
+    langFilter: 'Language: {0}',
+    langAll: 'All',
+    langOther: 'Other',
     automatic: 'Automatic',
     subtitlesGroup: 'Subtitles',
     subtitleSize: 'Subtitle size',
@@ -598,6 +620,10 @@ var UI_TEXT = {
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
+    noConnection:
+      'Não foi possível conectar ao Stremio. Verifique a internet da TV. Se outros apps funcionam, desative o IPv6 nas configurações de rede da TV. ({0})',
+    noConnectionShort: 'Sem conexão com o Stremio',
+    evNoNetwork: 'O Stremio não pôde ser alcançado',
     lastSource: 'Última fonte',
     continuePlayback: 'Continuar reprodução',
     sameSource: 'A mesma fonte usada anteriormente',
@@ -634,6 +660,11 @@ var UI_TEXT = {
     reloadingApp: 'Recarregando o StremCompat…',
     sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
+    preferredLanguage: 'Idioma preferido das fontes',
+    anyLanguage: 'Qualquer',
+    langFilter: 'Idioma: {0}',
+    langAll: 'Todos',
+    langOther: 'Outros',
     automatic: 'Automática',
     subtitlesGroup: 'Legendas',
     subtitleSize: 'Tamanho da legenda',
@@ -794,15 +825,12 @@ function tx(key) {
   });
 }
 // When a title counts as finished, shared by the interface and the player.
-/* Without credit markers, "finished" means little is left: at most 2 minutes or 5% of
-   the video, whichever is longer, and only past half of it so a short clip is not
-   finished as soon as it starts. Continue Watching, the watched mark and the next
-   episode all use this one rule. */
-var FINISHED_MIN_LEFT_MS = 120000,
-  FINISHED_MIN_LEFT_RATIO = 0.05;
+/* As the official Stremio apps (stremio-core): finished once the position passes 90 %,
+   where credits usually start. Continue Watching, the resume offer and the next episode
+   all use this rule; the player marks a video watched at 70 % really played. */
+var CREDITS_THRESHOLD = 0.9;
 function watchFinished(offsetMs, durationMs) {
-  if (!(durationMs > 0) || !(offsetMs > 0) || offsetMs < durationMs / 2) return false;
-  return durationMs - offsetMs <= Math.max(FINISHED_MIN_LEFT_MS, durationMs * FINISHED_MIN_LEFT_RATIO);
+  return durationMs > 0 && offsetMs > durationMs * CREDITS_THRESHOLD;
 }
 // Which installed addons answer stream requests; shared by the interface and the player.
 function addonBase(a) {
@@ -1196,11 +1224,17 @@ function upNextOf(id, vid) {
   var next = lsRaw('tvnext_' + id + '_' + vid, '');
   return next && next !== vid ? next : '';
 }
+/* A series item whose position sits at the very start points at its next episode: the
+   official apps move it there (position 1 ms) once an episode is finished. */
+function upNextPointer(it) {
+  var s = it.state || {};
+  return it.type === 'series' && s.video_id && s.timeOffset > 0 && s.timeOffset < 60000 ? s.video_id : '';
+}
 /* Continue Watching card data: a finished episode becomes its next episode, and the
    minutes left are only shown when the saved numbers can be trusted. */
 function cwCard(it) {
   var s = it.state || {},
-    next = watchFinished(s.timeOffset, s.duration) ? upNextOf(it._id, s.video_id) : '';
+    next = upNextPointer(it) || (watchFinished(s.timeOffset, s.duration) ? upNextOf(it._id, s.video_id) : '');
   return {
     id: it._id,
     type: it.type || 'movie',
@@ -1215,16 +1249,20 @@ function cwCard(it) {
   };
 }
 window.__STREMIO_CW_CARD__ = cwCard;
+/* As in Stremio, an item removed from the library stays only while it is temporary */
 function cwItems(limit) {
   var out = [],
     lib = allLib();
   for (var i = 0; i < lib.length; i++) {
     var it = lib[i],
       s = it.state || {};
-    if (!s.timeOffset || s.timeOffset < 60000) continue;
-    /* a finished episode stays only when its next episode is known (cwCard) */
-    if (watchFinished(s.timeOffset, s.duration) && !(it.type === 'series' && upNextOf(it._id, s.video_id)))
-      continue;
+    if (it.removed && !it.temp) continue;
+    if (!upNextPointer(it)) {
+      if (!s.timeOffset || s.timeOffset < 60000) continue;
+      /* a finished episode stays only when its next episode is known (cwCard) */
+      if (watchFinished(s.timeOffset, s.duration) && !(it.type === 'series' && upNextOf(it._id, s.video_id)))
+        continue;
+    }
     if (!it.name) continue;
     out.push(it);
   }
@@ -1233,6 +1271,7 @@ function cwItems(limit) {
   });
   return out.slice(0, limit || 12);
 }
+window.__STREMIO_CW_ITEMS__ = cwItems;
 function libGridItems() {
   var out = [],
     lib = allLib();
@@ -1632,9 +1671,100 @@ function sourceTags(s) {
   m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
   if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
+  /* the language goes right after the quality */
+  if (s.langs && s.langs.length)
+    out.splice(out.length && out[0].c === 'q' ? 1 : 0, 0, { t: langTagText(s.langs), c: 'lang' });
   return out;
 }
 window.__STREMIO_SOURCE_TAGS__ = sourceTags;
+/* ---- audio languages of a source, read once when the addon answers (fetchStreams) ----
+   From country flags (addons such as Torrentio list them) and the usual release words.
+   Codes are pt-BR, pt, es-419 (Latin American Spanish), es, en, fr, it, de, ja, ko, ru,
+   hi, plus 'multi' for multi or dual audio. */
+var FLAG_LANG = {
+  BR: 'pt-BR',
+  PT: 'pt',
+  ES: 'es',
+  MX: 'es-419',
+  AR: 'es-419',
+  CO: 'es-419',
+  CL: 'es-419',
+  PE: 'es-419',
+  VE: 'es-419',
+  UY: 'es-419',
+  US: 'en',
+  GB: 'en',
+  FR: 'fr',
+  IT: 'it',
+  DE: 'de',
+  JP: 'ja',
+  KR: 'ko',
+  RU: 'ru',
+  IN: 'hi'
+};
+var WORD_LANG = [
+  ['pt-BR', /\b(dublado|pt[ ._-]?br|brazilian)\b/],
+  ['pt', /\b(portugu[eê]se?|portugu[eê]s)\b/],
+  ['es-419', /\b(latino|latam)\b/],
+  ['es', /\b(castellano|spanish|espa[nñ]ol)\b/],
+  ['en', /\b(english|eng)\b/],
+  ['fr', /\b(french|truefrench|vff|vf2?)\b/],
+  ['it', /\b(ita|italian|italiano)\b/],
+  ['de', /\b(german|deutsch)\b/],
+  ['ja', /\b(japanese|jpn)\b/],
+  ['ko', /\b(korean)\b/],
+  ['ru', /\b(russian|rus)\b/],
+  ['hi', /\b(hindi)\b/],
+  ['multi', /\b(multi|dual)\b/]
+];
+function streamLanguages(s) {
+  var t = streamText(s),
+    low = t.toLowerCase(),
+    out = [],
+    flag = /\uD83C([\uDDE6-\uDDFF])\uD83C([\uDDE6-\uDDFF])/g,
+    m,
+    i;
+  function add(code) {
+    if (out.indexOf(code) < 0) out.push(code);
+  }
+  while ((m = flag.exec(t))) {
+    var cc = String.fromCharCode(m[1].charCodeAt(0) - 0xdde6 + 65, m[2].charCodeAt(0) - 0xdde6 + 65);
+    if (FLAG_LANG[cc]) add(FLAG_LANG[cc]);
+  }
+  for (i = 0; i < WORD_LANG.length; i++) if (WORD_LANG[i][1].test(low)) add(WORD_LANG[i][0]);
+  /* "dublado" or a Brazilian flag says more than a plain "portuguese" */
+  if (out.indexOf('pt-BR') >= 0 && out.indexOf('pt') >= 0) out.splice(out.indexOf('pt'), 1);
+  if (out.indexOf('es-419') >= 0 && out.indexOf('es') >= 0) out.splice(out.indexOf('es'), 1);
+  return out;
+}
+window.__STREMIO_STREAM_LANGUAGES__ = streamLanguages;
+function langBase(code) {
+  return String(code).split('-')[0];
+}
+/* 'PT-BR', 'ES-LA · EN', 'MULTI', or the first two and '+2' when there are more */
+function langTagText(langs) {
+  var names = [];
+  for (var i = 0; i < langs.length; i++)
+    names.push(langs[i] === 'es-419' ? 'ES-LA' : langs[i] === 'multi' ? 'MULTI' : langs[i].toUpperCase());
+  return names.length > 2 ? names.slice(0, 2).join(' · ') + ' +' + (names.length - 2) : names.join(' · ');
+}
+/* filter groups of a source: language bases, 'multi', or 'none' when nothing was detected */
+function langGroups(s) {
+  var langs = s.langs || [],
+    out = [];
+  for (var i = 0; i < langs.length; i++) {
+    var g = langBase(langs[i]);
+    if (out.indexOf(g) < 0) out.push(g);
+  }
+  if (!out.length) out.push('none');
+  return out;
+}
+/* 0 when the source has the preferred language, 1 for multi audio, 2 otherwise */
+function langRank(s, pref) {
+  if (!pref || pref === 'Auto') return 0;
+  var g = langGroups(s);
+  return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
+}
 function streamSourceKey(s) {
   if (s.stored) return 'stored';
   var u = String(s.url || '').replace(/#.*$/, '');
@@ -1760,6 +1890,7 @@ function fetchStreams(type, vid, onPart, onDone) {
               notWebReady: !!h.notWebReady,
               headers: (h.proxyHeaders && h.proxyHeaders.request) || null
             };
+            item.langs = streamLanguages(s);
             var compat = streamCompatibility(item);
             item.compatLabels = compat.labels;
             item.compatRank = compat.rank;
@@ -3206,18 +3337,27 @@ function buildRow(title, items, wide, label, eager) {
   return row;
 }
 // Row loaders for Home, Discover and Library, and opening a focused item.
-/* When every catalog answered and none has titles, Home says so instead of staying blank. */
+/* When every catalog answered and none has titles, Home says so instead of staying blank,
+   and says the TV has no connection when Stremio itself cannot be reached. */
 function paintBoardMessage(board) {
   var msg = $('boardMsg');
   if (curBoard() !== board) return;
-  msg.innerHTML = board.empty ? tx('catalogsFailed') + '<br>' + tx('pressOkRetry') : '';
+  var text = board.netCode ? tx('noConnection', board.netCode) : tx('catalogsFailed');
+  msg.innerHTML = board.empty ? esc(text) + '<br>' + tx('pressOkRetry') : '';
   msg.style.display = board.empty ? 'block' : 'none';
 }
 function settleBoardMessage(board) {
   var any = false;
   for (var i = 0; i < board.rows.length; i++) if (board.rows[i].items.length) any = true;
   board.empty = !any;
+  board.netCode = '';
   paintBoardMessage(board);
+  if (any) return;
+  checkConnection(function (code) {
+    if (!board.empty || !code) return;
+    board.netCode = code;
+    paintBoardMessage(board);
+  });
 }
 /* generic catalog-backed board loader (rows fill in asynchronously, cache-first) */
 function loadCatalogRows(board, defs, includeCW, keepFocus) {
@@ -3456,7 +3596,7 @@ function libHas(id) {
 }
 /* A film counts as watched when Stremio says so (times watched or the watched flag, also
    set by other devices, which reset the position to 0 once a film ends), when it is in the
-   local watched list, or when it stopped at 90 % or later. */
+   local watched list, or when it stopped in the credits (past 90 %). */
 function itemWatched(it) {
   if (!it || !it.id || it.type === 'series') return false;
   var lib = lsJson(PRE + it.id);
@@ -3466,7 +3606,7 @@ function itemWatched(it) {
   if (s.timesWatched > 0 || s.flaggedWatched > 0) return true;
   if (s.watchedEpisodes)
     for (var i = 0; i < s.watchedEpisodes.length; i++) if (s.watchedEpisodes[i] === vid) return true;
-  return !!(s.duration && s.timeOffset >= s.duration * 0.9);
+  return watchFinished(s.timeOffset, s.duration);
 }
 function libToggle(item) {
   var now = new Date().toISOString();
@@ -3541,15 +3681,17 @@ function clearRecentSearches() {
   lsSet(RECENT_SEARCH_KEY, []);
   search.recentSig = null;
 }
+/* Marked watched as the official apps do: the watched flag, one more time watched and,
+   for an episode, its bit in state.watched (written by the local server, which has the
+   episode list), so other devices show it too. */
 function markCwWatched(it) {
   var lib2 = lsJson(PRE + it.id);
   if (!lib2) return;
   var s2 = lib2.state || {};
   var vid = s2.video_id || it.videoId || it.id;
   if (!s2.watchedEpisodes) s2.watchedEpisodes = [];
-  var f = false;
-  for (var i = 0; i < s2.watchedEpisodes.length; i++) if (s2.watchedEpisodes[i] === vid) f = true;
-  if (!f) s2.watchedEpisodes.push(vid);
+  if (s2.watchedEpisodes.indexOf(vid) < 0) s2.watchedEpisodes.push(vid);
+  if (!s2.flaggedWatched) s2.timesWatched = (s2.timesWatched || 0) + 1;
   s2.flaggedWatched = 1;
   s2.timeOffset = 0;
   lib2.state = s2;
@@ -3557,6 +3699,23 @@ function markCwWatched(it) {
   lsSet(PRE + it.id, lib2);
   pushLib(lib2);
   invalidateBoards();
+  if (lib2.type !== 'series' || vid === it.id) return;
+  xhrJson(
+    '/watchedset?id=' +
+      encodeURIComponent(it.id) +
+      '&vid=' +
+      encodeURIComponent(vid) +
+      '&f=' +
+      encodeURIComponent(s2.watched || ''),
+    function (j) {
+      var cur = lsJson(PRE + it.id);
+      if (!j || !j.watched || !cur || !cur.state) return;
+      cur.state.watched = j.watched;
+      cur._mtime = new Date().toISOString();
+      lsSet(PRE + it.id, cur);
+      pushLib(cur);
+    }
+  );
 }
 // Long-press OK side menu available on every card.
 /* ================= unified long-press side menu (any card) ================= */
@@ -4212,7 +4371,7 @@ var detail = {
       var lib = lsJson(PRE + this.id);
       av =
         this.vid ||
-        (lib && lib.state && lib.state.timeOffset > 60000 && lib.state.video_id) ||
+        (lib && lib.state && (upNextPointer(lib) || (lib.state.timeOffset > 60000 && lib.state.video_id))) ||
         this.firstUnwatched();
       this.vid = null;
     }
@@ -4895,6 +5054,8 @@ var streamsUI = {
   autoPref: null,
   zone: 'list',
   filter: 'All',
+  langFilter: 'All',
+  langs: [],
   chipIdx: 0,
   chips: [],
   chipEls: [],
@@ -4921,11 +5082,14 @@ var streamsUI = {
     this.retryPref = takeRetryRequest(id, vid);
     this.zone = 'list';
     this.filter = 'All';
+    this.langFilter = 'All';
+    this.langs = [];
     this.chipIdx = 0;
     this.chips = [];
     this.chipEls = [];
     $('streams').style.display = 'block';
     $('stChips').innerHTML = '';
+    $('stLang').style.display = 'none';
     $('stSub').textContent =
       (title || '') +
       (vid && vid.indexOf(':') > 0 ? '  ·  T' + vid.split(':')[1] + ' E' + vid.split(':')[2] : '');
@@ -5063,7 +5227,47 @@ var streamsUI = {
       k = 0;
     }
     this.chipIdx = k;
+    this.renderLangs(allItems);
     this.paintChips();
+  },
+  /* The language selector stays small in the corner: it appears only when the sources
+     come in two or more languages, and OK steps through them. */
+  renderLangs: function (allItems) {
+    var counts = {},
+      order = [],
+      n,
+      g;
+    for (n = 0; n < allItems.length; n++) {
+      if (allItems[n].stored) continue;
+      g = langGroups(allItems[n]);
+      for (var j = 0; j < g.length; j++) {
+        if (!counts[g[j]]) order.push(g[j]);
+        counts[g[j]] = (counts[g[j]] || 0) + 1;
+      }
+    }
+    order.sort(function (a, b) {
+      return (a === 'none') - (b === 'none') || counts[b] - counts[a];
+    });
+    this.langs = order.length > 1 ? ['All'].concat(order) : [];
+    if (this.langs.indexOf(this.langFilter) < 0) this.langFilter = 'All';
+    if (!this.langs.length && this.zone === 'lang') this.zone = 'chips';
+    $('stLang').style.display = this.langs.length ? 'block' : 'none';
+  },
+  langName: function (g) {
+    return g === 'All'
+      ? tx('langAll')
+      : g === 'none'
+        ? tx('langOther')
+        : g === 'multi'
+          ? 'Multi'
+          : g.toUpperCase();
+  },
+  nextLang: function (step) {
+    var n = this.langs.length;
+    if (!n) return;
+    this.langFilter = this.langs[(this.langs.indexOf(this.langFilter) + (step || 1) + n) % n];
+    this.idx = 0;
+    this.rebuild();
   },
   paintChips: function () {
     for (var i = 0; i < this.chipEls.length; i++) {
@@ -5071,16 +5275,29 @@ var streamsUI = {
       this.chipEls[i].className =
         'stchip' + (cur ? ' cur' : '') + (this.zone === 'chips' && i === this.chipIdx ? ' f' : '');
     }
+    var lang = $('stLang');
+    lang.textContent = tx('langFilter', this.langName(this.langFilter));
+    lang.className = (this.langFilter !== 'All' ? 'cur' : '') + (this.zone === 'lang' ? ' f' : '');
   },
   rebuild: function () {
     var sel = this.items[this.idx] || null,
       flat = this.all(),
       self = this,
-      pref = lsRaw('preferredSourceQuality', 'Auto');
+      pref = lsRaw('preferredSourceQuality', 'Auto'),
+      langPref = lsRaw('preferredSourceLanguage', 'Auto'),
+      lf = this.langFilter;
     flat = flat.filter(function (s) {
-      return self.filter === 'All' || s.quality === self.filter;
+      return (
+        (self.filter === 'All' || s.quality === self.filter) &&
+        (lf === 'All' || s.stored || langGroups(s).indexOf(lf) >= 0)
+      );
     });
+    /* the last source first, then the preferred language, then the preferred quality */
     flat.sort(function (a, b) {
+      if (!a.stored !== !b.stored) return a.stored ? -1 : 1;
+      var al = langRank(a, langPref),
+        bl = langRank(b, langPref);
+      if (al !== bl) return al - bl;
       if (pref !== 'Auto') {
         var ap = a.quality === pref ? 0 : 1,
           bp = b.quality === pref ? 0 : 1;
@@ -5182,7 +5399,21 @@ var streamsUI = {
     return true;
   },
   key: function (k) {
+    if (this.zone === 'lang') {
+      if (k === 13 || k === 39) this.nextLang(1);
+      else if (k === 37) this.nextLang(-1);
+      else if (k === 40) {
+        this.zone = 'chips';
+        this.paint();
+      }
+      return true;
+    }
     if (this.zone === 'chips') {
+      if (k === 38 && this.langs.length) {
+        this.zone = 'lang';
+        this.paint();
+        return true;
+      }
       if (k === 39) this.chipIdx = Math.min(this.chipEls.length - 1, this.chipIdx + 1);
       else if (k === 37) this.chipIdx = Math.max(0, this.chipIdx - 1);
       else if (k === 40 || k === 13) {
@@ -5793,7 +6024,8 @@ function diagEventLine(e) {
       media_start_retry: 'evSlowStart',
       streamref_failed: 'evPrepareFailed',
       play_rejected: 'evPlayRejected',
-      addon_unavailable: 'evAddonDown'
+      addon_unavailable: 'evAddonDown',
+      network_unreachable: 'evNoNetwork'
     }[e.kind];
   return hh + ':' + mm + '  ·  ' + tx(key || e.kind) + (e.detail ? ' (' + e.detail + ')' : '');
 }
@@ -5829,6 +6061,20 @@ var settings = {
           ['1080p', '1080p'],
           ['720p', '720p'],
           ['SD', 'SD']
+        ],
+        d: 'Auto'
+      },
+      {
+        k: 'preferredSourceLanguage',
+        lb: tx('preferredLanguage'),
+        opts: [
+          ['Auto', tx('anyLanguage')],
+          ['pt', 'Português'],
+          ['es', 'Español'],
+          ['en', 'English'],
+          ['fr', 'Français'],
+          ['it', 'Italiano'],
+          ['de', 'Deutsch']
         ],
         d: 'Auto'
       },
@@ -6319,6 +6565,7 @@ var login = {
       if (!j || !j.code) {
         self.started = false;
         self.setStatus('qrUnavailable');
+        self.explainNoConnection(gen);
         return;
       }
       self.qrCode = j.code;
@@ -6326,6 +6573,15 @@ var login = {
       $('lgCode').textContent = j.code;
       self.setStatus('waitingPhone');
       self.schedulePoll(gen);
+    });
+  },
+  /* the QR code or sign-in got no answer: when Stremio is unreachable, say so and how to fix it */
+  explainNoConnection: function (gen) {
+    var self = this;
+    checkConnection(function (code) {
+      if (!code || gen !== self.pollGen || SCR !== 'login') return;
+      self.setStatus('noConnectionShort');
+      $('lgErr').textContent = tx('noConnection', code);
     });
   },
   schedulePoll: function (gen) {
@@ -6397,6 +6653,7 @@ var login = {
       var res = r && r.result;
       if (!res || !res.authKey) {
         $('lgErr').textContent = (r && r.error && r.error.message) || tx('signInFailed');
+        if (!r) self.explainNoConnection(self.pollGen);
         return;
       }
       if (res.user) lsSet('user', res.user);
@@ -6507,6 +6764,12 @@ function pointerUI(target, activate) {
     return true;
   }
   if (streamsUI.open) {
+    if (target && target.id === 'stLang') {
+      streamsUI.zone = 'lang';
+      streamsUI.paint();
+      if (activate) streamsUI.nextLang();
+      return true;
+    }
     i = pointerIndex(target, streamsUI.chipEls);
     if (i >= 0) {
       streamsUI.zone = 'chips';

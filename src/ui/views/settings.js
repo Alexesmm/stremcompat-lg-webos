@@ -32,7 +32,8 @@ function diagEventLine(e) {
       media_start_retry: 'evSlowStart',
       streamref_failed: 'evPrepareFailed',
       play_rejected: 'evPlayRejected',
-      addon_unavailable: 'evAddonDown'
+      addon_unavailable: 'evAddonDown',
+      network_unreachable: 'evNoNetwork'
     }[e.kind];
   return hh + ':' + mm + '  ·  ' + tx(key || e.kind) + (e.detail ? ' (' + e.detail + ')' : '');
 }
@@ -68,6 +69,20 @@ var settings = {
           ['1080p', '1080p'],
           ['720p', '720p'],
           ['SD', 'SD']
+        ],
+        d: 'Auto'
+      },
+      {
+        k: 'preferredSourceLanguage',
+        lb: tx('preferredLanguage'),
+        opts: [
+          ['Auto', tx('anyLanguage')],
+          ['pt', 'Português'],
+          ['es', 'Español'],
+          ['en', 'English'],
+          ['fr', 'Français'],
+          ['it', 'Italiano'],
+          ['de', 'Deutsch']
         ],
         d: 'Auto'
       },

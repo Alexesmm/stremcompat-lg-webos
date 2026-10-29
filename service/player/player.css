@@ -90,3 +90,6 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 #tlogo{position:fixed;top:44px;left:56px;z-index:4;opacity:0;transition:opacity .2s;pointer-events:none}
 #tlogo img{display:block;max-width:380px;max-height:120px}
 #bar.show~#tlogo{opacity:1}
+/* the paused screen already shows the title: no second copy in the bar or the corner */
+#pv.show~#bar #title,#pv.show~#bar #tse{visibility:hidden}
+#pv.show~#tlogo{opacity:0}

@@ -1,16 +1,25 @@
 // Row loaders for Home, Discover and Library, and opening a focused item.
-/* When every catalog answered and none has titles, Home says so instead of staying blank. */
+/* When every catalog answered and none has titles, Home says so instead of staying blank,
+   and says the TV has no connection when Stremio itself cannot be reached. */
 function paintBoardMessage(board) {
   var msg = $('boardMsg');
   if (curBoard() !== board) return;
-  msg.innerHTML = board.empty ? tx('catalogsFailed') + '<br>' + tx('pressOkRetry') : '';
+  var text = board.netCode ? tx('noConnection', board.netCode) : tx('catalogsFailed');
+  msg.innerHTML = board.empty ? esc(text) + '<br>' + tx('pressOkRetry') : '';
   msg.style.display = board.empty ? 'block' : 'none';
 }
 function settleBoardMessage(board) {
   var any = false;
   for (var i = 0; i < board.rows.length; i++) if (board.rows[i].items.length) any = true;
   board.empty = !any;
+  board.netCode = '';
   paintBoardMessage(board);
+  if (any) return;
+  checkConnection(function (code) {
+    if (!board.empty || !code) return;
+    board.netCode = code;
+    paintBoardMessage(board);
+  });
 }
 /* generic catalog-backed board loader (rows fill in asynchronously, cache-first) */
 function loadCatalogRows(board, defs, includeCW, keepFocus) {

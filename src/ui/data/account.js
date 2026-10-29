@@ -45,11 +45,17 @@ function upNextOf(id, vid) {
   var next = lsRaw('tvnext_' + id + '_' + vid, '');
   return next && next !== vid ? next : '';
 }
+/* A series item whose position sits at the very start points at its next episode: the
+   official apps move it there (position 1 ms) once an episode is finished. */
+function upNextPointer(it) {
+  var s = it.state || {};
+  return it.type === 'series' && s.video_id && s.timeOffset > 0 && s.timeOffset < 60000 ? s.video_id : '';
+}
 /* Continue Watching card data: a finished episode becomes its next episode, and the
    minutes left are only shown when the saved numbers can be trusted. */
 function cwCard(it) {
   var s = it.state || {},
-    next = watchFinished(s.timeOffset, s.duration) ? upNextOf(it._id, s.video_id) : '';
+    next = upNextPointer(it) || (watchFinished(s.timeOffset, s.duration) ? upNextOf(it._id, s.video_id) : '');
   return {
     id: it._id,
     type: it.type || 'movie',
@@ -64,16 +70,20 @@ function cwCard(it) {
   };
 }
 window.__STREMIO_CW_CARD__ = cwCard;
+/* As in Stremio, an item removed from the library stays only while it is temporary */
 function cwItems(limit) {
   var out = [],
     lib = allLib();
   for (var i = 0; i < lib.length; i++) {
     var it = lib[i],
       s = it.state || {};
-    if (!s.timeOffset || s.timeOffset < 60000) continue;
-    /* a finished episode stays only when its next episode is known (cwCard) */
-    if (watchFinished(s.timeOffset, s.duration) && !(it.type === 'series' && upNextOf(it._id, s.video_id)))
-      continue;
+    if (it.removed && !it.temp) continue;
+    if (!upNextPointer(it)) {
+      if (!s.timeOffset || s.timeOffset < 60000) continue;
+      /* a finished episode stays only when its next episode is known (cwCard) */
+      if (watchFinished(s.timeOffset, s.duration) && !(it.type === 'series' && upNextOf(it._id, s.video_id)))
+        continue;
+    }
     if (!it.name) continue;
     out.push(it);
   }
@@ -82,6 +92,7 @@ function cwItems(limit) {
   });
   return out.slice(0, limit || 12);
 }
+window.__STREMIO_CW_ITEMS__ = cwItems;
 function libGridItems() {
   var out = [],
     lib = allLib();

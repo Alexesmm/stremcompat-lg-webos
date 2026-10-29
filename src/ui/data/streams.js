@@ -90,9 +90,100 @@ function sourceTags(s) {
   m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
   if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
+  /* the language goes right after the quality */
+  if (s.langs && s.langs.length)
+    out.splice(out.length && out[0].c === 'q' ? 1 : 0, 0, { t: langTagText(s.langs), c: 'lang' });
   return out;
 }
 window.__STREMIO_SOURCE_TAGS__ = sourceTags;
+/* ---- audio languages of a source, read once when the addon answers (fetchStreams) ----
+   From country flags (addons such as Torrentio list them) and the usual release words.
+   Codes are pt-BR, pt, es-419 (Latin American Spanish), es, en, fr, it, de, ja, ko, ru,
+   hi, plus 'multi' for multi or dual audio. */
+var FLAG_LANG = {
+  BR: 'pt-BR',
+  PT: 'pt',
+  ES: 'es',
+  MX: 'es-419',
+  AR: 'es-419',
+  CO: 'es-419',
+  CL: 'es-419',
+  PE: 'es-419',
+  VE: 'es-419',
+  UY: 'es-419',
+  US: 'en',
+  GB: 'en',
+  FR: 'fr',
+  IT: 'it',
+  DE: 'de',
+  JP: 'ja',
+  KR: 'ko',
+  RU: 'ru',
+  IN: 'hi'
+};
+var WORD_LANG = [
+  ['pt-BR', /\b(dublado|pt[ ._-]?br|brazilian)\b/],
+  ['pt', /\b(portugu[eê]se?|portugu[eê]s)\b/],
+  ['es-419', /\b(latino|latam)\b/],
+  ['es', /\b(castellano|spanish|espa[nñ]ol)\b/],
+  ['en', /\b(english|eng)\b/],
+  ['fr', /\b(french|truefrench|vff|vf2?)\b/],
+  ['it', /\b(ita|italian|italiano)\b/],
+  ['de', /\b(german|deutsch)\b/],
+  ['ja', /\b(japanese|jpn)\b/],
+  ['ko', /\b(korean)\b/],
+  ['ru', /\b(russian|rus)\b/],
+  ['hi', /\b(hindi)\b/],
+  ['multi', /\b(multi|dual)\b/]
+];
+function streamLanguages(s) {
+  var t = streamText(s),
+    low = t.toLowerCase(),
+    out = [],
+    flag = /\uD83C([\uDDE6-\uDDFF])\uD83C([\uDDE6-\uDDFF])/g,
+    m,
+    i;
+  function add(code) {
+    if (out.indexOf(code) < 0) out.push(code);
+  }
+  while ((m = flag.exec(t))) {
+    var cc = String.fromCharCode(m[1].charCodeAt(0) - 0xdde6 + 65, m[2].charCodeAt(0) - 0xdde6 + 65);
+    if (FLAG_LANG[cc]) add(FLAG_LANG[cc]);
+  }
+  for (i = 0; i < WORD_LANG.length; i++) if (WORD_LANG[i][1].test(low)) add(WORD_LANG[i][0]);
+  /* "dublado" or a Brazilian flag says more than a plain "portuguese" */
+  if (out.indexOf('pt-BR') >= 0 && out.indexOf('pt') >= 0) out.splice(out.indexOf('pt'), 1);
+  if (out.indexOf('es-419') >= 0 && out.indexOf('es') >= 0) out.splice(out.indexOf('es'), 1);
+  return out;
+}
+window.__STREMIO_STREAM_LANGUAGES__ = streamLanguages;
+function langBase(code) {
+  return String(code).split('-')[0];
+}
+/* 'PT-BR', 'ES-LA · EN', 'MULTI', or the first two and '+2' when there are more */
+function langTagText(langs) {
+  var names = [];
+  for (var i = 0; i < langs.length; i++)
+    names.push(langs[i] === 'es-419' ? 'ES-LA' : langs[i] === 'multi' ? 'MULTI' : langs[i].toUpperCase());
+  return names.length > 2 ? names.slice(0, 2).join(' · ') + ' +' + (names.length - 2) : names.join(' · ');
+}
+/* filter groups of a source: language bases, 'multi', or 'none' when nothing was detected */
+function langGroups(s) {
+  var langs = s.langs || [],
+    out = [];
+  for (var i = 0; i < langs.length; i++) {
+    var g = langBase(langs[i]);
+    if (out.indexOf(g) < 0) out.push(g);
+  }
+  if (!out.length) out.push('none');
+  return out;
+}
+/* 0 when the source has the preferred language, 1 for multi audio, 2 otherwise */
+function langRank(s, pref) {
+  if (!pref || pref === 'Auto') return 0;
+  var g = langGroups(s);
+  return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
+}
 function streamSourceKey(s) {
   if (s.stored) return 'stored';
   var u = String(s.url || '').replace(/#.*$/, '');
@@ -218,6 +309,7 @@ function fetchStreams(type, vid, onPart, onDone) {
               notWebReady: !!h.notWebReady,
               headers: (h.proxyHeaders && h.proxyHeaders.request) || null
             };
+            item.langs = streamLanguages(s);
             var compat = streamCompatibility(item);
             item.compatLabels = compat.labels;
             item.compatRank = compat.rank;

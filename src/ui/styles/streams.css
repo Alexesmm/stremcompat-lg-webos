@@ -6,6 +6,9 @@
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
 .stchip.cur{background:rgba(140,92,255,.4);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
+#stLang{display:none;position:absolute;top:36px;right:54px;padding:7px 18px;border-radius:20px;font-size:20px;font-weight:600;color:rgba(255,255,255,.6);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);cursor:pointer}
+#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(140,92,255,.8)}
+#stLang.f{background:#fff;color:#0c0b11;box-shadow:none}
 #stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
 #stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
@@ -15,6 +18,8 @@
 .st .tags{margin-top:9px}
 .tg{display:inline-block;padding:4px 11px;margin:0 8px 6px 0;border-radius:6px;background:rgba(255,255,255,.1);font-size:20px;font-weight:700;color:rgba(255,255,255,.9)}
 .tg.q{background:#8c5cff;color:#fff}
+.tg.lang{background:rgba(142,227,173,.16);color:#bff0d0}
+.st.f .tg.lang{background:rgba(255,255,255,.24);color:#fff}
 .tg.size,.tg.seed{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg{background:rgba(255,255,255,.24);color:#fff}
 .st.f .tg.q{background:#fff;color:#5b2fd6}

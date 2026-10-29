@@ -1,11 +1,8 @@
 // When a title counts as finished, shared by the interface and the player.
-/* Without credit markers, "finished" means little is left: at most 2 minutes or 5% of
-   the video, whichever is longer, and only past half of it so a short clip is not
-   finished as soon as it starts. Continue Watching, the watched mark and the next
-   episode all use this one rule. */
-var FINISHED_MIN_LEFT_MS = 120000,
-  FINISHED_MIN_LEFT_RATIO = 0.05;
+/* As the official Stremio apps (stremio-core): finished once the position passes 90 %,
+   where credits usually start. Continue Watching, the resume offer and the next episode
+   all use this rule; the player marks a video watched at 70 % really played. */
+var CREDITS_THRESHOLD = 0.9;
 function watchFinished(offsetMs, durationMs) {
-  if (!(durationMs > 0) || !(offsetMs > 0) || offsetMs < durationMs / 2) return false;
-  return durationMs - offsetMs <= Math.max(FINISHED_MIN_LEFT_MS, durationMs * FINISHED_MIN_LEFT_RATIO);
+  return durationMs > 0 && offsetMs > durationMs * CREDITS_THRESHOLD;
 }

@@ -34,11 +34,13 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 @media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
 #boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(93,57,184,.18),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #boot .bootbox{text-align:center;width:360px}
-#boot .lg{width:94px;height:94px;animation:bb 1.8s ease-in-out infinite}
+#boot .lg{width:94px;height:94px;-webkit-animation:bb 1.8s ease-in-out infinite;animation:bb 1.8s ease-in-out infinite}
 #boot .bt{margin-top:18px;font-size:27px;font-weight:700;letter-spacing:.6px}
 #boot .btrack{height:3px;margin:28px auto 0;width:220px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
-#boot .bfill{height:100%;width:34%;border-radius:3px;background:#9c76ff;animation:loadline 1.45s ease-in-out infinite}
+#boot .bfill{height:100%;width:34%;border-radius:3px;background:#9c76ff;-webkit-animation:loadline 1.45s ease-in-out infinite;animation:loadline 1.45s ease-in-out infinite}
+@-webkit-keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
 @keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
+@-webkit-keyframes loadline{0%{-webkit-transform:translateX(-120%)}100%{-webkit-transform:translateX(330%)}}
 @keyframes loadline{0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
 /* faded official Stremio logo shown where cover art would be (Settings + empty Search) */
 #logobg{position:fixed;top:0;left:0;right:0;height:74%;background:url(/logo.png) center 32%/196px no-repeat;opacity:0;transition:opacity .5s ease;z-index:0}

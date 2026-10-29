@@ -16,4 +16,4 @@
 .lgin.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
 #lgBtn{display:inline-block;padding:16px 54px;border-radius:12px;font-size:29px;font-weight:700;background:rgba(255,255,255,.14)}
 #lgBtn.f{background:#fff;color:#0c0b11}
-#lgErr{margin-top:16px;font-size:23px;color:#ff9a9a;min-height:28px}
+#lgErr{margin-top:16px;font-size:23px;line-height:1.35;color:#ff9a9a;min-height:28px;max-width:568px}

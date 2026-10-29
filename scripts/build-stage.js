@@ -37,6 +37,9 @@ function replaceTokens(file, tokens) {
 fs.rmSync(buildRoot, { recursive: true, force: true });
 fs.mkdirSync(buildRoot, { recursive: true });
 fs.cpSync(path.join(root, 'app'), stageApp, { recursive: true });
+// the launcher shows the same logo and typeface as the interface; both live in service/
+fs.copyFileSync(path.join(root, 'service', 'stremio-logo.png'), path.join(stageApp, 'logo.png'));
+fs.cpSync(path.join(root, 'service', 'fonts'), path.join(stageApp, 'fonts'), { recursive: true });
 fs.cpSync(path.join(root, 'service'), stageService, {
   recursive: true,
   filter: function (source) { return !/\.log$/i.test(source) && path.basename(source) !== 'profile.json'; }

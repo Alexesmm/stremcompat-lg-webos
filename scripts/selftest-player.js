@@ -92,4 +92,81 @@ var urls = shared.streamAddonsIn([keyed, pathed], 'movie').map(function (ad) { r
 assert.strictEqual(urls[0], 'https://latam.example/stream/movie/tt1.json?token=ABC', 'an addon key after manifest.json was dropped');
 assert.strictEqual(urls[1], 'https://torrentio.example/qualityfilter=4k/stream/movie/tt1.json', 'a path-configured addon URL changed');
 
-console.log('OK: next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs.');
+// ---- watched state written like the official apps (progress.js + server/watched.js) ----
+var watchedLib = require(path.join(root, 'service', 'server', 'watched.js'));
+var eps = [
+  { id: 'tt7:1:2', season: 1, episode: 2 }, { id: 'tt7:1:1', season: 1, episode: 1 },
+  { id: 'tt7:2:1', season: 2, episode: 1 }, { id: 'tt7:0:1', season: 0, episode: 1 }
+];
+assert.deepStrictEqual(watchedLib.orderedIds(eps), ['tt7:0:1', 'tt7:1:1', 'tt7:1:2', 'tt7:2:1'], 'episodes were not ordered by season and episode');
+var field = watchedLib.setWatched('', eps, 'tt7:1:1');
+field = watchedLib.setWatched(field, eps, 'tt7:1:2');
+assert.ok(/^tt7:1:2:3:/.test(field), 'the field anchor is not the last watched episode: ' + field);
+var decoded = watchedLib.decodeField(field);
+assert.deepStrictEqual(decoded.bits.slice(0, 4), [0, 1, 1, 0], 'watched bits did not round-trip');
+// an episode added to the list later keeps the earlier bits on the right episodes
+var grown = eps.concat([{ id: 'tt7:0:0', season: 0, episode: 0 }]);
+var regrown = watchedLib.decodeField(watchedLib.setWatched(field, grown, 'tt7:2:1'));
+assert.deepStrictEqual(regrown.bits.slice(0, 5), [0, 0, 1, 1, 1], 'the anchor shift lost watched episodes');
+assert.strictEqual(watchedLib.setWatched(field, eps, 'tt7:9:9'), '', 'an unknown episode was written');
+
+function playSession(opts) {
+  var storage = memoryStorage({ user: JSON.stringify({ _id: 'abcd1234' }) });
+  if (opts.lib) storage.setItem('lib_abcd_tt7', JSON.stringify(opts.lib));
+  var events = {}, sent = [], intervals = [];
+  var video = {
+    duration: 1000, currentTime: 0, paused: false,
+    addEventListener: function (n, f) { (events[n] = events[n] || []).push(f); }
+  };
+  var ctx = {
+    ID: 'tt7', VID: opts.vid, TYPE: 'series', NEXTVID: opts.next || '', TITLE: 'Show', POSTER: 'p', BG: '', LOGO: '',
+    v: video, localStorage: storage, location: { search: '?x' }, Date: Date, JSON: JSON, Math: Math,
+    document: { getElementById: element }, P: {}, showToast: function () {}, fmt: String,
+    xhr: function (u, cb) { sent.push(u); if (u.indexOf('/watchedset') === 0) cb({ watched: 'tt7:1:1:2:x' }); },
+    lsGet: function () { return 'false'; }, NEXTHREF: '', npDismissed: false, startAutoNext: function () {},
+    setTimeout: function () {}, setInterval: function (f) { intervals.push(f); },
+    XMLHttpRequest: function () { this.open = function () {}; this.setRequestHeader = function () {}; this.send = function () {}; }
+  };
+  vm.runInNewContext(src('shared/watch-state.js') + src('player/progress.js'), ctx);
+  function fire(n) { (events[n] || []).forEach(function (f) { f(); }); }
+  ctx.play = function (to) { while (video.currentTime < to) { video.currentTime = Math.min(to, video.currentTime + 10); intervals[0](); } };
+  ctx.seek = function (to) { fire('seeking'); video.currentTime = to; };
+  ctx.fire = fire;
+  ctx.lib = function () { return JSON.parse(storage.getItem('lib_abcd_tt7')); };
+  ctx.sent = sent;
+  return ctx;
+}
+var ep = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2' });
+ep.play(600);
+assert.strictEqual(ep.lib().state.flaggedWatched, 0, 'an episode was watched before 70 %');
+ep.play(720);
+var st = ep.lib().state;
+assert.strictEqual(st.flaggedWatched, 1, 'an episode played past 70 % was not marked watched');
+assert.strictEqual(st.timesWatched, 1, 'times watched was not counted');
+assert.strictEqual(st.watched, 'tt7:1:1:2:x', 'the watched field from the server was not stored');
+ep.play(800);
+assert.strictEqual(ep.lib().state.timesWatched, 1, 'an episode was counted watched twice');
+ep.play(950);
+ep.fire('ended');
+st = ep.lib().state;
+assert.strictEqual(st.video_id, 'tt7:1:2', 'the finished episode did not move on to the next one');
+assert.strictEqual(st.timeOffset, 1, 'the next episode pointer is not at the start');
+assert.strictEqual(st.flaggedWatched, 0, 'the next episode inherited the watched flag');
+vm.runInNewContext('saveProgress()', ep);
+assert.strictEqual(ep.lib().state.video_id, 'tt7:1:2', 'saving after the end moved the item back');
+
+var skim = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2' });
+skim.play(100);
+skim.seek(920);
+skim.play(940);
+vm.runInNewContext('finishSession(false)', skim);
+st = skim.lib().state;
+assert.strictEqual(st.flaggedWatched, 0, 'skipping to the credits counted as watched');
+assert.strictEqual(st.video_id, 'tt7:1:2', 'leaving in the credits did not move on to the next episode');
+
+var early = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2' });
+early.play(400);
+vm.runInNewContext('finishSession(false)', early);
+assert.strictEqual(early.lib().state.timeOffset, 400000, 'leaving mid-episode lost the position');
+
+console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs.');

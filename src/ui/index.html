@@ -87,7 +87,7 @@
   <div id="simWrap"><div id="simTitle"></div><div id="simClip"><div id="simGrid"></div></div></div>
 </div>
 
-<div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
+<div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stLang"></div><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
 <div id="episodeJump"><div id="ejBox"><div id="ejTitle"></div><div id="ejValue"></div><div id="ejKeys"></div><div id="ejHint"></div></div></div>
 <div id="toast"></div>
@@ -100,15 +100,9 @@
   window.__STREMIO_BOOT_DONE__=false;
   window.__STREMIO_BOOT_FAILED__=false;
   window.__STREMIO_BOOT_PHASE__='G0';
-  var phase=document.createElement('div');
-  phase.id='bootPhase';
-  phase.style.cssText='position:absolute;left:0;right:0;bottom:42px;text-align:center;color:#837d91;font:16px Arial,sans-serif;letter-spacing:1px';
-  phase.innerHTML='Starting G0';
-  document.getElementById('boot').appendChild(phase);
   window.__STREMIO_PHASE__=function(code){
     if(window.__STREMIO_BOOT_FAILED__)return;
     window.__STREMIO_BOOT_PHASE__=String(code||'UNKNOWN');
-    var p=document.getElementById('bootPhase');if(p)p.innerHTML='Starting '+window.__STREMIO_BOOT_PHASE__;
   };
   window.__STREMIO_SCRIPT_LOADED__=function(){
     if(window.__STREMIO_BOOT_PHASE__==='G0')window.__STREMIO_PHASE__('SCRIPT_LOADED_NO_ENTRY');

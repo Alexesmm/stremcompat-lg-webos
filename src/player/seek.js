@@ -93,6 +93,7 @@ function exit() {
   }
   setTimeout(leave, 900);
   try {
+    finishSession(false);
     saveProgress();
     pushLib(true, leave);
   } catch (e) {

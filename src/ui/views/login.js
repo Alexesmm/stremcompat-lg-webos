@@ -90,6 +90,7 @@ var login = {
       if (!j || !j.code) {
         self.started = false;
         self.setStatus('qrUnavailable');
+        self.explainNoConnection(gen);
         return;
       }
       self.qrCode = j.code;
@@ -97,6 +98,15 @@ var login = {
       $('lgCode').textContent = j.code;
       self.setStatus('waitingPhone');
       self.schedulePoll(gen);
+    });
+  },
+  /* the QR code or sign-in got no answer: when Stremio is unreachable, say so and how to fix it */
+  explainNoConnection: function (gen) {
+    var self = this;
+    checkConnection(function (code) {
+      if (!code || gen !== self.pollGen || SCR !== 'login') return;
+      self.setStatus('noConnectionShort');
+      $('lgErr').textContent = tx('noConnection', code);
     });
   },
   schedulePoll: function (gen) {
@@ -168,6 +178,7 @@ var login = {
       var res = r && r.result;
       if (!res || !res.authKey) {
         $('lgErr').textContent = (r && r.error && r.error.message) || tx('signInFailed');
+        if (!r) self.explainNoConnection(self.pollGen);
         return;
       }
       if (res.user) lsSet('user', res.user);

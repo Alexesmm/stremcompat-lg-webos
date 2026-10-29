@@ -41,6 +41,19 @@ function xhrJson(u, cb, tmo) {
     return null;
   }
 }
+/* After a request failed: asks the local server whether Stremio answers at all, so the
+   screen can say the TV has no connection instead of a vague error. cb(code) gets the
+   network error (such as ENOTFOUND or ETIMEDOUT), or '' when Stremio is reachable or
+   the local server itself did not answer. Never runs while things work. */
+function checkConnection(cb) {
+  xhrJson(
+    '/netcheck',
+    function (j) {
+      cb(j && j.ok === false ? String(j.code || 'ERROR') : '');
+    },
+    15000
+  );
+}
 function apiPostUrl(u) {
   var p = API + '/api/';
   return String(u || '').indexOf(p) === 0

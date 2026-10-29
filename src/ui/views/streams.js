@@ -16,6 +16,8 @@ var streamsUI = {
   autoPref: null,
   zone: 'list',
   filter: 'All',
+  langFilter: 'All',
+  langs: [],
   chipIdx: 0,
   chips: [],
   chipEls: [],
@@ -42,11 +44,14 @@ var streamsUI = {
     this.retryPref = takeRetryRequest(id, vid);
     this.zone = 'list';
     this.filter = 'All';
+    this.langFilter = 'All';
+    this.langs = [];
     this.chipIdx = 0;
     this.chips = [];
     this.chipEls = [];
     $('streams').style.display = 'block';
     $('stChips').innerHTML = '';
+    $('stLang').style.display = 'none';
     $('stSub').textContent =
       (title || '') +
       (vid && vid.indexOf(':') > 0 ? '  ·  T' + vid.split(':')[1] + ' E' + vid.split(':')[2] : '');
@@ -184,7 +189,47 @@ var streamsUI = {
       k = 0;
     }
     this.chipIdx = k;
+    this.renderLangs(allItems);
     this.paintChips();
+  },
+  /* The language selector stays small in the corner: it appears only when the sources
+     come in two or more languages, and OK steps through them. */
+  renderLangs: function (allItems) {
+    var counts = {},
+      order = [],
+      n,
+      g;
+    for (n = 0; n < allItems.length; n++) {
+      if (allItems[n].stored) continue;
+      g = langGroups(allItems[n]);
+      for (var j = 0; j < g.length; j++) {
+        if (!counts[g[j]]) order.push(g[j]);
+        counts[g[j]] = (counts[g[j]] || 0) + 1;
+      }
+    }
+    order.sort(function (a, b) {
+      return (a === 'none') - (b === 'none') || counts[b] - counts[a];
+    });
+    this.langs = order.length > 1 ? ['All'].concat(order) : [];
+    if (this.langs.indexOf(this.langFilter) < 0) this.langFilter = 'All';
+    if (!this.langs.length && this.zone === 'lang') this.zone = 'chips';
+    $('stLang').style.display = this.langs.length ? 'block' : 'none';
+  },
+  langName: function (g) {
+    return g === 'All'
+      ? tx('langAll')
+      : g === 'none'
+        ? tx('langOther')
+        : g === 'multi'
+          ? 'Multi'
+          : g.toUpperCase();
+  },
+  nextLang: function (step) {
+    var n = this.langs.length;
+    if (!n) return;
+    this.langFilter = this.langs[(this.langs.indexOf(this.langFilter) + (step || 1) + n) % n];
+    this.idx = 0;
+    this.rebuild();
   },
   paintChips: function () {
     for (var i = 0; i < this.chipEls.length; i++) {
@@ -192,16 +237,29 @@ var streamsUI = {
       this.chipEls[i].className =
         'stchip' + (cur ? ' cur' : '') + (this.zone === 'chips' && i === this.chipIdx ? ' f' : '');
     }
+    var lang = $('stLang');
+    lang.textContent = tx('langFilter', this.langName(this.langFilter));
+    lang.className = (this.langFilter !== 'All' ? 'cur' : '') + (this.zone === 'lang' ? ' f' : '');
   },
   rebuild: function () {
     var sel = this.items[this.idx] || null,
       flat = this.all(),
       self = this,
-      pref = lsRaw('preferredSourceQuality', 'Auto');
+      pref = lsRaw('preferredSourceQuality', 'Auto'),
+      langPref = lsRaw('preferredSourceLanguage', 'Auto'),
+      lf = this.langFilter;
     flat = flat.filter(function (s) {
-      return self.filter === 'All' || s.quality === self.filter;
+      return (
+        (self.filter === 'All' || s.quality === self.filter) &&
+        (lf === 'All' || s.stored || langGroups(s).indexOf(lf) >= 0)
+      );
     });
+    /* the last source first, then the preferred language, then the preferred quality */
     flat.sort(function (a, b) {
+      if (!a.stored !== !b.stored) return a.stored ? -1 : 1;
+      var al = langRank(a, langPref),
+        bl = langRank(b, langPref);
+      if (al !== bl) return al - bl;
       if (pref !== 'Auto') {
         var ap = a.quality === pref ? 0 : 1,
           bp = b.quality === pref ? 0 : 1;
@@ -303,7 +361,21 @@ var streamsUI = {
     return true;
   },
   key: function (k) {
+    if (this.zone === 'lang') {
+      if (k === 13 || k === 39) this.nextLang(1);
+      else if (k === 37) this.nextLang(-1);
+      else if (k === 40) {
+        this.zone = 'chips';
+        this.paint();
+      }
+      return true;
+    }
     if (this.zone === 'chips') {
+      if (k === 38 && this.langs.length) {
+        this.zone = 'lang';
+        this.paint();
+        return true;
+      }
       if (k === 39) this.chipIdx = Math.min(this.chipEls.length - 1, this.chipIdx + 1);
       else if (k === 37) this.chipIdx = Math.max(0, this.chipIdx - 1);
       else if (k === 40 || k === 13) {

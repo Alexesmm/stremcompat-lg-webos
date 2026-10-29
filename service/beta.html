@@ -165,6 +165,9 @@ body.series-episode #dSeasons{margin-top:24px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
 .stchip.cur{background:rgba(140,92,255,.4);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
+#stLang{display:none;position:absolute;top:36px;right:54px;padding:7px 18px;border-radius:20px;font-size:20px;font-weight:600;color:rgba(255,255,255,.6);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);cursor:pointer}
+#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(140,92,255,.8)}
+#stLang.f{background:#fff;color:#0c0b11;box-shadow:none}
 #stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
 #stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
@@ -174,6 +177,8 @@ body.series-episode #dSeasons{margin-top:24px}
 .st .tags{margin-top:9px}
 .tg{display:inline-block;padding:4px 11px;margin:0 8px 6px 0;border-radius:6px;background:rgba(255,255,255,.1);font-size:20px;font-weight:700;color:rgba(255,255,255,.9)}
 .tg.q{background:#8c5cff;color:#fff}
+.tg.lang{background:rgba(142,227,173,.16);color:#bff0d0}
+.st.f .tg.lang{background:rgba(255,255,255,.24);color:#fff}
 .tg.size,.tg.seed{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg{background:rgba(255,255,255,.24);color:#fff}
 .st.f .tg.q{background:#fff;color:#5b2fd6}
@@ -316,6 +321,7 @@ body.series-episode #dSeasons{margin-top:24px}
   #streams h3{font-size:30px}
   #stSub{font-size:20px;margin-bottom:10px}
   .stchip{padding:9px 20px;margin-right:8px;font-size:19px}
+  #stLang{top:24px;right:20px;padding:5px 13px;font-size:16px}
   #stClip{top:176px;left:20px;right:20px;bottom:18px}
   .st{padding:14px 18px;margin-bottom:8px}
   .st .a{font-size:22px}
@@ -385,7 +391,7 @@ body.series-episode #dSeasons{margin-top:24px}
 .lgin.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
 #lgBtn{display:inline-block;padding:16px 54px;border-radius:12px;font-size:29px;font-weight:700;background:rgba(255,255,255,.14)}
 #lgBtn.f{background:#fff;color:#0c0b11}
-#lgErr{margin-top:16px;font-size:23px;color:#ff9a9a;min-height:28px}
+#lgErr{margin-top:16px;font-size:23px;line-height:1.35;color:#ff9a9a;min-height:28px;max-width:568px}
 
 /* ---------- misc ---------- */
 /* Settings > Interface text: larger. Only type grows; boxes keep their size. */
@@ -423,11 +429,13 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 @media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
 #boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(93,57,184,.18),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #boot .bootbox{text-align:center;width:360px}
-#boot .lg{width:94px;height:94px;animation:bb 1.8s ease-in-out infinite}
+#boot .lg{width:94px;height:94px;-webkit-animation:bb 1.8s ease-in-out infinite;animation:bb 1.8s ease-in-out infinite}
 #boot .bt{margin-top:18px;font-size:27px;font-weight:700;letter-spacing:.6px}
 #boot .btrack{height:3px;margin:28px auto 0;width:220px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
-#boot .bfill{height:100%;width:34%;border-radius:3px;background:#9c76ff;animation:loadline 1.45s ease-in-out infinite}
+#boot .bfill{height:100%;width:34%;border-radius:3px;background:#9c76ff;-webkit-animation:loadline 1.45s ease-in-out infinite;animation:loadline 1.45s ease-in-out infinite}
+@-webkit-keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
 @keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
+@-webkit-keyframes loadline{0%{-webkit-transform:translateX(-120%)}100%{-webkit-transform:translateX(330%)}}
 @keyframes loadline{0%{transform:translateX(-120%)}100%{transform:translateX(330%)}}
 /* faded official Stremio logo shown where cover art would be (Settings + empty Search) */
 #logobg{position:fixed;top:0;left:0;right:0;height:74%;background:url(/logo.png) center 32%/196px no-repeat;opacity:0;transition:opacity .5s ease;z-index:0}
@@ -517,7 +525,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
   <div id="simWrap"><div id="simTitle"></div><div id="simClip"><div id="simGrid"></div></div></div>
 </div>
 
-<div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
+<div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stLang"></div><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
 <div id="episodeJump"><div id="ejBox"><div id="ejTitle"></div><div id="ejValue"></div><div id="ejKeys"></div><div id="ejHint"></div></div></div>
 <div id="toast"></div>
@@ -530,15 +538,9 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
   window.__STREMIO_BOOT_DONE__=false;
   window.__STREMIO_BOOT_FAILED__=false;
   window.__STREMIO_BOOT_PHASE__='G0';
-  var phase=document.createElement('div');
-  phase.id='bootPhase';
-  phase.style.cssText='position:absolute;left:0;right:0;bottom:42px;text-align:center;color:#837d91;font:16px Arial,sans-serif;letter-spacing:1px';
-  phase.innerHTML='Starting G0';
-  document.getElementById('boot').appendChild(phase);
   window.__STREMIO_PHASE__=function(code){
     if(window.__STREMIO_BOOT_FAILED__)return;
     window.__STREMIO_BOOT_PHASE__=String(code||'UNKNOWN');
-    var p=document.getElementById('bootPhase');if(p)p.innerHTML='Starting '+window.__STREMIO_BOOT_PHASE__;
   };
   window.__STREMIO_SCRIPT_LOADED__=function(){
     if(window.__STREMIO_BOOT_PHASE__==='G0')window.__STREMIO_PHASE__('SCRIPT_LOADED_NO_ENTRY');
