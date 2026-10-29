@@ -78,7 +78,8 @@ function parseSrt(srt) {
       .slice(tc + 1)
       .join('\n')
       .replace(/<[^>]+>/g, '')
-      .replace(/\{[^}]*\}/g, '');
+      .replace(/\{[^}]*\}/g, '')
+      .replace(/\s+$/, ''); // a last cue without a blank line after it keeps a trailing break
     if (txt) cues.push({ s: s, e: e, t: txt });
   }
   return cues;
@@ -356,7 +357,7 @@ setInterval(function () {
     console.log('[embjob] idle reap');
     killJob();
   }
-}, 30000);
+}, 30000).unref();
 
 module.exports = {
   embCues: embCues,

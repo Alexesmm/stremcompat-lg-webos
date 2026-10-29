@@ -16,6 +16,14 @@ var forceEmbedded = process.argv[5] === 'embedded';
 var childLogGlobal = '';
 
 var nextEpisodeId = require(path.join(root, 'service', 'server', 'episodes.js')).nextEpisodeId;
+// subtitle decoding without the streaming server's converter (what the TV does when it is not ready)
+var subtitleLib = require(path.join(root, 'service', 'server', 'subtitles.js'));
+var directCues = subtitleLib.parseSrt(subtitleLib.subtitleText(Buffer.concat([
+  Buffer.from('1\n00:00:01,000 --> 00:00:02,500\nCora'), Buffer.from([0xe7, 0xe3]), Buffer.from('o\n')
+])));
+assert.strictEqual(directCues.length && directCues[0].t, 'Coração', 'a Windows-1252 subtitle read directly lost its accents or kept a line break');
+var vttCues = subtitleLib.parseSrt('WEBVTT\n\n01:02.500 --> 01:04.000 align:start\n<i>Olá</i>');
+assert.strictEqual(vttCues.length && vttCues[0].s + ':' + vttCues[0].t, '62.5:Olá', 'a WebVTT cue without hours was not read');
 var showVideos = [
   { id: 'tt1:2:1', season: 2, episode: 1, released: '2020-02-01T00:00:00Z' },
   { id: 'tt1:1:2', season: 1, episode: 2, released: '2020-01-08T00:00:00Z' },
