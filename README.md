@@ -12,6 +12,7 @@
   <img alt="No root required" src="https://img.shields.io/badge/root-not%20required-2ea44f">
   <img alt="Unofficial community project" src="https://img.shields.io/badge/project-unofficial%20community-ea345e">
   <a href="https://github.com/Alexesmm/stremcompat-lg-webos/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/community-Discussions-2ea44f"></a>
+  <a href="https://buymeacoffee.com/Alexesmm"><img alt="Buy me a coffee" src="https://img.shields.io/badge/support-Buy%20me%20a%20coffee-ffdd00?logo=buymeacoffee&logoColor=black"></a>
 </p>
 
 ## About
@@ -42,7 +43,8 @@ This project is not affiliated with or endorsed by Stremio or LG Electronics. Us
 14. [Troubleshooting](#troubleshooting)
 15. [Releases](#releases)
 16. [What StremCompat adds](#what-stremcompat-adds)
-17. [Credits and licensing](#credits-and-licensing)
+17. [Support development](#support-development)
+18. [Credits and licensing](#credits-and-licensing)
 
 ## Downloads
 
@@ -381,6 +383,16 @@ The project adds and maintains:
 - Automated package checks plus documented physical-device validation and compatibility reporting.
 
 That interface work, integration, legacy-browser engineering, device profiling, packaging and testing are the reason StremCompat exists. The upstream projects remain important technical foundations and are credited below; StremCompat is the maintained compatibility client that connects and adapts them for specific older LG televisions.
+
+## Support development
+
+StremCompat is a free community project developed and maintained in my spare time.
+
+If StremCompat has been useful to you and you'd like to support its continued development, you can buy me a coffee. Contributions are entirely optional and help support ongoing maintenance and compatibility improvements.
+
+[☕ Buy me a coffee](https://buymeacoffee.com/Alexesmm)
+
+StremCompat is free to use, and donations are never required.
 
 ## Credits and licensing
 
