@@ -20,6 +20,7 @@ var { bgResize } = require('./images');
 var { nextEpisodeId } = require('./episodes');
 var { diagnostics, netcheck, recordEvent } = require('./diag');
 var { cachedAddonJson } = require('./addon-cache');
+var { handleTakeover } = require('./takeover');
 var { decodeField, rememberVideos, seriesVideos, setWatched } = require('./watched');
 
 // Routes every request of the local compatibility server.
@@ -35,6 +36,8 @@ function handleRequest(req, res) {
       runtime: process.version,
       memory: { rssMiB: Math.round(hm.rss / 1048576), heapMiB: Math.round(hm.heapUsed / 1048576) }
     });
+  } else if (p === '/takeover') {
+    handleTakeover(req, res);
   } else if (p === '/diag') {
     diagnostics(res);
   } else if (p === '/netcheck') {

@@ -190,6 +190,8 @@ async function main() {
     var segment = await request({ hostname: parsedSegment.hostname, port: parsedSegment.port, path: parsedSegment.pathname + parsedSegment.search });
     assert.strictEqual(JSON.parse(segment.text).auth, 'Bearer hls-token');
     // subtitles from the account's subtitle addons, with the file name as extra, merged
+    var forgedTakeover = await request({ hostname: '127.0.0.1', port: appPort, path: '/takeover', method: 'POST' });
+    assert.strictEqual(forgedTakeover.status, 403, 'the local server could be stopped without the takeover header');
     var subRefBody = JSON.stringify({ url: 'http://127.0.0.1:9191/video.mkv', filename: 'Show S01E02.mkv' });
     var subRef = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/streamref', method: 'POST', headers: {
       'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(subRefBody)
@@ -213,7 +215,7 @@ async function main() {
     var tracks = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/embtracks?u=' + encodeURIComponent('http://127.0.0.1:9191/nothing.mkv') })).text);
     assert.ok(Array.isArray(tracks.tracks) && tracks.err, 'a failed track read did not report an error');
 
-    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons and subtitle decoding.');
+    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons, subtitle decoding and protected takeover.');
   } finally {
     try { child.kill(); } catch (e) {}
     await new Promise(function (resolve) { upstream.close(resolve); });

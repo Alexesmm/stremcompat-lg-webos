@@ -3,7 +3,7 @@
   "channel": "stable",
   "appId": "io.strem.tv",
   "serviceId": "io.strem.tv.server",
-  "version": "1.2.25",
+  "version": "1.2.26",
   "port": 8082,
   "graphicsResolution": "1920x1080",
   "ecmaTarget": "chrome53",

@@ -21,6 +21,7 @@ var { PORT, SERVER_PORT } = require('./server/config');
 var { dbg } = require('./server/log');
 var { portUp, startStreamingServer } = require('./server/streaming-server');
 var routes = require('./server/routes');
+var { listenTakingOver } = require('./server/takeover');
 
 dbg('tvserver starting, uid=' + (process.getuid ? process.getuid() : '?'));
 
@@ -32,7 +33,8 @@ portUp(SERVER_PORT, function (up) {
   if (!up) startStreamingServer();
 });
 
-http.createServer(routes.handleRequest).listen(PORT, '127.0.0.1', function () {
+/* the port may still be held by the server of the version installed before (takeover.js) */
+listenTakingOver(http.createServer(routes.handleRequest), function () {
   dbg('listening on :' + PORT);
   console.log('tvserver on :' + PORT);
 });

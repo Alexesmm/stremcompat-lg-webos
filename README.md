@@ -41,10 +41,10 @@ Download the IPK that matches your television's webOS generation and graphics mo
 
 | Package | For | Status | App name on the TV |
 |---|---|---|---|
-| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.25.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | Stremio |
-| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.25.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | Stremio HD |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.22.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | Stremio UJ3 |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.22.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | Stremio UJ3 HD |
+| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.26.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | Stremio |
+| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.26.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | Stremio HD |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.23.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | Stremio UJ3 |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.23.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | Stremio UJ3 HD |
 
 How to choose:
 
@@ -75,7 +75,7 @@ Root access is not required.
 
 The IPK is about 46 MiB and uses about 92 MiB once installed. Developer Mode installations expire with the Developer Mode timer, so renew it before it reaches zero.
 
-> **After updating over an existing installation**, older LG televisions can keep the previous version running through Quick Start+. If the app stays on the loading screen or cannot reach its local service, turn the television off, unplug it for at least 30 seconds and open it again. Reinstall only if that does not help. This does not erase your account or settings.
+> **After updating over an existing installation**, the app's local service from the previous version can keep running in the background. From 1.3.3 on, the new version replaces it by itself. When updating from an older version, if the app stays on the loading screen (`RUNTIME_START_TIMEOUT`), unplug the television for at least 30 seconds and open it again; turning it off with the remote is not enough when Quick Start+ is on. This does not erase your account or settings.
 
 ## Features
 
