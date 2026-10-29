@@ -145,16 +145,9 @@ var DGEN = [
   ['Horror', 'genreHorror']
 ];
 /* LIBRARY rows = Continue Watching + your added Movies + Series (all local) */
+/* Continue Watching lives on Home only, as in the Stremio apps */
 function loadLibraryRows(board) {
   board.rows = [];
-  var cw = cwItems();
-  if (cw.length) {
-    var m = [];
-    for (var c = 0; c < cw.length; c++) m.push(cwCard(cw[c]));
-    var r0 = buildRow(tx('continueWatching'), m, true);
-    r0.el.className = 'row in';
-    board.rows.push(r0);
-  }
   var all = libGridItems(),
     mv = [],
     sr = [];

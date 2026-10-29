@@ -94,6 +94,40 @@ function buildEpisodeModel(videos) {
   }
   return { seasons: seasons, linear: linear };
 }
+/* Episodes watched on any Stremio app, from the library item's `watched` field decoded by
+   the local server (/watchedbits). Same rule as stremio-watched-bitfield: video ids ordered
+   by season then episode (season 0 first, ties keep the addon order), and the stored bits
+   shifted so that the anchor video keeps its position. An unknown anchor means none. */
+function watchedFromBits(res, videos) {
+  var list = [],
+    out = {},
+    i;
+  for (i = 0; i < (videos || []).length; i++)
+    if (videos[i] && videos[i].id) list.push({ v: videos[i], i: i });
+  function num(x) {
+    var n = parseInt(x, 10);
+    return isNaN(n) ? -Infinity : n;
+  }
+  list.sort(function (a, b) {
+    var sa = num(a.v.season),
+      sb = num(b.v.season),
+      ea = num(a.v.episode != null ? a.v.episode : a.v.number),
+      eb = num(b.v.episode != null ? b.v.episode : b.v.number);
+    if (sa !== sb) return sa < sb ? -1 : 1;
+    if (ea !== eb) return ea < eb ? -1 : 1;
+    return a.i - b.i;
+  });
+  var at = -1;
+  for (i = 0; i < list.length; i++) if (list[i].v.id === res.anchor) at = i;
+  if (at < 0 || !res.bits) return out;
+  var offset = (parseInt(res.alen, 10) || 0) - at - 1;
+  for (i = 0; i < list.length; i++) {
+    var j = i + offset;
+    if (j >= 0 && j < res.bits.length && res.bits[j]) out[list[i].v.id] = 1;
+  }
+  return out;
+}
+window.__STREMIO_WATCHED_FROM_BITS__ = watchedFromBits;
 function episodeImage(v, meta) {
   var u = (v && (v.thumbnail || v.still || v.stillPath || v.still_path)) || '';
   if (u && String(u).charAt(0) === '/') u = 'https://image.tmdb.org/t/p/w500' + u;

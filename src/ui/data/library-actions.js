@@ -4,17 +4,19 @@ function libHas(id) {
   var it = lsJson(PRE + id);
   return !!(it && it.removed === false);
 }
-/* a movie counts as watched if it's in watchedEpisodes or finished (>=90%) */
+/* A film counts as watched when Stremio says so (times watched or the watched flag, also
+   set by other devices, which reset the position to 0 once a film ends), when it is in the
+   local watched list, or when it stopped at 90 % or later. */
 function itemWatched(it) {
   if (!it || !it.id || it.type === 'series') return false;
   var lib = lsJson(PRE + it.id);
   if (!lib || !lib.state) return false;
   var s = lib.state;
   var vid = it.videoId || it.id;
+  if (s.timesWatched > 0 || s.flaggedWatched > 0) return true;
   if (s.watchedEpisodes)
     for (var i = 0; i < s.watchedEpisodes.length; i++) if (s.watchedEpisodes[i] === vid) return true;
-  if (s.flaggedWatched && s.duration && s.timeOffset >= s.duration * 0.9) return true;
-  return false;
+  return !!(s.duration && s.timeOffset >= s.duration * 0.9);
 }
 function libToggle(item) {
   var now = new Date().toISOString();

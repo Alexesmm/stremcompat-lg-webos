@@ -295,7 +295,8 @@ function handleRequest(req, res) {
     var wbits = [];
     try {
       var wbuf = zlib.inflateSync(Buffer.from(wb64, 'base64'));
-      for (var wi = 0; wi < wbuf.length * 8; wi++) wbits.push(wbuf[wi >> 3] & (0x80 >> wi % 8) ? 1 : 0);
+      // least significant bit first, as stremio-watched-bitfield's BitField8::get
+      for (var wi = 0; wi < wbuf.length * 8; wi++) wbits.push((wbuf[wi >> 3] >> wi % 8) & 1);
     } catch (e) {}
     sendJson(res, { anchor: wanchor, alen: walen, bits: wbits });
   } else if (p === '/logo.png') {

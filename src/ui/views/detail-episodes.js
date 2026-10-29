@@ -3,12 +3,38 @@ detail.currentEpisode = function () {
   return (this.eps && this.eps[this.epIdx]) || null;
 };
 detail.loadWatched = function () {
-  /* LOCAL watched list (state.watchedEpisodes) — never synced */
+  /* episodes watched here (state.watchedEpisodes) and, decoded from state.watched, on
+     any other Stremio app */
   this.watchedMap = {};
   if (this.type !== 'series') return;
-  var lib = lsJson(PRE + this.id);
-  var we = (lib && lib.state && lib.state.watchedEpisodes) || [];
+  var lib = lsJson(PRE + this.id),
+    s = (lib && lib.state) || {};
+  var we = s.watchedEpisodes || [];
   for (var i = 0; i < we.length; i++) this.watchedMap[we[i]] = 1;
+  this.loadWatchedBits(s.watched);
+};
+var watchedBitsCache = {};
+detail.loadWatchedBits = function (field) {
+  if (!field || !this.meta || !this.meta.videos) return;
+  var self = this,
+    id = this.id,
+    videos = this.meta.videos;
+  function apply(res) {
+    if (self.id !== id || !res || !res.bits) return;
+    var w = watchedFromBits(res, videos);
+    for (var k in w) if (Object.prototype.hasOwnProperty.call(w, k)) self.watchedMap[k] = 1;
+    if (self.epEls && self.epEls.length) self.markWatched();
+  }
+  if (watchedBitsCache[field]) {
+    apply(watchedBitsCache[field]);
+    return;
+  }
+  xhrJson('/watchedbits?f=' + encodeURIComponent(field), function (j) {
+    if (!j || !j.bits) return;
+    if (Object.keys(watchedBitsCache).length > 20) watchedBitsCache = {};
+    watchedBitsCache[field] = j;
+    apply(j);
+  });
 };
 detail.markWatched = function () {
   for (var i = 0; i < this.eps.length; i++) {

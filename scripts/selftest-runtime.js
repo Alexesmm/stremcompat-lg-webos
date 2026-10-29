@@ -159,6 +159,11 @@ async function main() {
     var playlist = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + hlsRef });
     var segmentUrl = playlist.text.split('\n').filter(function (line) { return /^http:/.test(line); })[0];
     assert.ok(segmentUrl && segmentUrl.indexOf('/proxy?ref=') >= 0, 'relative HLS segment was not rewritten');
+    var packed = require('zlib').deflateSync(Buffer.from([6])).toString('base64');
+    var bitsRes = await request({ hostname: '127.0.0.1', port: appPort, path: '/watchedbits?f=' + encodeURIComponent('tt1:1:2:3:' + packed) });
+    var bitsJson = JSON.parse(bitsRes.text);
+    assert.strictEqual(bitsJson.anchor, 'tt1:1:2', 'watched field anchor was not parsed');
+    assert.deepStrictEqual(bitsJson.bits.slice(0, 4), [0, 1, 1, 0], 'watched field bits are not in Stremio order');
     var parsedSegment = new URL(segmentUrl);
     var segment = await request({ hostname: parsedSegment.hostname, port: parsedSegment.port, path: parsedSegment.pathname + parsedSegment.search });
     assert.strictEqual(JSON.parse(segment.text).auth, 'Bearer hls-token');
