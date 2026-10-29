@@ -11,8 +11,14 @@ function fmtDelta(d) {
   }
   return s + a + 's';
 }
+/* Presses add up from the position at the FIRST press (seekBase), so 3 presses of 10 s
+   read +30s even though the video kept playing meanwhile; the time that played until the
+   jump happens is added back in commitSeek, so the jump is exactly the setting. Number
+   keys and pointer clicks aim at an absolute time instead (seekAbs). */
+var seekBase = -1,
+  seekAbs = false;
 function showSeekInd() {
-  var d = Math.round(seekTarget - v.currentTime);
+  var d = Math.round(seekTarget - (seekAbs || seekBase < 0 ? v.currentTime : seekBase));
   seekEl.textContent = fmtDelta(d);
   seekEl.style.opacity = '1';
   if (seekHideT) {
@@ -30,7 +36,10 @@ function paintSeek() {
 function commitSeek() {
   if (seekTarget < 0) return;
   var tgt = seekTarget;
+  if (!seekAbs && seekBase >= 0) tgt = Math.max(0, Math.min(v.duration, tgt + (v.currentTime - seekBase)));
   seekTarget = -1;
+  seekBase = -1;
+  seekAbs = false;
   seekTimer = null;
   seekBar.className = mode === 'seek' ? 'f' : '';
   v.currentTime = tgt;
@@ -45,6 +54,10 @@ function commitSeek() {
 }
 function seek(d) {
   if (!v.duration) return;
+  if (seekTarget < 0) {
+    seekBase = v.currentTime;
+    seekAbs = false;
+  }
   var base = seekTarget >= 0 ? seekTarget : v.currentTime;
   seekTarget = Math.max(0, Math.min(v.duration, base + d));
   seekBar.className = 'seeking' + (mode === 'seek' ? ' f' : '');
@@ -54,6 +67,14 @@ function seek(d) {
   showBar();
   if (seekTimer) clearTimeout(seekTimer);
   seekTimer = setTimeout(commitSeek, 1200);
+}
+/* jump to an absolute time (number keys), committed like the other seeks */
+function seekTo(t) {
+  if (!v.duration) return;
+  if (seekTarget < 0) seekBase = v.currentTime;
+  seekAbs = true;
+  seek(t - (seekTarget >= 0 ? seekTarget : v.currentTime));
+  seekAbs = true;
 }
 function activateButton() {
   var id = btns[bIdx] && btns[bIdx].id;

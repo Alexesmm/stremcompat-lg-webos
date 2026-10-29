@@ -213,6 +213,12 @@ langSamples.forEach(function (sample) {
 });
 var subTags = firstRun.context.__STREMIO_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: ['en', 'pt-BR', 'es', 'multi'], subLangsOnly: true });
 assert.strictEqual(subTags[1].c + ':' + subTags[1].t, 'sublang:SUBS EN · PT-BR +1', 'Multi Subs flags were not tagged as subtitles');
+var compatOf = firstRun.context.__STREMIO_STREAM_COMPAT__;
+var rarSource = compatOf({ name: 'Torrentio', title: 'Movie.2020.1080p.WEB', filename: 'Movie.2020.1080p.WEB.rar', url: 'http://127.0.0.1:11470/abc/0' });
+assert.ok(rarSource.rank === 4 && rarSource.labels.indexOf('RAR') >= 0, 'a .rar source was not moved to the end with a warning');
+assert.strictEqual(compatOf({ name: 'Debrid', title: 'Show pack', url: 'https://cdn.example/files/show.part1.zip?token=1' }).rank, 4, 'a .zip link was not recognised');
+var rarbg = compatOf({ name: 'Torrentio', title: 'Movie.2020.1080p.WEBRip.x264-RARBG', filename: 'Movie.2020.1080p.WEBRip.x264-RARBG.mp4' });
+assert.ok(rarbg.rank === 0 && rarbg.labels.indexOf('RAR') < 0, 'a RARBG release was mistaken for an archive');
 var afterFail = firstRun.context.__STREMIO_NEXT_AFTER_FAILURE__([
   { stored:'q', addon:'Last' },
   { addon:'Torrentio', name:'A', title:'broken' },

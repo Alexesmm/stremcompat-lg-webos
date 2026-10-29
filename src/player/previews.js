@@ -120,6 +120,7 @@ document.addEventListener('click', function (e) {
       ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     mode = 'seek';
     seekTarget = v.duration * ratio;
+    seekAbs = true;
     paintSeek();
     commitSeek();
     paintBtns();

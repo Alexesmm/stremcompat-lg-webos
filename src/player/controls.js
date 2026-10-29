@@ -52,8 +52,27 @@ function fmt(s) {
   }
   return (h ? h + ':' + p(m) : m) + ':' + p(x);
 }
+/* The bar's length must not change while the time counts. The TV browsers do not apply
+   fixed-width digits, so once per video the time box gets the width of its longest form
+   (every digit replaced by the widest one), and the text sits at its right edge. */
+var timeWidthFor = 0;
+function lockTimeWidth() {
+  if (!v.duration || timeWidthFor === v.duration) return;
+  timeWidthFor = v.duration;
+  var full = fmt(v.duration),
+    widest = 0;
+  timeEl.style.minWidth = '';
+  for (var d = 0; d < 10; d++) {
+    var t = full.replace(/\d/g, String(d));
+    timeEl.innerHTML = t + ' / ' + t + '<span class=trem>-' + t + '</span>';
+    widest = Math.max(widest, timeEl.offsetWidth);
+  }
+  if (widest) timeEl.style.minWidth = widest + 2 + 'px';
+  else timeWidthFor = 0; // measured while hidden: try again next time
+}
 /* elapsed / total, then the time left */
 function paintTime(at) {
+  lockTimeWidth();
   timeEl.innerHTML =
     fmt(at) + ' / ' + fmt(v.duration) + '<span class=trem>-' + fmt(Math.max(0, v.duration - at)) + '</span>';
 }

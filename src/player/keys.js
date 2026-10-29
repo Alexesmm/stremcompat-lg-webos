@@ -48,7 +48,7 @@ document.addEventListener(
       }
       var digit = k >= 48 && k <= 57 ? k - 48 : k >= 96 && k <= 105 ? k - 96 : -1;
       if (digit >= 0 && v.duration) {
-        seek((v.duration * digit) / 10 - (seekTarget >= 0 ? seekTarget : v.currentTime));
+        seekTo((v.duration * digit) / 10);
         e.preventDefault();
         return;
       }

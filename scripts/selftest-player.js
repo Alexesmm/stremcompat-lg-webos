@@ -101,6 +101,35 @@ assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'the cont
 vm.runInNewContext("setExtSub('http://slow'); trackChosenAt = Date.now() - 60000", busyCtx);
 assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'a subtitle that never loads kept the controls up forever');
 
+// ---- seek steps are exact even though the video keeps playing until the jump (seek.js) ----
+function seekSession() {
+  var timers = [];
+  var ctx = {
+    v: { duration: 3600, currentTime: 100 }, mode: 'video', embN: -1,
+    seekTarget: -1, seekTimer: null, seekHideT: null,
+    seekEl: { textContent: '', style: {} }, seekBar: { className: '' }, fill: { style: {} }, knob: { style: {} },
+    paintTime: function () {}, schedPreview: function () {}, showBar: function () {}, showBuf: function () {},
+    pollEmbCues: function () {},
+    setTimeout: function (f) { timers.push(f); return timers.length; }, clearTimeout: function () {}
+  };
+  vm.runInNewContext(src('player/seek.js'), ctx);
+  ctx.commitNow = function () { vm.runInNewContext('commitSeek()', ctx); };
+  return ctx;
+}
+var sk = seekSession();
+vm.runInNewContext('seek(10)', sk);
+sk.v.currentTime = 101.2; // played on while waiting for more presses
+vm.runInNewContext('seek(10)', sk);
+assert.strictEqual(sk.seekEl.textContent, '+20s', 'two presses of 10 s did not read +20s');
+sk.v.currentTime = 102.4;
+sk.commitNow();
+assert.strictEqual(Math.round(sk.v.currentTime * 10) / 10, 122.4, 'the jump was not exactly 20 s from where the video was');
+var digits = seekSession();
+vm.runInNewContext('seekTo(1800)', digits);
+digits.v.currentTime = 101;
+digits.commitNow();
+assert.strictEqual(digits.v.currentTime, 1800, 'a number-key jump did not land on its absolute time');
+
 // ---- addon request URLs keep the installed link's query string (shared/stream-addons.js) ----
 var shared = {};
 vm.runInNewContext(src('shared/stream-addons.js'), shared);
@@ -200,4 +229,4 @@ early.play(400);
 vm.runInNewContext('finishSession(false)', early);
 assert.strictEqual(early.lib().state.timeOffset, 400000, 'leaving mid-episode lost the position');
 
-console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading.');
+console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');

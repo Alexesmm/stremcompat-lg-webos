@@ -1565,8 +1565,27 @@ function fmt(s) {
   }
   return (h ? h + ':' + p(m) : m) + ':' + p(x);
 }
+/* The bar's length must not change while the time counts. The TV browsers do not apply
+   fixed-width digits, so once per video the time box gets the width of its longest form
+   (every digit replaced by the widest one), and the text sits at its right edge. */
+var timeWidthFor = 0;
+function lockTimeWidth() {
+  if (!v.duration || timeWidthFor === v.duration) return;
+  timeWidthFor = v.duration;
+  var full = fmt(v.duration),
+    widest = 0;
+  timeEl.style.minWidth = '';
+  for (var d = 0; d < 10; d++) {
+    var t = full.replace(/\d/g, String(d));
+    timeEl.innerHTML = t + ' / ' + t + '<span class=trem>-' + t + '</span>';
+    widest = Math.max(widest, timeEl.offsetWidth);
+  }
+  if (widest) timeEl.style.minWidth = widest + 2 + 'px';
+  else timeWidthFor = 0; // measured while hidden: try again next time
+}
 /* elapsed / total, then the time left */
 function paintTime(at) {
+  lockTimeWidth();
   timeEl.innerHTML =
     fmt(at) + ' / ' + fmt(v.duration) + '<span class=trem>-' + fmt(Math.max(0, v.duration - at)) + '</span>';
 }
@@ -1861,8 +1880,14 @@ function fmtDelta(d) {
   }
   return s + a + 's';
 }
+/* Presses add up from the position at the FIRST press (seekBase), so 3 presses of 10 s
+   read +30s even though the video kept playing meanwhile; the time that played until the
+   jump happens is added back in commitSeek, so the jump is exactly the setting. Number
+   keys and pointer clicks aim at an absolute time instead (seekAbs). */
+var seekBase = -1,
+  seekAbs = false;
 function showSeekInd() {
-  var d = Math.round(seekTarget - v.currentTime);
+  var d = Math.round(seekTarget - (seekAbs || seekBase < 0 ? v.currentTime : seekBase));
   seekEl.textContent = fmtDelta(d);
   seekEl.style.opacity = '1';
   if (seekHideT) {
@@ -1880,7 +1905,10 @@ function paintSeek() {
 function commitSeek() {
   if (seekTarget < 0) return;
   var tgt = seekTarget;
+  if (!seekAbs && seekBase >= 0) tgt = Math.max(0, Math.min(v.duration, tgt + (v.currentTime - seekBase)));
   seekTarget = -1;
+  seekBase = -1;
+  seekAbs = false;
   seekTimer = null;
   seekBar.className = mode === 'seek' ? 'f' : '';
   v.currentTime = tgt;
@@ -1895,6 +1923,10 @@ function commitSeek() {
 }
 function seek(d) {
   if (!v.duration) return;
+  if (seekTarget < 0) {
+    seekBase = v.currentTime;
+    seekAbs = false;
+  }
   var base = seekTarget >= 0 ? seekTarget : v.currentTime;
   seekTarget = Math.max(0, Math.min(v.duration, base + d));
   seekBar.className = 'seeking' + (mode === 'seek' ? ' f' : '');
@@ -1904,6 +1936,14 @@ function seek(d) {
   showBar();
   if (seekTimer) clearTimeout(seekTimer);
   seekTimer = setTimeout(commitSeek, 1200);
+}
+/* jump to an absolute time (number keys), committed like the other seeks */
+function seekTo(t) {
+  if (!v.duration) return;
+  if (seekTarget < 0) seekBase = v.currentTime;
+  seekAbs = true;
+  seek(t - (seekTarget >= 0 ? seekTarget : v.currentTime));
+  seekAbs = true;
 }
 function activateButton() {
   var id = btns[bIdx] && btns[bIdx].id;
@@ -2580,6 +2620,7 @@ document.addEventListener('click', function (e) {
       ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     mode = 'seek';
     seekTarget = v.duration * ratio;
+    seekAbs = true;
     paintSeek();
     commitSeek();
     paintBtns();
@@ -2657,7 +2698,7 @@ document.addEventListener(
       }
       var digit = k >= 48 && k <= 57 ? k - 48 : k >= 96 && k <= 105 ? k - 96 : -1;
       if (digit >= 0 && v.duration) {
-        seek((v.duration * digit) / 10 - (seekTarget >= 0 ? seekTarget : v.currentTime));
+        seekTo((v.duration * digit) / 10);
         e.preventDefault();
         return;
       }

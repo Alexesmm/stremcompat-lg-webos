@@ -1703,6 +1703,21 @@ function streamCompatibility(s) {
   if (/\b(true[ ._-]?hd)\b/.test(t)) add('TrueHD');
   else if (/\b(dts[ ._-]?hd|dts)\b/.test(t)) add('DTS');
   if (/\b(e[ ._-]?ac[ ._-]?3|eac3|ddp|dd\+)\b/.test(t)) add('E-AC-3');
+  /* A link or torrent file that is a .rar/.zip/.7z archive cannot play: the TV would have to
+     unpack it. Only a real file extension counts ("RARBG" is a release group), and such a
+     source is moved to the end and never recommended rather than hidden. */
+  var file = (
+      String(s.filename || '') +
+      ' ' +
+      String(s.url || '').replace(/[?#].*$/, '') +
+      ' ' +
+      t
+    ).toLowerCase(),
+    archive = file.match(/\.(rar|zip|7z)(?![a-z0-9])/);
+  if (archive) {
+    add(archive[1].toUpperCase());
+    rank = Math.max(rank, 4);
+  }
   return { labels: labels, rank: rank };
 }
 window.__STREMIO_STREAM_COMPAT__ = streamCompatibility;
