@@ -78,12 +78,18 @@ var detail = {
     var lg = $('dLogo');
     var mediaId = this.id;
     if (m.logo) {
+      /* the logo box is reserved at once (fixed size in detail.css), so the meta, buttons
+         and episodes do not move when the logo arrives; the text title is the fallback */
+      lg.style.display = 'block';
+      $('dTitle').style.display = 'none';
       var im = new Image();
       im.onload = function () {
+        if (detail.meta === m && detail.id === mediaId) lg.src = m.logo;
+      };
+      im.onerror = function () {
         if (detail.meta === m && detail.id === mediaId) {
-          lg.src = m.logo;
-          lg.style.display = 'block';
-          $('dTitle').style.display = 'none';
+          lg.style.display = 'none';
+          $('dTitle').style.display = 'block';
         }
       };
       im.src = m.logo;

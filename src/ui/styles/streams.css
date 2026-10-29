@@ -1,7 +1,7 @@
 /* ---------- streams overlay ---------- */
 #streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 #streams h3{margin:0 0 8px;font-size:38px}
-#stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px}
+#stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stChips{white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
 .stchip.cur{background:rgba(140,92,255,.4);color:#fff}

@@ -2392,6 +2392,10 @@ var topNav = {
   }
 };
 // Board engine shared by Home and Library: hero plus horizontally scrolling rows.
+/* titles too long for two lines at the hero size use a smaller one (board.css) */
+function heroTitleClass(name) {
+  return String(name || '').length > 32 ? 'long' : '';
+}
 /* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
 function makeBoard(loader) {
   return {
@@ -2552,14 +2556,16 @@ function makeBoard(loader) {
         im.onerror = function () {
           if (self.focusedItem() === it) {
             tt.textContent = it.name || '';
-            tt.style.display = 'block';
+            tt.className = heroTitleClass(it.name);
+            tt.style.display = '';
             lg.style.display = 'none';
           }
         };
         im.src = lu;
       } else {
         tt.textContent = it.name || '';
-        tt.style.display = 'block';
+        tt.className = heroTitleClass(it.name);
+        tt.style.display = '';
         lg.style.display = 'none';
       }
       $('heroMeta').textContent = it.metaLine || '';
@@ -3327,16 +3333,9 @@ var DGEN = [
   ['Horror', 'genreHorror']
 ];
 /* LIBRARY rows = Continue Watching + your added Movies + Series (all local) */
+/* Continue Watching lives on Home only, as in the Stremio apps */
 function loadLibraryRows(board) {
   board.rows = [];
-  var cw = cwItems();
-  if (cw.length) {
-    var m = [];
-    for (var c = 0; c < cw.length; c++) m.push(cwCard(cw[c]));
-    var r0 = buildRow(tx('continueWatching'), m, true);
-    r0.el.className = 'row in';
-    board.rows.push(r0);
-  }
   var all = libGridItems(),
     mv = [],
     sr = [];
@@ -3436,17 +3435,19 @@ function libHas(id) {
   var it = lsJson(PRE + id);
   return !!(it && it.removed === false);
 }
-/* a movie counts as watched if it's in watchedEpisodes or finished (>=90%) */
+/* A film counts as watched when Stremio says so (times watched or the watched flag, also
+   set by other devices, which reset the position to 0 once a film ends), when it is in the
+   local watched list, or when it stopped at 90 % or later. */
 function itemWatched(it) {
   if (!it || !it.id || it.type === 'series') return false;
   var lib = lsJson(PRE + it.id);
   if (!lib || !lib.state) return false;
   var s = lib.state;
   var vid = it.videoId || it.id;
+  if (s.timesWatched > 0 || s.flaggedWatched > 0) return true;
   if (s.watchedEpisodes)
     for (var i = 0; i < s.watchedEpisodes.length; i++) if (s.watchedEpisodes[i] === vid) return true;
-  if (s.flaggedWatched && s.duration && s.timeOffset >= s.duration * 0.9) return true;
-  return false;
+  return !!(s.duration && s.timeOffset >= s.duration * 0.9);
 }
 function libToggle(item) {
   var now = new Date().toISOString();
@@ -3822,6 +3823,40 @@ function buildEpisodeModel(videos) {
   }
   return { seasons: seasons, linear: linear };
 }
+/* Episodes watched on any Stremio app, from the library item's `watched` field decoded by
+   the local server (/watchedbits). Same rule as stremio-watched-bitfield: video ids ordered
+   by season then episode (season 0 first, ties keep the addon order), and the stored bits
+   shifted so that the anchor video keeps its position. An unknown anchor means none. */
+function watchedFromBits(res, videos) {
+  var list = [],
+    out = {},
+    i;
+  for (i = 0; i < (videos || []).length; i++)
+    if (videos[i] && videos[i].id) list.push({ v: videos[i], i: i });
+  function num(x) {
+    var n = parseInt(x, 10);
+    return isNaN(n) ? -Infinity : n;
+  }
+  list.sort(function (a, b) {
+    var sa = num(a.v.season),
+      sb = num(b.v.season),
+      ea = num(a.v.episode != null ? a.v.episode : a.v.number),
+      eb = num(b.v.episode != null ? b.v.episode : b.v.number);
+    if (sa !== sb) return sa < sb ? -1 : 1;
+    if (ea !== eb) return ea < eb ? -1 : 1;
+    return a.i - b.i;
+  });
+  var at = -1;
+  for (i = 0; i < list.length; i++) if (list[i].v.id === res.anchor) at = i;
+  if (at < 0 || !res.bits) return out;
+  var offset = (parseInt(res.alen, 10) || 0) - at - 1;
+  for (i = 0; i < list.length; i++) {
+    var j = i + offset;
+    if (j >= 0 && j < res.bits.length && res.bits[j]) out[list[i].v.id] = 1;
+  }
+  return out;
+}
+window.__STREMIO_WATCHED_FROM_BITS__ = watchedFromBits;
 function episodeImage(v, meta) {
   var u = (v && (v.thumbnail || v.still || v.stillPath || v.still_path)) || '';
   if (u && String(u).charAt(0) === '/') u = 'https://image.tmdb.org/t/p/w500' + u;
@@ -4078,12 +4113,18 @@ var detail = {
     var lg = $('dLogo');
     var mediaId = this.id;
     if (m.logo) {
+      /* the logo box is reserved at once (fixed size in detail.css), so the meta, buttons
+         and episodes do not move when the logo arrives; the text title is the fallback */
+      lg.style.display = 'block';
+      $('dTitle').style.display = 'none';
       var im = new Image();
       im.onload = function () {
+        if (detail.meta === m && detail.id === mediaId) lg.src = m.logo;
+      };
+      im.onerror = function () {
         if (detail.meta === m && detail.id === mediaId) {
-          lg.src = m.logo;
-          lg.style.display = 'block';
-          $('dTitle').style.display = 'none';
+          lg.style.display = 'none';
+          $('dTitle').style.display = 'block';
         }
       };
       im.src = m.logo;
@@ -4437,12 +4478,38 @@ detail.currentEpisode = function () {
   return (this.eps && this.eps[this.epIdx]) || null;
 };
 detail.loadWatched = function () {
-  /* LOCAL watched list (state.watchedEpisodes) — never synced */
+  /* episodes watched here (state.watchedEpisodes) and, decoded from state.watched, on
+     any other Stremio app */
   this.watchedMap = {};
   if (this.type !== 'series') return;
-  var lib = lsJson(PRE + this.id);
-  var we = (lib && lib.state && lib.state.watchedEpisodes) || [];
+  var lib = lsJson(PRE + this.id),
+    s = (lib && lib.state) || {};
+  var we = s.watchedEpisodes || [];
   for (var i = 0; i < we.length; i++) this.watchedMap[we[i]] = 1;
+  this.loadWatchedBits(s.watched);
+};
+var watchedBitsCache = {};
+detail.loadWatchedBits = function (field) {
+  if (!field || !this.meta || !this.meta.videos) return;
+  var self = this,
+    id = this.id,
+    videos = this.meta.videos;
+  function apply(res) {
+    if (self.id !== id || !res || !res.bits) return;
+    var w = watchedFromBits(res, videos);
+    for (var k in w) if (Object.prototype.hasOwnProperty.call(w, k)) self.watchedMap[k] = 1;
+    if (self.epEls && self.epEls.length) self.markWatched();
+  }
+  if (watchedBitsCache[field]) {
+    apply(watchedBitsCache[field]);
+    return;
+  }
+  xhrJson('/watchedbits?f=' + encodeURIComponent(field), function (j) {
+    if (!j || !j.bits) return;
+    if (Object.keys(watchedBitsCache).length > 20) watchedBitsCache = {};
+    watchedBitsCache[field] = j;
+    apply(j);
+  });
 };
 detail.markWatched = function () {
   for (var i = 0; i < this.eps.length; i++) {

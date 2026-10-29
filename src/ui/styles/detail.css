@@ -1,7 +1,8 @@
 /* ---------- detail ---------- */
 #dWrap{position:absolute;top:48px;left:176px;right:48px;bottom:0}
 #dPoster{position:absolute;top:24px;right:0;width:330px;height:495px;border-radius:16px;display:none}
-#dLogo{max-width:560px;max-height:190px;display:none}
+/* fixed boxes: the logo is fitted inside, so its shape never moves what follows */
+#dLogo{width:560px;height:190px;object-fit:contain;object-position:left bottom;display:none}
 #dTitle{font-size:80px;font-weight:800;max-width:70%;line-height:1.05;letter-spacing:-1.5px}
 #dMeta{margin-top:20px;font-size:28px;color:rgba(214,201,255,.86);font-weight:600}
 .drating{color:#ffd27a;font-weight:800}
@@ -32,8 +33,9 @@
 .ep .t{font-size:25px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep.f{background:rgba(255,255,255,.14);box-shadow:0 0 0 5px #fff;transform:translateY(-5px)}
 .ep.w .t{color:#a98fff}
-body.series-episode #dLogo{max-width:460px;max-height:128px}
+body.series-episode #dLogo{width:460px;height:128px}
 body.series-episode #dTitle{font-size:58px}
-body.series-episode #dMeta{margin-top:14px;font-size:30px;color:#fff}
-body.series-episode #dDesc{margin-top:10px;max-width:86%;max-height:88px;font-size:25px;color:rgba(255,255,255,.72)}
+body.series-episode #dMeta{margin-top:14px;font-size:30px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* fixed height: the episode row must not move up and down with each synopsis length */
+body.series-episode #dDesc{margin-top:10px;max-width:86%;height:75px;max-height:none;line-height:1.5;font-size:25px;color:rgba(255,255,255,.72)}
 body.series-episode #dSeasons{margin-top:24px}

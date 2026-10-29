@@ -12,8 +12,9 @@
   #bg,#bg2{left:45%;height:66%}
   body.detail #bg,body.detail #bg2{left:37%;height:100%}
   #hero{top:38px;left:112px;width:39%}
-  #heroLogo{max-width:320px;max-height:88px}
-  #heroTitle{font-size:45px;max-height:94px}
+  #heroLogo{width:320px;height:88px}
+  #heroTitle{font-size:45px;height:94px}
+  #heroTitle.long{font-size:34px}
   #heroMeta{margin-top:9px;font-size:18px}
   #heroDesc{margin-top:7px;font-size:17px;line-height:1.34;max-height:46px}
   #rowsClip{top:258px;left:86px}
@@ -46,7 +47,7 @@
   .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
   #dWrap{top:32px;left:112px;right:30px}
   #dPoster{top:12px;width:220px;height:330px;border-radius:11px}
-  #dLogo{max-width:380px;max-height:112px}
+  #dLogo{width:380px;height:112px}
   #dTitle{font-size:52px;max-height:108px}
   #dMeta{margin-top:10px;font-size:21px}
   #dInfo{margin-top:10px;font-size:18px}.dlbl{width:128px;font-size:16px}
@@ -74,10 +75,10 @@
   .ep{width:287px;height:202px;margin-right:16px;border-radius:9px}
   .ep .th{width:287px;height:161px;border-radius:8px}.ep .th img{border-radius:8px}
   .ep .bd{padding:8px 10px}.ep .t{font-size:18px}.ep.f{box-shadow:0 0 0 3px #fff;transform:translateY(-3px)}
-  body.series-episode #dLogo{max-width:310px;max-height:76px}
+  body.series-episode #dLogo{width:310px;height:76px}
   body.series-episode #dTitle{font-size:38px}
   body.series-episode #dMeta{margin-top:8px;font-size:20px}
-  body.series-episode #dDesc{margin-top:6px;max-height:48px;font-size:17px;line-height:1.35}
+  body.series-episode #dDesc{margin-top:6px;height:46px;max-height:none;font-size:17px;line-height:1.35}
   body.series-episode #dSeasons{margin-top:12px}
   #aHead{height:78px;padding-right:175px}
   #aTitle{font-size:36px;margin-bottom:6px}

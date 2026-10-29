@@ -1,4 +1,8 @@
 // Board engine shared by Home and Library: hero plus horizontally scrolling rows.
+/* titles too long for two lines at the hero size use a smaller one (board.css) */
+function heroTitleClass(name) {
+  return String(name || '').length > 32 ? 'long' : '';
+}
 /* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
 function makeBoard(loader) {
   return {
@@ -159,14 +163,16 @@ function makeBoard(loader) {
         im.onerror = function () {
           if (self.focusedItem() === it) {
             tt.textContent = it.name || '';
-            tt.style.display = 'block';
+            tt.className = heroTitleClass(it.name);
+            tt.style.display = '';
             lg.style.display = 'none';
           }
         };
         im.src = lu;
       } else {
         tt.textContent = it.name || '';
-        tt.style.display = 'block';
+        tt.className = heroTitleClass(it.name);
+        tt.style.display = '';
         lg.style.display = 'none';
       }
       $('heroMeta').textContent = it.metaLine || '';
