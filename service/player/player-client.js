@@ -1205,7 +1205,8 @@ var embTracks = null,
   embTimeout = false,
   embReopenArmed = false,
   embN = -1,
-  embFirst = false;
+  embFirst = false,
+  embFailed = false;
 var autoSubDone = false;
 function autoSub() {
   if (autoSubDone || curSub !== 'off' || !WANTSUB) return;
@@ -1228,7 +1229,9 @@ function subtitleAddons() {
   } catch (e) {}
   return addonsFor(list, 'subtitles', TYPE, VID);
 }
+var extSubsLoading = false;
 function loadExtSubs() {
+  extSubsLoading = true;
   var ref = (location.search.match(/[?&]ref=([^&]+)/) || [])[1] || '';
   try {
     var x = new XMLHttpRequest();
@@ -1236,6 +1239,7 @@ function loadExtSubs() {
     x.setRequestHeader('Content-Type', 'application/json');
     x.onreadystatechange = function () {
       if (x.readyState !== 4) return;
+      extSubsLoading = false;
       var j = null;
       try {
         j = JSON.parse(x.responseText);
@@ -1246,7 +1250,9 @@ function loadExtSubs() {
       }
     };
     x.send(JSON.stringify({ ref: decodeURIComponent(ref), type: TYPE, vid: VID, addons: subtitleAddons() }));
-  } catch (e) {}
+  } catch (e) {
+    extSubsLoading = false;
+  }
 }
 if (TYPE && VID) loadExtSubs();
 // honour the Settings default audio language: enable the matching embedded audio track
@@ -1285,6 +1291,7 @@ function ensureEmbTracks() {
 }
 function setExtSub(u) {
   curSub = 'ext:' + u;
+  trackChosenAt = Date.now();
   embN = -1;
   cues = null;
   subEl.textContent = '';
@@ -1334,6 +1341,7 @@ function pollEmbCues() {
         }
       }
       if (j.err && !cues.length) {
+        embFailed = true;
         showToast(P.subtitleFailed);
       }
     }
@@ -1343,9 +1351,11 @@ function pollEmbCues() {
 // (mode="showing"). Far better than demuxing over the network if the TV exposes the tracks.
 function setEmbSub(n, ti) {
   curSub = 'emb:' + n;
+  trackChosenAt = Date.now();
   embN = n;
   cues = [];
   embFirst = false;
+  embFailed = false;
   subEl.textContent = '';
   // Settings: "native" tries the TV's own text track (usually empty on this TV -> falls back)
   if (EMBMODE === 'native') {
@@ -1374,9 +1384,26 @@ function setEmbSub(n, ti) {
     } else if (j.started) {
       showToast(P.preparingSubs);
     } else if (j.err) {
+      embFailed = true;
       showToast(P.noEmbedded);
     }
   });
+}
+/* While something the viewer asked for is still loading (the track list, the subtitle
+   list, a chosen subtitle or audio track), the controls stay on screen instead of hiding
+   after the usual few seconds (controls.js hideControls). The wait has a limit so a track
+   that never loads cannot keep them up forever. */
+var BUSY_LIMIT_MS = 45000,
+  trackChosenAt = 0,
+  audioChosenAt = 0;
+function playerBusy() {
+  var now = Date.now();
+  if (mode === 'menu' && (embTracksLoading || extSubsLoading)) return true;
+  if (now - trackChosenAt < BUSY_LIMIT_MS) {
+    if (curSub.indexOf('ext:') === 0 && cues === null) return true;
+    if (curSub.indexOf('emb:') === 0 && !embFirst && !embFailed) return true;
+  }
+  return now - audioChosenAt < 15000 && v.readyState < 3;
 }
 function subsOff() {
   curSub = 'off';
@@ -1561,7 +1588,7 @@ function showBar() {
    video stays: the bar, a focused button and the settings menu alike. The focus returns
    to the video, so the next key brings the controls back. */
 function hideControls() {
-  if (seekTarget >= 0) {
+  if (seekTarget >= 0 || playerBusy()) {
     showBar();
     return;
   }
@@ -2205,6 +2232,7 @@ function chooseMenu() {
   else if (it.k === 'aud') {
     try {
       for (var j = 0; j < v.audioTracks.length; j++) v.audioTracks[j].enabled = j === it.idx;
+      audioChosenAt = Date.now();
       var al = (v.audioTracks[it.idx] && v.audioTracks[it.idx].language) || '';
       if (al) saveTitlePref('aud', al.toLowerCase());
     } catch (e) {}

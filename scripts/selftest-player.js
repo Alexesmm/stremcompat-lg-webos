@@ -83,6 +83,24 @@ assert.strictEqual(remembered.aud, 'jpn', 'the audio chosen for this title did n
 assert.strictEqual(remembered.sub, '', 'subtitles turned off for this title came back on');
 assert.strictEqual(remembered.delay, 1.5, 'the subtitle delay for this title was not restored');
 
+// ---- the controls stay up while a subtitle or audio track is loading (subtitles.js playerBusy) ----
+var busyCtx = {
+  ID: 'tt9', TYPE: 'series', VID: '', URL: 'u', localStorage: memoryStorage({}), mode: 'menu',
+  v: { addEventListener: function () {}, textTracks: [], currentTime: 0, readyState: 4 },
+  document: { getElementById: element, createElement: element }, location: { search: '' },
+  xhr: function () {}, showToast: function () {}, subEl: element('sub')
+};
+vm.runInNewContext(src('player/subtitles.js'), busyCtx);
+assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'the controls were held with nothing loading');
+vm.runInNewContext('embTracksLoading = true', busyCtx);
+assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), true, 'the controls could hide while the track list was loading');
+vm.runInNewContext("embTracksLoading = false; setExtSub('http://sub')", busyCtx);
+assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), true, 'the controls could hide while the chosen subtitle was loading');
+vm.runInNewContext('cues = []', busyCtx);
+assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'the controls stayed after the subtitle loaded');
+vm.runInNewContext("setExtSub('http://slow'); trackChosenAt = Date.now() - 60000", busyCtx);
+assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'a subtitle that never loads kept the controls up forever');
+
 // ---- addon request URLs keep the installed link's query string (shared/stream-addons.js) ----
 var shared = {};
 vm.runInNewContext(src('shared/stream-addons.js'), shared);
@@ -182,4 +200,4 @@ early.play(400);
 vm.runInNewContext('finishSession(false)', early);
 assert.strictEqual(early.lib().state.timeOffset, 400000, 'leaving mid-episode lost the position');
 
-console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice.');
+console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading.');

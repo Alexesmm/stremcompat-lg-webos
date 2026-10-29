@@ -75,7 +75,7 @@ function showBar() {
    video stays: the bar, a focused button and the settings menu alike. The focus returns
    to the video, so the next key brings the controls back. */
 function hideControls() {
-  if (seekTarget >= 0) {
+  if (seekTarget >= 0 || playerBusy()) {
     showBar();
     return;
   }

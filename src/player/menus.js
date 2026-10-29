@@ -240,6 +240,7 @@ function chooseMenu() {
   else if (it.k === 'aud') {
     try {
       for (var j = 0; j < v.audioTracks.length; j++) v.audioTracks[j].enabled = j === it.idx;
+      audioChosenAt = Date.now();
       var al = (v.audioTracks[it.idx] && v.audioTracks[it.idx].language) || '';
       if (al) saveTitlePref('aud', al.toLowerCase());
     } catch (e) {}
