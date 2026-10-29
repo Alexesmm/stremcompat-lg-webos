@@ -40,7 +40,8 @@ function startStreamingServer() {
   env.USER = env.USER || 'root';
   env.FFMPEG_BIN = path.join(DIR, 'bin', 'ffmpeg');
   env.FFPROBE_BIN = path.join(DIR, 'bin', 'ffprobe');
-  var child = spawn(LOADER, ['--library-path', LIB, NODE, SERVER], {
+  /* IPv4 first, for the same reason as tvserver.js (no fallback in Node 18) */
+  var child = spawn(LOADER, ['--library-path', LIB, NODE, '--dns-result-order=ipv4first', SERVER], {
     cwd: DIR,
     env: env,
     detached: true,

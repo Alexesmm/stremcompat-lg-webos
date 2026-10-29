@@ -7,7 +7,16 @@
 //   3. Bridge account, addon, artwork, subtitle and stream requests that the old
 //      TV browsers cannot perform themselves (TLS roots, CORS, headers, HLS).
 
+var dns = require('dns');
 var http = require('http');
+
+/* Try IPv4 addresses first. Since Node 17 addresses come in the resolver's order, and
+   Node 18 has no automatic fallback to the next address (autoSelectFamily is off before
+   Node 20). On a network that hands out IPv6 without a working IPv6 route, every request
+   to Stremio, Cinemeta and the addons hung while browsers fell back to IPv4. */
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {}
 var { PORT, SERVER_PORT } = require('./server/config');
 var { dbg } = require('./server/log');
 var { portUp, startStreamingServer } = require('./server/streaming-server');
