@@ -240,9 +240,25 @@ var streamsUI = {
       this.chipEls[i].className =
         'stchip' + (cur ? ' cur' : '') + (this.zone === 'chips' && i === this.chipIdx ? ' f' : '');
     }
+    this.revealChip(this.zone === 'chips' ? this.chipIdx : this.chips.indexOf(this.filter));
     var lang = $('stLang');
     lang.textContent = tx('langFilter', this.langName(this.langFilter));
     lang.className = (this.langFilter !== 'All' ? 'cur' : '') + (this.zone === 'lang' ? ' f' : '');
+  },
+  /* When the chips do not fit (All, 4K, 1080p, 720p, SD, Other), the row scrolls so the
+     focused one, or the active filter, is fully visible; the first chip keeps the row at
+     the start. */
+  revealChip: function (i) {
+    var host = $('stChips'),
+      el = this.chipEls[i];
+    if (!el) return;
+    var left = el.offsetLeft,
+      right = left + el.offsetWidth,
+      pad = 24;
+    if (i === 0) host.scrollLeft = 0;
+    else if (right + pad > host.scrollLeft + host.clientWidth)
+      host.scrollLeft = right + pad - host.clientWidth;
+    else if (left - pad < host.scrollLeft) host.scrollLeft = Math.max(0, left - pad);
   },
   rebuild: function () {
     var sel = this.items[this.idx] || null,
