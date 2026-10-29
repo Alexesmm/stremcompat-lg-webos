@@ -143,6 +143,8 @@ StremCompat is free to use, and donations are never required.
 
 ## Credits and licensing
 
-The StremCompat television interface is maintained within this project. Its packaged-app bootstrap began from [kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos), which credits [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv) in its earlier interface lineage. The bundled runtime approach was adapted from [StremioBrew](https://github.com/simussu9-wq/stremiobrew). Stremio, Node.js, FFmpeg and LG webOS tooling are also used or interoperated with.
+- **[StremioBrew](https://github.com/simussu9-wq/stremiobrew)**: the bundled runtime (Node.js 18, FFmpeg, FFprobe and the Stremio streaming server) comes from its package, and part of the local server is still derived from its code.
+- **[kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos)**: StremCompat started as a fork of this project, whose earlier interface came from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The launcher and interface have since been rewritten.
+- Stremio, Node.js, FFmpeg, the Inter typeface and LG webOS tooling are also used or interoperated with.
 
-See [NOTICE.md](NOTICE.md) and [THIRD_PARTY.md](THIRD_PARTY.md) for project lineage, component provenance and redistribution caveats. No repository-wide open-source license is currently asserted while inherited source without a published license remains in the tree.
+See [NOTICE.md](NOTICE.md) and [THIRD_PARTY.md](THIRD_PARTY.md) for project lineage, component provenance and redistribution caveats. No repository-wide open-source license is currently asserted.
