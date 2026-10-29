@@ -2,7 +2,8 @@
 
 var fs = require('fs');
 var http = require('http');
-var { APP_VERSION, PORT } = require('./config');
+var path = require('path');
+var { APP_VERSION, DIR, PORT, SERVICE_ID } = require('./config');
 var { dbg } = require('./log');
 
 /* The local server runs detached from the webOS service, so removing or updating the app
@@ -184,8 +185,65 @@ function handleTakeover(req, res) {
   });
 }
 
+/* The other half: this server leaves by itself once it has been replaced, which needs no
+   permission at all (the jail may hide it from the new version, so it cannot be stopped
+   from outside). Every few seconds it checks two signs:
+   - the installed profile.json no longer names this version, or is gone (updated/removed);
+   - the claim file in the app's home folder, which every starting version writes and
+     which is shared by all runs of the app, names another version.
+   Two checks in a row are needed, so a file caught half written does not count. */
+var CHECK_MS = 3000;
+function claimFile() {
+  var home = process.env.HOME || '';
+  return home ? path.join(home, '.stremcompat-' + SERVICE_ID + '.version') : '';
+}
+function claimPort() {
+  var file = claimFile();
+  /* only an installed package (with profile.json) claims, never a source checkout */
+  if (!file || !fs.existsSync(path.join(DIR, 'profile.json'))) return;
+  try {
+    fs.writeFileSync(file, APP_VERSION);
+  } catch (e) {
+    dbg('claim not written: ' + ((e && e.code) || e));
+  }
+}
+function replacedBy() {
+  var installed = path.join(DIR, 'profile.json');
+  try {
+    var v = JSON.parse(fs.readFileSync(installed, 'utf8')).version;
+    if (v && v !== APP_VERSION) return 'installed ' + v;
+  } catch (e) {
+    if (e && e.code === 'ENOENT') return 'app removed';
+  }
+  var file = claimFile();
+  if (file) {
+    try {
+      var claimed = fs.readFileSync(file, 'utf8').trim();
+      if (claimed && claimed !== APP_VERSION) return 'claimed by ' + claimed;
+    } catch (e) {}
+  }
+  return '';
+}
+function leaveWhenReplaced() {
+  /* a source checkout has no profile.json: nothing is installed to watch */
+  if (!fs.existsSync(path.join(DIR, 'profile.json'))) return;
+  var seen = 0;
+  setInterval(function () {
+    var why = replacedBy();
+    if (!why) {
+      seen = 0;
+      return;
+    }
+    if (++seen < 2) return;
+    dbg('replaced (' + why + '), version ' + APP_VERSION + ' exiting');
+    process.exit(0);
+  }, CHECK_MS).unref();
+}
+
 module.exports = {
+  claimPort: claimPort,
   handleTakeover: handleTakeover,
+  leaveWhenReplaced: leaveWhenReplaced,
   listenTakingOver: listenTakingOver,
   pidOnPort: pidOnPort
 };

@@ -21,7 +21,7 @@ var { PORT, SERVER_PORT } = require('./server/config');
 var { dbg } = require('./server/log');
 var { portUp, startStreamingServer } = require('./server/streaming-server');
 var routes = require('./server/routes');
-var { listenTakingOver } = require('./server/takeover');
+var { claimPort, leaveWhenReplaced, listenTakingOver } = require('./server/takeover');
 
 dbg('tvserver starting, uid=' + (process.getuid ? process.getuid() : '?'));
 
@@ -37,4 +37,7 @@ portUp(SERVER_PORT, function (up) {
 listenTakingOver(http.createServer(routes.handleRequest), function () {
   dbg('listening on :' + PORT);
   console.log('tvserver on :' + PORT);
+  /* from now on, an update makes this server leave by itself */
+  claimPort();
+  leaveWhenReplaced();
 });

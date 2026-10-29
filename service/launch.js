@@ -211,7 +211,21 @@ function waitUntilReady(callback, attempts) {
 }
 
 service.activityManager.create('keepAlive', function () {});
+/* Tell a running server of another version (1.3.3 and later) that this version takes
+   over: it watches this file in the app's home folder and leaves by itself (takeover.js).
+   The new server writes it again once it listens. */
+function claimPort() {
+    var home = process.env.HOME || '';
+    if (!home) return;
+    try {
+        fs.writeFileSync(path.join(home, '.stremcompat-' + PROFILE.serviceId + '.version'), APP_VERSION);
+    } catch (error) {
+        log('Claim not written: ' + (error.code || error.message));
+    }
+}
+
 service.register('start', function (message) {
+    claimPort();
     function answer() {
         waitUntilReady(function (ready, staleVersion) {
             var reply = {
