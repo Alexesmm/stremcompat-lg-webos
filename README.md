@@ -343,6 +343,7 @@ The application cannot expand the codecs or processing power available in the te
 
 - Confirm that the correct application was opened. The dedicated webOS 3 edition is named `Stremio UJ3`.
 - **After updating an existing installation:** if the app no longer loads, asks to be reinstalled or cannot start its local service, close it, turn the television off, unplug it for at least 30 seconds and then reconnect it. A normal standby restart may preserve the previous runtime through Quick Start+.
+- **The login QR code, email login or catalogs never load, while other apps on the TV and Stremio on a phone work:** the network is probably handing out IPv6 without a working IPv6 route. Browsers and most apps fall back to IPv4, but versions up to 1.2.2 tried the IPv6 address first and failed. Update to 1.2.3 or later, which tries IPv4 first. On an older version, turn IPv6 off on the television (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router. The local service itself can be checked by opening `http://127.0.0.1:<port>/health` in the television's browser, with port `8082` (UM4 1920x1080), `8084` (UM4 1280x720), `8093` (UJ3 1920x1080) or `8094` (UJ3 1280x720); a JSON answer means it is running.
 - If the whole application occupies only the upper-left portion of the television, install the matching `graphics-1280x720` package instead of changing the TV picture settings.
 - Remove superseded test editions if storage is low.
 - Verify that Developer Mode is still active.
