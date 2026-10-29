@@ -60,6 +60,82 @@ function isUp(callback) {
     setTimeout(function () { finish(false); }, 1000);
 }
 
+/* The version answering /health on the app port, or '' when nothing answers. */
+function healthVersion(callback) {
+    var socket = net.connect(APP_PORT, '127.0.0.1');
+    var settled = false;
+    var response = '';
+    function finish() {
+        var m;
+        if (settled) return;
+        settled = true;
+        try { socket.destroy(); } catch (ignore) {}
+        m = response.match(/"version":"([^"]*)"/);
+        callback(m ? m[1] : response ? '?' : '');
+    }
+    socket.on('connect', function () {
+        socket.write('GET /health HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n');
+    });
+    socket.on('data', function (chunk) {
+        response += chunk.toString();
+        if (/"version":"[^"]*"/.test(response) || response.length > 8192) finish();
+    });
+    socket.on('end', finish);
+    socket.on('error', finish);
+    setTimeout(finish, 1500);
+}
+
+/* The local server runs detached, so after an update the previous version's server can
+   still hold the app port: the new one could never start and the launcher waited for
+   RUNTIME_START_TIMEOUT until the TV was unplugged. Before starting, every StremCompat
+   server of this app (a process whose command line runs this app's tvserver.js) is
+   stopped. The command line is readable even where another process's open sockets are
+   not. What happened is kept for the launcher's error code. */
+var takeover = null;
+function staleServerPids() {
+    var pids = [];
+    var names = [];
+    var i;
+    var cmd;
+    try { names = fs.readdirSync('/proc'); } catch (error) { takeover.err = 'proc ' + (error.code || 'error'); return pids; }
+    for (i = 0; i < names.length; i++) {
+        if (!/^\d+$/.test(names[i]) || Number(names[i]) === process.pid) continue;
+        try {
+            cmd = fs.readFileSync('/proc/' + names[i] + '/cmdline').toString().split('\u0000').join(' ');
+        } catch (ignore) { continue; }
+        if (cmd.indexOf(SUPERVISOR) >= 0) pids.push(Number(names[i]));
+    }
+    return pids;
+}
+function stopStaleServers(staleVersion, callback) {
+    var pids;
+    var waited = 0;
+    takeover = { version: staleVersion, found: 0, err: '' };
+    pids = staleServerPids();
+    takeover.found = pids.length;
+    log('Port ' + APP_PORT + ' held by version ' + staleVersion + '; stopping ' + pids.length + ' old server(s)');
+    function signal(name) {
+        var i;
+        for (i = 0; i < pids.length; i++) {
+            try { process.kill(pids[i], name); } catch (error) { takeover.err = takeover.err || (error.code || 'kill error'); }
+        }
+    }
+    signal('SIGTERM');
+    setTimeout(function () {
+        signal('SIGKILL');
+        (function waitFree() {
+            healthVersion(function (version) {
+                if (!version || waited >= 6) {
+                    if (version) log('Old server still answering after stop: ' + (takeover.err || 'unknown'));
+                    return callback();
+                }
+                waited++;
+                setTimeout(waitFree, 500);
+            });
+        })();
+    }, 800);
+}
+
 /* If the local server exits while this service is alive, start it again so the
    interface does not freeze until the app is reopened. A server that keeps dying is
    left alone after five restarts in ten minutes instead of looping. */
@@ -120,11 +196,15 @@ function startRuntime() {
     child.unref();
 }
 
+/* callback(ready, staleVersion). A normal start gets the full minute. Only while ANOTHER
+   version keeps answering (the old server could not be stopped) the wait ends after 30 s,
+   so the launcher can explain it instead of timing out. */
 function waitUntilReady(callback, attempts) {
     attempts = attempts || 0;
-    isUp(function (up) {
-        if (up) return callback(true);
-        if (attempts >= 120) return callback(false);
+    healthVersion(function (version) {
+        if (version === APP_VERSION) return callback(true, '');
+        if (version && version !== '?' && attempts >= 60) return callback(false, version);
+        if (attempts >= 120) return callback(false, '');
         if (!spawned) startRuntime();
         setTimeout(function () { waitUntilReady(callback, attempts + 1); }, 500);
     });
@@ -132,17 +212,28 @@ function waitUntilReady(callback, attempts) {
 
 service.activityManager.create('keepAlive', function () {});
 service.register('start', function (message) {
-    isUp(function (up) {
-        if (!up) startRuntime();
-        waitUntilReady(function (ready) {
-            message.respond({
+    function answer() {
+        waitUntilReady(function (ready, staleVersion) {
+            var reply = {
                 returnValue: ready,
                 ready: ready,
                 version: APP_VERSION,
                 runtime: 'bundled-node18-armv7',
                 target: PROFILE.targetLabel
-            });
+            };
+            if (!ready && staleVersion) {
+                reply.reason = 'STALE_SERVICE';
+                reply.staleVersion = staleVersion;
+                reply.detail = takeover ? 'found ' + takeover.found + (takeover.err ? ' ' + takeover.err : '') : 'no stop';
+            }
+            message.respond(reply);
         });
+    }
+    healthVersion(function (version) {
+        if (version === APP_VERSION) return answer();
+        if (version && !spawned) return stopStaleServers(version, function () { startRuntime(); answer(); });
+        if (!spawned) startRuntime();
+        answer();
     });
 });
 

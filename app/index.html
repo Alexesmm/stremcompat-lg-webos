@@ -43,7 +43,7 @@ body{margin:0;background:#090b12;color:#fff;font-family:Inter,Arial,sans-serif}
     <div id="hint" class="hint"></div>
     <div id="error" class="error">
       <button id="retry" onclick="location.reload()"></button>
-      <div class="code">RUNTIME_START_TIMEOUT · __APP_VERSION__</div>
+      <div id="code" class="code">RUNTIME_START_TIMEOUT · __APP_VERSION__</div>
     </div>
   </div>
 </div></div>
@@ -59,6 +59,8 @@ var TEXT = PT ? {
     hint: 'Na primeira abertura depois de instalar, isso pode levar alguns segundos.',
     failed: 'O serviço do app não respondeu.',
     failedHint: 'Desligue a TV da tomada por 30 segundos e abra o app de novo. Se continuar, reinstale a versão __APP_VERSION__.',
+    stale: 'Uma versão anterior do app ainda está rodando na TV.',
+    staleHint: 'Tire a TV da tomada por 30 segundos e abra o app de novo. Desligar pelo controle não basta quando o Quick Start+ está ativo.',
     retry: 'Tentar de novo'
 } : {
     starting: 'Starting…',
@@ -68,6 +70,8 @@ var TEXT = PT ? {
     hint: 'The first launch after installing can take a few seconds.',
     failed: 'The app service did not respond.',
     failedHint: 'Unplug the TV for 30 seconds and open the app again. If it keeps happening, reinstall version __APP_VERSION__.',
+    stale: 'An earlier version of the app is still running on the TV.',
+    staleHint: 'Unplug the TV for 30 seconds and open the app again. Turning it off with the remote is not enough when Quick Start+ is on.',
     retry: 'Try again'
 };
 var finished = false;
@@ -82,6 +86,27 @@ function setStatus(text) {
 }
 $('retry').innerHTML = TEXT.retry;
 setStatus(TEXT.starting);
+
+/* the error screen; code says what happened, for a report or a photo of the screen */
+function fail(text, hint, code) {
+    if (finished) return;
+    finished = true;
+    $('box').className = 'box failed';
+    setStatus(text);
+    $('hint').innerHTML = hint;
+    $('hint').style.visibility = 'visible';
+    $('code').innerHTML = code;
+    $('error').style.display = 'block';
+}
+/* An earlier version's local server can survive an update; the service stops it before
+   starting this one (launch.js). If another version still answers for a while, that did
+   not work: say so instead of waiting for the timeout. */
+var STALE_AFTER_MS = 35000;
+var otherVersion = '';
+var otherSince = 0;
+function staleFailure(code) {
+    fail(TEXT.stale, TEXT.staleHint, code + ' · __APP_VERSION__');
+}
 
 function openApp() {
     if (finished) return;
@@ -98,7 +123,14 @@ function ping() {
         request.timeout = 1500;
         request.onreadystatechange = function () {
             if (request.readyState === 4 && request.status === 200) {
-                try { var health = JSON.parse(request.responseText);if (health.version === '__APP_VERSION__') openApp(); } catch (ignore) {}
+                try {
+                    var health = JSON.parse(request.responseText);
+                    if (health.version === '__APP_VERSION__') openApp();
+                    else if (health.version) {
+                        if (health.version !== otherVersion) { otherVersion = health.version; otherSince = Date.now(); }
+                        if (Date.now() - otherSince > STALE_AFTER_MS) staleFailure('STALE_SERVICE ' + otherVersion);
+                    }
+                } catch (ignore) {}
             }
         };
         request.onerror = function () {};
@@ -107,12 +139,9 @@ function ping() {
     } catch (ignore) {}
 
     var elapsed = Date.now() - startedAt;
+    if (finished) return;
     if (elapsed > 90000) {
-        $('box').className = 'box failed';
-        setStatus(TEXT.failed);
-        $('hint').innerHTML = TEXT.failedHint;
-        $('hint').style.visibility = 'visible';
-        $('error').style.display = 'block';
+        fail(TEXT.failed, TEXT.failedHint, 'RUNTIME_START_TIMEOUT · __APP_VERSION__');
         return;
     }
     if (elapsed > 20000) setStatus(TEXT.almost);
@@ -129,7 +158,10 @@ try {
     bridge.onservicecallback = function (response) {
         try {
             var data = JSON.parse(response);
-            if (data.ready) openApp();
+            /* a service of another version means the old service is still the one running */
+            if (data.ready && (!data.version || data.version === '__APP_VERSION__')) openApp();
+            else if (data.ready) staleFailure('OLD_SERVICE ' + data.version);
+            else if (data.reason === 'STALE_SERVICE') staleFailure('STALE_SERVICE ' + data.staleVersion + ' · ' + (data.detail || ''));
         } catch (ignore) {}
     };
     bridge.call('luna://__SERVICE_ID__/start', '{}');
