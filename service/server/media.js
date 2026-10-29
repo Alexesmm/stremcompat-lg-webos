@@ -2,28 +2,22 @@
 
 var crypto = require('crypto');
 var spawn = require('child_process').spawn;
-var { FFMPEG, FFPROBE } = require('./config');
+var { FFMPEG } = require('./config');
 var { sendJson } = require('./http-util');
 var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
+var { probeStreams } = require('./probe');
 
 // ---- stream tech-info probe (for the paused-player vignette badges) ----
-var probeCache = {};
+var infoCache = {};
 
 function probeInfo(u, res) {
   if (!u) return sendJson(res, {});
-  if (probeCache[u]) return sendJson(res, probeCache[u]);
-  var args = ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', localProxy(u)];
-  var out = [],
-    done = false,
-    pr;
-  function finish() {
-    if (done) return;
-    done = true;
-    clearTimeout(to);
+  if (infoCache[u]) return sendJson(res, infoCache[u]);
+  probeStreams(u, function (j) {
     var info = {};
+    if (j.err) return sendJson(res, info);
     try {
-      var j = JSON.parse(Buffer.concat(out).toString('utf8'));
       var ss = j.streams || [],
         fmtI = j.format || {},
         vs = null,
@@ -81,30 +75,11 @@ function probeInfo(u, res) {
       var br = parseInt(fmtI.bit_rate || '0', 10);
       if (br > 0) info.br = Math.round(br / 100000) / 10 + ' Mb/s';
     } catch (e) {}
-    if (Object.keys(probeCache).length > 20) probeCache = {};
-    probeCache[u] = info;
+    if (Object.keys(infoCache).length > 20) infoCache = {};
+    infoCache[u] = info;
     console.log('[probe] ' + JSON.stringify(info));
     sendJson(res, info);
-  }
-  try {
-    pr = spawn(FFPROBE, args);
-    lowerPriority(pr, NICE.INTERACTIVE);
-  } catch (e) {
-    return sendJson(res, {});
-  }
-  var to = setTimeout(function () {
-    try {
-      pr.kill();
-    } catch (e) {}
-    finish();
-  }, 25000);
-  pr.stdout.on('data', function (d) {
-    out.push(d);
   });
-  pr.on('error', function () {
-    finish();
-  });
-  pr.on('close', finish);
 }
 
 // ---- scrub-preview: background coarse-sprite cache (Netflix-style, adapted for a remote

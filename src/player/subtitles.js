@@ -65,6 +65,7 @@ var embTracks = null,
   embTracksLoading = false,
   embTracksLoaded = false,
   embErr = '',
+  embTimeout = false,
   embReopenArmed = false,
   embN = -1,
   embFirst = false;
@@ -80,14 +81,37 @@ function autoSub() {
     }
   }
 }
-if (TYPE && VID) {
-  xhr('/subs?type=' + encodeURIComponent(TYPE) + '&vid=' + encodeURIComponent(VID), function (j) {
-    if (j && j.subtitles) {
-      extSubs = j.subtitles;
-      autoSub();
-    }
-  });
+/* External subtitles from the account's subtitle addons (same-origin localStorage, as the
+   interface keeps them), asked by the local server with this file's name and hash; with
+   none installed the server asks the public OpenSubtitles addon. */
+function subtitleAddons() {
+  var list = [];
+  try {
+    list = JSON.parse(localStorage.getItem('addons') || '[]') || [];
+  } catch (e) {}
+  return addonsFor(list, 'subtitles', TYPE, VID);
 }
+function loadExtSubs() {
+  var ref = (location.search.match(/[?&]ref=([^&]+)/) || [])[1] || '';
+  try {
+    var x = new XMLHttpRequest();
+    x.open('POST', '/subs', true);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      var j = null;
+      try {
+        j = JSON.parse(x.responseText);
+      } catch (e) {}
+      if (j && j.subtitles) {
+        extSubs = j.subtitles;
+        autoSub();
+      }
+    };
+    x.send(JSON.stringify({ ref: decodeURIComponent(ref), type: TYPE, vid: VID, addons: subtitleAddons() }));
+  } catch (e) {}
+}
+if (TYPE && VID) loadExtSubs();
 // honour the Settings default audio language: enable the matching embedded audio track
 var autoAudDone = false;
 function autoAudio() {
@@ -117,6 +141,9 @@ function ensureEmbTracks() {
     embTracksLoaded = true;
     embTracks = (j && j.tracks) || [];
     embErr = (j && j.err) || '';
+    embTimeout = !!(j && j.timeout);
+    /* a failed read is asked again the next time the menu opens (or on Try again) */
+    if (embErr || !j) embTracksLoaded = false;
   });
 }
 function setExtSub(u) {

@@ -55,7 +55,21 @@ function waitForHealth(attempt) {
 }
 
 async function main() {
+  var subtitleRequests = [];
   var upstream = http.createServer(function (req, res) {
+    var subMatch = req.url.match(/^\/(subA|subB)\/subtitles\//);
+    if (subMatch) {
+      subtitleRequests.push(req.url);
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ subtitles: subMatch[1] === 'subA'
+        ? [{ lang: 'por', url: 'http://127.0.0.1:9191/latin.srt' }, { lang: 'eng', url: 'http://127.0.0.1:9191/a-eng.srt' }]
+        : [{ lang: 'por', url: 'http://127.0.0.1:9191/latin.srt' }, { lang: 'spa', url: 'http://127.0.0.1:9191/b-spa.srt' }] }));
+      return;
+    }
+    if (req.url === '/latin.srt') {
+      res.end(Buffer.concat([Buffer.from('1\n00:00:01,000 --> 00:00:02,500\nCora'), Buffer.from([0xe7, 0xe3]), Buffer.from('o\n')]));
+      return;
+    }
     if (req.url === '/playlist.m3u8') {
       res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
       res.end('#EXTM3U\n#EXTINF:5,\nsegment.ts\n');return;
@@ -167,7 +181,31 @@ async function main() {
     var parsedSegment = new URL(segmentUrl);
     var segment = await request({ hostname: parsedSegment.hostname, port: parsedSegment.port, path: parsedSegment.pathname + parsedSegment.search });
     assert.strictEqual(JSON.parse(segment.text).auth, 'Bearer hls-token');
-    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers and relative HLS.');
+    // subtitles from the account's subtitle addons, with the file name as extra, merged
+    var subRefBody = JSON.stringify({ url: 'http://127.0.0.1:9191/video.mkv', filename: 'Show S01E02.mkv' });
+    var subRef = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/streamref', method: 'POST', headers: {
+      'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(subRefBody)
+    } }, subRefBody)).text).ref;
+    var subsBody = JSON.stringify({ ref: subRef, type: 'series', vid: 'tt9:1:2', addons: [
+      { name: 'Subs A', base: 'http://127.0.0.1:9191/subA', query: '?key=1' },
+      { name: 'Subs B', base: 'http://127.0.0.1:9191/subB', query: '' }
+    ] });
+    var subsAnswer = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/subs', method: 'POST', headers: {
+      'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(subsBody)
+    } }, subsBody)).text).subtitles;
+    assert.deepStrictEqual(subsAnswer.map(function (x) { return x.lang + ':' + x.src; }), ['eng:Subs A', 'por:Subs A', 'spa:Subs B'], 'subtitle addons were not merged without duplicates, English first');
+    assert.ok(subtitleRequests.indexOf('/subA/subtitles/series/tt9%3A1%3A2/filename=Show%20S01E02.mkv.json?key=1') >= 0, 'the subtitle request lost the file name or the addon key: ' + subtitleRequests.join(' '));
+    var subsAgain = await request({ hostname: '127.0.0.1', port: appPort, path: '/subs', method: 'POST', headers: {
+      'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(subsBody)
+    } }, subsBody);
+    assert.strictEqual(subtitleRequests.length, 2, 'the same subtitles were asked again instead of reused');
+    assert.strictEqual(JSON.parse(subsAgain.text).subtitles.length, 3);
+    var latin = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/sub?u=' + encodeURIComponent('http://127.0.0.1:9191/latin.srt') })).text).cues;
+    assert.strictEqual(latin.length && latin[0].t, 'Coração', 'a Windows-1252 subtitle lost its accents');
+    var tracks = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/embtracks?u=' + encodeURIComponent('http://127.0.0.1:9191/nothing.mkv') })).text);
+    assert.ok(Array.isArray(tracks.tracks) && tracks.err, 'a failed track read did not report an error');
+
+    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons and subtitle decoding.');
   } finally {
     try { child.kill(); } catch (e) {}
     await new Promise(function (resolve) { upstream.close(resolve); });

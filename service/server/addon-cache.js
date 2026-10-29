@@ -25,7 +25,7 @@ function cachedAddonJson(u, cb) {
     return;
   }
   waiting[u] = [cb];
-  fetchAddonJson(u, function (json) {
+  fetchAddonJson(u, function (json, why) {
     var callbacks = waiting[u] || [];
     delete waiting[u];
     if (json) {
@@ -34,7 +34,7 @@ function cachedAddonJson(u, cb) {
       while (order.length > MAX_ENTRIES) delete cache[order.shift()];
     }
     callbacks.forEach(function (fn) {
-      fn(json);
+      fn(json, why);
     });
   });
 }

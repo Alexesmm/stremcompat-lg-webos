@@ -14,7 +14,7 @@ function putMetaMem(k, m) {
 }
 function metaAddonsFor(type, id) {
   var out = [],
-    a = addons();
+    a = remoteAddons();
   for (var i = 0; i < a.length; i++) {
     var m = a[i] && a[i].manifest;
     if (!m) continue;

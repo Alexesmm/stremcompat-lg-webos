@@ -5,13 +5,14 @@ var { APP_VERSION, PORT } = require('./config');
 var { dbg } = require('./log');
 var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
-var { fetchJson, fetchUrl, readJsonBody, sendJson } = require('./http-util');
+var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
 var { waitForServer } = require('./streaming-server');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
 var { proxySignature, proxyStream, redirectedHeaders, resolvedFor } = require('./proxy');
 var { playerPage } = require('./player-page');
-var { embCues, embStart, embTracks, langName, parseSrt } = require('./subtitles');
+var { embCues, embStart, embTracks, subtitleCues } = require('./subtitles');
+var { addonSubtitles } = require('./subtitle-addons');
 var { postStremioApi } = require('./stremio-api');
 var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
@@ -51,9 +52,12 @@ function handleRequest(req, res) {
       sendJson(res, ref ? { ref: ref } : { error: 'invalid_stream' });
     });
   } else if (p === '/addon') {
-    cachedAddonJson(q.u || '', function (j) {
+    cachedAddonJson(q.u || '', function (j, why) {
       if (!j) {
-        recordEvent('addon_unavailable', String(q.u || '').replace(/^https?:\/\/([^/]+).*$/, '$1'));
+        recordEvent(
+          'addon_unavailable',
+          String(q.u || '').replace(/^https?:\/\/([^/]+).*$/, '$1') + (why ? ' · ' + why : '')
+        );
         res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end('{"error":"addon_unavailable"}');
       } else sendJson(res, j);
@@ -235,35 +239,21 @@ function handleRequest(req, res) {
       }
     );
   } else if (p === '/subs') {
-    fetchJson(
-      'https://opensubtitles-v3.strem.io/subtitles/' +
-        encodeURIComponent(q.type || 'movie') +
-        '/' +
-        encodeURIComponent(q.vid || '') +
-        '.json',
-      function (j) {
-        var subs = (j && j.subtitles) || [],
-          out = [],
-          per = {};
-        for (var i = 0; i < subs.length; i++) {
-          var lang = (subs[i].lang || '').toLowerCase();
-          if (!lang || !subs[i].url) continue;
-          per[lang] = (per[lang] || 0) + 1;
-          if (per[lang] > 12) continue; // cap per language
-          out.push({ lang: lang, name: langName(lang), u: subs[i].url, n: per[lang] });
-        }
-        out.sort(function (a, b) {
-          if (a.lang === 'eng' && b.lang !== 'eng') return -1;
-          if (b.lang === 'eng' && a.lang !== 'eng') return 1;
-          if (a.name !== b.name) return a.name < b.name ? -1 : 1;
-          return a.n - b.n;
+    // External subtitles: the account's subtitle addons (POST from the player), or the
+    // public OpenSubtitles addon for a plain GET.
+    if (req.method === 'POST')
+      readJsonBody(req, 32768, function (body) {
+        addonSubtitles(body, function (list) {
+          sendJson(res, { subtitles: list });
         });
-        sendJson(res, { subtitles: out });
-      }
-    );
+      });
+    else
+      addonSubtitles({ type: q.type, vid: q.vid }, function (list) {
+        sendJson(res, { subtitles: list });
+      });
   } else if (p === '/sub') {
-    fetchUrl(q.u || '', function (buf) {
-      sendJson(res, { cues: buf ? parseSrt(buf.toString('utf8')) : [] });
+    subtitleCues(String(q.u || ''), function (cues) {
+      sendJson(res, { cues: cues });
     });
   } else if (p === '/proxy') {
     var refStream = getStreamRef(q.ref || '');

@@ -62,7 +62,12 @@ function openMenu(view) {
         }, 400);
       }
     } else if (embErr) {
-      html += '<div class=mi style="opacity:.6;white-space:normal;font-size:22px">' + eh(embErr) + '</div>';
+      html +=
+        '<div class=mi style="opacity:.6;white-space:normal;font-size:22px">' +
+        eh(embTimeout ? P.tracksStillLoading : embErr) +
+        '</div>';
+      html += '<div class=mi>' + P.tryAgain + '</div>';
+      menuItems.push({ k: 'embretry' });
     } else if (!embTracks.length) {
       html += '<div class=mi style="opacity:.5">' + P.noneInFile + '</div>';
     } else {
@@ -99,7 +104,13 @@ function openMenu(view) {
       if (extSubs[i].lang === extLang) {
         c++;
         var fe = curSub === 'ext:' + extSubs[i].u;
-        html += '<div class="mi' + (fe ? ' on' : '') + '">' + eh(selectedLabel(nm + ' ' + c, fe)) + '</div>';
+        var srcName = extSubs[i].src ? '  ·  ' + extSubs[i].src : '';
+        html +=
+          '<div class="mi' +
+          (fe ? ' on' : '') +
+          '">' +
+          eh(selectedLabel(nm + ' ' + c + srcName, fe)) +
+          '</div>';
         menuItems.push({ k: 'ext', u: extSubs[i].u });
       }
     }
@@ -168,6 +179,13 @@ function chooseMenu() {
   if (it.k === 'lang') {
     extLang = it.lang;
     openMenu('extlang');
+    return;
+  }
+  if (it.k === 'embretry') {
+    embTracks = null;
+    embErr = '';
+    ensureEmbTracks();
+    reopen();
     return;
   }
   if (it.k === 'size+') {

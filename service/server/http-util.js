@@ -129,10 +129,11 @@ function fetchAddonJson(u, cb, depth) {
   depth = depth || 0;
   var pu,
     done = false;
-  function finish(v) {
+  /* why (on failure): 'HTTP 503', 'timeout', 'invalid', 'too large' or the network error */
+  function finish(v, why) {
     if (done) return;
     done = true;
-    cb(v);
+    cb(v, v ? '' : why || 'error');
   }
   try {
     pu = urlmod.parse(String(u || ''));
@@ -166,7 +167,7 @@ function fetchAddonJson(u, cb, depth) {
       }
       if (up.statusCode < 200 || up.statusCode >= 300) {
         up.resume();
-        return finish(null);
+        return finish(null, 'HTTP ' + up.statusCode);
       }
       var chunks = [],
         total = 0;
@@ -176,7 +177,7 @@ function fetchAddonJson(u, cb, depth) {
           try {
             up.destroy();
           } catch (e) {}
-          finish(null);
+          finish(null, 'too large');
         } else chunks.push(d);
       });
       up.on('end', function () {
@@ -186,31 +187,31 @@ function fetchAddonJson(u, cb, depth) {
           try {
             buf = zlib.gunzipSync(buf);
           } catch (e) {
-            return finish(null);
+            return finish(null, 'invalid');
           }
         }
-        if (buf.length > 4 * 1024 * 1024) return finish(null);
+        if (buf.length > 4 * 1024 * 1024) return finish(null, 'too large');
         try {
           finish(JSON.parse(buf.toString('utf8')));
         } catch (e) {
-          finish(null);
+          finish(null, 'invalid');
         }
       });
-      up.on('error', function () {
-        finish(null);
+      up.on('error', function (e) {
+        finish(null, (e && e.code) || 'error');
       });
     });
   } catch (e) {
     return finish(null);
   }
-  rq.on('error', function () {
-    finish(null);
+  rq.on('error', function (e) {
+    finish(null, (e && e.code) || 'error');
   });
   rq.setTimeout(45000, function () {
     try {
       rq.abort();
     } catch (e) {}
-    finish(null);
+    finish(null, 'timeout');
   });
   rq.end();
 }

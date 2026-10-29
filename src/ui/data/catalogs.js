@@ -36,7 +36,7 @@ function discoverCatalogInfo(cat) {
 function discoverTypes() {
   var values = ['movie', 'series'],
     seen = { movie: true, series: true },
-    a = addons();
+    a = remoteAddons();
   for (var i = 0; i < a.length; i++) {
     var man = a[i] && a[i].manifest;
     if (!man || !man.catalogs) continue;
@@ -72,7 +72,7 @@ function catalogCacheKey(addon, cat) {
 var CATALOG_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 function homeCatalogs() {
   var out = [],
-    a = addons(),
+    a = remoteAddons(),
     maxRows = TV_PROFILE.catalogRowsCap || 16;
   for (var i = 0; i < a.length; i++) {
     var man = a[i] && a[i].manifest;
@@ -100,7 +100,7 @@ function homeCatalogs() {
 function discoverCatalogs(type) {
   var out = [],
     seen = {},
-    a = addons();
+    a = remoteAddons();
   for (var i = 0; i < a.length; i++) {
     var man = a[i] && a[i].manifest;
     if (!man || !man.catalogs) continue;

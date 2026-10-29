@@ -4,10 +4,12 @@ var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
-var { DIR, FFMPEG, FFPROBE } = require('./config');
-var { sendJson } = require('./http-util');
+var zlib = require('zlib');
+var { DIR, FFMPEG, SERVER_PORT } = require('./config');
+var { fetchUrl, sendJson } = require('./http-util');
 var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
+var { probeStreams } = require('./probe');
 
 var LANGS = {
   eng: 'English',
@@ -53,6 +55,7 @@ function langName(l) {
   return LANGS[l] || (l ? l.toUpperCase() : 'Unknown');
 }
 
+/* SRT or WebVTT text to cues; VTT may leave out the hours */
 function parseSrt(srt) {
   srt = srt.replace(/\r/g, '');
   var blocks = srt.split(/\n\n+/),
@@ -67,10 +70,10 @@ function parseSrt(srt) {
       }
     }
     if (tc < 0) continue;
-    var m = lines[tc].match(/(\d+):(\d+):(\d+)[,.](\d+)\s*-->\s*(\d+):(\d+):(\d+)[,.](\d+)/);
+    var m = lines[tc].match(/(?:(\d+):)?(\d+):(\d+)[,.](\d+)\s*-->\s*(?:(\d+):)?(\d+):(\d+)[,.](\d+)/);
     if (!m) continue;
-    var s = +m[1] * 3600 + +m[2] * 60 + +m[3] + +m[4] / 1000;
-    var e = +m[5] * 3600 + +m[6] * 60 + +m[7] + +m[8] / 1000;
+    var s = (+m[1] || 0) * 3600 + +m[2] * 60 + +m[3] + +m[4] / 1000;
+    var e = (+m[5] || 0) * 3600 + +m[6] * 60 + +m[7] + +m[8] / 1000;
     var txt = lines
       .slice(tc + 1)
       .join('\n')
@@ -81,75 +84,69 @@ function parseSrt(srt) {
   return cues;
 }
 
+/* Subtitle file bytes as text: gzip is unpacked, and a file that is not valid UTF-8 is read
+   as Latin-1 (older Portuguese and Spanish subtitles are Windows-1252). */
+function subtitleText(buf) {
+  if (buf.length > 2 && buf[0] === 0x1f && buf[1] === 0x8b) {
+    try {
+      buf = zlib.gunzipSync(buf);
+    } catch (e) {}
+  }
+  var text = buf.toString('utf8');
+  return text.indexOf('�') >= 0 ? buf.toString('latin1') : text;
+}
+
+/* Cues of an external subtitle. The bundled streaming server converts any format (SRT, VTT,
+   ASS/SSA, any charset, gzip) to WebVTT, as in the official apps; when it is not ready the
+   file is read directly. */
+function subtitleCues(u, cb) {
+  if (!/^https?:\/\//i.test(u)) return cb([]);
+  function direct() {
+    fetchUrl(u, function (buf) {
+      cb(buf ? parseSrt(subtitleText(buf)) : []);
+    });
+  }
+  fetchUrl(
+    'http://127.0.0.1:' + SERVER_PORT + '/subtitles.vtt?from=' + encodeURIComponent(u),
+    function (buf) {
+      var cues = buf ? parseSrt(buf.toString('utf8')) : [];
+      if (cues.length) cb(cues);
+      else direct();
+    }
+  );
+}
+
 var IMG_SUB = { hdmv_pgs_subtitle: 1, dvd_subtitle: 1, dvb_subtitle: 1, xsub: 1, dvb_teletext: 1 };
 
+/* The text subtitle tracks of the video, from the shared probe (probe.js). n is the
+   ffmpeg 0:s:n index, ti the index among text tracks (the TV's textTracks[]). A probe that
+   ran out of time says so (err 'timeout'), so the player can offer to try again. */
 function embTracks(u, res) {
   if (!u) return sendJson(res, { tracks: [] });
-  var args = [
-    '-v',
-    'error',
-    '-print_format',
-    'json',
-    '-show_entries',
-    'stream=index,codec_name:stream_tags=language,title',
-    '-select_streams',
-    's',
-    localProxy(u)
-  ];
-  var out = [],
-    err = [],
-    done = false,
-    pr;
-  function finish() {
-    if (done) return;
-    done = true;
-    clearTimeout(to);
+  probeStreams(u, function (j) {
+    if (j.err) {
+      console.log('[embtracks] err=' + j.err);
+      return sendJson(res, { tracks: [], err: j.err, timeout: !!j.timedOut });
+    }
     var tracks = [],
-      errStr = '';
-    try {
-      var j = JSON.parse(Buffer.concat(out).toString('utf8')),
-        ss = j.streams || [],
-        ti = 0;
-      for (var i = 0; i < ss.length; i++) {
-        if (IMG_SUB[ss[i].codec_name || '']) continue; // image subs can't render as text
-        var tg = ss[i].tags || {},
-          lang = (tg.language || '').toLowerCase();
-        var nm = langName(lang);
+      n = 0,
+      ti = 0;
+    for (var i = 0; i < j.streams.length; i++) {
+      var st = j.streams[i];
+      if (st.codec_type !== 'subtitle') continue;
+      if (!IMG_SUB[st.codec_name || '']) {
+        // image subs can't render as text
+        var tg = st.tags || {},
+          nm = langName((tg.language || '').toLowerCase());
         if (tg.title) nm += ' — ' + tg.title;
-        tracks.push({ n: i, ti: ti, name: nm }); // n=ffmpeg 0:s:n index; ti=index among TEXT tracks (native textTracks[])
+        tracks.push({ n: n, ti: ti, name: nm });
         ti++;
       }
-    } catch (e) {
-      errStr = (Buffer.concat(err).toString('utf8').split('\n')[0] || 'probe failed').slice(0, 160);
+      n++;
     }
-    console.log('[embtracks] found=' + tracks.length + (errStr ? ' err=' + errStr : ''));
-    sendJson(res, { tracks: tracks, err: tracks.length ? '' : errStr });
-  }
-  try {
-    pr = spawn(FFPROBE, args);
-    lowerPriority(pr, NICE.INTERACTIVE);
-  } catch (e) {
-    return sendJson(res, { tracks: [], err: 'ffprobe missing' });
-  }
-  var to = setTimeout(function () {
-    try {
-      pr.kill();
-    } catch (e) {}
-    finish();
-  }, 20000);
-  pr.stdout.on('data', function (d) {
-    out.push(d);
+    console.log('[embtracks] found=' + tracks.length);
+    sendJson(res, { tracks: tracks, err: '' });
   });
-  pr.stderr.on('data', function (d) {
-    err.push(d);
-  });
-  pr.on('error', function (e) {
-    if (done) return;
-    done = true;
-    clearTimeout(to);
-    sendJson(res, { tracks: [], err: 'ffprobe error: ' + ((e && e.code) || e) });
-  });
-  pr.on('close', finish);
 }
 
 // ---- progressive embedded-subtitle extraction ----
@@ -366,5 +363,7 @@ module.exports = {
   embStart: embStart,
   embTracks: embTracks,
   langName: langName,
-  parseSrt: parseSrt
+  parseSrt: parseSrt,
+  subtitleCues: subtitleCues,
+  subtitleText: subtitleText
 };

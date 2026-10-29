@@ -173,6 +173,7 @@ var UI_TEXT = {
     langFilter: 'Language: {0}',
     langAll: 'All',
     langOther: 'Other',
+    subsTag: 'SUBS',
     automatic: 'Automatic',
     subtitlesGroup: 'Subtitles',
     subtitleSize: 'Subtitle size',
@@ -288,6 +289,8 @@ var UI_TEXT = {
       none: 'None',
       readingTracks: 'Reading tracks…',
       noneInFile: 'None in this file',
+      tracksStillLoading: 'The file is still loading. Try again in a few seconds.',
+      tryAgain: 'Try again',
       style: 'Style',
       delay: 'Delay',
       later: 'Later (+0.5s)',
@@ -478,6 +481,7 @@ var UI_TEXT = {
     langFilter: 'Idioma: {0}',
     langAll: 'Todos',
     langOther: 'Outros',
+    subsTag: 'LEG',
     automatic: 'Automática',
     subtitlesGroup: 'Legendas',
     subtitleSize: 'Tamanho da legenda',
@@ -593,6 +597,8 @@ var UI_TEXT = {
       none: 'Nenhuma',
       readingTracks: 'Lendo faixas…',
       noneInFile: 'Nenhuma neste arquivo',
+      tracksStillLoading: 'O arquivo ainda está carregando. Tente de novo em alguns segundos.',
+      tryAgain: 'Tentar de novo',
       style: 'Estilo',
       delay: 'Atraso',
       later: 'Mais tarde (+0,5s)',
@@ -657,37 +663,64 @@ function addonQuery(a) {
   var m = String((a && a.transportUrl) || '').match(/\/manifest\.json(\?[^#]*)/);
   return m ? m[1] : '';
 }
-function streamAddonsIn(a, type) {
+/* The installed addons that answer `resource` ('stream', 'subtitles') for `type`, as Stremio
+   picks them: the resource may be a name (manifest types apply) or an object with its own
+   types and idPrefixes. With an `id`, idPrefixes are checked too (a subtitle addon for IMDb
+   ids is not asked about a Kitsu episode). */
+function addonsFor(a, resource, type, id) {
   var out = [];
   a = a || [];
   for (var i = 0; i < a.length; i++) {
     var m = a[i] && a[i].manifest;
     if (!m) continue;
     var res = m.resources || [],
-      okRes = false;
+      entry = null;
     for (var r = 0; r < res.length; r++) {
       var rr = res[r];
-      if (rr === 'stream' || (rr && rr.name === 'stream')) okRes = true;
+      if (rr === resource || (rr && rr.name === resource)) entry = rr;
     }
-    if (!okRes) continue;
-    var types = m.types || [];
-    if (types.length && types.indexOf(type) < 0) {
-      /* a stream resource OBJECT with no explicit types means "any type" — don't skip it */
-      var allow = false;
-      for (var r2 = 0; r2 < res.length; r2++) {
-        var rr2 = res[r2];
-        if (rr2 && rr2.name === 'stream') {
-          if (!rr2.types || !rr2.types.length || rr2.types.indexOf(type) >= 0) allow = true;
-        }
-      }
-      if (!allow) continue;
+    if (!entry) continue;
+    var types = m.types || [],
+      own = typeof entry === 'object' ? entry.types || [] : null;
+    /* the manifest types, or the resource object's own types; an object with no types
+       means "any type" */
+    if (types.length && types.indexOf(type) < 0 && !(own && (!own.length || own.indexOf(type) >= 0)))
+      continue;
+    var prefixes = (typeof entry === 'object' && entry.idPrefixes) || m.idPrefixes;
+    if (id && prefixes && prefixes.length) {
+      var okId = false;
+      for (var p = 0; p < prefixes.length; p++) if (String(id).indexOf(prefixes[p]) === 0) okId = true;
+      if (!okId) continue;
     }
     out.push({ name: m.name || 'Addon', base: addonBase(a[i]), query: addonQuery(a[i]) });
   }
   return out;
 }
+function streamAddonsIn(a, type) {
+  return addonsFor(a, 'stream', type);
+}
+/* <base>/<resource>/<type>/<id>[/<extra>].json<query>, extra as Stremio encodes it:
+   videoHash=..&videoSize=..&filename=.. */
+function addonResourceUrl(ad, resource, type, id, extra) {
+  var parts = [];
+  for (var k in extra || {})
+    if (Object.prototype.hasOwnProperty.call(extra, k) && extra[k] !== '' && extra[k] != null)
+      parts.push(k + '=' + encodeURIComponent(extra[k]));
+  return (
+    ad.base +
+    '/' +
+    resource +
+    '/' +
+    type +
+    '/' +
+    encodeURIComponent(id) +
+    (parts.length ? '/' + parts.join('&') : '') +
+    '.json' +
+    (ad.query || '')
+  );
+}
 function streamUrl(ad, type, vid) {
-  return ad.base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json' + (ad.query || '');
+  return addonResourceUrl(ad, 'stream', type, vid);
 }
 // Player strings from the shared table, and the season/episode line.
 /* The player strings in the current language, completed from English. */
@@ -1169,6 +1202,7 @@ var embTracks = null,
   embTracksLoading = false,
   embTracksLoaded = false,
   embErr = '',
+  embTimeout = false,
   embReopenArmed = false,
   embN = -1,
   embFirst = false;
@@ -1184,14 +1218,37 @@ function autoSub() {
     }
   }
 }
-if (TYPE && VID) {
-  xhr('/subs?type=' + encodeURIComponent(TYPE) + '&vid=' + encodeURIComponent(VID), function (j) {
-    if (j && j.subtitles) {
-      extSubs = j.subtitles;
-      autoSub();
-    }
-  });
+/* External subtitles from the account's subtitle addons (same-origin localStorage, as the
+   interface keeps them), asked by the local server with this file's name and hash; with
+   none installed the server asks the public OpenSubtitles addon. */
+function subtitleAddons() {
+  var list = [];
+  try {
+    list = JSON.parse(localStorage.getItem('addons') || '[]') || [];
+  } catch (e) {}
+  return addonsFor(list, 'subtitles', TYPE, VID);
 }
+function loadExtSubs() {
+  var ref = (location.search.match(/[?&]ref=([^&]+)/) || [])[1] || '';
+  try {
+    var x = new XMLHttpRequest();
+    x.open('POST', '/subs', true);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      var j = null;
+      try {
+        j = JSON.parse(x.responseText);
+      } catch (e) {}
+      if (j && j.subtitles) {
+        extSubs = j.subtitles;
+        autoSub();
+      }
+    };
+    x.send(JSON.stringify({ ref: decodeURIComponent(ref), type: TYPE, vid: VID, addons: subtitleAddons() }));
+  } catch (e) {}
+}
+if (TYPE && VID) loadExtSubs();
 // honour the Settings default audio language: enable the matching embedded audio track
 var autoAudDone = false;
 function autoAudio() {
@@ -1221,6 +1278,9 @@ function ensureEmbTracks() {
     embTracksLoaded = true;
     embTracks = (j && j.tracks) || [];
     embErr = (j && j.err) || '';
+    embTimeout = !!(j && j.timeout);
+    /* a failed read is asked again the next time the menu opens (or on Try again) */
+    if (embErr || !j) embTracksLoaded = false;
   });
 }
 function setExtSub(u) {
@@ -1967,7 +2027,12 @@ function openMenu(view) {
         }, 400);
       }
     } else if (embErr) {
-      html += '<div class=mi style="opacity:.6;white-space:normal;font-size:22px">' + eh(embErr) + '</div>';
+      html +=
+        '<div class=mi style="opacity:.6;white-space:normal;font-size:22px">' +
+        eh(embTimeout ? P.tracksStillLoading : embErr) +
+        '</div>';
+      html += '<div class=mi>' + P.tryAgain + '</div>';
+      menuItems.push({ k: 'embretry' });
     } else if (!embTracks.length) {
       html += '<div class=mi style="opacity:.5">' + P.noneInFile + '</div>';
     } else {
@@ -2004,7 +2069,13 @@ function openMenu(view) {
       if (extSubs[i].lang === extLang) {
         c++;
         var fe = curSub === 'ext:' + extSubs[i].u;
-        html += '<div class="mi' + (fe ? ' on' : '') + '">' + eh(selectedLabel(nm + ' ' + c, fe)) + '</div>';
+        var srcName = extSubs[i].src ? '  ·  ' + extSubs[i].src : '';
+        html +=
+          '<div class="mi' +
+          (fe ? ' on' : '') +
+          '">' +
+          eh(selectedLabel(nm + ' ' + c + srcName, fe)) +
+          '</div>';
         menuItems.push({ k: 'ext', u: extSubs[i].u });
       }
     }
@@ -2073,6 +2144,13 @@ function chooseMenu() {
   if (it.k === 'lang') {
     extLang = it.lang;
     openMenu('extlang');
+    return;
+  }
+  if (it.k === 'embretry') {
+    embTracks = null;
+    embErr = '';
+    ensureEmbTracks();
+    reopen();
     return;
   }
   if (it.k === 'size+') {

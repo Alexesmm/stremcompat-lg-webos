@@ -41,10 +41,10 @@ Download the IPK that matches your television's webOS generation and graphics mo
 
 | Package | For | Status | App name on the TV |
 |---|---|---|---|
-| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.23.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | Stremio |
-| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.23.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | Stremio HD |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.20.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | Stremio UJ3 |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.20.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | Stremio UJ3 HD |
+| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.24.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | Stremio |
+| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.24.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | Stremio HD |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.21.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | Stremio UJ3 |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.21.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | Stremio UJ3 HD |
 
 How to choose:
 

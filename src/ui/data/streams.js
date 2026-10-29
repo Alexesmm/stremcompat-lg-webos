@@ -1,7 +1,7 @@
 // Source discovery, quality/seeder/codec classification and per-profile source budget.
 /* ================= streams (generic: any addon that declares them) ================= */
 function streamAddons(type) {
-  return streamAddonsIn(addons(), type);
+  return streamAddonsIn(remoteAddons(), type);
 }
 function streamText(s) {
   return String(
@@ -92,7 +92,11 @@ function sourceTags(s) {
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
   /* the language goes right after the quality */
   if (s.langs && s.langs.length)
-    out.splice(out.length && out[0].c === 'q' ? 1 : 0, 0, { t: langTagText(s.langs), c: 'lang' });
+    out.splice(
+      out.length && out[0].c === 'q' ? 1 : 0,
+      0,
+      s.subLangsOnly ? subTag(s.langs) : { t: langTagText(s.langs), c: 'lang' }
+    );
   return out;
 }
 window.__STREMIO_SOURCE_TAGS__ = sourceTags;
@@ -157,6 +161,14 @@ function streamLanguages(s) {
   return out;
 }
 window.__STREMIO_STREAM_LANGUAGES__ = streamLanguages;
+/* "Multi Subs" releases (anime above all) list their SUBTITLE languages with flags. The
+   detected languages stay the same for the filter and the preferred-language order; only
+   the tag says they are subtitles. */
+function subtitleLanguagesOnly(s) {
+  var low = streamText(s).toLowerCase();
+  return /\bmulti[ ._-]?subs?\b/.test(low) && !/\b(multi[ ._-]?audio|dual|dublado|dubbed|dub)\b/.test(low);
+}
+window.__STREMIO_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
 function langBase(code) {
   return String(code).split('-')[0];
 }
@@ -166,6 +178,12 @@ function langTagText(langs) {
   for (var i = 0; i < langs.length; i++)
     names.push(langs[i] === 'es-419' ? 'ES-LA' : langs[i] === 'multi' ? 'MULTI' : langs[i].toUpperCase());
   return names.length > 2 ? names.slice(0, 2).join(' · ') + ' +' + (names.length - 2) : names.join(' · ');
+}
+/* 'LEG EN · PT +4' (subtitles), without the multi marker the words already imply */
+function subTag(langs) {
+  var named = [];
+  for (var i = 0; i < langs.length; i++) if (langs[i] !== 'multi') named.push(langs[i]);
+  return { t: tx('subsTag') + ' ' + (named.length ? langTagText(named) : 'MULTI'), c: 'sublang' };
 }
 /* filter groups of a source: language bases, 'multi', or 'none' when nothing was detected */
 function langGroups(s) {
@@ -310,6 +328,7 @@ function fetchStreams(type, vid, onPart, onDone) {
               headers: (h.proxyHeaders && h.proxyHeaders.request) || null
             };
             item.langs = streamLanguages(s);
+            item.subLangsOnly = item.langs.length > 0 && subtitleLanguagesOnly(s);
             var compat = streamCompatibility(item);
             item.compatLabels = compat.labels;
             item.compatRank = compat.rank;

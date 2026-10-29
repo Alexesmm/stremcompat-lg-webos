@@ -368,6 +368,7 @@ var UI_TEXT = {
     langFilter: 'Language: {0}',
     langAll: 'All',
     langOther: 'Other',
+    subsTag: 'SUBS',
     automatic: 'Automatic',
     subtitlesGroup: 'Subtitles',
     subtitleSize: 'Subtitle size',
@@ -483,6 +484,8 @@ var UI_TEXT = {
       none: 'None',
       readingTracks: 'Reading tracks…',
       noneInFile: 'None in this file',
+      tracksStillLoading: 'The file is still loading. Try again in a few seconds.',
+      tryAgain: 'Try again',
       style: 'Style',
       delay: 'Delay',
       later: 'Later (+0.5s)',
@@ -673,6 +676,7 @@ var UI_TEXT = {
     langFilter: 'Idioma: {0}',
     langAll: 'Todos',
     langOther: 'Outros',
+    subsTag: 'LEG',
     automatic: 'Automática',
     subtitlesGroup: 'Legendas',
     subtitleSize: 'Tamanho da legenda',
@@ -788,6 +792,8 @@ var UI_TEXT = {
       none: 'Nenhuma',
       readingTracks: 'Lendo faixas…',
       noneInFile: 'Nenhuma neste arquivo',
+      tracksStillLoading: 'O arquivo ainda está carregando. Tente de novo em alguns segundos.',
+      tryAgain: 'Tentar de novo',
       style: 'Estilo',
       delay: 'Atraso',
       later: 'Mais tarde (+0,5s)',
@@ -852,37 +858,64 @@ function addonQuery(a) {
   var m = String((a && a.transportUrl) || '').match(/\/manifest\.json(\?[^#]*)/);
   return m ? m[1] : '';
 }
-function streamAddonsIn(a, type) {
+/* The installed addons that answer `resource` ('stream', 'subtitles') for `type`, as Stremio
+   picks them: the resource may be a name (manifest types apply) or an object with its own
+   types and idPrefixes. With an `id`, idPrefixes are checked too (a subtitle addon for IMDb
+   ids is not asked about a Kitsu episode). */
+function addonsFor(a, resource, type, id) {
   var out = [];
   a = a || [];
   for (var i = 0; i < a.length; i++) {
     var m = a[i] && a[i].manifest;
     if (!m) continue;
     var res = m.resources || [],
-      okRes = false;
+      entry = null;
     for (var r = 0; r < res.length; r++) {
       var rr = res[r];
-      if (rr === 'stream' || (rr && rr.name === 'stream')) okRes = true;
+      if (rr === resource || (rr && rr.name === resource)) entry = rr;
     }
-    if (!okRes) continue;
-    var types = m.types || [];
-    if (types.length && types.indexOf(type) < 0) {
-      /* a stream resource OBJECT with no explicit types means "any type" — don't skip it */
-      var allow = false;
-      for (var r2 = 0; r2 < res.length; r2++) {
-        var rr2 = res[r2];
-        if (rr2 && rr2.name === 'stream') {
-          if (!rr2.types || !rr2.types.length || rr2.types.indexOf(type) >= 0) allow = true;
-        }
-      }
-      if (!allow) continue;
+    if (!entry) continue;
+    var types = m.types || [],
+      own = typeof entry === 'object' ? entry.types || [] : null;
+    /* the manifest types, or the resource object's own types; an object with no types
+       means "any type" */
+    if (types.length && types.indexOf(type) < 0 && !(own && (!own.length || own.indexOf(type) >= 0)))
+      continue;
+    var prefixes = (typeof entry === 'object' && entry.idPrefixes) || m.idPrefixes;
+    if (id && prefixes && prefixes.length) {
+      var okId = false;
+      for (var p = 0; p < prefixes.length; p++) if (String(id).indexOf(prefixes[p]) === 0) okId = true;
+      if (!okId) continue;
     }
     out.push({ name: m.name || 'Addon', base: addonBase(a[i]), query: addonQuery(a[i]) });
   }
   return out;
 }
+function streamAddonsIn(a, type) {
+  return addonsFor(a, 'stream', type);
+}
+/* <base>/<resource>/<type>/<id>[/<extra>].json<query>, extra as Stremio encodes it:
+   videoHash=..&videoSize=..&filename=.. */
+function addonResourceUrl(ad, resource, type, id, extra) {
+  var parts = [];
+  for (var k in extra || {})
+    if (Object.prototype.hasOwnProperty.call(extra, k) && extra[k] !== '' && extra[k] != null)
+      parts.push(k + '=' + encodeURIComponent(extra[k]));
+  return (
+    ad.base +
+    '/' +
+    resource +
+    '/' +
+    type +
+    '/' +
+    encodeURIComponent(id) +
+    (parts.length ? '/' + parts.join('&') : '') +
+    '.json' +
+    (ad.query || '')
+  );
+}
 function streamUrl(ad, type, vid) {
-  return ad.base + '/stream/' + type + '/' + encodeURIComponent(vid) + '.json' + (ad.query || '');
+  return addonResourceUrl(ad, 'stream', type, vid);
 }
 // Applying the interface language to the static markup and switching it.
 function applyTextSize() {
@@ -1376,6 +1409,19 @@ function pushLibItems(items) {
 function addons() {
   return lsJson('addons') || [];
 }
+/* The addons asked for catalogs, metadata and sources: all but Local files, which the
+   streaming server serves for a computer's own video folders. The TV has none, so asking
+   it only costs requests and "did not answer" entries in Diagnostics. */
+function remoteAddons() {
+  var all = addons(),
+    out = [];
+  for (var i = 0; i < all.length; i++)
+    if (
+      !/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(String((all[i] && all[i].transportUrl) || ''))
+    )
+      out.push(all[i]);
+  return out;
+}
 function syncAddons(cb) {
   var ak = authKey();
   if (!ak) {
@@ -1438,7 +1484,7 @@ function discoverCatalogInfo(cat) {
 function discoverTypes() {
   var values = ['movie', 'series'],
     seen = { movie: true, series: true },
-    a = addons();
+    a = remoteAddons();
   for (var i = 0; i < a.length; i++) {
     var man = a[i] && a[i].manifest;
     if (!man || !man.catalogs) continue;
@@ -1474,7 +1520,7 @@ function catalogCacheKey(addon, cat) {
 var CATALOG_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 function homeCatalogs() {
   var out = [],
-    a = addons(),
+    a = remoteAddons(),
     maxRows = TV_PROFILE.catalogRowsCap || 16;
   for (var i = 0; i < a.length; i++) {
     var man = a[i] && a[i].manifest;
@@ -1502,7 +1548,7 @@ function homeCatalogs() {
 function discoverCatalogs(type) {
   var out = [],
     seen = {},
-    a = addons();
+    a = remoteAddons();
   for (var i = 0; i < a.length; i++) {
     var man = a[i] && a[i].manifest;
     if (!man || !man.catalogs) continue;
@@ -1591,7 +1637,7 @@ function getCatalogUrl(url, key, type, cb) {
 // Source discovery, quality/seeder/codec classification and per-profile source budget.
 /* ================= streams (generic: any addon that declares them) ================= */
 function streamAddons(type) {
-  return streamAddonsIn(addons(), type);
+  return streamAddonsIn(remoteAddons(), type);
 }
 function streamText(s) {
   return String(
@@ -1682,7 +1728,11 @@ function sourceTags(s) {
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
   /* the language goes right after the quality */
   if (s.langs && s.langs.length)
-    out.splice(out.length && out[0].c === 'q' ? 1 : 0, 0, { t: langTagText(s.langs), c: 'lang' });
+    out.splice(
+      out.length && out[0].c === 'q' ? 1 : 0,
+      0,
+      s.subLangsOnly ? subTag(s.langs) : { t: langTagText(s.langs), c: 'lang' }
+    );
   return out;
 }
 window.__STREMIO_SOURCE_TAGS__ = sourceTags;
@@ -1747,6 +1797,14 @@ function streamLanguages(s) {
   return out;
 }
 window.__STREMIO_STREAM_LANGUAGES__ = streamLanguages;
+/* "Multi Subs" releases (anime above all) list their SUBTITLE languages with flags. The
+   detected languages stay the same for the filter and the preferred-language order; only
+   the tag says they are subtitles. */
+function subtitleLanguagesOnly(s) {
+  var low = streamText(s).toLowerCase();
+  return /\bmulti[ ._-]?subs?\b/.test(low) && !/\b(multi[ ._-]?audio|dual|dublado|dubbed|dub)\b/.test(low);
+}
+window.__STREMIO_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
 function langBase(code) {
   return String(code).split('-')[0];
 }
@@ -1756,6 +1814,12 @@ function langTagText(langs) {
   for (var i = 0; i < langs.length; i++)
     names.push(langs[i] === 'es-419' ? 'ES-LA' : langs[i] === 'multi' ? 'MULTI' : langs[i].toUpperCase());
   return names.length > 2 ? names.slice(0, 2).join(' · ') + ' +' + (names.length - 2) : names.join(' · ');
+}
+/* 'LEG EN · PT +4' (subtitles), without the multi marker the words already imply */
+function subTag(langs) {
+  var named = [];
+  for (var i = 0; i < langs.length; i++) if (langs[i] !== 'multi') named.push(langs[i]);
+  return { t: tx('subsTag') + ' ' + (named.length ? langTagText(named) : 'MULTI'), c: 'sublang' };
 }
 /* filter groups of a source: language bases, 'multi', or 'none' when nothing was detected */
 function langGroups(s) {
@@ -1900,6 +1964,7 @@ function fetchStreams(type, vid, onPart, onDone) {
               headers: (h.proxyHeaders && h.proxyHeaders.request) || null
             };
             item.langs = streamLanguages(s);
+            item.subLangsOnly = item.langs.length > 0 && subtitleLanguagesOnly(s);
             var compat = streamCompatibility(item);
             item.compatLabels = compat.labels;
             item.compatRank = compat.rank;
@@ -2182,7 +2247,7 @@ function putMetaMem(k, m) {
 }
 function metaAddonsFor(type, id) {
   var out = [],
-    a = addons();
+    a = remoteAddons();
   for (var i = 0; i < a.length; i++) {
     var m = a[i] && a[i].manifest;
     if (!m) continue;

@@ -3,6 +3,19 @@
 function addons() {
   return lsJson('addons') || [];
 }
+/* The addons asked for catalogs, metadata and sources: all but Local files, which the
+   streaming server serves for a computer's own video folders. The TV has none, so asking
+   it only costs requests and "did not answer" entries in Diagnostics. */
+function remoteAddons() {
+  var all = addons(),
+    out = [];
+  for (var i = 0; i < all.length; i++)
+    if (
+      !/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(String((all[i] && all[i].transportUrl) || ''))
+    )
+      out.push(all[i]);
+  return out;
+}
 function syncAddons(cb) {
   var ak = authKey();
   if (!ak) {

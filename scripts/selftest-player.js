@@ -92,6 +92,19 @@ var urls = shared.streamAddonsIn([keyed, pathed], 'movie').map(function (ad) { r
 assert.strictEqual(urls[0], 'https://latam.example/stream/movie/tt1.json?token=ABC', 'an addon key after manifest.json was dropped');
 assert.strictEqual(urls[1], 'https://torrentio.example/qualityfilter=4k/stream/movie/tt1.json', 'a path-configured addon URL changed');
 
+// ---- subtitle addons of the account (shared/stream-addons.js addonsFor) ----
+var subAddons = [
+  { transportUrl: 'https://opensubs.example/cfg/manifest.json?key=K', manifest: { name: 'OpenSubtitles', types: ['movie', 'series'], idPrefixes: ['tt'], resources: ['subtitles'] } },
+  { transportUrl: 'https://anime.example/manifest.json', manifest: { name: 'Anime Subs', types: ['series'], resources: [{ name: 'subtitles', types: ['series'], idPrefixes: ['kitsu:'] }] } },
+  { transportUrl: 'https://streams.example/manifest.json', manifest: { name: 'Streams', types: ['series'], resources: ['stream'] } }
+];
+function subNames(type, id) { return shared.addonsFor(subAddons, 'subtitles', type, id).map(function (a) { return a.name; }).join(','); }
+assert.strictEqual(subNames('series', 'tt1:1:2'), 'OpenSubtitles', 'an IMDb episode did not reach only the IMDb subtitle addon');
+assert.strictEqual(subNames('series', 'kitsu:12:1180'), 'Anime Subs', 'a Kitsu episode was not sent to the addon that accepts Kitsu ids');
+assert.strictEqual(subNames('movie', 'tt5'), 'OpenSubtitles', 'a film reached a series-only subtitle addon');
+assert.strictEqual(shared.addonsFor(subAddons, 'subtitles', 'series', 'tt1:1:2')[0].query, '?key=K', 'the subtitle addon key was dropped');
+assert.strictEqual(shared.streamAddonsIn(subAddons, 'series').map(function (a) { return a.name; }).join(','), 'Streams', 'stream addon selection changed');
+
 // ---- watched state written like the official apps (progress.js + server/watched.js) ----
 var watchedLib = require(path.join(root, 'service', 'server', 'watched.js'));
 var eps = [
@@ -169,4 +182,4 @@ early.play(400);
 vm.runInNewContext('finishSession(false)', early);
 assert.strictEqual(early.lib().state.timeOffset, 400000, 'leaving mid-episode lost the position');
 
-console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs.');
+console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice.');
