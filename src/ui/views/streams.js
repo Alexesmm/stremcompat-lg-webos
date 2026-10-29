@@ -207,8 +207,11 @@ var streamsUI = {
         counts[g[j]] = (counts[g[j]] || 0) + 1;
       }
     }
+    /* a fixed order so the selector always steps the same way: English, Portuguese,
+       Spanish, the other languages, multi audio, then sources with no language */
+    var rank = ['en', 'pt', 'es', 'fr', 'it', 'de', 'ja', 'ko', 'ru', 'hi', 'multi', 'none'];
     order.sort(function (a, b) {
-      return (a === 'none') - (b === 'none') || counts[b] - counts[a];
+      return rank.indexOf(a) - rank.indexOf(b);
     });
     this.langs = order.length > 1 ? ['All'].concat(order) : [];
     if (this.langs.indexOf(this.langFilter) < 0) this.langFilter = 'All';
