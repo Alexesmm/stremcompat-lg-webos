@@ -9,7 +9,6 @@
   .chip.f:before{left:-9px;top:13px;width:3px;height:20px}
   .navlabel{left:62px;margin-top:-12px;line-height:24px;font-size:19px}
   #topnav:before{width:330px}
-  #bg,#bg2{left:45%;height:66%}
   body.detail #bg,body.detail #bg2{left:37%;height:100%}
   #hero{top:38px;left:112px;width:39%}
   #heroLogo{width:320px;height:88px}

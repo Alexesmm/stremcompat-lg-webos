@@ -2191,7 +2191,27 @@ function hstep(dir, cardsEl) {
 }
 // Hero backdrop: one decoded texture, debounced while the remote is scrolling.
 var bgCur = '',
-  bgT = null;
+  bgT = null,
+  bgDipT = null,
+  BG_DIP_MS = 200;
+/* A new title fades through the dark background instead of popping in: the old image goes
+   out first, so only one image is on screen and no second layer has to be blended. */
+function showBg(u) {
+  var bg = $('bg');
+  function swap() {
+    bgDipT = null;
+    if (bgCur !== u) return;
+    bg.style.backgroundImage = 'url("' + u + '")';
+    bg.className = 'on';
+    $('bg2').className = '';
+    $('bg2').style.backgroundImage = 'none';
+  }
+  if (bgDipT) clearTimeout(bgDipT);
+  if (bg.className === 'on') {
+    bg.className = '';
+    bgDipT = setTimeout(swap, BG_DIP_MS);
+  } else swap();
+}
 /* This TV has ~38MB free RAM + a weak GPU, so large backdrop textures are the
    scroll-jank/"black blockiness" culprit. Keep one cropped texture, swap only after the
    replacement decodes, and debounce hard so rapid scrolling never thrashes the decoder. */
@@ -2218,10 +2238,7 @@ function setBg(u) {
     var img = new Image();
     img.onload = function () {
       if (bgCur !== u || !img.naturalWidth) return;
-      $('bg').style.backgroundImage = 'url("' + u + '")';
-      $('bg').className = 'on';
-      $('bg2').className = '';
-      $('bg2').style.backgroundImage = 'none';
+      showBg(u);
     };
     img.onerror = function () {
       if (bgCur !== u) return;
@@ -2235,10 +2252,7 @@ function setBg(u) {
         var im2 = new Image();
         im2.onload = function () {
           if (bgCur !== raw) return;
-          $('bg').style.backgroundImage = 'url("' + raw + '")';
-          $('bg').className = 'on';
-          $('bg2').className = '';
-          $('bg2').style.backgroundImage = 'none';
+          showBg(raw);
         };
         im2.src = raw;
       }
@@ -3202,9 +3216,8 @@ var disc = {
     var y = this.zone === 'grid' ? Math.max(0, row - 1) * rowH : 0;
     $('discGrid').style.transform = 'translateY(-' + y + 'px)';
     $('discGrid').style.webkitTransform = 'translateY(-' + y + 'px)';
-    var it = this.focusedItem();
-    if (this.zone === 'grid' && it) setBg(bgMid(it));
-    else setBg('');
+    /* no backdrop here: the grid would cover nearly all of it, for the cost of one image */
+    setBg('');
     this.maybeLoadMore();
   },
   key: function (k) {

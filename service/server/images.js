@@ -45,7 +45,7 @@ function bgResize(q, res) {
     '-vf',
     'scale=' + PROFILE.backdropWidth + ':-2',
     '-q:v',
-    '6',
+    PROFILE.lowMemory ? '5' : '4',
     '-f',
     'mjpeg',
     'pipe:1'

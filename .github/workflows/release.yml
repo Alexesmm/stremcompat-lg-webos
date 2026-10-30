@@ -26,10 +26,10 @@ jobs:
       - name: Prepare clear release filenames
         shell: pwsh
         run: |
-          Move-Item -LiteralPath 'dist/io.strem.tv_1.2.30_all.ipk' -Destination 'dist/StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.30.ipk'
-          Move-Item -LiteralPath 'dist/io.strem.tv.hd_1.2.30_all.ipk' -Destination 'dist/StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.30.ipk'
-          Move-Item -LiteralPath 'dist/io.strem.tv.uj3native_1.0.27_all.ipk' -Destination 'dist/StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.27.ipk'
-          Move-Item -LiteralPath 'dist/io.strem.tv.uj3native.hd_1.0.27_all.ipk' -Destination 'dist/StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.27.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv_1.2.31_all.ipk' -Destination 'dist/StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.31.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv.hd_1.2.31_all.ipk' -Destination 'dist/StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.31.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv.uj3native_1.0.28_all.ipk' -Destination 'dist/StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.28.ipk'
+          Move-Item -LiteralPath 'dist/io.strem.tv.uj3native.hd_1.0.28_all.ipk' -Destination 'dist/StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.28.ipk'
       - uses: actions/upload-artifact@v4
         with:
           name: webos-ipks

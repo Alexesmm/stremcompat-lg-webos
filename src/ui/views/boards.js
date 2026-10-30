@@ -326,9 +326,8 @@ var disc = {
     var y = this.zone === 'grid' ? Math.max(0, row - 1) * rowH : 0;
     $('discGrid').style.transform = 'translateY(-' + y + 'px)';
     $('discGrid').style.webkitTransform = 'translateY(-' + y + 'px)';
-    var it = this.focusedItem();
-    if (this.zone === 'grid' && it) setBg(bgMid(it));
-    else setBg('');
+    /* no backdrop here: the grid would cover nearly all of it, for the cost of one image */
+    setBg('');
     this.maybeLoadMore();
   },
   key: function (k) {
