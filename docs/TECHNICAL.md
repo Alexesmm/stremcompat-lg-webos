@@ -1,6 +1,6 @@
 # StremCompat technical notes
 
-Background for contributors and curious users: why the project ships separate builds, how the package is put together, the memory profile of each television generation, how to adapt it to another TV and how releases are verified and published. Installation and everyday use are covered in the [README](../README.md).
+Background for contributors and curious users: why the project ships separate builds, how the package is put together, where the code lives, the memory profile of each television generation, how to adapt it to another TV and how releases are verified and published. Installation and everyday use are covered in the [README](../README.md).
 
 ## Why separate builds are required
 
@@ -36,6 +36,53 @@ The installed package contains two webOS components:
 6. The browser uses the television's hardware-backed HTML5 media pipeline for playback.
 
 The UM4 1920x1080 and 1280x720 builds use ports `8082` and `8084`. The UJ3 1920x1080 and 1280x720 builds use ports `8093` and `8094`. Each edition has its own app and service identity, so a test build cannot attach to a stale process from another edition.
+
+## Code map
+
+Edit the sources below, not the generated files.
+
+| Area | Location | Notes |
+|---|---|---|
+| Launcher | `app/index.html` | Starts the service, waits for `/health`, opens the interface, shows startup errors |
+| webOS service | `service/launch.js` | ES5 for Node.js 0.12; starts the bundled Node.js 18 runtime |
+| Local server | `service/tvserver.js`, `service/server/` | Node.js 18; `routes.js` holds every HTTP route |
+| Interface screens | `src/ui/views/` | Home, title page, source list, search, settings, login and others |
+| Interface data | `src/ui/data/` | Account and library sync, catalogs, metadata, sources |
+| Interface foundation | `src/ui/core/`, `src/ui/ui/`, `src/ui/input/`, `src/ui/features/` | Network and storage helpers, navigation, cards, remote and pointer input, trailers |
+| Interface page and styles | `src/ui/index.html`, `src/ui/styles/` | One stylesheet per area; `compact-720p.css` adapts the 1280x720 packages |
+| Player | `src/player/`, `service/player/player.css`, `service/player/player-body.html` | Controls, seeking, subtitles, progress and next episode |
+| Shared by interface and player | `src/shared/` | Translations (`strings.js`), the finished-title rule, addon selection |
+| Television editions | `profiles/` | Identity, version, port, resolution and memory limits of each package |
+| Build and tests | `scripts/` | See below |
+
+### Generated files
+
+`npm run build:ui` generates these files, which are committed. `node scripts/build-ui.js --check` fails when one is stale.
+
+| Generated file | Sources | Order |
+|---|---|---|
+| `service/beta-app.js` | `src/ui/` and `src/shared/` | `src/ui/modules.json` |
+| `service/player/player-client.js` | `src/player/` and `src/shared/` | `src/player/modules.json` |
+| `service/beta.html` | `src/ui/index.html` and `src/ui/styles/` | `src/ui/styles/styles.json` |
+
+The scripts are plain fragments joined in the listed order, with no `import` or module loader. All modules of a bundle share one scope, so a function from one file can be called directly from another. A new file must be added to the matching `modules.json`, and order matters for code that runs at load time.
+
+Browser code must stay ES5 and run on Chromium 38, which rejects newer syntax and block-level function declarations in strict mode. `service/launch.js` must also stay ES5. Only `service/tvserver.js` and `service/server/` can use modern JavaScript.
+
+### Build, test and package
+
+| Command | What it does |
+|---|---|
+| `npm run build:ui` | Regenerates the three files above |
+| `npm test` | Interface and player tests in a Node.js VM, then runtime tests against a real local server |
+| `npm run test:chrome38` | Runs the interface and player UI in real Chromium 38 (needs the snapshot in `.cache/chromium38`) |
+| `npm run test:visual:layouts` | Checks the layouts of all four packages (needs Chrome) |
+| `npm run lint`, `npm run format:check` | ESLint and Prettier |
+| `npm run verify` | Checks syntax targets, required features, manifests and the bundled runtime |
+| `npm run runtime` | Downloads the pinned runtime the packages need |
+| `npm run package:all` | Builds, verifies and packages all four IPKs into `dist/` |
+
+Packaging stages each edition in `.build/<profile>/` first: `scripts/build-stage.js` copies `app/` and `service/`, writes `service/profile.json` and fills in the launcher's port, version and service ID. Without `profile.json`, a source checkout runs as a development profile.
 
 ## webOS 3 adaptation
 
