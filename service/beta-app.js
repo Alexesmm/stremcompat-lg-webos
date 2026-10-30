@@ -2538,6 +2538,11 @@ function paintChips() {
 function curBoard() {
   return SCR === 'home' ? home : SCR === 'lib' ? lib : null;
 }
+function resetBoardPosition(board) {
+  board.rowIdx = 0;
+  for (var i = 0; i < board.rows.length; i++) board.rows[i].col = 0;
+  board._act = null;
+}
 var topNav = {
   idx: 1,
   active: false,
@@ -2567,6 +2572,8 @@ var topNav = {
       return;
     this.idx = i;
     var t = chipTarget[i];
+    if (t === 'home') resetBoardPosition(home);
+    else if (t === 'lib') resetBoardPosition(lib);
     backStack = [];
     scrParams = null;
     if (t !== 'search') search.reset();
@@ -2607,12 +2614,19 @@ var topNav = {
     } else {
       var b = curBoard();
       if (b) {
-        b.rowIdx = 0;
         b.paint();
         b.hero();
       }
     }
     this.paint();
+  },
+  /* Choosing the section already on screen (OK or a click) goes back to its start; Right
+     from the sidebar returns to the row and card that had the focus. */
+  chooseSection: function (i) {
+    if (i === this.idx && curBoard()) {
+      resetBoardPosition(curBoard());
+      this.enterContent();
+    } else this.switchTo(i);
   },
   /* OK on a section while a title page is open goes to that section, e.g. Home from a
      series opened on Home, instead of staying on the series */
@@ -2620,6 +2634,7 @@ var topNav = {
     if (k === 38) this.switchTo(this.idx - 1);
     else if (k === 40) this.switchTo(this.idx + 1);
     else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
+    else if (k === 13 && curBoard()) this.chooseSection(this.idx);
     else if (k === 39 || k === 13) this.enterContent();
     return true;
   }
@@ -2723,7 +2738,8 @@ function makeBoard(loader) {
       /* rows are the only children of #rows and hidden rows take no space, so the
          focused row's offsetTop equals the height of the rows above it */
       var cur = this.rows[this.rowIdx];
-      var t = focusOn && cur ? cur.el.offsetTop : 0;
+      /* the sidebar taking the focus keeps the rows where they are */
+      var t = curBoard() === this && cur ? cur.el.offsetTop : 0;
       $('rows').style.transform = 'translateY(-' + t + 'px)';
       $('rows').style.webkitTransform = 'translateY(-' + t + 'px)';
       virtualizeBoard(this, this.rowIdx, true);
@@ -6919,7 +6935,7 @@ function pointerUI(target, activate) {
   }
   i = pointerIndex(target, chips);
   if (i >= 0) {
-    if (activate) topNav.switchTo(i);
+    if (activate) topNav.chooseSection(i);
     else {
       topNav.idx = i;
       topNav.active = true;

@@ -97,7 +97,8 @@ function makeBoard(loader) {
       /* rows are the only children of #rows and hidden rows take no space, so the
          focused row's offsetTop equals the height of the rows above it */
       var cur = this.rows[this.rowIdx];
-      var t = focusOn && cur ? cur.el.offsetTop : 0;
+      /* the sidebar taking the focus keeps the rows where they are */
+      var t = curBoard() === this && cur ? cur.el.offsetTop : 0;
       $('rows').style.transform = 'translateY(-' + t + 'px)';
       $('rows').style.webkitTransform = 'translateY(-' + t + 'px)';
       virtualizeBoard(this, this.rowIdx, true);

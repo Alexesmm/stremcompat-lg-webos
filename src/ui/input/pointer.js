@@ -79,7 +79,7 @@ function pointerUI(target, activate) {
   }
   i = pointerIndex(target, chips);
   if (i >= 0) {
-    if (activate) topNav.switchTo(i);
+    if (activate) topNav.chooseSection(i);
     else {
       topNav.idx = i;
       topNav.active = true;
