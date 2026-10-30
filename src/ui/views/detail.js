@@ -384,10 +384,7 @@ var detail = {
           return true;
         }
         this.btnIdx--;
-      } else if (k === 38) {
-        topNav.focus();
-        return true;
-      } /* Up reaches the top tabs from a detail page */ else if (k === 13) {
+      } else if (k === 13) {
         var a = this.btnActs[this.btnIdx];
         if (a) a();
       } else if (k === 40) {

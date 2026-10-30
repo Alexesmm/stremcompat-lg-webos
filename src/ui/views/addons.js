@@ -72,7 +72,7 @@ var addonPanel = {
       if (this.idx > 0) {
         this.idx--;
         this.paint();
-      } else topNav.focus();
+      }
     } else if (k === 37) topNav.focus();
     else if (k === 13 && this.idx === 0) this.syncNow();
     return true;

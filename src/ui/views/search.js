@@ -394,7 +394,7 @@ var search = {
         this.paint();
         return true;
       }
-      if (k === 38) {
+      if (k === 37) {
         topNav.focus();
         return true;
       }

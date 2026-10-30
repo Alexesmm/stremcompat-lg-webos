@@ -2868,7 +2868,7 @@ function makeBoard(loader) {
     },
     key: function (k) {
       if (this.settleRow() < 0) {
-        if (k === 38) topNav.focus();
+        if (k === 37) topNav.focus();
         else if (k === 13 && this.empty) refreshCurBoard();
         return true;
       }
@@ -2890,8 +2890,6 @@ function makeBoard(loader) {
           this.rowIdx = prev;
           this.paint();
           this.hero();
-        } else {
-          topNav.focus();
         }
       } else if (k === 13) {
         var it = this.focusedItem();
@@ -3255,10 +3253,7 @@ var disc = {
         }
         this.filterIdx--;
       } else if (k === 39) this.filterIdx = Math.min(2, this.filterIdx + 1);
-      else if (k === 38) {
-        topNav.focus();
-        return true;
-      } else if (k === 40) {
+      else if (k === 40) {
         if (this.items.length) this.zone = 'grid';
       } else if (k === 13) {
         this.openFilter();
@@ -4747,10 +4742,7 @@ var detail = {
           return true;
         }
         this.btnIdx--;
-      } else if (k === 38) {
-        topNav.focus();
-        return true;
-      } /* Up reaches the top tabs from a detail page */ else if (k === 13) {
+      } else if (k === 13) {
         var a = this.btnActs[this.btnIdx];
         if (a) a();
       } else if (k === 40) {
@@ -6009,7 +6001,7 @@ var search = {
         this.paint();
         return true;
       }
-      if (k === 38) {
+      if (k === 37) {
         topNav.focus();
         return true;
       }
@@ -6152,7 +6144,7 @@ var addonPanel = {
       if (this.idx > 0) {
         this.idx--;
         this.paint();
-      } else topNav.focus();
+      }
     } else if (k === 37) topNav.focus();
     else if (k === 13 && this.idx === 0) this.syncNow();
     return true;
@@ -6620,10 +6612,6 @@ var settings = {
     if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
     else if (k === 38) {
       if (this.idx > 0) this.idx--;
-      else {
-        topNav.focus();
-        return true;
-      }
     } else if (k === 37) {
       topNav.focus();
       return true;

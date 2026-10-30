@@ -352,10 +352,7 @@ var disc = {
         }
         this.filterIdx--;
       } else if (k === 39) this.filterIdx = Math.min(2, this.filterIdx + 1);
-      else if (k === 38) {
-        topNav.focus();
-        return true;
-      } else if (k === 40) {
+      else if (k === 40) {
         if (this.items.length) this.zone = 'grid';
       } else if (k === 13) {
         this.openFilter();

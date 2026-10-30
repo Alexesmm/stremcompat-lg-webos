@@ -213,7 +213,7 @@ function makeBoard(loader) {
     },
     key: function (k) {
       if (this.settleRow() < 0) {
-        if (k === 38) topNav.focus();
+        if (k === 37) topNav.focus();
         else if (k === 13 && this.empty) refreshCurBoard();
         return true;
       }
@@ -235,8 +235,6 @@ function makeBoard(loader) {
           this.rowIdx = prev;
           this.paint();
           this.hero();
-        } else {
-          topNav.focus();
         }
       } else if (k === 13) {
         var it = this.focusedItem();

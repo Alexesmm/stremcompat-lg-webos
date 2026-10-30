@@ -460,10 +460,6 @@ var settings = {
     if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
     else if (k === 38) {
       if (this.idx > 0) this.idx--;
-      else {
-        topNav.focus();
-        return true;
-      }
     } else if (k === 37) {
       topNav.focus();
       return true;
