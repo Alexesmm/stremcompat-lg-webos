@@ -26,7 +26,7 @@ img{border:0}
 /* Details use the same split composition, but allow the art to reach lower behind episodes. */
 body.detail #bg,body.detail #bg2{left:34%;height:100%;background-position:center top}
 body.detail #bg.on,body.detail #bg2.on{opacity:.88}
-body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 52%,rgba(9,11,18,.7) 82%,#090b12 100%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.96) 31%,rgba(9,11,18,.45) 53%,rgba(9,11,18,.05) 100%)}
+body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 52%,rgba(9,11,18,.7) 82%,#090b12 100%),linear-gradient(to right,#090b12 34%,rgba(9,11,18,.93) 39%,rgba(9,11,18,.78) 46%,rgba(9,11,18,.56) 55%,rgba(9,11,18,.3) 66%,rgba(9,11,18,.08) 80%,rgba(9,11,18,0) 90%)}
 
 /* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
    available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same
@@ -58,7 +58,7 @@ body.login #topnav,body.login #logobg{display:none}
 .chip svg{width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;-webkit-flex:none;flex:none}
 .navlabel{display:block;position:absolute;left:92px;top:50%;margin-top:-17px;line-height:34px;font-size:27px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap;pointer-events:none;opacity:0;-webkit-transform:translateX(-10px);transform:translateX(-10px);transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.2,.8,.2,1)}
 /* while the menu has focus the labels appear over a darker panel, without moving the page */
-#topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(9,11,18,.98) 52%,rgba(9,11,18,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
+#topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(9,11,18,.98) 62%,rgba(9,11,18,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
 body.navopen #topnav:before{opacity:1}
 body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
 .chip.cur .navlabel{color:#cdb9ff}
@@ -164,6 +164,8 @@ body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- streams overlay ---------- */
 #streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
+/* the poster would stick out above the panel */
+body.streamsopen #dPoster{visibility:hidden}
 #streams h3{margin:0 0 8px;font-size:38px}
 #stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stChips{position:relative;white-space:nowrap;overflow:hidden;margin-bottom:8px}
@@ -299,7 +301,6 @@ body.series-episode #dSeasons{margin-top:24px}
   .chip.f:before{left:-9px;top:13px;width:3px;height:20px}
   .navlabel{left:62px;margin-top:-12px;line-height:24px;font-size:19px}
   #topnav:before{width:330px}
-  body.detail #bg,body.detail #bg2{left:37%;height:100%}
   #hero{top:38px;left:112px;width:39%}
   #heroLogo{width:320px;height:88px}
   #heroTitle{font-size:45px;height:94px}

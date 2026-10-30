@@ -328,7 +328,8 @@ var detail = {
     setF(this.epEls, this.zone === 'eps' ? this.epIdx : -1);
     for (var ii = 0; ii < this.epEls.length; ii++) {
       var ims = this.epEls[ii].getElementsByTagName('img'),
-        near = Math.abs(ii - this.epIdx) <= 2;
+        /* one more ahead: the next card is already partly on screen */
+        near = ii - this.epIdx >= -2 && ii - this.epIdx <= 3;
       for (var iz = 0; iz < ims.length; iz++) {
         var ei = ims[iz];
         if (near && ei._full) {

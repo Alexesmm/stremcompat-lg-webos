@@ -20,7 +20,7 @@ img{border:0}
 /* Details use the same split composition, but allow the art to reach lower behind episodes. */
 body.detail #bg,body.detail #bg2{left:34%;height:100%;background-position:center top}
 body.detail #bg.on,body.detail #bg2.on{opacity:.88}
-body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 52%,rgba(9,11,18,.7) 82%,#090b12 100%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.96) 31%,rgba(9,11,18,.45) 53%,rgba(9,11,18,.05) 100%)}
+body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 52%,rgba(9,11,18,.7) 82%,#090b12 100%),linear-gradient(to right,#090b12 34%,rgba(9,11,18,.93) 39%,rgba(9,11,18,.78) 46%,rgba(9,11,18,.56) 55%,rgba(9,11,18,.3) 66%,rgba(9,11,18,.08) 80%,rgba(9,11,18,0) 90%)}
 
 /* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
    available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same

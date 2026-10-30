@@ -50,6 +50,7 @@ var streamsUI = {
     this.chips = [];
     this.chipEls = [];
     $('streams').style.display = 'block';
+    bodyAdd('streamsopen');
     $('stChips').innerHTML = '';
     $('stLang').style.display = 'none';
     $('stSub').textContent =
@@ -367,6 +368,7 @@ var streamsUI = {
     this.cancelFlush();
     this.requestSeq++;
     $('streams').style.display = 'none';
+    bodyRemove('streamsopen');
   },
   choose: function () {
     var s = this.items[this.idx];
