@@ -12,7 +12,7 @@
 #stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
 #stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .st{padding:24px 26px;border-radius:12px;margin-bottom:12px;transition:background .12s ease}
-.st .a{font-size:29px;font-weight:700;color:#c9b8ff}
+.st .a{font-size:29px;font-weight:700;color:#fff}
 .st .rec{margin-bottom:8px;font-size:20px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#8ee3ad}
 .st.f .rec{color:#fff}
 .st .tags{margin-top:9px}

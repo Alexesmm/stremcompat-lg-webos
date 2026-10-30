@@ -1,7 +1,7 @@
 /* ---------- misc ---------- */
 /* Settings > Interface text: larger. Only type grows; boxes keep their size. */
 body.bigtext .rowtitle{font-size:37px}
-body.bigtext #heroMeta{font-size:28px}
+body.bigtext #heroMeta{font-size:27px}
 body.bigtext #heroDesc{font-size:28px;max-height:120px}
 body.bigtext .titlelabel,body.bigtext .card .nm{font-size:29px}
 body.bigtext .cwlabel{font-size:29px}

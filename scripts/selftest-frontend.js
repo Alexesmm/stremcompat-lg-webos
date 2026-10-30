@@ -213,6 +213,9 @@ langSamples.forEach(function (sample) {
 });
 var subTags = firstRun.context.__STREMIO_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: ['en', 'pt-BR', 'es', 'multi'], subLangsOnly: true });
 assert.strictEqual(subTags[1].c + ':' + subTags[1].t, 'sublang:SUBS EN · PT-BR +1', 'Multi Subs flags were not tagged as subtitles');
+var heroHtml = firstRun.context.__STREMIO_HERO_META__({ runtime: '109 min', year: '2026', imdbRating: '7.8' });
+assert.ok(/109 min.*2026.*7\.8.*IMDb/.test(heroHtml), 'the hero info line is out of order: ' + heroHtml);
+assert.strictEqual(firstRun.context.__STREMIO_HERO_META__({ runtime: '<b>' }).indexOf('<b>'), -1, 'hero metadata was not escaped');
 var compatOf = firstRun.context.__STREMIO_STREAM_COMPAT__;
 var rarSource = compatOf({ name: 'Torrentio', title: 'Movie.2020.1080p.WEB', filename: 'Movie.2020.1080p.WEB.rar', url: 'http://127.0.0.1:11470/abc/0' });
 assert.ok(rarSource.rank === 4 && rarSource.labels.indexOf('RAR') >= 0, 'a .rar source was not moved to the end with a warning');

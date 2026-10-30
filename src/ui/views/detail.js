@@ -108,14 +108,10 @@ var detail = {
       };
       pi.src = m.poster;
     }
-    var bits = [];
-    if (m.releaseInfo || m.year) bits.push(m.releaseInfo || m.year);
-    if (m.runtime) bits.push(m.runtime);
-    if (m.genres && m.genres.length) bits.push(m.genres.slice(0, 3).join(' · '));
-    var rate = m.imdbRating
-      ? '<span class="drating">★ ' + esc(m.imdbRating) + '</span>&nbsp;&nbsp;·&nbsp;&nbsp;'
-      : '';
-    $('dMeta').innerHTML = rate + esc(bits.join('  ·  '));
+    /* the same info line as the Home hero, followed by the genres */
+    $('dMeta').innerHTML =
+      heroMetaHtml(m) +
+      (m.genres && m.genres.length ? '<span>' + esc(m.genres.slice(0, 3).join(' · ')) + '</span>' : '');
     var info = '';
     if (m.cast && m.cast.length)
       info +=

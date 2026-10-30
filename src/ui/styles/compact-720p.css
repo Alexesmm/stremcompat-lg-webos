@@ -14,7 +14,10 @@
   #heroLogo{width:320px;height:88px}
   #heroTitle{font-size:45px;height:94px}
   #heroTitle.long{font-size:34px}
-  #heroMeta{margin-top:9px;font-size:18px}
+  #heroMeta{margin-top:9px;height:24px;line-height:24px;font-size:17px}
+  #heroMeta span{margin-right:20px}
+  #heroMeta .imdb{margin-left:6px;padding:0 4px;font-size:11px;line-height:16px;vertical-align:1px}
+  #heroCast{margin-top:5px;height:20px;line-height:20px;font-size:15px}
   #heroDesc{margin-top:7px;font-size:17px;line-height:1.34;max-height:46px}
   #rowsClip{top:258px;left:86px}
   #boardMsg{top:270px;left:112px;font-size:20px}
@@ -50,6 +53,8 @@
   #dLogo{width:380px;height:112px}
   #dTitle{font-size:52px;max-height:108px}
   #dMeta{margin-top:10px;font-size:21px}
+  #dMeta span{margin-right:20px}
+  #dMeta .imdb{margin-left:6px;padding:0 4px;font-size:13px;line-height:18px;vertical-align:2px}
   #dInfo{margin-top:10px;font-size:18px}.dlbl{width:128px;font-size:16px}
   #dDesc{margin-top:8px;font-size:19px;line-height:1.35;max-height:78px}
   #dBtns{margin-top:16px}.btn{padding:12px 30px;margin-right:12px;border-radius:9px;font-size:21px}

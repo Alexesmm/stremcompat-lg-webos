@@ -4,8 +4,9 @@
 /* fixed boxes: the logo is fitted inside, so its shape never moves what follows */
 #dLogo{width:560px;height:190px;object-fit:contain;object-position:left bottom;display:none}
 #dTitle{font-size:80px;font-weight:800;max-width:70%;line-height:1.05;letter-spacing:-1.5px}
-#dMeta{margin-top:20px;font-size:28px;color:rgba(214,201,255,.86);font-weight:600}
-.drating{color:#ffd27a;font-weight:800}
+#dMeta{margin-top:20px;font-size:28px;color:rgba(255,255,255,.92);font-weight:600}
+#dMeta span{margin-right:30px}
+#dMeta .imdb{display:inline-block;margin-left:9px;padding:0 6px;border-radius:4px;background:#f5c518;color:#111;font-size:17px;font-weight:800;line-height:24px;vertical-align:3px}
 #dInfo{margin-top:20px;font-size:27px;color:rgba(255,255,255,.9);max-width:70%}
 #dInfo div{margin-bottom:9px}
 .dlbl{display:inline-block;width:190px;color:rgba(255,255,255,.52);font-size:23px;text-transform:uppercase;letter-spacing:1.4px}

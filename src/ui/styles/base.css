@@ -25,14 +25,14 @@ body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,r
 /* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
    available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same
    vignette + smooth edges, so it reads as the cover art coming to life. */
-#topnav,#hero,#rowsClip,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc{transition:opacity .9s ease}
+#topnav,#hero,#rowsClip,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc,#heroCast{transition:opacity .9s ease}
 body.idle #topnav,body.idle #hero,body.idle #rowsClip,body.idle #dWrap{opacity:.82}
 body.trailer #bg.on,body.trailer #bg2.on{opacity:0}
 /* trailer playing: everything on the upper half melts to near-nothing; only the title
    cover-art/logo stays (~.78). Smooth .9s fades. */
 body.trailer #hero{opacity:1}
 body.trailer #topnav{opacity:.16}
-body.trailer #heroMeta,body.trailer #heroDesc{opacity:.1}
+body.trailer #heroMeta,body.trailer #heroDesc,body.trailer #heroCast{opacity:.1}
 body.trailer #heroTitle,body.trailer #heroLogo{opacity:.78}
 /* first row overlaps the trailer -> very low; the rows below it stay readable at .75 */
 body.trailer #rowsClip{opacity:1}

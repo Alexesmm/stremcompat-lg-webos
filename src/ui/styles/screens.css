@@ -57,7 +57,7 @@
 #setAcct .pl{margin-top:8px;font-size:24px;color:rgba(255,255,255,.6)}
 .set{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;max-width:1100px;padding:19px 26px;border-radius:14px;margin-bottom:8px;transition:background .12s ease}
 .set .lb{font-size:29px;font-weight:600;-webkit-flex:1;flex:1}
-.set .vl{font-size:26px;color:#c9b8ff;font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(140,92,255,.10)}
+.set .vl{font-size:26px;color:rgba(255,255,255,.88);font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(255,255,255,.08)}
 .set.f{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 3px #fff}
 .set.editing{background:rgba(140,92,255,.24);box-shadow:inset 0 0 0 3px #a98fff}
 .set.editing .vl{background:#8c5cff;color:#fff}

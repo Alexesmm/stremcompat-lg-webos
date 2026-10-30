@@ -14,7 +14,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 #bar{position:fixed;left:0;right:0;bottom:0;padding:28px 52px 40px;box-sizing:border-box;background:linear-gradient(transparent,rgba(0,0,0,.92));opacity:0;transition:opacity .2s;z-index:4}
 #bar.show{opacity:1}
 #title{font-size:46px;font-weight:800;letter-spacing:.3px;margin-bottom:6px;text-shadow:0 2px 10px #000}
-#tse{font-size:28px;font-weight:600;color:#c9b8ff;letter-spacing:.4px;margin:0 0 16px;text-shadow:0 1px 6px #000}
+#tse{font-size:28px;font-weight:600;color:rgba(255,255,255,.78);letter-spacing:.4px;margin:0 0 16px;text-shadow:0 1px 6px #000}
 #tse:empty{display:none}
 #buf{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;background:rgba(12,11,17,.5);z-index:8}
 #bufart{font-size:54px;font-weight:800;text-align:center;max-width:80%;text-shadow:0 4px 24px #000;animation:breathe 2.6s ease-in-out infinite}
@@ -52,7 +52,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 #pvLbl{font-size:23px;color:rgba(255,255,255,.65);letter-spacing:2.4px;text-transform:uppercase;margin-bottom:12px}
 #pvTitle{font-size:62px;font-weight:800;line-height:1.08;text-shadow:0 3px 16px #000}
 #pvTitle img{max-width:640px;max-height:210px;display:block}
-#pvSe{margin-top:12px;font-size:28px;color:#c9b8ff;font-weight:600}
+#pvSe{margin-top:12px;font-size:28px;color:rgba(255,255,255,.78);font-weight:600}
 #pvSe:empty{display:none}
 #pvBadges{margin-top:28px}
 .bdg{display:inline-block;padding:9px 20px;border:2px solid rgba(255,255,255,.42);border-radius:9px;font-size:23px;font-weight:600;margin:0 14px 12px 0;color:rgba(255,255,255,.95)}

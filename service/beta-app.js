@@ -2658,6 +2658,18 @@ var topNav = {
 function heroTitleClass(name) {
   return String(name || '').length > 32 ? 'long' : '';
 }
+/* the hero's info line: 109 min   2026   7.8 [IMDb] */
+function heroMetaHtml(m) {
+  var html = '';
+  function add(text) {
+    if (text) html += '<span>' + esc(text) + '</span>';
+  }
+  add(m.runtime);
+  add(m.releaseInfo || m.year);
+  if (m.imdbRating) html += '<span>' + esc(m.imdbRating) + '<b class="imdb">IMDb</b></span>';
+  return html;
+}
+window.__STREMIO_HERO_META__ = heroMetaHtml;
 /* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
 function makeBoard(loader) {
   return {
@@ -2831,19 +2843,20 @@ function makeBoard(loader) {
         tt.style.display = '';
         lg.style.display = 'none';
       }
-      $('heroMeta').textContent = it.metaLine || '';
+      $('heroMeta').innerHTML = it.metaHtml || '';
       $('heroDesc').textContent = it.description || '';
+      $('heroCast').textContent = it.castLine || '';
       setBg(bgMid(it));
       if (!it.description && it.id) {
         getMeta(it.type, it.id, function (m) {
           if (!m) return;
           it.description = m.description || '';
-          it.metaLine = [m.releaseInfo || m.year, m.runtime, m.imdbRating ? 'IMDb ' + m.imdbRating : '']
-            .join('   ')
-            .replace(/\s+/g, ' ');
+          it.metaHtml = heroMetaHtml(m);
+          it.castLine = m.cast && m.cast.length ? m.cast.slice(0, 3).join(', ') : '';
           if (self.focusedItem() === it) {
             $('heroDesc').textContent = it.description;
-            $('heroMeta').textContent = it.metaLine;
+            $('heroMeta').innerHTML = it.metaHtml;
+            $('heroCast').textContent = it.castLine;
           }
         });
       }
@@ -4458,14 +4471,10 @@ var detail = {
       };
       pi.src = m.poster;
     }
-    var bits = [];
-    if (m.releaseInfo || m.year) bits.push(m.releaseInfo || m.year);
-    if (m.runtime) bits.push(m.runtime);
-    if (m.genres && m.genres.length) bits.push(m.genres.slice(0, 3).join(' · '));
-    var rate = m.imdbRating
-      ? '<span class="drating">★ ' + esc(m.imdbRating) + '</span>&nbsp;&nbsp;·&nbsp;&nbsp;'
-      : '';
-    $('dMeta').innerHTML = rate + esc(bits.join('  ·  '));
+    /* the same info line as the Home hero, followed by the genres */
+    $('dMeta').innerHTML =
+      heroMetaHtml(m) +
+      (m.genres && m.genres.length ? '<span>' + esc(m.genres.slice(0, 3).join(' · ')) + '</span>' : '');
     var info = '';
     if (m.cast && m.cast.length)
       info +=

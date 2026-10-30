@@ -5,8 +5,12 @@
 #heroLogo{width:470px;height:145px;object-fit:contain;object-position:left bottom;display:none}
 #heroTitle{height:142px;overflow:hidden;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:flex-end;justify-content:flex-end;font-size:68px;font-weight:800;line-height:1.04;letter-spacing:-1px}
 #heroTitle.long{font-size:50px}
-#heroMeta{margin-top:15px;font-size:25px;color:rgba(214,201,255,.86);font-weight:700;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#heroDesc{margin-top:14px;font-size:25px;line-height:1.42;color:rgba(255,255,255,.78);max-height:107px;overflow:hidden}
+#heroMeta{margin-top:15px;height:34px;line-height:34px;font-size:24px;color:rgba(255,255,255,.92);font-weight:600;letter-spacing:.2px;white-space:nowrap;overflow:hidden}
+#heroMeta span{margin-right:30px}
+#heroMeta .imdb{display:inline-block;margin-left:9px;padding:0 6px;border-radius:4px;background:#f5c518;color:#111;font-size:15px;font-weight:800;line-height:22px;vertical-align:2px}
+#heroDesc{margin-top:14px;font-size:25px;line-height:1.42;color:rgba(255,255,255,.88);max-height:107px;overflow:hidden}
+/* the cast line keeps its height when empty, so nothing moves between titles */
+#heroCast{margin-top:8px;height:30px;line-height:30px;font-size:22px;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- rows ---------- */
 #rowsClip{position:absolute;top:420px;left:128px;right:0;bottom:0;overflow:hidden}
