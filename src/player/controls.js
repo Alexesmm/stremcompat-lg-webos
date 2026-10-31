@@ -19,21 +19,38 @@ var btns = [];
     }
   }
 })();
+/* what the next episode's source should match (matchingNextSource) */
+function nextSourcePref() {
+  return {
+    at: Date.now(),
+    addon: ADDON,
+    quality: QUALITY,
+    compat: COMPAT,
+    text: SNAME,
+    binge: BINGE,
+    langs: subtitleLanguagesOnly({ name: SNAME }) ? [] : streamLanguages({ name: SNAME })
+  };
+}
 function rememberNextSource() {
   if (!ID || !NEXTVID) return;
   try {
-    localStorage.setItem(
-      'tvnextpref_' + ID + '_' + NEXTVID,
-      JSON.stringify({ at: Date.now(), addon: ADDON, quality: QUALITY, compat: COMPAT, text: SNAME })
-    );
+    localStorage.setItem('tvnextpref_' + ID + '_' + NEXTVID, JSON.stringify(nextSourcePref()));
   } catch (e) {}
 }
+function forgetNextSource() {
+  try {
+    localStorage.removeItem('tvnextpref_' + ID + '_' + NEXTVID);
+  } catch (e) {}
+}
+var nextStarting = false;
 function nextEp() {
-  if (NEXTHREF) {
-    try {
-      finishSession(true);
-      rememberNextSource();
-    } catch (e) {}
+  if (!NEXTHREF || nextStarting) return;
+  nextStarting = true;
+  try {
+    finishSession(true);
+    rememberNextSource();
+    openNextDirect();
+  } catch (e) {
     location.replace(NEXTHREF);
   }
 }

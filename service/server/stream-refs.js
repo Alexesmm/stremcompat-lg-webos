@@ -43,6 +43,7 @@ function storeStreamRef(raw) {
     title: safeText(raw.title, 700),
     description: safeText(raw.description, 700),
     behaviorHints: { filename: safeText(raw.filename, 500) },
+    bingeGroup: safeText(raw.bingeGroup, 200),
     quality: safeText(raw.quality, 40),
     compat: safeText(raw.compat, 160),
     headers: safeProxyHeaders(raw.headers),

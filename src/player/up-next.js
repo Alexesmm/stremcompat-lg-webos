@@ -76,13 +76,112 @@ var nextPrefetched = false;
 function prefetchNext() {
   if (nextPrefetched || !isNextEp || !NEXTVID) return;
   nextPrefetched = true;
-  var list = [];
+  var ads = nextEpisodeAddons();
+  for (var i = 0; i < ads.length; i++)
+    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[i], TYPE || 'series', NEXTVID)), function () {});
+}
+/* the addons that answer for the next episode, without the local streaming server's own */
+function nextEpisodeAddons() {
+  var list = [],
+    out = [];
   try {
     list = JSON.parse(localStorage.getItem('addons') || '[]');
   } catch (e) {}
   var ads = streamAddonsIn(list, TYPE || 'series');
   for (var i = 0; i < ads.length; i++)
-    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[i], TYPE || 'series', NEXTVID)), function () {});
+    if (!/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(ads[i].base)) out.push(ads[i]);
+  return out;
+}
+/* The next episode starts from here, with the source that matches this one: no title page,
+   no list. Anything that goes wrong (no answer in time, no matching source) falls back to
+   the title page, which still holds the preference and offers the list. */
+var NEXT_DIRECT_LIMIT_MS = 12000;
+function coverForNext() {
+  try {
+    v.pause();
+  } catch (e) {}
+  if (startupWatch) clearTimeout(startupWatch);
+  mode = 'video';
+  menu.className = '';
+  bar.className = '';
+  npShown = false;
+  npFocus = false;
+  paintNp();
+  subEl.textContent = '';
+  load.style.display = '';
+  showToast(P.nextLoading, NEXT_DIRECT_LIMIT_MS);
+}
+function openNextDirect() {
+  var ended = false,
+    items = [],
+    ads = [],
+    all = nextEpisodeAddons(),
+    limit;
+  /* Back while waiting (seek.js exit) already left for the previous screen */
+  function giveUp() {
+    if (ended || exited) return;
+    ended = true;
+    location.replace(NEXTHREF);
+  }
+  function play(source) {
+    postStreamRef(source, function (ref) {
+      if (ended || exited) return;
+      if (!ref) return giveUp();
+      ended = true;
+      clearTimeout(limit);
+      forgetNextSource();
+      location.replace(
+        '/play?ref=' +
+          encodeURIComponent(ref) +
+          '&type=' +
+          encodeURIComponent(TYPE) +
+          '&id=' +
+          encodeURIComponent(ID) +
+          '&vid=' +
+          encodeURIComponent(NEXTVID) +
+          '&back=' +
+          encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + NEXTVID)
+      );
+    });
+  }
+  /* only the addon that gave this source can give its match */
+  for (var i = 0; i < all.length; i++) if (all[i].name === ADDON) ads.push(all[i]);
+  if (!ads.length) return giveUp();
+  coverForNext();
+  limit = setTimeout(giveUp, NEXT_DIRECT_LIMIT_MS);
+  var pending = ads.length,
+    pref = nextSourcePref();
+  for (var a = 0; a < ads.length; a++)
+    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[a], TYPE, NEXTVID)), function (j) {
+      var st = (j && j.streams) || [];
+      for (var k = 0; k < st.length; k++) {
+        var item = sourceItem(st[k], ADDON);
+        if (item) items.push(item);
+      }
+      pending--;
+      if (pending > 0 || ended) return;
+      var match = matchingNextSource(items, pref);
+      if (match) play(match);
+      else giveUp();
+    });
+}
+function postStreamRef(source, cb) {
+  try {
+    var x = new XMLHttpRequest();
+    x.open('POST', '/streamref', true);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      var j = null;
+      try {
+        j = JSON.parse(x.responseText);
+      } catch (e) {}
+      cb(j && j.ref);
+    };
+    x.send(JSON.stringify(streamRefBody(source)));
+  } catch (e) {
+    cb('');
+  }
 }
 /* When an episode ends the next one starts after a countdown: OK starts it now, Back
    cancels it. After three episodes in a row with nobody touching the remote it asks

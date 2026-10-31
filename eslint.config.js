@@ -54,7 +54,7 @@ module.exports = [
         ID: 'readonly', VID: 'readonly', LOGO: 'readonly', BG: 'readonly', POSTER: 'readonly',
         SEASON: 'readonly', EPISODE: 'readonly', EPTITLE: 'readonly', NEXTVID: 'readonly', NEXTHREF: 'readonly', BACK: 'readonly',
         NEXTTITLE: 'readonly', NEXTTHUMB: 'readonly', SNAME: 'readonly', CERT: 'readonly',
-        COMPAT: 'readonly', SERVICE_ID: 'readonly', APP_PORT: 'readonly'
+        COMPAT: 'readonly', BINGE: 'readonly', SERVICE_ID: 'readonly', APP_PORT: 'readonly'
       })
     },
     rules: browserCorrectness

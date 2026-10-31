@@ -24,7 +24,13 @@ document.addEventListener(
     if (k === 461 || k === 8 || k === 27) {
       e.preventDefault();
       e.stopPropagation();
+      /* leaving now means the next episode was not wanted after all */
+      if (nextStarting) forgetNextSource();
       history.back();
+      return;
+    }
+    if (nextStarting) {
+      e.preventDefault();
       return;
     }
     if (failShown) {
@@ -168,5 +174,8 @@ window.__tv = {
   },
   off: function () {
     subsOff();
+  },
+  next: function () {
+    nextEp();
   }
 };

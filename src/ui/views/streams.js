@@ -298,8 +298,11 @@ var streamsUI = {
     for (var r = 0; r < flat.length; r++) {
       if (flat[r].stored) continue;
       choices++;
-      if (rec < 0 && !(flat[r].compatRank > 0)) rec = r;
+      if (rec < 0 && !(flat[r].compatRank > 0) && !(flat[r].compatLabels || []).length) rec = r;
     }
+    /* every source has a note: the list order still names the safest one */
+    for (var rr = 0; rec < 0 && rr < flat.length; rr++)
+      if (!flat[rr].stored && !(flat[rr].compatRank > 0)) rec = rr;
     if (choices < 2) rec = -1;
     for (var i = 0; i < flat.length; i++) {
       var s = flat[i],

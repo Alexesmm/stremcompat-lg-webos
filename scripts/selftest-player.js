@@ -60,6 +60,79 @@ var asleep = countdown(3);
 assert.strictEqual(asleep.label, 'Você ainda está assistindo?', 'three automatic episodes did not ask if anyone is watching');
 assert.strictEqual(asleep.went, 0, 'the still-watching prompt continued on its own');
 
+// ---- the next episode opens straight from the player (up-next.js) ----
+function nextDirect(streams, opts) {
+  opts = opts || {};
+  var els = {}, timers = [], went = [], posted = [], removed = [];
+  var addons = [
+    { transportUrl: 'http://127.0.0.1:11470/manifest.json', manifest: { name: 'Local', types: ['series'], resources: ['stream'] } },
+    { transportUrl: 'https://torrentio.example/manifest.json', manifest: { name: 'Torrentio', types: ['series'], resources: ['stream'] } }
+  ];
+  var asked = [];
+  var ctx = {
+    SEASON: '1', EPISODE: '2', EPTITLE: '', BACK: 'beta#detail/series/tt1/tt1:1:2', TYPE: 'series', ID: 'tt1',
+    NEXTHREF: '/beta#detail/series/tt1/tt1:1:3', NEXTTITLE: '', NEXTVID: 'tt1:1:3', NEXTTHUMB: '',
+    ADDON: 'Torrentio', QUALITY: '1080p', COMPAT: '', SNAME: opts.sname || 'Torrentio 1080p Show.S01E02.1080p 🇧🇷', BINGE: opts.binge || '',
+    exited: false, startupWatch: null, mode: 'video', menu: {}, bar: {}, load: { style: { display: 'none' } }, subEl: {},
+    localStorage: memoryStorage({ uiLanguage: 'pt-BR', addons: JSON.stringify(addons) }),
+    document: { getElementById: function (id) { return els[id] || (els[id] = element(id)); } },
+    v: { addEventListener: function () {}, pause: function () { ctx.paused = true; } },
+    showBar: function () {}, saveProgress: function () {}, showToast: function (m) { ctx.toast = m; },
+    location: { replace: function (u) { went.push(u); } },
+    lsGet: function (k, d) { return d; }, cancelAutoNext: function () {},
+    forgetNextSource: function () { removed.push(1); },
+    nextEp: function () {},
+    nextSourcePref: null,
+    xhr: function (u, cb) {
+      asked.push(u);
+      if (!opts.silent) cb(streams ? { streams: streams } : null);
+    },
+    XMLHttpRequest: function () {
+      var x = this;
+      x.open = x.setRequestHeader = function () {};
+      x.send = function (b) {
+        posted.push(JSON.parse(b));
+        x.readyState = 4;
+        x.responseText = opts.noRef ? '{}' : '{"ref":"R1"}';
+        x.onreadystatechange();
+      };
+    },
+    setTimeout: function (f) { timers.push(f); return timers.length; }, clearTimeout: function () {}
+  };
+  vm.runInNewContext(
+    src('shared/strings.js') + src('shared/stream-addons.js') + src('shared/source-info.js') + src('player/strings.js') + src('player/up-next.js') +
+    ';function nextSourcePref(){return{addon:ADDON,quality:QUALITY,compat:COMPAT,text:SNAME,binge:BINGE,langs:subtitleLanguagesOnly({name:SNAME})?[]:streamLanguages({name:SNAME})};}' +
+    ';openNextDirect();',
+    ctx
+  );
+  if (opts.timeout) while (timers.length) timers.shift()();
+  return { went: went, posted: posted, removed: removed, asked: asked, ctx: ctx };
+}
+var directPt = { name: 'Torrentio 1080p', title: 'Show.S01E03.1080p 🇧🇷', infoHash: 'a'.repeat(40) };
+var directEn = { name: 'Torrentio 1080p', title: 'Show.S01E03.1080p 🇬🇧', infoHash: 'b'.repeat(40) };
+var direct = nextDirect([directEn, directPt]);
+assert.strictEqual(direct.posted[0].url, 'http://127.0.0.1:11470/' + 'a'.repeat(40) + '/0', 'the next episode did not keep the language being watched');
+assert.strictEqual(
+  direct.went[0],
+  '/play?ref=R1&type=series&id=tt1&vid=tt1%3A1%3A3&back=' + encodeURIComponent('beta#detail/series/tt1/tt1:1:3'),
+  'the next episode did not open straight in the player'
+);
+assert.strictEqual(direct.removed.length, 1, 'the used preference stayed behind and would autoplay on Back');
+assert.strictEqual(direct.ctx.paused, true, 'the finished episode kept playing behind the cover');
+assert.strictEqual(direct.ctx.toast, 'Próximo episódio…', 'no notice while the next episode was looked for');
+assert.strictEqual(direct.asked.length, 1, 'addons other than the source addon were asked');
+var boundBinge = nextDirect(
+  [directEn, { name: 'Torrentio 720p', title: 'Other.720p 🇬🇧', infoHash: 'c'.repeat(40), behaviorHints: { bingeGroup: 'torrentio|pack' } }],
+  { binge: 'torrentio|pack' }
+);
+assert.strictEqual(boundBinge.posted[0].bingeGroup, 'torrentio|pack', 'the same release marker did not win');
+var otherLang = nextDirect([directEn]);
+assert.deepStrictEqual(otherLang.went, ['/beta#detail/series/tt1/tt1:1:3'], 'a dubbed episode continued in another language instead of offering the list');
+assert.strictEqual(otherLang.posted.length, 0, 'a source in another language was prepared');
+assert.deepStrictEqual(nextDirect(null).went, ['/beta#detail/series/tt1/tt1:1:3'], 'an addon that failed did not fall back to the title page');
+assert.deepStrictEqual(nextDirect([directPt], { noRef: true }).went, ['/beta#detail/series/tt1/tt1:1:3'], 'a failed source preparation did not fall back');
+assert.deepStrictEqual(nextDirect([], { silent: true, timeout: true }).went, ['/beta#detail/series/tt1/tt1:1:3'], 'a slow addon held the viewer past the limit');
+
 // ---- per-title audio, subtitles and delay (subtitles.js) ----
 function subtitlePrefs(stored) {
   var storage = memoryStorage(stored);
@@ -229,4 +302,4 @@ early.play(400);
 vm.runInNewContext('finishSession(false)', early);
 assert.strictEqual(early.lib().state.timeOffset, 400000, 'leaving mid-episode lost the position');
 
-console.log('OK: watched state like the official apps, next-episode countdown, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');
+console.log('OK: watched state like the official apps, next-episode countdown, next episode opened directly, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');

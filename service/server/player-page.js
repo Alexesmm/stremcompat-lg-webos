@@ -66,7 +66,8 @@ function playerPage(stream, ctx) {
   var meta = ctx.meta || {};
   var title = meta.name || cleanTitle(stream);
   var nextVid = ctx.nextVid || '';
-  // "Next episode" returns to the interface detail page, which picks the next source.
+  // The title page of the next episode: where the player goes when it cannot start that
+  // episode by itself (up-next.js).
   var nextHref = !nextVid
     ? ''
     : '/beta#detail/' +
@@ -127,6 +128,8 @@ function playerPage(stream, ctx) {
     safeScriptJson((ctx.meta && ctx.meta.cert) || '') +
     ',COMPAT=' +
     safeScriptJson(stream.compat || '') +
+    ',BINGE=' +
+    safeScriptJson(stream.bingeGroup || '') +
     ',SERVICE_ID=' +
     safeScriptJson(SERVICE_ID) +
     ',APP_PORT=' +

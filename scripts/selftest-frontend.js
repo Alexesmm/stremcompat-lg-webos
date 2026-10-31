@@ -256,6 +256,20 @@ var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
   { addon:'Torrentio',quality:'4K',title:'H264 AAC',seeders:200,compatRank:0 }
 ],{addon:'Torrentio',quality:'4K',text:'HEVC 10bit DDP WEB-DL',compat:'HEVC 10-bit'});
 assert.strictEqual(nextMatch.title,'HEVC 10bit DDP WEB-DL','next episode did not prefer the closest safe source traits');
+var matchNext = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__;
+var pack = { addon:'Torrentio',quality:'720p',title:'Other',seeders:1,compatRank:0,bingeGroup:'torrentio|pack' };
+var strongEn = { addon:'Torrentio',quality:'1080p',title:'English',seeders:900,compatRank:0,langs:['en'] };
+var weakBr = { addon:'Torrentio',quality:'1080p',title:'Dublado',seeders:2,compatRank:0,langs:['pt-BR'] };
+var multiAudio = { addon:'Torrentio',quality:'1080p',title:'Multi',seeders:50,compatRank:0,langs:['multi'] };
+var plain = { addon:'Torrentio',quality:'1080p',title:'Plain',seeders:40,compatRank:0,langs:[] };
+assert.strictEqual(matchNext([strongEn,pack],{addon:'Torrentio',quality:'1080p',binge:'torrentio|pack'}),pack,'the same release marker did not settle the next source');
+assert.strictEqual(matchNext([strongEn,weakBr],{addon:'Torrentio',quality:'1080p',langs:['pt-BR']}),weakBr,'seeders beat the language being watched');
+assert.strictEqual(matchNext([strongEn],{addon:'Torrentio',quality:'1080p',langs:['pt-BR']}),null,'a source in another language was chosen for the next episode');
+assert.strictEqual(matchNext([plain],{addon:'Torrentio',quality:'1080p',langs:['pt-BR']}),null,'a source with no named language replaced a dub');
+assert.strictEqual(matchNext([strongEn,multiAudio],{addon:'Torrentio',quality:'1080p',langs:['pt-BR']}),multiAudio,'multi audio was not accepted for a named language');
+assert.strictEqual(matchNext([strongEn,plain],{addon:'Torrentio',quality:'1080p',langs:[]}),plain,'a dub replaced a source that names no language');
+assert.strictEqual(matchNext([strongEn],{addon:'Torrentio',quality:'1080p'}).title,'English','an older saved preference was judged by language');
+assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',compatRank:4,langs:[] }],{addon:'Torrentio',quality:'1080p',langs:[]}),null,'an archive was chosen for the next episode');
 firstRun.context.__STREMIO_SET_UI_LANGUAGE__('pt-BR');
 assert.strictEqual(firstRun.context.__STREMIO_UI_LANGUAGE__(), 'pt-BR');
 assert.strictEqual(firstRun.context.localStorage.getItem('uiLanguage'), 'pt-BR', 'language preference was not persisted');
