@@ -51,6 +51,16 @@ function playUrl(source, type, id, vid, backHash) {
       attempt === 1 ? 2500 : 4500
     );
   }
+  /* a torrent needs the streaming server, which is downloaded from Stremio on first use */
+  if (/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(s.url))
+    xhrJson(
+      '/streamfile',
+      function (j) {
+        if (j && j.state === 'downloading') toast(tx('preparingTorrents'));
+        else if (j && j.state === 'failed') toast(tx('torrentsUnavailable'));
+      },
+      2000
+    );
   prepare(1);
 }
 function resumeSearch(id, vid) {

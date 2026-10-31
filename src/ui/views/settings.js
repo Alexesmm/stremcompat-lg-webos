@@ -37,6 +37,14 @@ function diagEventLine(e) {
     }[e.kind];
   return hh + ':' + mm + '  ·  ' + tx(key || e.kind) + (e.detail ? ' (' + e.detail + ')' : '');
 }
+/* running or stopped, or why it is not there yet (it is downloaded from Stremio) */
+function diagStreamingState(j) {
+  var f = j.streamingFile || {};
+  if (j.streamingServer) return tx('diagRunning');
+  if (f.state === 'downloading') return tx('diagDownloading');
+  if (f.state === 'failed') return tx('diagStreamFailed', f.err);
+  return tx('diagStopped');
+}
 var settings = {
   idx: 0,
   els: [],
@@ -329,7 +337,7 @@ var settings = {
         var lines = [
           tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
-          tx('diagStreaming', j.streamingServer ? tx('diagRunning') : tx('diagStopped')),
+          tx('diagStreaming', diagStreamingState(j)),
           tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
         ];

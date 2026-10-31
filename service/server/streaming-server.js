@@ -1,9 +1,11 @@
-// Starting and waiting for the bundled Stremio streaming server (:11470).
+// Starting and waiting for the Stremio streaming server (:11470).
 
+var fs = require('fs');
 var net = require('net');
 var path = require('path');
 var spawn = require('child_process').spawn;
-var { DIR, LIB, LOADER, NODE, SERVER, SERVER_PORT } = require('./config');
+var { DIR, LIB, LOADER, NODE, SERVER_PORT } = require('./config');
+var { ensureServerFile, serverFileStatus } = require('./streaming-file');
 
 // ---------- start the streaming server ----------
 function portUp(port, cb) {
@@ -35,13 +37,21 @@ function startStreamingServer() {
   var now = Date.now();
   if (now - streamingServerStartedAt < 30000) return;
   streamingServerStartedAt = now;
+  /* the runtime only exists on the TV: tests and source checkouts download nothing */
+  if (!fs.existsSync(LOADER)) return;
+  ensureServerFile(function (err, file) {
+    if (!err) spawnStreamingServer(file);
+  });
+}
+
+function spawnStreamingServer(file) {
   var env = Object.assign({}, process.env);
   env.HOME = env.HOME || '/home/root';
   env.USER = env.USER || 'root';
   env.FFMPEG_BIN = path.join(DIR, 'bin', 'ffmpeg');
   env.FFPROBE_BIN = path.join(DIR, 'bin', 'ffprobe');
   /* IPv4 first, for the same reason as tvserver.js (no fallback in Node 18) */
-  var child = spawn(LOADER, ['--library-path', LIB, NODE, '--dns-result-order=ipv4first', SERVER], {
+  var child = spawn(LOADER, ['--library-path', LIB, NODE, '--dns-result-order=ipv4first', file], {
     cwd: DIR,
     env: env,
     detached: true,
@@ -59,7 +69,9 @@ function waitForServer(cb, waited) {
   portUp(SERVER_PORT, function (up) {
     if (up) return cb(true);
     if (waited === 0) startStreamingServer();
-    if (waited >= 25000) return cb(false);
+    /* the first torrent may have to wait for the download; a failed one ends the wait */
+    var file = serverFileStatus().state;
+    if (file === 'failed' || waited >= (file === 'downloading' ? 90000 : 25000)) return cb(false);
     setTimeout(function () {
       waitForServer(cb, waited + 700);
     }, 700);

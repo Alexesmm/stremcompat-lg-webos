@@ -10,8 +10,6 @@ var NODE = path.join(DIR, 'bin', 'node18');
 
 var LIB = path.join(DIR, 'bin', 'lib');
 
-var SERVER = path.join(DIR, 'server.js');
-
 var LOG_FILE = process.env.TVSERVER_LOG || path.join(DIR, 'tvserver.log');
 
 // Port, identity and memory limits come from the build profile (see profile.js).
@@ -47,7 +45,6 @@ module.exports = {
   PORT: PORT,
   PROFILE: PROFILE,
   PROFILE_MODULE: PROFILE_MODULE,
-  SERVER: SERVER,
   SERVER_PORT: SERVER_PORT,
   SERVICE_ID: SERVICE_ID
 };

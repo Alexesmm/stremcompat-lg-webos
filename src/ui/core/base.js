@@ -5,7 +5,7 @@ var API = 'https://api.strem.io';
 /* Injected by tvserver.js from the build profile; the fallback is the webOS 4 1920x1080 profile. */
 var TV_PROFILE = window.__STREMIO_PROFILE__ || {
   id: 'um4-armv7',
-  serviceId: 'io.strem.tv.server',
+  serviceId: 'io.github.alexesmm.legacytv.server',
   lowMemory: false,
   sourceCap: 60,
   libraryCap: 60,

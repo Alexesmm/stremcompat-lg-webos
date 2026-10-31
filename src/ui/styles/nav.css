@@ -13,11 +13,11 @@ body.login #topnav,body.login #logobg{display:none}
 #topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(9,11,18,.98) 62%,rgba(9,11,18,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
 body.navopen #topnav:before{opacity:1}
 body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
-.chip.cur .navlabel{color:#cdb9ff}
+.chip.cur .navlabel{color:#99F6E4}
 .chip.f .navlabel{color:#fff}
-.chip.cur{color:#b69cff}
+.chip.cur{color:#5EEAD4}
 .chip.f{background:#fff;color:#12101a}
-.chip.f:before{content:"";position:absolute;left:-14px;top:17px;width:4px;height:28px;border-radius:3px;background:#8c5cff}
+.chip.f:before{content:"";position:absolute;left:-14px;top:17px;width:4px;height:28px;border-radius:3px;background:#22D3EE}
 
 /* ---------- screens ---------- */
 .scr{position:fixed;top:0;left:0;right:0;bottom:0;display:none}

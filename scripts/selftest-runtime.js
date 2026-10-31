@@ -62,7 +62,51 @@ function waitForHealth(attempt) {
   });
 }
 
+
+// ---- the streaming server is downloaded, verified and reused (server/streaming-file.js) ----
+async function streamingFileTests() {
+  var streamingFile = require(path.join(root, 'service', 'server', 'streaming-file.js'));
+  var crypto = require('crypto');
+  var body = Buffer.from('console.log("server");'),
+    goodSha = crypto.createHash('sha256').update(body).digest('hex'),
+    hits = 0,
+    failNext = false;
+  var mock = http.createServer(function (req, res) {
+    hits++;
+    if (failNext) { res.writeHead(503); res.end(); return; }
+    if (req.url === '/moved') { res.writeHead(302, { Location: '/server.js' }); res.end(); return; }
+    res.end(body);
+  });
+  await new Promise(function (resolve) { mock.listen(0, '127.0.0.1', resolve); });
+  var base = 'http://127.0.0.1:' + mock.address().port;
+  var dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-streamfile-'));
+  function ensure(options) {
+    return new Promise(function (resolve) {
+      streamingFile.ensureServerFile(function (err, file) { resolve({ err: err, file: file }); }, Object.assign({ dirs: [dir] }, options));
+    });
+  }
+  var bad = await ensure({ url: base + '/server.js', sha256: 'f'.repeat(64) });
+  assert.strictEqual(bad.err, 'checksum', 'a file with the wrong checksum was accepted');
+  assert.strictEqual(fs.readdirSync(dir).length, 0, 'a file with the wrong checksum was kept');
+  assert.strictEqual(streamingFile.serverFileStatus().state, 'failed', 'the failed download was not reported');
+  failNext = true;
+  assert.strictEqual((await ensure({ url: base + '/server.js', sha256: goodSha })).err, 'network', 'a failed download was not reported as a network problem');
+  failNext = false;
+  var good = await ensure({ url: base + '/moved', sha256: goodSha });
+  assert.ok(!good.err && fs.readFileSync(good.file).equals(body), 'the download (through a redirect) was not stored');
+  assert.strictEqual(streamingFile.serverFileStatus().state, 'ready', 'the finished download was not reported');
+  var before = hits;
+  assert.strictEqual((await ensure({ url: base + '/server.js', sha256: goodSha })).file, good.file, 'the stored file was not reused');
+  assert.strictEqual(hits, before, 'a stored file was downloaded again');
+  fs.writeFileSync(good.file, 'tampered');
+  var repaired = await ensure({ url: base + '/server.js', sha256: goodSha });
+  assert.ok(!repaired.err && fs.readFileSync(repaired.file).equals(body), 'a damaged stored file was not replaced');
+  await new Promise(function (resolve) { mock.close(resolve); });
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
 async function main() {
+  await streamingFileTests();
   var subtitleRequests = [];
   var upstream = http.createServer(function (req, res) {
     var subMatch = req.url.match(/^\/(subA|subB)\/subtitles\//);
@@ -215,7 +259,7 @@ async function main() {
     var tracks = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/embtracks?u=' + encodeURIComponent('http://127.0.0.1:9191/nothing.mkv') })).text);
     assert.ok(Array.isArray(tracks.tracks) && tracks.err, 'a failed track read did not report an error');
 
-    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons, subtitle decoding and protected takeover.');
+    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons, subtitle decoding, protected takeover and the streaming server download.');
   } finally {
     try { child.kill(); } catch (e) {}
     await new Promise(function (resolve) { upstream.close(resolve); });

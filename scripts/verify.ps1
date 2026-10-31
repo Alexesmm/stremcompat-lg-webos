@@ -2,15 +2,15 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 
 $appInfo = Get-Content -LiteralPath (Join-Path $projectRoot 'app\appinfo.json') -Raw | ConvertFrom-Json
-if ($appInfo.id -ne 'io.strem.tv' -or $appInfo.version -ne '1.2.5') { throw 'Manifesto do aplicativo inesperado.' }
+if ($appInfo.id -ne 'io.github.alexesmm.legacytv' -or $appInfo.version -ne '2.0.0') { throw 'Manifesto do aplicativo inesperado.' }
 if ($appInfo.type -ne 'web' -or $appInfo.main -ne 'index.html') { throw 'appinfo.json invalido.' }
 $serviceInfo = Get-Content -LiteralPath (Join-Path $projectRoot 'service\package.json') -Raw | ConvertFrom-Json
-if ($serviceInfo.name -ne 'io.strem.tv.server' -or $serviceInfo.version -ne $appInfo.version) { throw 'Versoes do app e servico nao coincidem.' }
+if ($serviceInfo.name -ne 'io.github.alexesmm.legacytv.server' -or $serviceInfo.version -ne $appInfo.version) { throw 'Versoes do app e servico nao coincidem.' }
 
 $required = @(
     'app\index.html', 'app\icon.png', 'app\splash.png', 'app\services.json',
     'service\launch.js', 'service\profile.js', 'service\tvserver.js', 'service\beta.html', 'service\beta-app.js',
-    'service\server.js', 'service\services.json', 'service\stremio-logo.png',
+    'service\services.json', 'service\app-logo.png', 'service\licenses\README.txt',
     'service\player\player.css', 'service\player\player-body.html', 'service\player\player-client.js',
     'service\bin\node18', 'service\bin\ffmpeg', 'service\bin\ffprobe',
     'service\bin\lib\libcrypto.so.3', 'service\bin\lib\libssl.so.3',
@@ -42,7 +42,7 @@ foreach ($bootstrap in 'launch.js', 'profile.js') {
     if ($LASTEXITCODE -ne 0) { throw "$bootstrap nao e compativel com Node.js 0.12/ES5." }
 }
 
-foreach ($script in 'tvserver.js', 'server.js') {
+foreach ($script in 'tvserver.js') {
     & node.exe --check (Join-Path $projectRoot "service\$script")
     if ($LASTEXITCODE -ne 0) { throw "$script contem erro de sintaxe." }
 }

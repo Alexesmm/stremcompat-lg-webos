@@ -6,11 +6,11 @@ var { APP_VERSION, DIR, PROFILE, PROFILE_MODULE } = require('./config');
 var { dbg } = require('./log');
 var { safeScriptJson } = require('./text');
 
-// The official Stremio logo mark, served at /logo.png (beta splash + settings/search backdrop).
+// The StremCompat logo, served at /logo.png (start screen + settings/search backdrop).
 var LOGO_PNG = null;
 
 try {
-  LOGO_PNG = fs.readFileSync(path.join(DIR, 'stremio-logo.png'));
+  LOGO_PNG = fs.readFileSync(path.join(DIR, 'app-logo.png'));
 } catch (e) {
   dbg('logo read failed: ' + e.message);
 }

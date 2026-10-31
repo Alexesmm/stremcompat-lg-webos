@@ -30,6 +30,8 @@ function must(rel) {
   'service/bin/ffmpeg', 'service/bin/ffprobe'
 ].forEach(must);
 
+if (fs.existsSync(path.join(stage, 'service', 'server.js'))) throw new Error('The Stremio streaming server must not be staged: the TV downloads it.');
+
 var app = JSON.parse(read('app/appinfo.json'));
 var service = JSON.parse(read('service/package.json'));
 var serviceManifest = JSON.parse(read('service/services.json'));

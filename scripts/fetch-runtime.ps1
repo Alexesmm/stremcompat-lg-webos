@@ -4,11 +4,10 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $serviceDir = Join-Path $projectRoot 'service'
 $cacheDir = Join-Path $projectRoot '.cache'
-$sourceIpk = Join-Path $cacheDir 'stremiobrew-1.0.0.ipk'
-$sourceUrl = 'https://github.com/Alexesmm/stremcompat-lg-webos/releases/download/runtime-v1.0.0/stremiobrew-1.0.0.ipk'
-$expectedSha256 = '36C81015D851BFD4B12C40372EDBE7B51FB67FE1D8CEC828D0AEFA6CE8343DF7'
+$sourceIpk = Join-Path $cacheDir 'stremcompat-runtime-2.0.0.tar.gz'
+$sourceUrl = 'https://github.com/Alexesmm/stremcompat-lg-webos/releases/download/runtime-v2.0.0/stremcompat-runtime-2.0.0.tar.gz'
+$expectedSha256 = '3A63BA8CE3C3A6CAFC3FD1EB6D0187231C8261150B06868A0B67835224AD246B'
 $required = @(
-    (Join-Path $serviceDir 'server.js'),
     (Join-Path $serviceDir 'bin\node18'),
     (Join-Path $serviceDir 'bin\ffmpeg'),
     (Join-Path $serviceDir 'bin\ffprobe')
@@ -21,14 +20,14 @@ if (-not $Force) {
 
 New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
 if (-not (Test-Path -LiteralPath $sourceIpk -PathType Leaf) -or $Force) {
-    Write-Host 'Downloading pinned StremioBrew runtime package...'
+    Write-Host 'Downloading pinned runtime archive...'
     try {
         Invoke-WebRequest -UseBasicParsing -Uri $sourceUrl -OutFile $sourceIpk
     } catch {
         $gh = Get-Command gh -ErrorAction SilentlyContinue
         if (-not $gh) { throw }
         Write-Host 'Direct download unavailable; using authenticated GitHub CLI fallback...'
-        & gh release download runtime-v1.0.0 --repo Alexesmm/stremcompat-lg-webos --pattern 'stremiobrew-1.0.0.ipk' --dir $cacheDir --clobber
+        & gh release download runtime-v2.0.0 --repo Alexesmm/stremcompat-lg-webos --pattern 'stremcompat-runtime-2.0.0.tar.gz' --dir $cacheDir --clobber
         if ($LASTEXITCODE -ne 0) { throw 'GitHub CLI runtime download failed.' }
     }
 }

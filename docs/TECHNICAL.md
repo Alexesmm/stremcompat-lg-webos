@@ -45,7 +45,7 @@ Edit the sources below, not the generated files.
 |---|---|---|
 | Launcher | `app/index.html` | Starts the service, waits for `/health`, opens the interface, shows startup errors |
 | webOS service | `service/launch.js` | ES5 for Node.js 0.12; starts the bundled Node.js 18 runtime |
-| Local server | `service/tvserver.js`, `service/server/` | Node.js 18; `routes.js` holds every HTTP route |
+| Local server | `service/tvserver.js`, `service/server/` | Node.js 18; `routes.js` holds every HTTP route, `streaming-file.js` downloads the streaming server |
 | Interface screens | `src/ui/views/` | Home, title page, source list, search, settings, login and others |
 | Interface data | `src/ui/data/` | Account and library sync, catalogs, metadata, sources |
 | Interface foundation | `src/ui/core/`, `src/ui/ui/`, `src/ui/input/`, `src/ui/features/` | Network and storage helpers, navigation, cards, remote and pointer input, trailers |
@@ -97,7 +97,7 @@ The UJ3 edition is not just a renamed UM package. It includes the following chan
 - Addon and metadata GET requests bridged through the same local runtime.
 - Reduced catalog, library, source, backdrop and worker limits.
 - Smaller 640-pixel backdrops and a six-item backdrop cache.
-- Separate application and service identity: `io.strem.tv.uj3native` and `io.strem.tv.uj3native.server`.
+- Separate application and service identity: `io.github.alexesmm.legacytv.uj3` and `io.github.alexesmm.legacytv.uj3.server`.
 
 The confirmed UJ3 package was tested with the official Chromium 38 snapshot. Startup reached login, remote navigation moved focus correctly, a stored account reached Home, embedded UI fallback worked, and live Cinemeta, Stremio account API and Stremio pairing requests returned valid data.
 
@@ -175,7 +175,9 @@ npm run package:uj3-native
 npm run package:uj3-native-hd
 ```
 
-The first runtime preparation downloads a pinned StremioBrew package, verifies SHA-256 `36c81015d851bfd4b12c40372edbe7b51fb67fe1d8cec828d0aeFA6CE8343DF7` case-insensitively, and extracts the required ARMv7 runtime files. Runtime binaries are not committed to this repository. The original upstream file was removed after version 2.0.0 replaced that architecture, so an unchanged checksum-verified copy is retained in the `runtime-v1.0.0` build-dependency prerelease. It is not a TV application download.
+The first runtime preparation downloads the pinned runtime archive from the `runtime-v2.0.0` build-dependency prerelease and verifies its SHA-256 (`3a63ba8ce3c3a6cafc3fd1eb6d0187231c8261150b06868a0b67835224ad246b`). Runtime binaries are not committed to this repository. `scripts/make-runtime-archive.js` builds that archive from the StremioBrew 1.0.0 package, keeping Node.js, its libraries, FFmpeg and FFprobe and leaving out Stremio's streaming server. It is not a TV application download.
+
+Stremio's streaming server is not packaged. On first use, the TV downloads the pinned webOS build from `dl.strem.io`, verifies its SHA-256 and stores it in `$HOME/.stremcompat/`, or in the app's folder when that fails. A file that does not match is never executed. The version and checksum are in `service/server/streaming-file.js`.
 
 To add another profile:
 
@@ -208,6 +210,7 @@ The build fails when it detects an incompatible or incomplete package. It checks
 - Executable permissions for Node.js, FFmpeg and FFprobe inside the IPK.
 - Presence of the account, addon, HLS and protected stream bridges.
 - Package manifests and final IPK contents.
+- That the IPK does not contain Stremio's streaming server or the old logo.
 
 Additional local tests exercise startup, remote focus, login/Home transitions, storage failures, addon requests, protected headers and relative HLS rewriting. The Chromium 38 integration test requires the official legacy Chromium snapshot in the local test cache.
 

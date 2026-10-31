@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Stremio</title>
+<title>StremCompat</title>
 <style>
 /* Designed for the 1920x1080 webview. Netflix-like, BIG and clear.
    RULES LEARNED ON THIS TV: no blurred shadows, no scale animations, transform-only
@@ -61,11 +61,11 @@ body.login #topnav,body.login #logobg{display:none}
 #topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(9,11,18,.98) 62%,rgba(9,11,18,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
 body.navopen #topnav:before{opacity:1}
 body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
-.chip.cur .navlabel{color:#cdb9ff}
+.chip.cur .navlabel{color:#99F6E4}
 .chip.f .navlabel{color:#fff}
-.chip.cur{color:#b69cff}
+.chip.cur{color:#5EEAD4}
 .chip.f{background:#fff;color:#12101a}
-.chip.f:before{content:"";position:absolute;left:-14px;top:17px;width:4px;height:28px;border-radius:3px;background:#8c5cff}
+.chip.f:before{content:"";position:absolute;left:-14px;top:17px;width:4px;height:28px;border-radius:3px;background:#22D3EE}
 
 /* ---------- screens ---------- */
 .scr{position:fixed;top:0;left:0;right:0;bottom:0;display:none}
@@ -97,7 +97,7 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 .rowtitle{font-size:33px;font-weight:700;margin:0 0 16px 4px;color:rgba(255,255,255,.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80%}
 .cards{white-space:nowrap}
 .cards.snap{transition:none} /* while holding a direction: steps snap, no animation lag */
-.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:14px;background:#1b1927;overflow:hidden;transition:none}
+.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:14px;background:#171d26;overflow:hidden;transition:none}
 .card img{width:100%;height:100%;border-radius:14px}
 .card .nm{position:absolute;top:0;left:0;right:0;bottom:0;padding:16px;font-size:28px;line-height:1.3;white-space:normal;color:rgba(255,255,255,.9)}
 .titlelabel{position:absolute;left:0;right:0;bottom:0;padding:34px 15px 13px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.92));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -105,16 +105,16 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 .card.wide{width:430px;height:242px}
 .card.more{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
 .morelbl{position:absolute;top:50%;left:0;right:0;margin-top:-20px;text-align:center;font-size:30px;font-weight:700;color:rgba(255,255,255,.85)}
-.card.noart{background:linear-gradient(155deg,#2b2346 0%,#17141f 72%)}
+.card.noart{background:linear-gradient(155deg,#1c2733 0%,#11161d 72%)}
 .card.noart .nm{top:auto;padding:20px 18px;font-size:27px;font-weight:700;line-height:1.25;color:#fff}
 .card.wide.noart .nm,.card.labeled.noart .nm{display:none !important}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
-.pbar div{height:100%;background:#8c5cff}
+.pbar div{height:100%;background:#22D3EE}
 .cwlabel .sub{margin-top:3px;font-size:20px;font-weight:600;color:rgba(255,255,255,.72);overflow:hidden;text-overflow:ellipsis}
-.cwlabel .sub.next{color:#cdb9ff}
+.cwlabel .sub.next{color:#99F6E4}
 .cwlabel{position:absolute;left:0;right:0;bottom:9px;padding:12px 15px;font-size:26px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.88));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wbadge{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;background:rgba(140,92,255,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.55);z-index:3}
+.wbadge{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;background:rgba(15,118,110,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.55);z-index:3}
 .wbadge svg{width:28px;height:28px;fill:currentColor}
 .ep .th .wbadge{top:8px;right:8px;width:40px;height:40px}
 .ep .th .wbadge svg{width:24px;height:24px}
@@ -137,24 +137,24 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 .btn.f{background:#fff;color:#0c0b11}
 #dSeasons{margin-top:32px;display:none}
 .schip{display:inline-block;padding:13px 32px;margin-right:14px;border-radius:28px;font-size:27px;background:rgba(255,255,255,.10);color:rgba(255,255,255,.85)}
-.schip.cur{background:rgba(140,92,255,.35);color:#fff}
+.schip.cur{background:rgba(20,184,166,.35);color:#fff}
 .schip.f{background:#fff;color:#0c0b11;font-weight:700}
 .schip.arrow{min-width:28px;padding-left:18px;padding-right:18px;text-align:center}
 .schip.selector{min-width:220px;text-align:center}
-.schip.jump{background:rgba(140,92,255,.18)}
+.schip.jump{background:rgba(20,184,166,.18)}
 #dEps{margin-top:22px;height:330px;overflow:hidden;display:none;white-space:nowrap;padding:7px 7px 0}
 #dEpsInner{transition:transform .18s cubic-bezier(.2,.8,.2,1);white-space:nowrap}
-.ep{display:inline-block;vertical-align:top;width:430px;height:286px;border-radius:14px;margin-right:24px;background:rgba(12,11,17,.58);overflow:hidden;white-space:normal;transition:transform .12s ease,background .12s ease}
+.ep{display:inline-block;vertical-align:top;width:430px;height:286px;border-radius:14px;margin-right:24px;background:rgba(10,13,18,.58);overflow:hidden;white-space:normal;transition:transform .12s ease,background .12s ease}
 .ep .th{width:430px;height:242px;border-radius:12px;background:#0a0a10;-webkit-flex:none;flex:none;overflow:hidden;position:relative}
 .ep .th img{width:100%;height:100%;border-radius:12px;object-fit:cover}
 .ep .th.fallback img{opacity:.52}
-.epbadge{position:absolute;left:10px;top:10px;z-index:2;padding:5px 11px;border-radius:7px;background:#8c5cff;color:#fff;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.epbadge{position:absolute;left:10px;top:10px;z-index:2;padding:5px 11px;border-radius:7px;background:#0F766E;color:#fff;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
 .ep .th .pbar{z-index:2}
 .ep .th:after{content:"";position:absolute;left:0;right:0;bottom:0;height:48%;background:linear-gradient(transparent,rgba(0,0,0,.6));border-radius:0 0 10px 10px;pointer-events:none}
 .ep .bd{padding:11px 14px;min-width:0}
 .ep .t{font-size:25px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep.f{background:rgba(255,255,255,.14);box-shadow:0 0 0 5px #fff;transform:translateY(-5px)}
-.ep.w .t{color:#a98fff}
+.ep.w .t{color:#5EEAD4}
 body.series-episode #dLogo{width:460px;height:128px}
 body.series-episode #dTitle{font-size:58px}
 body.series-episode #dMeta{margin-top:14px;font-size:30px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -163,17 +163,17 @@ body.series-episode #dDesc{margin-top:10px;max-width:86%;height:75px;max-height:
 body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- streams overlay ---------- */
-#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
+#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(13,17,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 /* the poster would stick out above the panel */
 body.streamsopen #dPoster{visibility:hidden}
 #streams h3{margin:0 0 8px;font-size:38px}
 #stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stChips{position:relative;white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
-.stchip.cur{background:rgba(140,92,255,.4);color:#fff}
+.stchip.cur{background:rgba(20,184,166,.4);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
 #stLang{display:none;position:absolute;top:36px;right:54px;padding:7px 18px;border-radius:20px;font-size:20px;font-weight:600;color:rgba(255,255,255,.6);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);cursor:pointer}
-#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(140,92,255,.8)}
+#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(20,184,166,.8)}
 #stLang.f{background:#fff;color:#0c0b11;box-shadow:none}
 #stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
 #stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
@@ -183,29 +183,29 @@ body.streamsopen #dPoster{visibility:hidden}
 .st.f .rec{color:#fff}
 .st .tags{margin-top:9px}
 .tg{display:inline-block;padding:4px 11px;margin:0 8px 6px 0;border-radius:6px;background:rgba(255,255,255,.1);font-size:20px;font-weight:700;color:rgba(255,255,255,.9)}
-.tg.q{background:#8c5cff;color:#fff}
+.tg.q{background:#0F766E;color:#fff}
 .tg.lang{background:rgba(142,227,173,.16);color:#bff0d0}
 .st.f .tg.lang{background:rgba(255,255,255,.24);color:#fff}
 .tg.sublang{background:transparent;color:rgba(255,255,255,.75);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg.sublang{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5)}
 .tg.size,.tg.seed{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg{background:rgba(255,255,255,.24);color:#fff}
-.st.f .tg.q{background:#fff;color:#5b2fd6}
+.st.f .tg.q{background:#fff;color:#0F766E}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
 .st.f .compat{color:#fff}
 .st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.92);max-height:112px;overflow:hidden;white-space:normal;word-break:break-word}
-.st.f{background:#8c5cff}
+.st.f{background:#0F766E}
 .stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.65)}
 .chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang{cursor:pointer}
 
 /* ---------- continue-watching long-press menu ---------- */
-#cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(16,14,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
+#cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(13,17,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
 #cwmTitle{font-size:40px;font-weight:800;margin-bottom:8px;max-height:110px;overflow:hidden}
 #cwmSub{font-size:24px;color:rgba(255,255,255,.55);margin-bottom:34px}
 .cwmi{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:23px 30px;border-radius:12px;font-size:30px;font-weight:600;margin-bottom:10px;background:rgba(255,255,255,.05);transition:background .12s ease}
 .cwmi svg{width:34px;height:34px;margin-right:22px;-webkit-flex:none;flex:none;fill:currentColor;opacity:.92}
-.cwmi.f{background:#8c5cff}
+.cwmi.f{background:#0F766E}
 
 /* ---------- similar ---------- */
 #simWrap{position:absolute;top:58px;left:176px;right:0;bottom:0}
@@ -226,11 +226,11 @@ body.streamsopen #dPoster{visibility:hidden}
 .fchip{display:inline-block;padding:13px 54px 13px 30px;margin-right:10px;border-radius:13px;font-size:25px;font-weight:600;background:rgba(255,255,255,.09);color:rgba(255,255,255,.82);position:relative}
 .fchip:after{content:"";position:absolute;right:23px;top:50%;margin-top:-3px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid currentColor;opacity:.72}
 .fchip.open:after{border-top:0;border-bottom:7px solid currentColor}
-.fchip.cur{background:rgba(140,92,255,.4);color:#fff}
+.fchip.cur{background:rgba(20,184,166,.4);color:#fff}
 .fchip.f{background:#fff;color:#0c0b11}
-.fmenu{position:absolute;left:0;top:58px;min-width:270px;max-height:420px;overflow:hidden;padding:8px;background:rgba(15,13,29,.99);border:1px solid rgba(166,137,255,.26);border-radius:13px;box-shadow:0 14px 38px rgba(0,0,0,.58);z-index:20;box-sizing:border-box}
+.fmenu{position:absolute;left:0;top:58px;min-width:270px;max-height:420px;overflow:hidden;padding:8px;background:rgba(13,17,26,.99);border:1px solid rgba(94,234,212,.26);border-radius:13px;box-shadow:0 14px 38px rgba(0,0,0,.58);z-index:20;box-sizing:border-box}
 .fopt{position:relative;padding:14px 40px 14px 18px;border-radius:9px;font-size:23px;color:rgba(255,255,255,.86)}
-.fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#8c5cff}
+.fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#22D3EE}
 .fopt.f{background:#fff;color:#0c0b11}
 #discGridClip{position:absolute;top:142px;left:-7px;right:0;bottom:0;overflow:hidden;padding:18px 7px 7px}
 #discGrid{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
@@ -253,7 +253,7 @@ body.streamsopen #dPoster{visibility:hidden}
 .sreclbl{margin:0 0 14px 2px;font-size:21px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.5)}
 #sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
 #spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#bda6ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#5EEAD4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spDesc{margin-top:9px;font-size:20px;line-height:1.35;color:rgba(255,255,255,.72);max-height:54px;overflow:hidden}
 #sRowsClip{position:absolute;top:156px;left:564px;right:0;bottom:0;overflow:hidden}
 #sRows{position:absolute;top:0;left:-36px;right:0;padding-top:26px}
@@ -268,12 +268,12 @@ body.streamsopen #dPoster{visibility:hidden}
 .set .lb{font-size:29px;font-weight:600;-webkit-flex:1;flex:1}
 .set .vl{font-size:26px;color:rgba(255,255,255,.88);font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(255,255,255,.08)}
 .set.f{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 3px #fff}
-.set.editing{background:rgba(140,92,255,.24);box-shadow:inset 0 0 0 3px #a98fff}
-.set.editing .vl{background:#8c5cff;color:#fff}
+.set.editing{background:rgba(20,184,166,.24);box-shadow:inset 0 0 0 3px #5EEAD4}
+.set.editing .vl{background:#0F766E;color:#fff}
 .set.act .vl{color:#ff9a9a}
 .setdiag{max-width:1100px;margin:0 0 12px;padding:14px 26px;border-radius:12px;background:rgba(255,255,255,.05);font-size:22px;line-height:1.6;color:rgba(255,255,255,.75)}
 .sethint{margin:18px 0 0 26px;font-size:22px;color:rgba(255,255,255,.45)}
-.setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#a98fff;margin:30px 0 12px 26px}
+.setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#5EEAD4;margin:30px 0 12px 26px}
 #setItems > .setgrp:first-child{margin-top:6px}
 
 /* ---------- addons ---------- */
@@ -281,7 +281,7 @@ body.streamsopen #dPoster{visibility:hidden}
 #aHead{height:112px;border-bottom:1px solid rgba(255,255,255,.10);position:relative;padding-right:260px;box-sizing:border-box}
 #aTitle{font-size:50px;font-weight:800;margin-bottom:8px}
 #aHelp{font-size:24px;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(140,92,255,.32)}
+#aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(20,184,166,.32)}
 #aSync.f{background:#fff;color:#0c0b11}
 #aClip{position:absolute;top:128px;left:0;right:0;bottom:0;overflow:hidden}
 #aInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
@@ -389,6 +389,8 @@ body.streamsopen #dPoster{visibility:hidden}
 #lgWrap{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #lgLang{position:fixed;top:34px;right:42px;padding:12px 22px;border-radius:24px;font-size:22px;color:rgba(255,255,255,.78);background:rgba(255,255,255,.08);z-index:3}
 #lgLang.f{background:#fff;color:#0c0b11;font-weight:700}
+#lgNote{position:fixed;left:0;right:0;bottom:26px;text-align:center;font-size:20px;color:rgba(255,255,255,.45)}
+body:not(.login) #lgNote{display:none}
 #lgBox{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
 #lgQr{text-align:center;padding-right:90px;border-right:1px solid rgba(255,255,255,.14)}
 #lgQr h2{font-size:40px;margin:0 0 10px}
@@ -396,7 +398,7 @@ body.streamsopen #dPoster{visibility:hidden}
 #lgQrImg{width:300px;height:300px;background:#fff;border-radius:18px;padding:12px;box-sizing:border-box}
 #lgCode{font-size:46px;letter-spacing:9px;font-weight:800;margin-top:20px}
 #lgStat{margin:18px auto 0;min-height:30px;line-height:30px;font-size:22px;text-align:center;color:rgba(255,255,255,.6)}
-#lgStat.loading:after{content:"  ·  ·  ·";display:inline-block;margin-left:14px;color:#a98fff;letter-spacing:4px}
+#lgStat.loading:after{content:"  ·  ·  ·";display:inline-block;margin-left:14px;color:#5EEAD4;letter-spacing:4px}
 #lgForm{padding-left:90px}
 #lgForm h2{font-size:40px;margin:0 0 22px}
 .lgin{display:block;width:520px;padding:18px 24px;margin-bottom:16px;font-size:28px;border:0;border-radius:12px;background:rgba(255,255,255,.10);color:#fff;outline:none}
@@ -425,26 +427,26 @@ body.bigtext .cwmi{font-size:33px}
 body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 /* empty states */
 .empty{padding:70px 48px 0;max-width:900px}
-.emptyic{width:56px;height:56px;color:#a98fff;margin-bottom:18px}
+.emptyic{width:56px;height:56px;color:#5EEAD4;margin-bottom:18px}
 .emptyic svg{width:56px;height:56px;fill:currentColor}
 .emptyt{font-size:34px;font-weight:700;color:#fff}
 .emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.6)}
 #toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
-#ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#171421;border:1px solid rgba(174,135,255,.42);border-radius:22px;box-sizing:border-box}
+#ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
 #ejTitle{font-size:32px;font-weight:700;color:#fff}
-#ejValue{height:72px;margin:22px 0 18px;border-radius:12px;background:#0c0a12;color:#c9adff;font-size:48px;line-height:72px;font-weight:700}
+#ejValue{height:72px;margin:22px 0 18px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:48px;line-height:72px;font-weight:700}
 #ejKeys{text-align:left}
-.ejkey{display:inline-block;width:132px;height:62px;margin:6px 6px;text-align:center;line-height:62px;border-radius:10px;background:#2b2737;color:#fff;font-size:27px;font-weight:600;box-sizing:border-box;cursor:pointer}
-.ejkey.f{background:#8b5cf6;color:#fff;outline:3px solid #fff}
-#ejHint{margin-top:18px;color:#aaa3b5;font-size:19px}
+.ejkey{display:inline-block;width:132px;height:62px;margin:6px 6px;text-align:center;line-height:62px;border-radius:10px;background:#27303a;color:#fff;font-size:27px;font-weight:600;box-sizing:border-box;cursor:pointer}
+.ejkey.f{background:#0F766E;color:#fff;outline:3px solid #fff}
+#ejHint{margin-top:18px;color:#a3adb8;font-size:19px}
 @media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
-#boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(93,57,184,.18),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
+#boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(20,184,166,.10),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #boot .bootbox{text-align:center;width:360px}
 #boot .lg{width:94px;height:94px;-webkit-animation:bb 1.8s ease-in-out infinite;animation:bb 1.8s ease-in-out infinite}
 #boot .bt{margin-top:18px;font-size:27px;font-weight:700;letter-spacing:.6px}
 #boot .btrack{height:3px;margin:28px auto 0;width:220px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
-#boot .bfill{height:100%;width:34%;border-radius:3px;background:#9c76ff;-webkit-animation:loadline 1.45s ease-in-out infinite;animation:loadline 1.45s ease-in-out infinite}
+#boot .bfill{height:100%;width:34%;border-radius:3px;background:#22D3EE;-webkit-animation:loadline 1.45s ease-in-out infinite;animation:loadline 1.45s ease-in-out infinite}
 @-webkit-keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
 @keyframes bb{0%,100%{opacity:.72}50%{opacity:1}}
 @-webkit-keyframes loadline{0%{-webkit-transform:translateX(-120%)}100%{-webkit-transform:translateX(330%)}}
@@ -521,6 +523,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 </div>
 
 <div class="scr" id="scrLogin">
+  <div id="lgNote"></div>
   <div id="lgLang">Language: English&nbsp;&nbsp;‹ ›</div>
   <div id="lgWrap"><div id="lgBox">
     <div id="lgQr"><h2 id="lgQrTitle">Sign in with your phone</h2><div class="s" id="lgQrHelp">Scan the code with your camera</div><img id="lgQrImg"><div id="lgCode"></div><div id="lgStat">Generating code…</div></div>
@@ -562,11 +565,11 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
     window.__STREMIO_BOOT_MESSAGE__=String(message||'Unknown startup error');
     window.__STREMIO_BOOT_LINE__=String(line||'');
     var b=document.getElementById('boot');if(!b)return;
-    b.style.background='#08070d';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
+    b.style.background='#090b12';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
     b.style.textAlign='center';b.style.paddingTop='28vh';b.style.boxSizing='border-box';
-    b.innerHTML='<div style="font-size:42px;font-weight:bold;margin-bottom:20px">Stremio could not finish loading</div>'+
-      '<div style="font-size:23px;color:#c8c4d5;margin:0 auto 26px;max-width:1100px">'+String(message||'Unknown startup error').replace(/</g,'&lt;')+'</div>'+
-      '<div style="font-size:17px;color:#8f899d">UJ3_BOOT '+(line||'')+' / '+window.__STREMIO_BOOT_PHASE__+' · press BACK, then open the app again</div>';
+    b.innerHTML='<div style="font-size:42px;font-weight:bold;margin-bottom:20px">StremCompat could not finish loading</div>'+
+      '<div style="font-size:23px;color:#c3cad2;margin:0 auto 26px;max-width:1100px">'+String(message||'Unknown startup error').replace(/</g,'&lt;')+'</div>'+
+      '<div style="font-size:17px;color:#8b95a0">UJ3_BOOT '+(line||'')+' / '+window.__STREMIO_BOOT_PHASE__+' · press BACK, then open the app again</div>';
   };
   window.onerror=function(message,source,line){window.__STREMIO_BOOT_ERROR__(message,line);return false;};
   setTimeout(function(){

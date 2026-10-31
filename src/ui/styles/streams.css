@@ -1,15 +1,15 @@
 /* ---------- streams overlay ---------- */
-#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(16,14,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
+#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(13,17,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 /* the poster would stick out above the panel */
 body.streamsopen #dPoster{visibility:hidden}
 #streams h3{margin:0 0 8px;font-size:38px}
 #stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stChips{position:relative;white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
-.stchip.cur{background:rgba(140,92,255,.4);color:#fff}
+.stchip.cur{background:rgba(20,184,166,.4);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
 #stLang{display:none;position:absolute;top:36px;right:54px;padding:7px 18px;border-radius:20px;font-size:20px;font-weight:600;color:rgba(255,255,255,.6);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);cursor:pointer}
-#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(140,92,255,.8)}
+#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(20,184,166,.8)}
 #stLang.f{background:#fff;color:#0c0b11;box-shadow:none}
 #stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
 #stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
@@ -19,26 +19,26 @@ body.streamsopen #dPoster{visibility:hidden}
 .st.f .rec{color:#fff}
 .st .tags{margin-top:9px}
 .tg{display:inline-block;padding:4px 11px;margin:0 8px 6px 0;border-radius:6px;background:rgba(255,255,255,.1);font-size:20px;font-weight:700;color:rgba(255,255,255,.9)}
-.tg.q{background:#8c5cff;color:#fff}
+.tg.q{background:#0F766E;color:#fff}
 .tg.lang{background:rgba(142,227,173,.16);color:#bff0d0}
 .st.f .tg.lang{background:rgba(255,255,255,.24);color:#fff}
 .tg.sublang{background:transparent;color:rgba(255,255,255,.75);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg.sublang{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5)}
 .tg.size,.tg.seed{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg{background:rgba(255,255,255,.24);color:#fff}
-.st.f .tg.q{background:#fff;color:#5b2fd6}
+.st.f .tg.q{background:#fff;color:#0F766E}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
 .st.f .compat{color:#fff}
 .st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.92);max-height:112px;overflow:hidden;white-space:normal;word-break:break-word}
-.st.f{background:#8c5cff}
+.st.f{background:#0F766E}
 .stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.65)}
 .chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang{cursor:pointer}
 
 /* ---------- continue-watching long-press menu ---------- */
-#cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(16,14,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
+#cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(13,17,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
 #cwmTitle{font-size:40px;font-weight:800;margin-bottom:8px;max-height:110px;overflow:hidden}
 #cwmSub{font-size:24px;color:rgba(255,255,255,.55);margin-bottom:34px}
 .cwmi{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:23px 30px;border-radius:12px;font-size:30px;font-weight:600;margin-bottom:10px;background:rgba(255,255,255,.05);transition:background .12s ease}
 .cwmi svg{width:34px;height:34px;margin-right:22px;-webkit-flex:none;flex:none;fill:currentColor;opacity:.92}
-.cwmi.f{background:#8c5cff}
+.cwmi.f{background:#0F766E}

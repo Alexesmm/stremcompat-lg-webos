@@ -61,6 +61,8 @@ if (JSON.parse(serviceInfo.data.toString('utf8')).version !== profile.version) t
   if (!entry) throw new Error(name + ' ausente no IPK.');
   if ((entry.mode & 73) !== 73) throw new Error(name + ' nao esta executavel: ' + entry.mode.toString(8));
 });
+if (find(entries, /\/services\/[^\/]+\/server\.js$/)) throw new Error('O servidor de streaming do Stremio nao pode estar no IPK.');
+if (find(entries, /stremio-logo\.png$/)) throw new Error('O logo antigo nao pode estar no IPK.');
 var REQUIRED = [
   'launch.js', 'profile.js', 'profile.json', 'tvserver.js', 'beta.html', 'beta-app.js',
   'server/routes.js', 'server/embedded.js', 'server/proxy.js', 'server/config.js',

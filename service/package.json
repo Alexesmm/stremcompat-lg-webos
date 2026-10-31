@@ -1,1 +1,1 @@
-{"name":"io.strem.tv.server","version":"1.2.5","description":"Stremio Server for legacy webOS","main":"launch.js"}
+{"name":"io.github.alexesmm.legacytv.server","version":"2.0.0","description":"StremCompat local service for legacy webOS","main":"launch.js"}

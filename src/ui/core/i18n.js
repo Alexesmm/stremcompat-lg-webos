@@ -24,6 +24,7 @@ function applyStaticLanguage() {
     sHint: 'searchHint',
     setHint: 'settingsHint',
     discTitle: 'discoverTitle',
+    lgNote: 'unofficialNote',
     lgQrTitle: 'phoneSignIn',
     lgQrHelp: 'scanCode',
     lgEmailTitle: 'emailSignIn',

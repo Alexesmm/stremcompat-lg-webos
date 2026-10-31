@@ -21,7 +21,7 @@
 .rowtitle{font-size:33px;font-weight:700;margin:0 0 16px 4px;color:rgba(255,255,255,.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80%}
 .cards{white-space:nowrap}
 .cards.snap{transition:none} /* while holding a direction: steps snap, no animation lag */
-.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:14px;background:#1b1927;overflow:hidden;transition:none}
+.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:14px;background:#171d26;overflow:hidden;transition:none}
 .card img{width:100%;height:100%;border-radius:14px}
 .card .nm{position:absolute;top:0;left:0;right:0;bottom:0;padding:16px;font-size:28px;line-height:1.3;white-space:normal;color:rgba(255,255,255,.9)}
 .titlelabel{position:absolute;left:0;right:0;bottom:0;padding:34px 15px 13px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.92));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -29,16 +29,16 @@
 .card.wide{width:430px;height:242px}
 .card.more{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
 .morelbl{position:absolute;top:50%;left:0;right:0;margin-top:-20px;text-align:center;font-size:30px;font-weight:700;color:rgba(255,255,255,.85)}
-.card.noart{background:linear-gradient(155deg,#2b2346 0%,#17141f 72%)}
+.card.noart{background:linear-gradient(155deg,#1c2733 0%,#11161d 72%)}
 .card.noart .nm{top:auto;padding:20px 18px;font-size:27px;font-weight:700;line-height:1.25;color:#fff}
 .card.wide.noart .nm,.card.labeled.noart .nm{display:none !important}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:rgba(255,255,255,.25)}
-.pbar div{height:100%;background:#8c5cff}
+.pbar div{height:100%;background:#22D3EE}
 .cwlabel .sub{margin-top:3px;font-size:20px;font-weight:600;color:rgba(255,255,255,.72);overflow:hidden;text-overflow:ellipsis}
-.cwlabel .sub.next{color:#cdb9ff}
+.cwlabel .sub.next{color:#99F6E4}
 .cwlabel{position:absolute;left:0;right:0;bottom:9px;padding:12px 15px;font-size:26px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.88));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wbadge{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;background:rgba(140,92,255,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.55);z-index:3}
+.wbadge{position:absolute;top:12px;right:12px;width:46px;height:46px;border-radius:50%;background:rgba(15,118,110,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.55);z-index:3}
 .wbadge svg{width:28px;height:28px;fill:currentColor}
 .ep .th .wbadge{top:8px;right:8px;width:40px;height:40px}
 .ep .th .wbadge svg{width:24px;height:24px}

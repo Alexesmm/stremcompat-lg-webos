@@ -16,16 +16,19 @@ StremCompat adds a separately implemented low-memory television UI, account and 
 
 ## Bundled runtime
 
-The build extracts ARMv7 runtime files from the pinned StremioBrew 1.0.0 IPK at build time. The expected package SHA-256 is `36c81015d851bfd4b12c40372edbe7b51fb67fe1d8cec828d0aefa6ce8343df7`.
+The build uses a runtime archive (`runtime-v2.0.0`, SHA-256 `3a63ba8ce3c3a6cafc3fd1eb6d0187231c8261150b06868a0b67835224ad246b`) made by `scripts/make-runtime-archive.js` from the StremioBrew 1.0.0 IPK (SHA-256 `36c81015d851bfd4b12c40372edbe7b51fb67fe1d8cec828d0aefa6ce8343df7`). License texts ship in `service/licenses/`.
 
 The extracted package includes:
 
 - Node.js 18 for ARMv7: [Node.js licensing information](https://github.com/nodejs/node/blob/main/LICENSE)
 - FFmpeg and FFprobe: [FFmpeg legal information](https://ffmpeg.org/legal.html)
-- Stremio streaming server: [Stremio downloads](https://www.stremio.com/downloads)
 - Shared libraries needed by the ARMv7 runtime
 
 The bundled FFmpeg binary identifies itself as configured with `--enable-gpl` and `--enable-version3`, along with GPL-enabled libraries including libx264. Treat that binary as GPLv3-covered distribution material. The pinned IPK does not identify the exact FFmpeg source revision or provide a corresponding source offer, so the runtime provenance is not yet sufficient for a fully documented public redistribution. A future release should replace it with a reproducible build and publish the exact corresponding source and build configuration.
+
+## Downloaded by the television
+
+Stremio's streaming server (`https://dl.strem.io/server/v4.20.17/webos/server.js`, SHA-256 `ecef1b5a4f67f5fd94ffc0c39e7567d6a6efdd46849ea7a2da48ccc84bd49c1d`) is closed-source and is not part of the release packages. The television downloads it directly from Stremio on first use. Its use remains subject to Stremio's terms.
 
 ## Bundled font
 

@@ -6,6 +6,7 @@ var os = require('os');
 var { APP_VERSION, PROFILE, SERVER_PORT } = require('./config');
 var { sendJson } = require('./http-util');
 var { portUp } = require('./streaming-server');
+var { serverFileStatus } = require('./streaming-file');
 
 function mb(bytes) {
   return Math.round((bytes || 0) / 1048576);
@@ -72,6 +73,7 @@ function diagnostics(res) {
       system: systemMemory(),
       load: Math.round(os.loadavg()[0] * 100) / 100,
       streamingServer: !!up,
+      streamingFile: serverFileStatus(),
       peakRssMb: peakRss,
       minAvailableMb: minAvailable,
       events: events.slice().reverse()

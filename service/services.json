@@ -1,1 +1,1 @@
-{"id":"io.strem.tv.server","description":"Stremio Server","services":[{"name":"io.strem.tv.server"}]}
+{"id":"io.github.alexesmm.legacytv.server","description":"StremCompat local service","services":[{"name":"io.github.alexesmm.legacytv.server"}]}

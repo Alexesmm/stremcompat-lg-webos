@@ -95,7 +95,7 @@ function exit() {
     window.removeEventListener('popstate', onPop);
   } catch (e) {}
   // one clean dark cover (same bg as the Stremio splash) so there is no flash, then a flag so
-  // the interface shows a single "Taking you back to Stremio" loading splash.
+  // the interface shows a single "Taking you back to the interface" loading splash.
   try {
     var cov = document.createElement('div');
     cov.id = 'gocov';

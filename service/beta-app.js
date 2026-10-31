@@ -10,7 +10,7 @@ var API = 'https://api.strem.io';
 /* Injected by tvserver.js from the build profile; the fallback is the webOS 4 1920x1080 profile. */
 var TV_PROFILE = window.__STREMIO_PROFILE__ || {
   id: 'um4-armv7',
-  serviceId: 'io.strem.tv.server',
+  serviceId: 'io.github.alexesmm.legacytv.server',
   lowMemory: false,
   sourceCap: 60,
   libraryCap: 60,
@@ -228,7 +228,7 @@ var UI_TEXT = {
     keyClear: 'clear',
     clearHistory: 'Clear history',
     removeFromCw: 'Remove from Continue watching',
-    exitTitle: 'Leave Stremio?',
+    exitTitle: 'Leave StremCompat?',
     exitSub: 'Choose an option',
     exitStay: 'Stay',
     exitLeave: 'Leave the app',
@@ -349,6 +349,11 @@ var UI_TEXT = {
     diagServer: 'Local server: {0} MB in use (JS {1} MB) · running for {2} min',
     diagTv: 'Television: {0} MB free of {1} MB · CPU load {2}',
     diagStreaming: 'Streaming server: {0}',
+    diagDownloading: 'downloading from Stremio',
+    diagStreamFailed: 'download failed ({0})',
+    preparingTorrents: 'Downloading the streaming server from Stremio. This only happens once…',
+    torrentsUnavailable:
+      'The streaming server could not be downloaded. Torrents may not play. Check the connection.',
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
@@ -440,6 +445,7 @@ var UI_TEXT = {
     enterCredentials: 'Enter your email and password',
     signingIn: 'Signing in',
     signInFailed: 'Could not sign in',
+    unofficialNote: 'Unofficial client. Not affiliated with or endorsed by Stremio or LG.',
     accountConnected: 'Account connected! Loading',
     genreAction: 'Action',
     genreComedy: 'Comedy',
@@ -536,7 +542,7 @@ var UI_TEXT = {
     keyClear: 'limpar',
     clearHistory: 'Limpar histórico',
     removeFromCw: 'Remover de Continuar assistindo',
-    exitTitle: 'Sair do Stremio?',
+    exitTitle: 'Sair do StremCompat?',
     exitSub: 'Escolha uma opção',
     exitStay: 'Continuar no app',
     exitLeave: 'Sair do app',
@@ -657,6 +663,11 @@ var UI_TEXT = {
     diagServer: 'Servidor local: {0} MB em uso (JS {1} MB) · ativo há {2} min',
     diagTv: 'TV: {0} MB livres de {1} MB · carga da CPU {2}',
     diagStreaming: 'Servidor de streaming: {0}',
+    diagDownloading: 'baixando do Stremio',
+    diagStreamFailed: 'falha no download ({0})',
+    preparingTorrents: 'Baixando o servidor de streaming do Stremio. Isso só acontece uma vez…',
+    torrentsUnavailable:
+      'Não foi possível baixar o servidor de streaming. Torrents podem não tocar. Verifique a conexão.',
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
@@ -748,6 +759,7 @@ var UI_TEXT = {
     enterCredentials: 'Digite e-mail e senha',
     signingIn: 'Entrando',
     signInFailed: 'Não foi possível entrar',
+    unofficialNote: 'Cliente não oficial. Sem vínculo com o Stremio ou a LG.',
     accountConnected: 'Conta conectada! Carregando',
     genreAction: 'Ação',
     genreComedy: 'Comédia',
@@ -943,6 +955,7 @@ function applyStaticLanguage() {
     sHint: 'searchHint',
     setHint: 'settingsHint',
     discTitle: 'discoverTitle',
+    lgNote: 'unofficialNote',
     lgQrTitle: 'phoneSignIn',
     lgQrHelp: 'scanCode',
     lgEmailTitle: 'emailSignIn',
@@ -2047,6 +2060,16 @@ function playUrl(source, type, id, vid, backHash) {
       attempt === 1 ? 2500 : 4500
     );
   }
+  /* a torrent needs the streaming server, which is downloaded from Stremio on first use */
+  if (/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(s.url))
+    xhrJson(
+      '/streamfile',
+      function (j) {
+        if (j && j.state === 'downloading') toast(tx('preparingTorrents'));
+        else if (j && j.state === 'failed') toast(tx('torrentsUnavailable'));
+      },
+      2000
+    );
   prepare(1);
 }
 function resumeSearch(id, vid) {
@@ -6189,6 +6212,14 @@ function diagEventLine(e) {
     }[e.kind];
   return hh + ':' + mm + '  ·  ' + tx(key || e.kind) + (e.detail ? ' (' + e.detail + ')' : '');
 }
+/* running or stopped, or why it is not there yet (it is downloaded from Stremio) */
+function diagStreamingState(j) {
+  var f = j.streamingFile || {};
+  if (j.streamingServer) return tx('diagRunning');
+  if (f.state === 'downloading') return tx('diagDownloading');
+  if (f.state === 'failed') return tx('diagStreamFailed', f.err);
+  return tx('diagStopped');
+}
 var settings = {
   idx: 0,
   els: [],
@@ -6481,7 +6512,7 @@ var settings = {
         var lines = [
           tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
-          tx('diagStreaming', j.streamingServer ? tx('diagRunning') : tx('diagStopped')),
+          tx('diagStreaming', diagStreamingState(j)),
           tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
         ];

@@ -8,8 +8,8 @@ var path = require('path');
 
 var DEVELOPMENT_PROFILE = {
   profile: 'um4-armv7',
-  appId: 'io.strem.tv',
-  serviceId: 'io.strem.tv.server',
+  appId: 'io.github.alexesmm.legacytv',
+  serviceId: 'io.github.alexesmm.legacytv.server',
   version: 'dev',
   port: 8082,
   targetLabel: 'LG 50UM7500PSB / webOS 4.x',

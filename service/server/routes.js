@@ -8,6 +8,7 @@ var { safeText } = require('./text');
 var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
 var { waitForServer } = require('./streaming-server');
+var { serverFileStatus } = require('./streaming-file');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
 var { proxySignature, proxyStream, redirectedHeaders, resolvedFor } = require('./proxy');
 var { playerPage } = require('./player-page');
@@ -38,6 +39,8 @@ function handleRequest(req, res) {
     });
   } else if (p === '/takeover') {
     handleTakeover(req, res);
+  } else if (p === '/streamfile') {
+    sendJson(res, serverFileStatus());
   } else if (p === '/diag') {
     diagnostics(res);
   } else if (p === '/netcheck') {

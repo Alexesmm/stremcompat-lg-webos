@@ -5,10 +5,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Alexesmm/stremcompat-lg-webos?display_name=tag&color=8d5bd4"></a>
-  <img alt="LG webOS 3.x and 4.x" src="https://img.shields.io/badge/LG%20webOS-3.x%20%7C%204.x-8d5bd4">
-  <img alt="ARMv7" src="https://img.shields.io/badge/architecture-ARMv7-6f45b5">
-  <img alt="1280x720 and 1920x1080 graphics" src="https://img.shields.io/badge/UI-1280x720%20%7C%201920x1080-6f45b5">
+  <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Alexesmm/stremcompat-lg-webos?display_name=tag&color=0F766E"></a>
+  <img alt="LG webOS 3.x and 4.x" src="https://img.shields.io/badge/LG%20webOS-3.x%20%7C%204.x-0F766E">
+  <img alt="ARMv7" src="https://img.shields.io/badge/architecture-ARMv7-0F766E">
+  <img alt="1280x720 and 1920x1080 graphics" src="https://img.shields.io/badge/UI-1280x720%20%7C%201920x1080-0F766E">
   <img alt="No root required" src="https://img.shields.io/badge/root-not%20required-2ea44f">
   <img alt="Unofficial community project" src="https://img.shields.io/badge/project-unofficial%20community-ea345e">
   <a href="https://github.com/Alexesmm/stremcompat-lg-webos/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/community-Discussions-2ea44f"></a>
@@ -17,9 +17,9 @@
 
 ## About
 
-StremCompat is an unofficial, remote-friendly Stremio client for older LG televisions that cannot install the official Stremio app. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access or Homebrew Channel.
+StremCompat is an independent, unofficial client for older LG televisions that cannot install the official Stremio app. It works with your Stremio account and addons, with an interface designed for the TV remote. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access or Homebrew Channel.
 
-It combines its own lightweight television interface with a bundled ARMv7 Node.js runtime, FFmpeg tools and a local compatibility server, so legacy webOS televisions can sign in, sync the account library and addons, browse catalogs and play media with the TV's hardware video decoder.
+It combines its own lightweight television interface with a bundled ARMv7 Node.js runtime, FFmpeg tools and a local compatibility server, so legacy webOS televisions can sign in, sync the account library and addons, browse catalogs and play media with the TV's hardware video decoder. Stremio's streaming server, which torrents need, is not part of the package: the TV downloads it directly from Stremio on first use.
 
 This project is not affiliated with or endorsed by Stremio or LG Electronics. Use only addons and media sources that you are authorized to access.
 
@@ -41,10 +41,10 @@ Download the IPK that matches your television's webOS generation and graphics mo
 
 | Package | For | Status | App name on the TV |
 |---|---|---|---|
-| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-1.2.33.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | Stremio |
-| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-1.2.33.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | Stremio HD |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-1.0.30.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | Stremio UJ3 |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-1.0.30.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | Stremio UJ3 HD |
+| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-2.0.0.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | StremCompat |
+| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-2.0.0.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | StremCompat HD |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-2.0.0.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | StremCompat UJ3 |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-2.0.0.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | StremCompat UJ3 HD |
 
 How to choose:
 
@@ -71,11 +71,13 @@ Root access is not required.
 1. Install LG's **Developer Mode** app on the television, sign in, and enable Developer Mode and Key Server.
 2. Add the television in **webOS Dev Manager**.
 3. Download the matching IPK from Releases and install it.
-4. Open the app (`Stremio`, `Stremio HD`, `Stremio UJ3` or `Stremio UJ3 HD`).
+4. Open the app (`StremCompat`, `StremCompat HD`, `StremCompat UJ3` or `StremCompat UJ3 HD`).
+
+> **Coming from 1.x?** Version 2.0 is installed as a new app. Remove the old `Stremio` app first, then install this one. You may need to sign in again; your library and addons are on your Stremio account.
 
 The IPK is about 46 MiB and uses about 92 MiB once installed. Developer Mode installations expire with the Developer Mode timer, so renew it before it reaches zero.
 
-> **After updating over an existing installation**, the app's local service from the previous version can keep running in the background. From 1.3.3 on, the new version replaces it by itself. When updating from an older version, if the app stays on the loading screen (`RUNTIME_START_TIMEOUT`), unplug the television for at least 30 seconds and open it again; turning it off with the remote is not enough when Quick Start+ is on. This does not erase your account or settings.
+> **After updating over an existing installation**, the app's local service from the previous version can keep running in the background. From 1.3.3 on, the new version replaces it by itself. If the app ever stays on the loading screen (`RUNTIME_START_TIMEOUT`), unplug the television for at least 30 seconds and open it again; turning it off with the remote is not enough when Quick Start+ is on. This does not erase your account or settings.
 
 ## Features
 
@@ -122,6 +124,7 @@ webOS 3 and 4 need separate packages because they ship different browser engines
 - **Check that the app's local service is running** by opening `http://127.0.0.1:<port>/health` in the TV browser, with port `8082` (UM4 1920x1080), `8084` (UM4 1280x720), `8093` (UJ3 1920x1080) or `8094` (UJ3 1280x720). A JSON answer means it is running.
 - **App stuck after an update:** power cycle the television as described in [Installation](#installation).
 - **Interface only in the upper-left part of the screen:** install the `graphics-1280x720` package.
+- **Torrents do not start, but debrid and direct links work:** the TV may have failed to download the streaming server from Stremio. **Settings > Diagnostics** shows the reason.
 - **Error screen at startup:** note the full `UJ3_BOOT` or `UJ3_ASSET` message before reinstalling.
 - **A source appears but does not play:** usually a codec, bitrate or addon issue. Try a moderate H.264/AAC source first; very large 4K remuxes and some audio formats can exceed what older firmware supports.
 - Make sure Developer Mode is still active, and remove old test versions if storage is low.
@@ -144,8 +147,8 @@ StremCompat is free to use, and donations are never required.
 
 ## Credits and licensing
 
-- **[StremioBrew](https://github.com/simussu9-wq/stremiobrew)**: the bundled runtime (Node.js 18, FFmpeg, FFprobe and the Stremio streaming server) comes from its package, and part of the local server is still derived from its code.
+- **[StremioBrew](https://github.com/simussu9-wq/stremiobrew)**: the bundled runtime (Node.js 18, FFmpeg and FFprobe) comes from its package, and part of the local server is still derived from its code.
 - **[kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos)**: StremCompat started as a fork of this project, whose earlier interface came from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The launcher and interface have since been rewritten.
-- Stremio, Node.js, FFmpeg, the Inter typeface and LG webOS tooling are also used or interoperated with.
+- Stremio, Node.js, FFmpeg, the Inter typeface and LG webOS tooling are also used or interoperated with. Stremio is a trademark of its owner; the streaming server belongs to Stremio and is downloaded from them.
 
 See [NOTICE.md](NOTICE.md) and [THIRD_PARTY.md](THIRD_PARTY.md) for project lineage, component provenance and redistribution caveats. No repository-wide open-source license is currently asserted.
