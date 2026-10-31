@@ -190,6 +190,31 @@ w4.A.ok();
 w4.page.pagehide();
 assert.ok(w4.A.calls.indexOf('close') > 0, 'the sound would carry on over the next page');
 
+// ---- on the TV's Node, when one is at hand: NODE4=path/to/node npm test ----
+/* A site with a current certificate chain must open with the package's list, and only with it;
+   needs the network. Without NODE4 the rest of this test still runs on the current Node. */
+function node4Certificates() {
+  if (!process.env.NODE4) return;
+  var probe =
+    "var https=require('https');https.get('https://letsencrypt.org/robots.txt',function(r){console.log('ok');process.exit(0)})" +
+    ".on('error',function(e){console.log(e.code);process.exit(0)})";
+  function run(script) {
+    var out = childProcess.spawnSync(process.env.NODE4, ['-e', script], { encoding: 'utf8', timeout: 30000 });
+    return String(out.stdout).trim();
+  }
+  assert.ok(/^v4\./.test(run('console.log(process.version)')), 'NODE4 is not a Node 4');
+  assert.strictEqual(run(probe), 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'this Node already knows the chain, so the check proves nothing');
+  var shim = "require(" + JSON.stringify(path.join(stage, 'service', 'node4.js')) + ");";
+  assert.strictEqual(run(shim + probe), 'ok', 'the current certificates did not reach Node 4');
+  var folder = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-node4-'));
+  var made = path.join(folder, 'a', 'b');
+  run(shim + "require('fs').mkdirSync(" + JSON.stringify(made) + ",{recursive:true})");
+  assert.ok(fs.existsSync(made), 'recursive folders did not work on Node 4');
+  fs.rmSync(folder, { recursive: true, force: true });
+  console.log('OK: current certificates and shims on ' + run('console.log(process.version)') + '.');
+}
+node4Certificates();
+
 // ---- the service ----
 function request(method, url, headers, body) {
   return new Promise(function (resolve, reject) {

@@ -59,18 +59,18 @@ dns.lookup = function (host, options, cb) {
 
 /* The certificates this Node knows are from 2016, before Let's Encrypt's current chain. A
    single context holds the current list: read when the first secure connection is made,
-   and shared by all of them, since the TV has little memory to spare. */
-var context = null;
-function secureContext() {
-  if (!context) context = tls.createSecureContext({ ca: require('./roots.json') });
-  return context;
-}
+   and shared by all of them, since the TV has little memory to spare. Node 4 has no option
+   for a shared context (tls.connect always asks for a new one), so it is handed out here.
+   Whoever asks for their own certificates still gets their own context. */
 var parts = process.versions.node.split('.');
 if (parseInt(parts[0], 10) < 10 || process.env.STREMCOMPAT_FORCE_ROOTS) {
-  var connect = tls.connect;
-  tls.connect = function (options) {
-    if (options && typeof options === 'object' && !options.ca && !options.secureContext)
-      options.secureContext = secureContext();
-    return connect.apply(tls, arguments);
+  var createContext = tls.createSecureContext;
+  var shared = null;
+  tls.createSecureContext = function (options) {
+    var o = options || {};
+    if (o.ca || o.cert || o.key || o.pfx || o.crl || o.secureProtocol)
+      return createContext.apply(tls, arguments);
+    if (!shared) shared = createContext.call(tls, { ca: require('./roots.json') });
+    return shared;
   };
 }
