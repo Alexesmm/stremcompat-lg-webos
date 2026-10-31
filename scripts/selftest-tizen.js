@@ -34,6 +34,9 @@ assert.ok(player.indexOf('application/avplayer') > 0 && player.indexOf('<video i
 assert.ok(index.indexOf('PalmServiceBridge') < 0, 'LG code reached the Samsung interface');
 assert.ok(player.indexOf('PalmServiceBridge') < 0, 'LG code reached the Samsung player');
 assert.ok(index.indexOf('__STREMCOMPAT_APP__') > 0 && index.indexOf('/beta-app.js') < 0, 'the interface script was not inlined');
+[index, player].forEach(function (page) {
+  assert.ok(page.indexOf('/fonts/inter') < 0 && page.indexOf('/logo.png') < 0, 'the first paint must not need the service');
+});
 ['server.js', 'bin', 'tvserver.js'].forEach(function (name) {
   assert.ok(!fs.existsSync(path.join(stage, 'service', name)), name + ' must not be in the Samsung package');
 });

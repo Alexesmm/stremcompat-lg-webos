@@ -102,6 +102,15 @@ function tokens(text) {
     .split('__SERVICE_ID__').join(profile.serviceId)
     .split('__TITLE__').join(profile.title);
 }
+/* The page starts before the service does, so what it paints first cannot come from the service. */
+function inlineAssets(text) {
+  ['inter-latin-400.woff', 'inter-latin-700.woff'].forEach(function (name) {
+    var data = fs.readFileSync(path.join(root, 'service', 'fonts', name)).toString('base64');
+    text = text.split('/fonts/' + name).join('data:font/woff;base64,' + data);
+  });
+  var logo = fs.readFileSync(path.join(root, 'service', 'app-logo.png')).toString('base64');
+  return text.split('/logo.png').join('data:image/png;base64,' + logo);
+}
 var baseTag = '<base href="http://127.0.0.1:' + profile.port + '/">';
 var viewportTag = '<meta name="viewport" content="width=1920">';
 
@@ -155,8 +164,8 @@ fs.mkdirSync(stage, { recursive: true });
 
 write('config.xml', tokens(read(path.join(root, 'platforms', 'tizen', 'config.xml'))));
 copy('app/icon.png', 'icon.png');
-write('index.html', interfacePage());
-write('player.html', playerPage());
+write('index.html', inlineAssets(interfacePage()));
+write('player.html', inlineAssets(playerPage()));
 
 write('service/main.js', assertNode4(read(path.join(root, 'platforms', 'tizen', 'service', 'main.js')), 'main.js'));
 write('service/node4.js', assertNode4(read(path.join(root, 'platforms', 'tizen', 'service', 'node4.js')), 'node4.js'));
