@@ -33,6 +33,15 @@ function pointerBoard(target, board, activate) {
 }
 function pointerUI(target, activate) {
   var i, r, row, def;
+  if (serverPanel.open) {
+    i = pointerIndex(target, serverPanel.els);
+    if (i >= 0) {
+      serverPanel.idx = i;
+      serverPanel.paint();
+      if (activate) serverPanel.press(i);
+    }
+    return true;
+  }
   if (episodeJump.open) {
     i = pointerIndex(target, episodeJump.els);
     if (i >= 0) {

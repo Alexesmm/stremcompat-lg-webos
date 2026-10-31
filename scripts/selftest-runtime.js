@@ -66,6 +66,67 @@ function waitForHealth(attempt) {
 
 
 // ---- the streaming server is downloaded, verified and reused (server/streaming-file.js) ----
+/* Another streaming server: only one that answers is kept, and torrents go there. */
+async function serverAddressTests() {
+  var address = require(path.join(root, 'service', 'server', 'server-address.js'));
+  var refs = require(path.join(root, 'service', 'server', 'stream-refs.js'));
+  var home = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-address-')),
+    realHome = process.env.HOME;
+  process.env.HOME = home;
+  function set(value) {
+    return new Promise(function (resolve) {
+      address.setServerAddress(value, resolve);
+    });
+  }
+  assert.strictEqual(address.normalizeAddress('192.168.0.10'), 'http://192.168.0.10:11470', 'a bare address did not get the server port');
+  assert.strictEqual(address.normalizeAddress(' 192.168.0.10:8000/ '), 'http://192.168.0.10:8000', 'an address with a port changed');
+  assert.strictEqual(address.normalizeAddress('https://tv.example'), 'https://tv.example', 'a full address gained a port');
+  assert.strictEqual(address.normalizeAddress('http://127.0.0.1:11470'), '', 'this TV was treated as another server');
+  assert.strictEqual(address.normalizeAddress(''), '', 'empty is not this TV');
+  ['ftp://host', 'http://user:pw@host', 'http://host/path', 'http://host?x=1', 'file:///etc/passwd', 'a b/c'].forEach(function (bad) {
+    assert.strictEqual(address.normalizeAddress(bad), null, 'accepted as an address: ' + bad);
+  });
+  var seen = [],
+    fake = http.createServer(function (req, res) {
+      seen.push(req.url);
+      res.writeHead(req.url === '/stats.json' ? 200 : 404, { 'Content-Type': 'application/json' });
+      res.end('{}');
+    });
+  await new Promise(function (resolve) { fake.listen(0, '127.0.0.1', resolve); });
+  var base = 'http://127.0.0.1:' + fake.address().port;
+  try {
+    var bad = await set('http://host/path');
+    assert.strictEqual(bad.err, 'invalid', 'an invalid address was not refused');
+    var silent = http.createServer(function (req, res) { res.writeHead(500); res.end(); });
+    await new Promise(function (resolve) { silent.listen(0, '127.0.0.1', resolve); });
+    var down = await set('http://127.0.0.1:' + silent.address().port);
+    silent.close();
+    assert.strictEqual(down.err, 'unreachable', 'an address with no server was kept');
+    assert.strictEqual(address.remoteAddress(), '', 'a refused address replaced the current one');
+    var localRef = refs.getStreamRef(refs.storeStreamRef({ url: 'http://127.0.0.1:11470/abc/0' }));
+    assert.strictEqual(localRef.url, 'http://127.0.0.1:11470/abc/0', 'a torrent left this TV with no other server set');
+    var saved = await set(base);
+    assert.strictEqual(saved.ok, true, 'a server that answers only its stats was refused');
+    assert.ok(seen.indexOf('/settings') >= 0 && seen.indexOf('/stats.json') >= 0, 'the connection was not tested');
+    assert.strictEqual(address.remoteAddress(), base, 'the address was not kept');
+    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(home, '.stremcompat', 'server-address.json'), 'utf8')).address, base, 'the address did not reach the disk');
+    var torrent = refs.getStreamRef(refs.storeStreamRef({ url: 'http://127.0.0.1:11470/abc/0' }));
+    assert.strictEqual(torrent.url, base + '/abc/0', 'a torrent did not go to the server given');
+    assert.ok(address.isStreamingUrl(torrent.url), 'a torrent at the server given was not recognised');
+    var direct = refs.getStreamRef(refs.storeStreamRef({ url: 'https://cdn.example/a.mp4' }));
+    assert.strictEqual(direct.url, 'https://cdn.example/a.mp4', 'a direct link was sent to the streaming server');
+    var back = await set('');
+    assert.strictEqual(back.ok, true, 'going back to this TV failed');
+    assert.strictEqual(address.remoteAddress(), '', 'this TV was not restored');
+    assert.strictEqual(address.streamingBase(), 'http://127.0.0.1:11470', 'this TV was not the base again');
+  } finally {
+    fake.close();
+    if (realHome === undefined) delete process.env.HOME;
+    else process.env.HOME = realHome;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+}
+
 async function streamingFileTests() {
   var streamingFile = require(path.join(root, 'service', 'server', 'streaming-file.js'));
   var crypto = require('crypto');
@@ -109,6 +170,7 @@ async function streamingFileTests() {
 
 async function main() {
   await streamingFileTests();
+  await serverAddressTests();
   var subtitleRequests = [];
   var upstream = http.createServer(function (req, res) {
     var subMatch = req.url.match(/^\/(subA|subB)\/subtitles\//);

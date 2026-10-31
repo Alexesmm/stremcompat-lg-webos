@@ -25,6 +25,13 @@ on(
     var a = document.activeElement;
     if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass'))
       return; /* typing: inputs manage themselves */
+    if (serverPanel.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (k === 461 || k === 8 || k === 27) serverPanel.close();
+      else serverPanel.key(k);
+      return;
+    }
     if (episodeJump.open) {
       e.preventDefault();
       e.stopPropagation();

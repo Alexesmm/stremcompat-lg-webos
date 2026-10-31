@@ -233,6 +233,21 @@ var UI_TEXT = {
     exitStay: 'Stay',
     exitLeave: 'Leave the app',
     removedFromCw: 'Removed from Continue watching',
+    serverGroup: 'Streaming server',
+    serverAddress: 'Address',
+    serverHere: 'This TV',
+    serverTitle: 'Streaming server address',
+    serverHint: 'Used for torrents. Example: 192.168.0.10:11470',
+    serverDelete: 'Delete',
+    serverClear: 'Clear',
+    serverUseTv: 'Use this TV',
+    serverSave: 'Test and save',
+    serverTesting: 'Testing the connection…',
+    serverSaved: 'Streaming server saved',
+    serverLocal: 'Using the server on this TV',
+    serverInvalid: 'Check the address',
+    serverUnreachable: 'No streaming server answered at this address',
+    serverDisk: 'Could not save the address',
     historyGroup: 'History',
     noHistory: 'Do not save history',
     clearSearches: 'Clear recent searches',
@@ -550,6 +565,21 @@ var UI_TEXT = {
     exitStay: 'Continuar no app',
     exitLeave: 'Sair do app',
     removedFromCw: 'Removido de Continuar assistindo',
+    serverGroup: 'Servidor de streaming',
+    serverAddress: 'Endereço',
+    serverHere: 'Esta TV',
+    serverTitle: 'Endereço do servidor de streaming',
+    serverHint: 'Usado para torrents. Exemplo: 192.168.0.10:11470',
+    serverDelete: 'Apagar',
+    serverClear: 'Limpar',
+    serverUseTv: 'Usar esta TV',
+    serverSave: 'Testar e salvar',
+    serverTesting: 'Testando a conexão…',
+    serverSaved: 'Servidor de streaming salvo',
+    serverLocal: 'Usando o servidor desta TV',
+    serverInvalid: 'Confira o endereço',
+    serverUnreachable: 'Nenhum servidor de streaming respondeu nesse endereço',
+    serverDisk: 'Não foi possível salvar o endereço',
     historyGroup: 'Histórico',
     noHistory: 'Não salvar histórico',
     clearSearches: 'Limpar buscas recentes',
@@ -6278,6 +6308,8 @@ function diagEventLine(e) {
 /* running or stopped, or why it is not there yet (it is downloaded from Stremio) */
 function diagStreamingState(j) {
   var f = j.streamingFile || {};
+  if (j.serverAddress)
+    return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
   if (j.streamingServer) return tx('diagRunning');
   if (f.state === 'downloading') return tx('diagDownloading');
   if (f.state === 'failed') return tx('diagStreamFailed', f.err);
@@ -6468,6 +6500,8 @@ var settings = {
       },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
+      { head: tx('serverGroup') },
+      { k: '__server', lb: tx('serverAddress'), action: true, info: true },
       { head: tx('addonsGroup') },
       { k: '__sync', lb: tx('syncAddons'), action: true },
       { head: tx('accountGroup') },
@@ -6491,7 +6525,7 @@ var settings = {
         continue;
       }
       var d = document.createElement('div');
-      d.className = 'set' + (def.action ? ' act' : '');
+      d.className = 'set' + (def.action ? ' act' : '') + (def.info ? ' info' : '');
       var l = document.createElement('div');
       l.className = 'lb';
       l.textContent = def.lb;
@@ -6504,8 +6538,28 @@ var settings = {
       this.els.push(d);
       this.fdefs.push(def);
     }
+    this.showServerAddress();
     this.paint();
     animIn($('setWrap'));
+  },
+  /* the value of the address row comes from the local server */
+  serverAddress: '',
+  showServerAddress: function () {
+    var self = this;
+    xhrJson(
+      '/serverconfig',
+      function (j) {
+        self.serverAddress = (j && j.address) || '';
+        self.paintServerAddress();
+      },
+      3000
+    );
+  },
+  paintServerAddress: function () {
+    for (var i = 0; i < this.fdefs.length; i++)
+      if (this.fdefs[i].k === '__server')
+        this.els[i].getElementsByClassName('vl')[0].textContent =
+          this.serverAddress.replace(/^https?:\/\//, '') || tx('serverHere');
   },
   syncNow: function () {
     toast(tx('syncing'));
@@ -6522,7 +6576,13 @@ var settings = {
   },
   /* actions that are not Sync or Reload; the destructive one asks for a second OK */
   runAction: function (k) {
-    if (k === '__diag') this.showDiag();
+    if (k === '__server') {
+      var self = this;
+      serverPanel.show(this.serverAddress, function (address) {
+        self.serverAddress = address;
+        self.paintServerAddress();
+      });
+    } else if (k === '__diag') this.showDiag();
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
       clearRecentSearches();
@@ -6732,6 +6792,117 @@ var settings = {
     return true;
   }
 };
+// Typing the streaming server address with the remote.
+/* Letters, digits and what an address needs, ten to a row; below them delete, clear, back
+   to the server on this TV, and test and save. The number keys of the remote type too. */
+var SERVER_KEYS = '1234567890abcdefghijklmnopqrstuvwxyz.:-/'.split('');
+var serverPanel = {
+  open: false,
+  busy: false,
+  text: '',
+  idx: 0,
+  els: [],
+  actions: ['serverDelete', 'serverClear', 'serverUseTv', 'serverSave'],
+  done: null,
+  show: function (current, done) {
+    this.open = true;
+    this.busy = false;
+    this.text = String(current || '').replace(/^http:\/\//, '');
+    this.done = done;
+    this.idx = 0;
+    this.build();
+    $('serverPanel').style.display = 'block';
+    this.status(tx('serverHint'));
+    this.paint();
+  },
+  build: function () {
+    var host = $('srvKeys'),
+      self = this;
+    host.innerHTML = '';
+    this.els = [];
+    $('srvTitle').textContent = tx('serverTitle');
+    function add(label, wide) {
+      var b = document.createElement('div');
+      b.className = 'srvkey' + (wide ? ' srvact' : '');
+      b.textContent = label;
+      host.appendChild(b);
+      self.els.push(b);
+    }
+    for (var i = 0; i < SERVER_KEYS.length; i++) add(SERVER_KEYS[i], false);
+    for (var a = 0; a < this.actions.length; a++) add(tx(this.actions[a]), true);
+  },
+  status: function (text) {
+    $('srvStatus').textContent = text;
+  },
+  paint: function () {
+    $('srvValue').textContent = this.text || ' ';
+    setF(this.els, this.idx);
+  },
+  close: function () {
+    this.open = false;
+    $('serverPanel').style.display = 'none';
+  },
+  press: function (i) {
+    if (this.busy) return;
+    if (i < SERVER_KEYS.length) {
+      if (this.text.length < 120) this.text += SERVER_KEYS[i];
+    } else {
+      var action = this.actions[i - SERVER_KEYS.length];
+      if (action === 'serverDelete') this.text = this.text.slice(0, -1);
+      else if (action === 'serverClear') this.text = '';
+      else if (action === 'serverUseTv') this.submit('');
+      else if (action === 'serverSave') this.submit(this.text);
+    }
+    this.paint();
+  },
+  submit: function (address) {
+    var self = this;
+    this.busy = true;
+    this.status(tx('serverTesting'));
+    postJson(
+      '/serverconfig',
+      { address: address },
+      function (j) {
+        self.busy = false;
+        if (!self.open) return;
+        if (j && j.ok) {
+          self.close();
+          toast(j.address ? tx('serverSaved') : tx('serverLocal'));
+          if (self.done) self.done(j.address);
+          return;
+        }
+        var why = j && j.err;
+        self.status(
+          tx(why === 'invalid' ? 'serverInvalid' : why === 'disk' ? 'serverDisk' : 'serverUnreachable')
+        );
+      },
+      10000
+    );
+  },
+  /* rows of ten over a row of four wider keys */
+  key: function (k) {
+    var n = SERVER_KEYS.length,
+      i = this.idx;
+    if (k >= 48 && k <= 57) {
+      if (!this.busy && this.text.length < 120) this.text += String(k - 48);
+    } else if (k === 13) {
+      this.press(i);
+      return;
+    } else if (k === 37) {
+      if (i < n ? i % 10 > 0 : i > n) this.idx = i - 1;
+    } else if (k === 39) {
+      if (i < n ? i % 10 < 9 : i < n + this.actions.length - 1) this.idx = i + 1;
+    } else if (k === 38) {
+      if (i >= n) this.idx = n - 10 + Math.floor(((i - n) * 10) / this.actions.length);
+      else if (i >= 10) this.idx = i - 10;
+    } else if (k === 40) {
+      if (i < n - 10) this.idx = i + 10;
+      else if (i < n) this.idx = n + Math.floor(((i - (n - 10)) * this.actions.length) / 10);
+    }
+    this.paint();
+  }
+};
+window.__STREMIO_SERVER_PANEL__ = serverPanel;
 // Login screen: QR pairing and email sign-in.
 /* ================= LOGIN (standalone: QR + email) ================= */
 var login = {
@@ -7005,6 +7176,15 @@ function pointerBoard(target, board, activate) {
 }
 function pointerUI(target, activate) {
   var i, r, row, def;
+  if (serverPanel.open) {
+    i = pointerIndex(target, serverPanel.els);
+    if (i >= 0) {
+      serverPanel.idx = i;
+      serverPanel.paint();
+      if (activate) serverPanel.press(i);
+    }
+    return true;
+  }
   if (episodeJump.open) {
     i = pointerIndex(target, episodeJump.els);
     if (i >= 0) {
@@ -7366,6 +7546,13 @@ on(
     var a = document.activeElement;
     if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass'))
       return; /* typing: inputs manage themselves */
+    if (serverPanel.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (k === 461 || k === 8 || k === 27) serverPanel.close();
+      else serverPanel.key(k);
+      return;
+    }
     if (episodeJump.open) {
       e.preventDefault();
       e.stopPropagation();

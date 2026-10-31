@@ -6,6 +6,7 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 var { DIR, LIB, LOADER, NODE, SERVER_PORT } = require('./config');
 var { ensureServerFile, serverFileStatus } = require('./streaming-file');
+var { probeAddress, remoteAddress } = require('./server-address');
 
 // ---------- start the streaming server ----------
 function portUp(port, cb) {
@@ -38,7 +39,7 @@ function startStreamingServer() {
   if (now - streamingServerStartedAt < 30000) return;
   streamingServerStartedAt = now;
   /* the runtime only exists on the TV: tests and source checkouts download nothing */
-  if (!fs.existsSync(LOADER)) return;
+  if (remoteAddress() || !fs.existsSync(LOADER)) return;
   ensureServerFile(function (err, file) {
     if (!err) spawnStreamingServer(file);
   });
@@ -61,6 +62,12 @@ function spawnStreamingServer(file) {
   child.unref();
 }
 
+/* for Diagnostics: is the server in use answering, here or at the address given */
+function streamingServerUp(cb) {
+  if (remoteAddress()) probeAddress(remoteAddress(), cb, 3000);
+  else portUp(SERVER_PORT, cb);
+}
+
 // ---------- streaming server readiness ----------
 // Wait until the streaming server (:11470) is accepting connections, so the
 // playback never starts before its backend is ready. Gives up after ~maxMs.
@@ -81,5 +88,6 @@ function waitForServer(cb, waited) {
 module.exports = {
   portUp: portUp,
   startStreamingServer: startStreamingServer,
+  streamingServerUp: streamingServerUp,
   waitForServer: waitForServer
 };

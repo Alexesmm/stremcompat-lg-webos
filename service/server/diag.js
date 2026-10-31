@@ -3,9 +3,10 @@
 var fs = require('fs');
 var https = require('https');
 var os = require('os');
-var { APP_VERSION, PROFILE, SERVER_PORT } = require('./config');
+var { APP_VERSION, PROFILE } = require('./config');
 var { sendJson } = require('./http-util');
-var { portUp } = require('./streaming-server');
+var { streamingServerUp } = require('./streaming-server');
+var { remoteAddress } = require('./server-address');
 var { serverFileStatus } = require('./streaming-file');
 
 function mb(bytes) {
@@ -64,7 +65,7 @@ function recordEvent(kind, detail) {
 function diagnostics(res) {
   sample();
   var mem = process.memoryUsage();
-  portUp(SERVER_PORT, function (up) {
+  streamingServerUp(function (up) {
     sendJson(res, {
       version: APP_VERSION,
       profile: PROFILE.profile,
@@ -73,6 +74,7 @@ function diagnostics(res) {
       system: systemMemory(),
       load: Math.round(os.loadavg()[0] * 100) / 100,
       streamingServer: !!up,
+      serverAddress: remoteAddress(),
       streamingFile: serverFileStatus(),
       peakRssMb: peakRss,
       minAvailableMb: minAvailable,

@@ -3,7 +3,7 @@
 var { fetchAddonJson, fetchJson } = require('./http-util');
 var { getStreamRef } = require('./stream-refs');
 var { langName } = require('./subtitles');
-var { SERVER_PORT } = require('./config');
+var { isStreamingUrl, streamingBase } = require('./server-address');
 
 var PER_LANGUAGE = 12;
 var ADDON_TIMEOUT_MS = 8000;
@@ -51,14 +51,11 @@ function videoExtra(ref, cb) {
   if (!stream) return cb(extra);
   var fn = stream.behaviorHints && stream.behaviorHints.filename;
   if (fn) extra.filename = fn;
-  if (!/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(stream.url || '')) return cb(extra);
+  if (!isStreamingUrl(stream.url)) return cb(extra);
   within(
     HASH_TIMEOUT_MS,
     function (done) {
-      fetchJson(
-        'http://127.0.0.1:' + SERVER_PORT + '/opensubHash?videoUrl=' + encodeURIComponent(stream.url),
-        done
-      );
+      fetchJson(streamingBase() + '/opensubHash?videoUrl=' + encodeURIComponent(stream.url), done);
     },
     function (j) {
       var r = j && j.result;

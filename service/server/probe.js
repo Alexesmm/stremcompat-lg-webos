@@ -2,6 +2,7 @@
 
 var spawn = require('child_process').spawn;
 var { FFPROBE } = require('./config');
+var { isStreamingUrl } = require('./server-address');
 var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
 
@@ -22,7 +23,7 @@ function probeStreams(u, cb) {
   if (cache[u]) return cb(cache[u]);
   if (waiting[u]) return waiting[u].push(cb);
   waiting[u] = [cb];
-  var torrent = /^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(u);
+  var torrent = isStreamingUrl(u);
   var args = [
     '-v',
     'error',

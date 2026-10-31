@@ -38,6 +38,7 @@
   "views/search.js",
   "views/addons.js",
   "views/settings.js",
+  "views/server-address.js",
   "views/login.js",
   "input/pointer.js",
   "features/idle-trailer.js",

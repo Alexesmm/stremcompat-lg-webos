@@ -271,6 +271,7 @@ body.streamsopen #dPoster{visibility:hidden}
 .set.editing{background:rgba(20,184,166,.24);box-shadow:inset 0 0 0 3px #5EEAD4}
 .set.editing .vl{background:#0F766E;color:#fff}
 .set.act .vl{color:#ff9a9a}
+.set.act.info .vl{color:rgba(255,255,255,.88)}
 .setdiag{max-width:1100px;margin:0 0 12px;padding:14px 26px;border-radius:12px;background:rgba(255,255,255,.05);font-size:22px;line-height:1.6;color:rgba(255,255,255,.75)}
 .sethint{margin:18px 0 0 26px;font-size:22px;color:rgba(255,255,255,.45)}
 .setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#5EEAD4;margin:30px 0 12px 26px}
@@ -432,6 +433,16 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .emptyt{font-size:34px;font-weight:700;color:#fff}
 .emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.6)}
 #toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
+#serverPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
+#srvBox{width:968px;margin:12vh auto 0;padding:32px 40px 26px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
+#srvTitle{font-size:32px;font-weight:700;color:#fff}
+#srvValue{height:68px;margin:20px 0 16px;padding:0 20px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:36px;line-height:68px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden;direction:rtl}
+#srvKeys{text-align:left}
+.srvkey{display:inline-block;vertical-align:top;width:80px;height:56px;margin:4px;text-align:center;line-height:56px;border-radius:10px;background:#27303a;color:#fff;font-size:26px;font-weight:600;box-sizing:border-box;cursor:pointer}
+.srvkey.srvact{width:212px;font-size:22px;margin-top:10px}
+.srvkey.f{background:#0F766E;color:#fff;outline:3px solid #fff}
+#srvStatus{min-height:32px;margin-top:16px;font-size:24px;color:rgba(255,255,255,.75)}
+@media(max-height:800px){#srvBox{width:648px;margin-top:7vh;padding:20px 28px 16px}#srvTitle{font-size:24px}#srvValue{height:46px;margin:12px 0 10px;padding:0 14px;font-size:25px;line-height:46px}.srvkey{width:52px;height:38px;margin:3px;line-height:38px;font-size:18px;border-radius:7px}.srvkey.srvact{width:139px;font-size:15px;margin-top:7px}#srvStatus{min-height:22px;margin-top:10px;font-size:17px}}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
 #ejTitle{font-size:32px;font-weight:700;color:#fff}
@@ -542,6 +553,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 
 <div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stLang"></div><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
+<div id="serverPanel"><div id="srvBox"><div id="srvTitle"></div><div id="srvValue"></div><div id="srvKeys"></div><div id="srvStatus"></div></div></div>
 <div id="episodeJump"><div id="ejBox"><div id="ejTitle"></div><div id="ejValue"></div><div id="ejKeys"></div><div id="ejHint"></div></div></div>
 <div id="toast"></div>
 <div id="boot"><div class="bootbox"><img class="lg" src="/logo.png"><div class="bt">StremCompat</div><div class="btrack"><div class="bfill"></div></div></div></div>

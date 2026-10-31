@@ -9,6 +9,7 @@ var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
 var { waitForServer } = require('./streaming-server');
 var { serverFileStatus } = require('./streaming-file');
+var { remoteAddress, setServerAddress, streamingUrl } = require('./server-address');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
 var { proxySignature, proxyStream, redirectedHeaders, resolvedFor } = require('./proxy');
 var { playerPage } = require('./player-page');
@@ -40,7 +41,21 @@ function handleRequest(req, res) {
   } else if (p === '/takeover') {
     handleTakeover(req, res);
   } else if (p === '/streamfile') {
-    sendJson(res, serverFileStatus());
+    sendJson(res, remoteAddress() ? { state: 'ready', remote: true } : serverFileStatus());
+  } else if (p === '/serverconfig') {
+    if (req.method !== 'POST') return sendJson(res, { address: remoteAddress() });
+    /* A page on the web can only send this content type after a preflight, which this server
+       never allows, so only the app can change where torrents are sent. */
+    if (String(req.headers['content-type'] || '').indexOf('application/json') !== 0) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
+    readJsonBody(req, 1024, function (body) {
+      setServerAddress(body && body.address, function (result) {
+        sendJson(res, result);
+      });
+    });
   } else if (p === '/diag') {
     diagnostics(res);
   } else if (p === '/netcheck') {
@@ -133,7 +148,7 @@ function handleRequest(req, res) {
     });
   } else if (p === '/play') {
     var stream = getStreamRef(q.ref || '');
-    if (!stream && q.u) stream = { url: q.u }; // direct URL fallback: the interface passes the stream URL directly
+    if (!stream && q.u) stream = { url: streamingUrl(q.u) }; // direct URL fallback: the interface passes the stream URL directly
     if (!stream || !stream.url) {
       if (q.ref && q.back) {
         res.writeHead(302, {

@@ -2,6 +2,7 @@
 
 var crypto = require('crypto');
 var { safeText } = require('./text');
+var { streamingUrl } = require('./server-address');
 
 // Stream references keep provider cookies/auth headers out of URLs and browser
 // storage. Only a short opaque id crosses the webview boundary.
@@ -37,7 +38,7 @@ function storeStreamRef(raw) {
   if (!/^https?:\/\//i.test(streamUrl)) return '';
   var ref = crypto.randomBytes(12).toString('hex');
   streamRefs[ref] = {
-    url: streamUrl,
+    url: streamingUrl(streamUrl),
     addon: safeText(raw.addon, 160),
     name: safeText(raw.name, 300),
     title: safeText(raw.title, 700),

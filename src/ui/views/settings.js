@@ -40,6 +40,8 @@ function diagEventLine(e) {
 /* running or stopped, or why it is not there yet (it is downloaded from Stremio) */
 function diagStreamingState(j) {
   var f = j.streamingFile || {};
+  if (j.serverAddress)
+    return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
   if (j.streamingServer) return tx('diagRunning');
   if (f.state === 'downloading') return tx('diagDownloading');
   if (f.state === 'failed') return tx('diagStreamFailed', f.err);
@@ -230,6 +232,8 @@ var settings = {
       },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
+      { head: tx('serverGroup') },
+      { k: '__server', lb: tx('serverAddress'), action: true, info: true },
       { head: tx('addonsGroup') },
       { k: '__sync', lb: tx('syncAddons'), action: true },
       { head: tx('accountGroup') },
@@ -253,7 +257,7 @@ var settings = {
         continue;
       }
       var d = document.createElement('div');
-      d.className = 'set' + (def.action ? ' act' : '');
+      d.className = 'set' + (def.action ? ' act' : '') + (def.info ? ' info' : '');
       var l = document.createElement('div');
       l.className = 'lb';
       l.textContent = def.lb;
@@ -266,8 +270,28 @@ var settings = {
       this.els.push(d);
       this.fdefs.push(def);
     }
+    this.showServerAddress();
     this.paint();
     animIn($('setWrap'));
+  },
+  /* the value of the address row comes from the local server */
+  serverAddress: '',
+  showServerAddress: function () {
+    var self = this;
+    xhrJson(
+      '/serverconfig',
+      function (j) {
+        self.serverAddress = (j && j.address) || '';
+        self.paintServerAddress();
+      },
+      3000
+    );
+  },
+  paintServerAddress: function () {
+    for (var i = 0; i < this.fdefs.length; i++)
+      if (this.fdefs[i].k === '__server')
+        this.els[i].getElementsByClassName('vl')[0].textContent =
+          this.serverAddress.replace(/^https?:\/\//, '') || tx('serverHere');
   },
   syncNow: function () {
     toast(tx('syncing'));
@@ -284,7 +308,13 @@ var settings = {
   },
   /* actions that are not Sync or Reload; the destructive one asks for a second OK */
   runAction: function (k) {
-    if (k === '__diag') this.showDiag();
+    if (k === '__server') {
+      var self = this;
+      serverPanel.show(this.serverAddress, function (address) {
+        self.serverAddress = address;
+        self.paintServerAddress();
+      });
+    } else if (k === '__diag') this.showDiag();
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
       clearRecentSearches();

@@ -5,7 +5,8 @@ var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
 var zlib = require('zlib');
-var { DIR, FFMPEG, SERVER_PORT } = require('./config');
+var { DIR, FFMPEG } = require('./config');
+var { streamingBase } = require('./server-address');
 var { fetchUrl, sendJson } = require('./http-util');
 var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
@@ -107,14 +108,11 @@ function subtitleCues(u, cb) {
       cb(buf ? parseSrt(subtitleText(buf)) : []);
     });
   }
-  fetchUrl(
-    'http://127.0.0.1:' + SERVER_PORT + '/subtitles.vtt?from=' + encodeURIComponent(u),
-    function (buf) {
-      var cues = buf ? parseSrt(buf.toString('utf8')) : [];
-      if (cues.length) cb(cues);
-      else direct();
-    }
-  );
+  fetchUrl(streamingBase() + '/subtitles.vtt?from=' + encodeURIComponent(u), function (buf) {
+    var cues = buf ? parseSrt(buf.toString('utf8')) : [];
+    if (cues.length) cb(cues);
+    else direct();
+  });
 }
 
 var IMG_SUB = { hdmv_pgs_subtitle: 1, dvd_subtitle: 1, dvb_subtitle: 1, xsub: 1, dvb_teletext: 1 };
