@@ -248,6 +248,7 @@ function chooseMenu() {
   var chosen = it.k === 'aud' ? P.audio + ': ' + audioName() : P.subtitles + ': ' + subtitleName();
   closeMenu();
   showToast(chosen);
+  if (it.k === 'ext' || it.k === 'emb') holdForSubtitle();
 }
 function closeMenu() {
   menu.className = '';

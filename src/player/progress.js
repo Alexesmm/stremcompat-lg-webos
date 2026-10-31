@@ -18,6 +18,9 @@ function libPrefix() {
 }
 // one shared account library (lib_<hash>_): progress/watched is pushed to api.strem.io
 var LIBKEY = libPrefix() + ID;
+/* Settings > Do not save history: nothing about this session is kept, here or in the account.
+   An earlier position is still offered, because it was saved before. */
+var NO_HISTORY = lsGet('noHistory', 'false') === 'true';
 // POST helper + push the library item to the account (same datastorePut Stremio uses)
 /* done (optional) runs once the request finished, failed or took longer than 2 s */
 function xpost(u, body, done) {
@@ -54,7 +57,7 @@ function pushLib(force, done) {
   var ak = authKeyLS(),
     it = readLib(),
     n = Date.now();
-  if (!ak || !it || !it._id || (!force && n - lastPush < 60000)) {
+  if (NO_HISTORY || !ak || !it || !it._id || (!force && n - lastPush < 60000)) {
     if (done) done();
     return;
   }
@@ -67,7 +70,7 @@ function pushLib(force, done) {
 }
 // remember exactly which stream we played so Continue Watching can resume it directly
 try {
-  if (ID) localStorage.setItem('tvstream_' + ID + '_' + (VID || ID), location.search);
+  if (ID && !NO_HISTORY) localStorage.setItem('tvstream_' + ID + '_' + (VID || ID), location.search);
 } catch (e) {}
 // if the name/poster never came back from the server (Cinemeta was slow), fetch it now so
 // the Continue Watching entry isn't left blank
@@ -96,7 +99,7 @@ function readLib() {
 // Stremio auto-watch semantics: removed:false + temp:true (shows in Library + Continue
 // Watching and syncs everywhere). An explicit + Library later flips temp:false.
 function saveProgress() {
-  if (!v.duration || !ID || sessionDone) return;
+  if (NO_HISTORY || !v.duration || !ID || sessionDone) return;
   var now = new Date().toISOString();
   var it = readLib();
   if (!it || !it.state) {
@@ -204,6 +207,13 @@ function tryResume() {
 }
 v.addEventListener('loadeddata', tryResume);
 v.addEventListener('canplay', tryResume);
+/* said once, unless the resume hint is using the same place */
+var noHistoryShown = !NO_HISTORY;
+v.addEventListener('playing', function () {
+  if (noHistoryShown) return;
+  noHistoryShown = true;
+  if (Date.now() >= restartUntil) showToast(P.noHistoryOn);
+});
 setInterval(function () {
   if (!v.paused) {
     saveProgress();
@@ -211,6 +221,7 @@ setInterval(function () {
   }
 }, 10000);
 v.addEventListener('pause', function () {
+  if (subHolding) return;
   saveProgress();
   pushLib(true);
 });
@@ -264,7 +275,7 @@ function markWatchedLocal() {
    start and a series moves on to its next episode, which Continue Watching then offers on
    every device. `toNext` (the Next button) moves on even before the credits. */
 function finishSession(toNext) {
-  if (!v.duration) return;
+  if (NO_HISTORY || !v.duration) return;
   saveProgress();
   var it = readLib();
   if (!it || !it.state || it.state.video_id !== (VID || ID)) return;

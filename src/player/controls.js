@@ -194,6 +194,7 @@ setInterval(function () {
   if (embN >= 0) pollEmbCues();
 }, 4000);
 function setPlaying(play) {
+  dropSubHold();
   try {
     if (play) {
       var result = v.play();

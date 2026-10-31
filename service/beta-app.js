@@ -234,6 +234,7 @@ var UI_TEXT = {
     exitLeave: 'Leave the app',
     removedFromCw: 'Removed from Continue watching',
     historyGroup: 'History',
+    noHistory: 'Do not save history',
     clearSearches: 'Clear recent searches',
     clearCw: 'Clear Continue watching',
     confirmAgain: 'Press OK again to confirm',
@@ -478,6 +479,8 @@ var UI_TEXT = {
       nativeSubs: 'Native subtitles on',
       noNative: 'No native track — extracting…',
       preparingSubs: 'Preparing subtitles…',
+      loadingSubtitle: 'Loading subtitles…',
+      noHistoryOn: 'History is not being saved',
       noEmbedded: 'No embedded subtitles',
       defaultAudio: 'Default',
       off: 'Off',
@@ -548,6 +551,7 @@ var UI_TEXT = {
     exitLeave: 'Sair do app',
     removedFromCw: 'Removido de Continuar assistindo',
     historyGroup: 'Histórico',
+    noHistory: 'Não salvar histórico',
     clearSearches: 'Limpar buscas recentes',
     clearCw: 'Limpar Continuar assistindo',
     confirmAgain: 'Pressione OK de novo para confirmar',
@@ -792,6 +796,8 @@ var UI_TEXT = {
       nativeSubs: 'Legendas nativas ativadas',
       noNative: 'Faixa nativa indisponível — extraindo…',
       preparingSubs: 'Preparando legendas…',
+      loadingSubtitle: 'Carregando legenda…',
+      noHistoryOn: 'O histórico não está sendo salvo',
       noEmbedded: 'Nenhuma legenda incorporada',
       defaultAudio: 'Padrão',
       off: 'Desativadas',
@@ -5694,13 +5700,14 @@ function recentSearches() {
 }
 function rememberSearch(q) {
   q = String(q || '').replace(/^\s+|\s+$/g, '');
-  if (!q) return;
+  if (!q || lsRaw('noHistory', 'false') === 'true') return;
   var list = recentSearches(),
     out = [q];
   for (var i = 0; i < list.length && out.length < RECENT_SEARCH_MAX; i++)
     if (typeof list[i] === 'string' && list[i].toLowerCase() !== q.toLowerCase()) out.push(list[i]);
   lsSet(RECENT_SEARCH_KEY, out);
 }
+window.__STREMIO_REMEMBER_SEARCH__ = rememberSearch;
 /* The on-screen keyboard replaces the system one (slow, covers the screen and closed
    after every key on some webOS builds): 6 x 6 letters and digits, then space, delete
    and clear across two columns each. The system keyboard stays one key up, on the box. */
@@ -6450,6 +6457,15 @@ var settings = {
         d: 'false'
       },
       { head: tx('historyGroup') },
+      {
+        k: 'noHistory',
+        lb: tx('noHistory'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: 'false'
+      },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
       { head: tx('addonsGroup') },

@@ -174,6 +174,62 @@ assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'the cont
 vm.runInNewContext("setExtSub('http://slow'); trackChosenAt = Date.now() - 60000", busyCtx);
 assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'a subtitle that never loads kept the controls up forever');
 
+// ---- playback waits for a subtitle chosen in the menu (subtitles.js holdForSubtitle) ----
+function holdSession(paused) {
+  var timers = [], xhrs = [], toasts = [];
+  var ctx = {
+    ID: 'tt9', TYPE: 'series', VID: '', URL: 'u', localStorage: memoryStorage({}), mode: 'video', EMBMODE: 'server',
+    NO_HISTORY: false, load: { style: { display: 'none' } },
+    v: {
+      paused: !!paused, ended: false, addEventListener: function () {}, textTracks: [], currentTime: 0, readyState: 4,
+      pause: function () { this.paused = true; ctx.pauses = (ctx.pauses || 0) + 1; },
+      play: function () { this.paused = false; ctx.plays = (ctx.plays || 0) + 1; }
+    },
+    document: { getElementById: element, createElement: element }, location: { search: '' },
+    xhr: function (u, cb) { xhrs.push(cb); }, showToast: function (m) { toasts.push(m); }, subEl: element('sub'),
+    P: { loadingSubtitle: 'loading', preparingSubs: 'late' },
+    setTimeout: function (f) { timers.push(f); return timers.length; }, clearTimeout: function (i) { timers[i - 1] = null; },
+    setInterval: function () { return 99; }, clearInterval: function () {}
+  };
+  vm.runInNewContext(src('player/subtitles.js'), ctx);
+  ctx.fireTimer = function () { timers.filter(Boolean).forEach(function (f) { f(); }); };
+  ctx.answer = function (j) { xhrs.shift()(j); };
+  ctx.toasts = toasts;
+  return ctx;
+}
+var hold = holdSession();
+vm.runInNewContext("setExtSub('http://sub'); holdForSubtitle()", hold);
+assert.strictEqual(hold.v.paused, true, 'playback did not wait for the chosen subtitle');
+assert.strictEqual(hold.subHolding, true, 'the wait was not marked, so the paused screen would cover the video');
+hold.answer({ cues: [{ s: 0, e: 1, t: 'x' }] });
+assert.strictEqual(hold.v.paused, false, 'playback did not continue when the subtitle arrived');
+var late = holdSession();
+vm.runInNewContext("setExtSub('http://slow'); holdForSubtitle()", late);
+late.fireTimer();
+assert.strictEqual(late.v.paused, false, 'a late subtitle held playback past the limit');
+assert.strictEqual(late.toasts.pop(), 'late', 'a late subtitle did not say it was still coming');
+var wasPaused = holdSession(true);
+vm.runInNewContext("setExtSub('http://sub'); holdForSubtitle()", wasPaused);
+wasPaused.answer({ cues: [] });
+assert.strictEqual(wasPaused.plays, undefined, 'a video paused by the viewer started by itself');
+var takeover = holdSession();
+vm.runInNewContext("setExtSub('http://sub'); holdForSubtitle(); dropSubHold()", takeover);
+takeover.answer({ cues: [] });
+assert.strictEqual(takeover.v.paused, true, 'a pause key during the wait was overridden when the subtitle arrived');
+var switched = holdSession();
+vm.runInNewContext("setExtSub('http://old'); holdForSubtitle(); setExtSub('http://new')", switched);
+switched.answer({ cues: [{ s: 0, e: 1, t: 'old' }] });
+assert.strictEqual(vm.runInNewContext('cues', switched), null, 'the answer for a previous subtitle replaced the chosen one');
+assert.strictEqual(switched.v.paused, true, 'the answer for a previous subtitle ended the wait');
+var turnedOff = holdSession();
+vm.runInNewContext("setExtSub('http://sub'); holdForSubtitle(); subsOff()", turnedOff);
+assert.strictEqual(turnedOff.v.paused, false, 'turning subtitles off during the wait left the video paused');
+var embHold = holdSession();
+vm.runInNewContext('setEmbSub(2); holdForSubtitle()', embHold);
+assert.strictEqual(embHold.v.paused, true, 'playback did not wait for an embedded subtitle');
+embHold.answer({ err: 'no' });
+assert.strictEqual(embHold.v.paused, false, 'a failed embedded subtitle left the video paused');
+
 // ---- seek steps are exact even though the video keeps playing until the jump (seek.js) ----
 function seekSession() {
   var timers = [];
@@ -246,7 +302,7 @@ assert.strictEqual(watchedLib.setWatched(field, eps, 'tt7:9:9'), '', 'an unknown
 function playSession(opts) {
   var storage = memoryStorage({ user: JSON.stringify({ _id: 'abcd1234' }) });
   if (opts.lib) storage.setItem('lib_abcd_tt7', JSON.stringify(opts.lib));
-  var events = {}, sent = [], intervals = [];
+  var events = {}, sent = [], intervals = [], posts = [];
   var video = {
     duration: 1000, currentTime: 0, paused: false,
     addEventListener: function (n, f) { (events[n] = events[n] || []).push(f); }
@@ -256,9 +312,10 @@ function playSession(opts) {
     v: video, localStorage: storage, location: { search: '?x' }, Date: Date, JSON: JSON, Math: Math,
     document: { getElementById: element }, P: {}, showToast: function () {}, fmt: String,
     xhr: function (u, cb) { sent.push(u); if (u.indexOf('/watchedset') === 0) cb({ watched: 'tt7:1:1:2:x' }); },
-    lsGet: function () { return 'false'; }, NEXTHREF: '', npDismissed: false, startAutoNext: function () {},
+    lsGet: function (k, d) { return k === 'noHistory' && opts.noHistory ? 'true' : k === 'noHistory' ? d : 'false'; },
+    NEXTHREF: '', npDismissed: false, startAutoNext: function () {}, subHolding: false,
     setTimeout: function () {}, setInterval: function (f) { intervals.push(f); },
-    XMLHttpRequest: function () { this.open = function () {}; this.setRequestHeader = function () {}; this.send = function () {}; }
+    XMLHttpRequest: function () { this.open = function (m, u) { posts.push(u); }; this.setRequestHeader = function () {}; this.send = function () {}; }
   };
   vm.runInNewContext(src('shared/watch-state.js') + src('player/progress.js'), ctx);
   function fire(n) { (events[n] || []).forEach(function (f) { f(); }); }
@@ -267,6 +324,8 @@ function playSession(opts) {
   ctx.fire = fire;
   ctx.lib = function () { return JSON.parse(storage.getItem('lib_abcd_tt7')); };
   ctx.sent = sent;
+  ctx.storage = storage;
+  ctx.posts = posts;
   return ctx;
 }
 var ep = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2' });
@@ -302,4 +361,19 @@ early.play(400);
 vm.runInNewContext('finishSession(false)', early);
 assert.strictEqual(early.lib().state.timeOffset, 400000, 'leaving mid-episode lost the position');
 
-console.log('OK: watched state like the official apps, next-episode countdown, next episode opened directly, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');
+var before = { user: 1, state: { video_id: 'tt7:1:1', timeOffset: 120000, duration: 1000000 } };
+var off = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2', noHistory: true, lib: before });
+off.play(800);
+off.fire('pause');
+off.fire('ended');
+vm.runInNewContext('finishSession(true); pushLib(true)', off);
+assert.deepStrictEqual(off.lib(), before, 'history was written with Do not save history on');
+assert.deepStrictEqual(off.posts, [], 'progress was sent to the account with Do not save history on');
+assert.deepStrictEqual(off.sent.filter(function (u) { return u.indexOf('/watchedset') === 0; }), [], 'an episode was marked watched with Do not save history on');
+assert.strictEqual(off.storage.getItem('tvstream_tt7_tt7:1:1'), null, 'the source was remembered with Do not save history on');
+var pushed = false;
+vm.runInNewContext('pushLib(true, function () { doneCalled = true; })', Object.assign(off, { doneCalled: false }));
+pushed = off.doneCalled;
+assert.strictEqual(pushed, true, 'leaving the player would wait for a push that never happens');
+
+console.log('OK: watched state like the official apps, next-episode countdown, next episode opened directly, waiting for a chosen subtitle, do not save history, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');

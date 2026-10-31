@@ -256,6 +256,10 @@ var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
   { addon:'Torrentio',quality:'4K',title:'H264 AAC',seeders:200,compatRank:0 }
 ],{addon:'Torrentio',quality:'4K',text:'HEVC 10bit DDP WEB-DL',compat:'HEVC 10-bit'});
 assert.strictEqual(nextMatch.title,'HEVC 10bit DDP WEB-DL','next episode did not prefer the closest safe source traits');
+firstRun.context.localStorage.setItem('noHistory', 'true');
+firstRun.context.__STREMIO_REMEMBER_SEARCH__('private title');
+assert.ok(String(firstRun.context.localStorage.getItem('recentSearches') || '').indexOf('private title') < 0, 'a search was remembered with Do not save history on');
+firstRun.context.localStorage.removeItem('noHistory');
 var matchNext = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__;
 var pack = { addon:'Torrentio',quality:'720p',title:'Other',seeders:1,compatRank:0,bingeGroup:'torrentio|pack' };
 var strongEn = { addon:'Torrentio',quality:'1080p',title:'English',seeders:900,compatRank:0,langs:['en'] };

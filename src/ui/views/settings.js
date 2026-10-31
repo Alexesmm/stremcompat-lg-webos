@@ -219,6 +219,15 @@ var settings = {
         d: 'false'
       },
       { head: tx('historyGroup') },
+      {
+        k: 'noHistory',
+        lb: tx('noHistory'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: 'false'
+      },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
       { head: tx('addonsGroup') },

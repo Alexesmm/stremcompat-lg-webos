@@ -39,6 +39,7 @@ var UI_TEXT = {
     exitLeave: 'Leave the app',
     removedFromCw: 'Removed from Continue watching',
     historyGroup: 'History',
+    noHistory: 'Do not save history',
     clearSearches: 'Clear recent searches',
     clearCw: 'Clear Continue watching',
     confirmAgain: 'Press OK again to confirm',
@@ -283,6 +284,8 @@ var UI_TEXT = {
       nativeSubs: 'Native subtitles on',
       noNative: 'No native track — extracting…',
       preparingSubs: 'Preparing subtitles…',
+      loadingSubtitle: 'Loading subtitles…',
+      noHistoryOn: 'History is not being saved',
       noEmbedded: 'No embedded subtitles',
       defaultAudio: 'Default',
       off: 'Off',
@@ -353,6 +356,7 @@ var UI_TEXT = {
     exitLeave: 'Sair do app',
     removedFromCw: 'Removido de Continuar assistindo',
     historyGroup: 'Histórico',
+    noHistory: 'Não salvar histórico',
     clearSearches: 'Limpar buscas recentes',
     clearCw: 'Limpar Continuar assistindo',
     confirmAgain: 'Pressione OK de novo para confirmar',
@@ -597,6 +601,8 @@ var UI_TEXT = {
       nativeSubs: 'Legendas nativas ativadas',
       noNative: 'Faixa nativa indisponível — extraindo…',
       preparingSubs: 'Preparando legendas…',
+      loadingSubtitle: 'Carregando legenda…',
+      noHistoryOn: 'O histórico não está sendo salvo',
       noEmbedded: 'Nenhuma legenda incorporada',
       defaultAudio: 'Padrão',
       off: 'Desativadas',
@@ -1135,6 +1141,9 @@ function libPrefix() {
 }
 // one shared account library (lib_<hash>_): progress/watched is pushed to api.strem.io
 var LIBKEY = libPrefix() + ID;
+/* Settings > Do not save history: nothing about this session is kept, here or in the account.
+   An earlier position is still offered, because it was saved before. */
+var NO_HISTORY = lsGet('noHistory', 'false') === 'true';
 // POST helper + push the library item to the account (same datastorePut Stremio uses)
 /* done (optional) runs once the request finished, failed or took longer than 2 s */
 function xpost(u, body, done) {
@@ -1171,7 +1180,7 @@ function pushLib(force, done) {
   var ak = authKeyLS(),
     it = readLib(),
     n = Date.now();
-  if (!ak || !it || !it._id || (!force && n - lastPush < 60000)) {
+  if (NO_HISTORY || !ak || !it || !it._id || (!force && n - lastPush < 60000)) {
     if (done) done();
     return;
   }
@@ -1184,7 +1193,7 @@ function pushLib(force, done) {
 }
 // remember exactly which stream we played so Continue Watching can resume it directly
 try {
-  if (ID) localStorage.setItem('tvstream_' + ID + '_' + (VID || ID), location.search);
+  if (ID && !NO_HISTORY) localStorage.setItem('tvstream_' + ID + '_' + (VID || ID), location.search);
 } catch (e) {}
 // if the name/poster never came back from the server (Cinemeta was slow), fetch it now so
 // the Continue Watching entry isn't left blank
@@ -1213,7 +1222,7 @@ function readLib() {
 // Stremio auto-watch semantics: removed:false + temp:true (shows in Library + Continue
 // Watching and syncs everywhere). An explicit + Library later flips temp:false.
 function saveProgress() {
-  if (!v.duration || !ID || sessionDone) return;
+  if (NO_HISTORY || !v.duration || !ID || sessionDone) return;
   var now = new Date().toISOString();
   var it = readLib();
   if (!it || !it.state) {
@@ -1321,6 +1330,13 @@ function tryResume() {
 }
 v.addEventListener('loadeddata', tryResume);
 v.addEventListener('canplay', tryResume);
+/* said once, unless the resume hint is using the same place */
+var noHistoryShown = !NO_HISTORY;
+v.addEventListener('playing', function () {
+  if (noHistoryShown) return;
+  noHistoryShown = true;
+  if (Date.now() >= restartUntil) showToast(P.noHistoryOn);
+});
 setInterval(function () {
   if (!v.paused) {
     saveProgress();
@@ -1328,6 +1344,7 @@ setInterval(function () {
   }
 }, 10000);
 v.addEventListener('pause', function () {
+  if (subHolding) return;
   saveProgress();
   pushLib(true);
 });
@@ -1381,7 +1398,7 @@ function markWatchedLocal() {
    start and a series moves on to its next episode, which Continue Watching then offers on
    every device. `toNext` (the Next button) moves on even before the credits. */
 function finishSession(toNext) {
-  if (!v.duration) return;
+  if (NO_HISTORY || !v.duration) return;
   saveProgress();
   var it = readLib();
   if (!it || !it.state || it.state.video_id !== (VID || ID)) return;
@@ -1463,7 +1480,7 @@ function titlePref() {
   }
 }
 function saveTitlePref(field, value) {
-  if (!ID) return;
+  if (!ID || NO_HISTORY) return;
   var p = titlePref();
   p[field] = value;
   try {
@@ -1579,7 +1596,9 @@ function setExtSub(u) {
     } catch (e) {}
   }
   xhr('/sub?u=' + encodeURIComponent(u), function (j) {
+    if (curSub !== 'ext:' + u) return;
     cues = (j && j.cues) || [];
+    releaseSubHold();
   });
 }
 // embedded: the TV never exposes MKV sub cues to JS (textTracks empty), so the server
@@ -1597,12 +1616,15 @@ function embQS() {
     encodeURIComponent(VID)
   );
 }
+var embPolling = false;
 function pollEmbCues() {
-  if (embN < 0) return;
+  if (embN < 0 || embPolling) return;
   var want = embN;
+  embPolling = true;
   xhr(
     '/embcues?' + embQS() + '&since=' + (cues ? cues.length : 0) + '&t=' + (v.currentTime | 0),
     function (j) {
+      embPolling = false;
       if (want !== embN || !j) return;
       if (j.gone) {
         setEmbSub(embN);
@@ -1616,11 +1638,13 @@ function pollEmbCues() {
         if (!embFirst) {
           embFirst = true;
           showToast(P.subtitlesReady);
+          releaseSubHold();
         }
       }
       if (j.err && !cues.length) {
         embFailed = true;
         showToast(P.subtitleFailed);
+        releaseSubHold();
       }
     }
   );
@@ -1647,6 +1671,7 @@ function setEmbSub(n, ti) {
       }
     } catch (e) {}
     if (ok) {
+      embFirst = true;
       showToast(P.nativeSubs);
       return;
     }
@@ -1659,11 +1684,13 @@ function setEmbSub(n, ti) {
       subEl._t = null;
       embFirst = true;
       showToast(j.cached ? P.loaded : P.ready);
+      releaseSubHold();
     } else if (j.started) {
       showToast(P.preparingSubs);
     } else if (j.err) {
       embFailed = true;
       showToast(P.noEmbedded);
+      releaseSubHold();
     }
   });
 }
@@ -1688,6 +1715,45 @@ function subsOff() {
   embN = -1;
   cues = null;
   subEl.textContent = '';
+  releaseSubHold();
+}
+/* A subtitle chosen in the menu should start with the line being spoken, so playback waits
+   for it, ten seconds at most, and carries on if it is late. Only a video that was playing
+   is held, and any play or pause key takes over (setPlaying). */
+var SUB_HOLD_LIMIT_MS = 10000,
+  subHolding = false,
+  subHoldLimit = null,
+  subHoldPoll = null;
+function subtitleLoading() {
+  if (curSub.indexOf('ext:') === 0) return cues === null;
+  return curSub.indexOf('emb:') === 0 && !embFirst && !embFailed;
+}
+function holdForSubtitle() {
+  if (subHolding || v.paused || v.ended || load.style.display !== 'none' || !subtitleLoading()) return;
+  subHolding = true;
+  try {
+    v.pause();
+  } catch (e) {}
+  showToast(P.loadingSubtitle, SUB_HOLD_LIMIT_MS);
+  subHoldLimit = setTimeout(function () {
+    showToast(P.preparingSubs);
+    releaseSubHold();
+  }, SUB_HOLD_LIMIT_MS);
+  /* a track already extracted answers at once: no need to wait for the slow poll */
+  if (embN >= 0) subHoldPoll = setInterval(pollEmbCues, 1000);
+}
+function dropSubHold() {
+  subHolding = false;
+  clearTimeout(subHoldLimit);
+  clearInterval(subHoldPoll);
+}
+function releaseSubHold() {
+  if (!subHolding) return;
+  dropSubHold();
+  try {
+    var r = v.play();
+    if (r && r.catch) r.catch(function () {});
+  } catch (e) {}
 }
 function audioName() {
   try {
@@ -1985,6 +2051,7 @@ setInterval(function () {
   if (embN >= 0) pollEmbCues();
 }, 4000);
 function setPlaying(play) {
+  dropSubHold();
   try {
     if (play) {
       var result = v.play();
@@ -2575,6 +2642,7 @@ function chooseMenu() {
   var chosen = it.k === 'aud' ? P.audio + ': ' + audioName() : P.subtitles + ': ' + subtitleName();
   closeMenu();
   showToast(chosen);
+  if (it.k === 'ext' || it.k === 'emb') holdForSubtitle();
 }
 function closeMenu() {
   menu.className = '';
@@ -2643,6 +2711,7 @@ function ensureTechProbe() {
 }
 var pvT = null;
 v.addEventListener('pause', function () {
+  if (subHolding) return;
   ensureTechProbe();
   if (pvT) clearTimeout(pvT);
   pvT = setTimeout(function () {

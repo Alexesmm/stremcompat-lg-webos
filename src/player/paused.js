@@ -59,6 +59,7 @@ function ensureTechProbe() {
 }
 var pvT = null;
 v.addEventListener('pause', function () {
+  if (subHolding) return;
   ensureTechProbe();
   if (pvT) clearTimeout(pvT);
   pvT = setTimeout(function () {

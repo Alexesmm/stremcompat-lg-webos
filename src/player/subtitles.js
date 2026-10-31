@@ -48,7 +48,7 @@ function titlePref() {
   }
 }
 function saveTitlePref(field, value) {
-  if (!ID) return;
+  if (!ID || NO_HISTORY) return;
   var p = titlePref();
   p[field] = value;
   try {
@@ -164,7 +164,9 @@ function setExtSub(u) {
     } catch (e) {}
   }
   xhr('/sub?u=' + encodeURIComponent(u), function (j) {
+    if (curSub !== 'ext:' + u) return;
     cues = (j && j.cues) || [];
+    releaseSubHold();
   });
 }
 // embedded: the TV never exposes MKV sub cues to JS (textTracks empty), so the server
@@ -182,12 +184,15 @@ function embQS() {
     encodeURIComponent(VID)
   );
 }
+var embPolling = false;
 function pollEmbCues() {
-  if (embN < 0) return;
+  if (embN < 0 || embPolling) return;
   var want = embN;
+  embPolling = true;
   xhr(
     '/embcues?' + embQS() + '&since=' + (cues ? cues.length : 0) + '&t=' + (v.currentTime | 0),
     function (j) {
+      embPolling = false;
       if (want !== embN || !j) return;
       if (j.gone) {
         setEmbSub(embN);
@@ -201,11 +206,13 @@ function pollEmbCues() {
         if (!embFirst) {
           embFirst = true;
           showToast(P.subtitlesReady);
+          releaseSubHold();
         }
       }
       if (j.err && !cues.length) {
         embFailed = true;
         showToast(P.subtitleFailed);
+        releaseSubHold();
       }
     }
   );
@@ -232,6 +239,7 @@ function setEmbSub(n, ti) {
       }
     } catch (e) {}
     if (ok) {
+      embFirst = true;
       showToast(P.nativeSubs);
       return;
     }
@@ -244,11 +252,13 @@ function setEmbSub(n, ti) {
       subEl._t = null;
       embFirst = true;
       showToast(j.cached ? P.loaded : P.ready);
+      releaseSubHold();
     } else if (j.started) {
       showToast(P.preparingSubs);
     } else if (j.err) {
       embFailed = true;
       showToast(P.noEmbedded);
+      releaseSubHold();
     }
   });
 }
@@ -273,6 +283,45 @@ function subsOff() {
   embN = -1;
   cues = null;
   subEl.textContent = '';
+  releaseSubHold();
+}
+/* A subtitle chosen in the menu should start with the line being spoken, so playback waits
+   for it, ten seconds at most, and carries on if it is late. Only a video that was playing
+   is held, and any play or pause key takes over (setPlaying). */
+var SUB_HOLD_LIMIT_MS = 10000,
+  subHolding = false,
+  subHoldLimit = null,
+  subHoldPoll = null;
+function subtitleLoading() {
+  if (curSub.indexOf('ext:') === 0) return cues === null;
+  return curSub.indexOf('emb:') === 0 && !embFirst && !embFailed;
+}
+function holdForSubtitle() {
+  if (subHolding || v.paused || v.ended || load.style.display !== 'none' || !subtitleLoading()) return;
+  subHolding = true;
+  try {
+    v.pause();
+  } catch (e) {}
+  showToast(P.loadingSubtitle, SUB_HOLD_LIMIT_MS);
+  subHoldLimit = setTimeout(function () {
+    showToast(P.preparingSubs);
+    releaseSubHold();
+  }, SUB_HOLD_LIMIT_MS);
+  /* a track already extracted answers at once: no need to wait for the slow poll */
+  if (embN >= 0) subHoldPoll = setInterval(pollEmbCues, 1000);
+}
+function dropSubHold() {
+  subHolding = false;
+  clearTimeout(subHoldLimit);
+  clearInterval(subHoldPoll);
+}
+function releaseSubHold() {
+  if (!subHolding) return;
+  dropSubHold();
+  try {
+    var r = v.play();
+    if (r && r.catch) r.catch(function () {});
+  } catch (e) {}
 }
 function audioName() {
   try {
