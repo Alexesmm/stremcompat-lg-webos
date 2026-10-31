@@ -28,18 +28,18 @@ on(
     if (serverPanel.open) {
       e.preventDefault();
       e.stopPropagation();
-      if (k === 461 || k === 8 || k === 27) serverPanel.close();
+      if (isBackKey(k)) serverPanel.close();
       else serverPanel.key(k);
       return;
     }
     if (episodeJump.open) {
       e.preventDefault();
       e.stopPropagation();
-      if (k === 461 || k === 8 || k === 27) episodeJump.close();
+      if (isBackKey(k)) episodeJump.close();
       else episodeJump.key(k);
       return;
     }
-    if (k === 461 || k === 8 || k === 27) {
+    if (isBackKey(k)) {
       e.preventDefault();
       e.stopPropagation();
       if (SCR === 'disc' && disc.closeFilter()) return;

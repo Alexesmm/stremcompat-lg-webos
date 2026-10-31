@@ -3,6 +3,56 @@ try{
 'use strict';
 window.__STREMIO_MAIN_PARSED__=true;
 window.__STREMIO_PHASE__('M0');
+// What differs between TV platforms, LG webOS here. src/platform/tizen has the same functions;
+// the build picks one folder per platform, in both the interface and the player.
+/* FFmpeg and FFprobe run on this platform: reduced artwork, technical badges, seek previews
+   and subtitle extraction are available */
+var HAS_MEDIA_TOOLS = true;
+/* where a path of the app really is; on webOS the pages come from the local server */
+function appUrl(path) {
+  return path;
+}
+/* Back on the remote, for text boxes too (where 8 is the Delete key of the keyboard) */
+function isRemoteBack(k) {
+  return k === 461 || k === 27;
+}
+function isBackKey(k) {
+  return isRemoteBack(k) || k === 8;
+}
+/* cb(true) when the system answered, cb(false) if it did not; the service may need a moment
+   more before it listens */
+function startService(serviceId, cb) {
+  var done = false,
+    bridge = null;
+  function finish(ok) {
+    if (done) return;
+    done = true;
+    bridge = null;
+    cb(ok);
+  }
+  try {
+    if (typeof PalmServiceBridge === 'undefined') {
+      finish(false);
+      return;
+    }
+    bridge = new PalmServiceBridge();
+    bridge.onservicecallback = function () {
+      finish(true);
+    };
+    bridge.call('luna://' + serviceId + '/start', '{}');
+    setTimeout(function () {
+      finish(false);
+    }, 2600);
+  } catch (e) {
+    finish(false);
+  }
+}
+// Interface side of the LG platform.
+function exitApp() {
+  try {
+    window.close();
+  } catch (e) {}
+}
 // Service endpoints, the build profile, viewport metrics and DOM/event helpers.
 /* ================= utils ================= */
 var CIN = 'https://v3-cinemeta.strem.io';
@@ -1356,30 +1406,7 @@ function runtimePing(cb) {
   }
 }
 function runtimeStart(cb) {
-  var done = false,
-    bridge = null;
-  function finish(ok) {
-    if (done) return;
-    done = true;
-    bridge = null;
-    cb(ok);
-  }
-  try {
-    if (typeof PalmServiceBridge === 'undefined') {
-      finish(false);
-      return;
-    }
-    bridge = new PalmServiceBridge();
-    bridge.onservicecallback = function () {
-      finish(true);
-    };
-    bridge.call('luna://' + TV_PROFILE.serviceId + '/start', '{}');
-    setTimeout(function () {
-      finish(false);
-    }, 2600);
-  } catch (e) {
-    finish(false);
-  }
+  startService(TV_PROFILE.serviceId, cb);
 }
 function runtimeRecover() {
   if (runtimeRecovering) return;
@@ -1417,7 +1444,7 @@ function runtimeRecover() {
 }
 window.__STREMIO_RESUME_CHECK__ = runtimeRecover;
 function reloadUi() {
-  var url = '/beta?recover=' + Date.now();
+  var url = appUrl('/beta?recover=' + Date.now());
   try {
     location.replace(url);
   } catch (e) {
@@ -1533,6 +1560,8 @@ function bgSmall(it) {
 function bgMid(it) {
   var u = String(bgOf(it) || '');
   if (!u) return u;
+  /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
+  if (!HAS_MEDIA_TOOLS) return bgSmall(it);
   return (
     '/bgz?u=' + encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
   );
@@ -2178,7 +2207,7 @@ function playUrl(source, type, id, vid, backHash) {
       body,
       function (j) {
         if (j && j.ref) {
-          location.assign('/play?ref=' + encodeURIComponent(j.ref) + tail);
+          location.assign(appUrl('/play?ref=' + encodeURIComponent(j.ref) + tail));
           return;
         }
         if (attempt < 2) {
@@ -2214,7 +2243,7 @@ function resumeSearch(id, vid) {
 }
 function playStored(q, backHash) {
   q = q.replace(/&back=[^&]*/, '');
-  location.assign('/play' + q + '&back=' + encodeURIComponent(backHash));
+  location.assign(appUrl('/play' + q + '&back=' + encodeURIComponent(backHash)));
 }
 /* Left by the player when a source would not play (player controls.js): the title page
    reopens the sources and plays the next one, skipping the failed source. */
@@ -3990,9 +4019,7 @@ var cwMenu = {
     });
     this.add(ICON.exit, tx('exitLeave'), function () {
       self.close();
-      try {
-        window.close();
-      } catch (e) {}
+      exitApp();
     });
     $('cwm').style.display = 'block';
     this.paint();
@@ -5779,7 +5806,7 @@ var search = {
         box,
         'keydown',
         function (e) {
-          if (e.keyCode === 13) {
+          if (e.keyCode === 13 || e.keyCode === 65376) {
             e.preventDefault();
             e.stopPropagation();
             $('sBox').blur();
@@ -5792,7 +5819,7 @@ var search = {
             self.text = $('sBox').value;
             self.zone = 'keys';
             self.paint();
-          } else if (e.keyCode === 461 || e.keyCode === 27) {
+          } else if (isRemoteBack(e.keyCode) || e.keyCode === 65385) {
             e.preventDefault();
             e.stopPropagation();
             $('sBox').blur();
@@ -6513,6 +6540,10 @@ var settings = {
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
+    /* these depend on FFmpeg or on memory only the LG packages can spare */
+    if (!HAS_MEDIA_TOOLS)
+      for (var nf = this.defs.length - 1; nf >= 0; nf--)
+        if (/^(scrubPreview|embSubsMode|bgTrailer)$/.test(this.defs[nf].k || '')) this.defs.splice(nf, 1);
     var host = $('setItems');
     host.innerHTML = '';
     this.els = [];
@@ -6947,13 +6978,13 @@ var login = {
           el,
           'keydown',
           function (e) {
-            if (e.keyCode === 13 || e.keyCode === 40) {
+            if (e.keyCode === 13 || e.keyCode === 40 || e.keyCode === 65376) {
               e.preventDefault();
               e.stopPropagation();
               el.blur();
               self.zone = next;
               self.paint();
-            } else if (e.keyCode === 461 || e.keyCode === 27) {
+            } else if (isRemoteBack(e.keyCode) || e.keyCode === 65385) {
               e.preventDefault();
               e.stopPropagation();
               el.blur();
@@ -7471,7 +7502,8 @@ function idleMeta(cb) {
 }
 function startIdleTrailer() {
   if (bgv) return;
-  if (lsRaw('bgTrailer', 'false') !== 'true') return; /* Off by default on the low-memory 2019 TV */
+  if (!HAS_MEDIA_TOOLS || lsRaw('bgTrailer', 'false') !== 'true')
+    return; /* Off by default on the low-memory 2019 TV */
   idleMeta(function (m) {
     if (!m) return;
     var t = trailerIdOf(m);
@@ -7558,18 +7590,18 @@ on(
     if (serverPanel.open) {
       e.preventDefault();
       e.stopPropagation();
-      if (k === 461 || k === 8 || k === 27) serverPanel.close();
+      if (isBackKey(k)) serverPanel.close();
       else serverPanel.key(k);
       return;
     }
     if (episodeJump.open) {
       e.preventDefault();
       e.stopPropagation();
-      if (k === 461 || k === 8 || k === 27) episodeJump.close();
+      if (isBackKey(k)) episodeJump.close();
       else episodeJump.key(k);
       return;
     }
-    if (k === 461 || k === 8 || k === 27) {
+    if (isBackKey(k)) {
       e.preventDefault();
       e.stopPropagation();
       if (SCR === 'disc' && disc.closeFilter()) return;
@@ -7725,7 +7757,7 @@ function boot() {
       goScr('sim', { type: ms[1], id: ms[2] });
     }
     try {
-      history.replaceState(history.state, '', '/beta');
+      history.replaceState(history.state, '', appUrl('/beta'));
     } catch (e) {}
     setTimeout(function () {
       window.__STREMIO_BOOT_DONE__ = true;

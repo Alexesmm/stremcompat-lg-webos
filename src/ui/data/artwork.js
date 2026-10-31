@@ -30,6 +30,8 @@ function bgSmall(it) {
 function bgMid(it) {
   var u = String(bgOf(it) || '');
   if (!u) return u;
+  /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
+  if (!HAS_MEDIA_TOOLS) return bgSmall(it);
   return (
     '/bgz?u=' + encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
   );

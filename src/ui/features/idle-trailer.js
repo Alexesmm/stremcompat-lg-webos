@@ -35,7 +35,8 @@ function idleMeta(cb) {
 }
 function startIdleTrailer() {
   if (bgv) return;
-  if (lsRaw('bgTrailer', 'false') !== 'true') return; /* Off by default on the low-memory 2019 TV */
+  if (!HAS_MEDIA_TOOLS || lsRaw('bgTrailer', 'false') !== 'true')
+    return; /* Off by default on the low-memory 2019 TV */
   idleMeta(function (m) {
     if (!m) return;
     var t = trailerIdOf(m);

@@ -16,12 +16,12 @@ document.addEventListener(
       e.preventDefault();
       return;
     }
-    if (k === 179 || key === 'MediaPlayPause') {
+    if (k === 179 || k === 10252 || key === 'MediaPlayPause') {
       tog();
       e.preventDefault();
       return;
     }
-    if (k === 461 || k === 8 || k === 27) {
+    if (isBackKey(k)) {
       e.preventDefault();
       e.stopPropagation();
       /* leaving now means the next episode was not wanted after all */

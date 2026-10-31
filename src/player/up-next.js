@@ -53,7 +53,7 @@ function npGo() {
     try {
       saveProgress();
     } catch (e) {}
-    location.replace(SIMHREF);
+    location.replace(appUrl(SIMHREF));
   }
 }
 function checkNp() {
@@ -121,7 +121,7 @@ function openNextDirect() {
   function giveUp() {
     if (ended || exited) return;
     ended = true;
-    location.replace(NEXTHREF);
+    location.replace(appUrl(NEXTHREF));
   }
   function play(source) {
     postStreamRef(source, function (ref) {
@@ -131,16 +131,18 @@ function openNextDirect() {
       clearTimeout(limit);
       forgetNextSource();
       location.replace(
-        '/play?ref=' +
-          encodeURIComponent(ref) +
-          '&type=' +
-          encodeURIComponent(TYPE) +
-          '&id=' +
-          encodeURIComponent(ID) +
-          '&vid=' +
-          encodeURIComponent(NEXTVID) +
-          '&back=' +
-          encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + NEXTVID)
+        appUrl(
+          '/play?ref=' +
+            encodeURIComponent(ref) +
+            '&type=' +
+            encodeURIComponent(TYPE) +
+            '&id=' +
+            encodeURIComponent(ID) +
+            '&vid=' +
+            encodeURIComponent(NEXTVID) +
+            '&back=' +
+            encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + NEXTVID)
+        )
       );
     });
   }

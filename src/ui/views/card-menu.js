@@ -35,9 +35,7 @@ var cwMenu = {
     });
     this.add(ICON.exit, tx('exitLeave'), function () {
       self.close();
-      try {
-        window.close();
-      } catch (e) {}
+      exitApp();
     });
     $('cwm').style.display = 'block';
     this.paint();

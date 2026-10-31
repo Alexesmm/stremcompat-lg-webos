@@ -27,7 +27,7 @@ subBgOp = parseFloat(lsGet('subsBgStyle', '0')) || 0;
 var SEEKSTEP = parseInt(lsGet('seekStep', '10'), 10) || 10;
 var EMBMODE = lsGet('embSubsMode', 'server');
 // "server"=our ffmpeg extraction, "native"=TV textTracks
-var PREVIEW_ON = lsGet('scrubPreview', 'false') === 'true';
+var PREVIEW_ON = HAS_MEDIA_TOOLS && lsGet('scrubPreview', 'false') === 'true';
 // default to English auto-subs when the setting was NEVER configured; a stored "" = user chose Off
 var rawSub = lsGet('subsLang', null);
 if (rawSub == null) rawSub = lsGet('subtitles', null);
@@ -140,6 +140,11 @@ v.addEventListener('canplay', autoAudio);
 // On this CPU, ffprobe during startup makes the remote stutter. Probe only when
 // the user actually opens the subtitle menu.
 function ensureEmbTracks() {
+  /* a player that decodes the file itself already knows its tracks */
+  if (v.textTrackList) {
+    embTracks = v.textTrackList();
+    return;
+  }
   if (embTracksLoaded || embTracksLoading) return;
   embTracksLoading = true;
   xhr('/embtracks?u=' + encodeURIComponent(URL), function (j) {
@@ -153,6 +158,7 @@ function ensureEmbTracks() {
   });
 }
 function setExtSub(u) {
+  if (v.selectTextTrack) v.selectTextTrack(-1);
   curSub = 'ext:' + u;
   trackChosenAt = Date.now();
   embN = -1;
@@ -219,7 +225,23 @@ function pollEmbCues() {
 }
 // TRY NATIVE: the TV already decodes the MKV; ask its pipeline to render this text track
 // (mode="showing"). Far better than demuxing over the network if the TV exposes the tracks.
+/* Lines from the player itself arrive one at a time, with how long each one lasts. */
+function setPlayerTextTrack(n) {
+  curSub = 'emb:' + n;
+  trackChosenAt = Date.now();
+  embN = -1;
+  cues = [];
+  embFirst = true;
+  embFailed = false;
+  subEl.textContent = '';
+  subEl._t = null;
+  v.selectTextTrack(n, function (ms, text) {
+    cues = text ? [{ s: 0, e: v.currentTime + ms / 1000, t: text }] : [];
+    renderSub();
+  });
+}
 function setEmbSub(n, ti) {
+  if (v.selectTextTrack) return setPlayerTextTrack(n);
   curSub = 'emb:' + n;
   trackChosenAt = Date.now();
   embN = n;
@@ -279,6 +301,7 @@ function playerBusy() {
   return now - audioChosenAt < 15000 && v.readyState < 3;
 }
 function subsOff() {
+  if (v.selectTextTrack) v.selectTextTrack(-1);
   curSub = 'off';
   embN = -1;
   cues = null;

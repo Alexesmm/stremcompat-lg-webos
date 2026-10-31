@@ -1,3 +1,51 @@
+// What differs between TV platforms, LG webOS here. src/platform/tizen has the same functions;
+// the build picks one folder per platform, in both the interface and the player.
+/* FFmpeg and FFprobe run on this platform: reduced artwork, technical badges, seek previews
+   and subtitle extraction are available */
+var HAS_MEDIA_TOOLS = true;
+/* where a path of the app really is; on webOS the pages come from the local server */
+function appUrl(path) {
+  return path;
+}
+/* Back on the remote, for text boxes too (where 8 is the Delete key of the keyboard) */
+function isRemoteBack(k) {
+  return k === 461 || k === 27;
+}
+function isBackKey(k) {
+  return isRemoteBack(k) || k === 8;
+}
+/* cb(true) when the system answered, cb(false) if it did not; the service may need a moment
+   more before it listens */
+function startService(serviceId, cb) {
+  var done = false,
+    bridge = null;
+  function finish(ok) {
+    if (done) return;
+    done = true;
+    bridge = null;
+    cb(ok);
+  }
+  try {
+    if (typeof PalmServiceBridge === 'undefined') {
+      finish(false);
+      return;
+    }
+    bridge = new PalmServiceBridge();
+    bridge.onservicecallback = function () {
+      finish(true);
+    };
+    bridge.call('luna://' + serviceId + '/start', '{}');
+    setTimeout(function () {
+      finish(false);
+    }, 2600);
+  } catch (e) {
+    finish(false);
+  }
+}
+// Player side of the LG platform.
+function createVideo() {
+  return document.getElementById('v');
+}
 // Interface and player strings (en-US, pt-BR), shared by both bundles.
 /* Adding a language means adding one block here: the interface reads it with tx(),
    the player through playerText() in src/player/strings.js. */
@@ -1053,7 +1101,7 @@ var SE =
     ? tx('season', SEASON) + ' · ' + tx('episode', EPISODE) + (EPTITLE ? '  ·  ' + EPTITLE : '')
     : '';
 // Element references, XHR helper, loading artwork and the startup watchdog.
-var v = document.getElementById('v'),
+var v = createVideo(),
   bar = document.getElementById('bar'),
   fill = document.getElementById('fill'),
   timeEl = document.getElementById('time'),
@@ -1491,7 +1539,7 @@ subBgOp = parseFloat(lsGet('subsBgStyle', '0')) || 0;
 var SEEKSTEP = parseInt(lsGet('seekStep', '10'), 10) || 10;
 var EMBMODE = lsGet('embSubsMode', 'server');
 // "server"=our ffmpeg extraction, "native"=TV textTracks
-var PREVIEW_ON = lsGet('scrubPreview', 'false') === 'true';
+var PREVIEW_ON = HAS_MEDIA_TOOLS && lsGet('scrubPreview', 'false') === 'true';
 // default to English auto-subs when the setting was NEVER configured; a stored "" = user chose Off
 var rawSub = lsGet('subsLang', null);
 if (rawSub == null) rawSub = lsGet('subtitles', null);
@@ -1604,6 +1652,11 @@ v.addEventListener('canplay', autoAudio);
 // On this CPU, ffprobe during startup makes the remote stutter. Probe only when
 // the user actually opens the subtitle menu.
 function ensureEmbTracks() {
+  /* a player that decodes the file itself already knows its tracks */
+  if (v.textTrackList) {
+    embTracks = v.textTrackList();
+    return;
+  }
   if (embTracksLoaded || embTracksLoading) return;
   embTracksLoading = true;
   xhr('/embtracks?u=' + encodeURIComponent(URL), function (j) {
@@ -1617,6 +1670,7 @@ function ensureEmbTracks() {
   });
 }
 function setExtSub(u) {
+  if (v.selectTextTrack) v.selectTextTrack(-1);
   curSub = 'ext:' + u;
   trackChosenAt = Date.now();
   embN = -1;
@@ -1683,7 +1737,23 @@ function pollEmbCues() {
 }
 // TRY NATIVE: the TV already decodes the MKV; ask its pipeline to render this text track
 // (mode="showing"). Far better than demuxing over the network if the TV exposes the tracks.
+/* Lines from the player itself arrive one at a time, with how long each one lasts. */
+function setPlayerTextTrack(n) {
+  curSub = 'emb:' + n;
+  trackChosenAt = Date.now();
+  embN = -1;
+  cues = [];
+  embFirst = true;
+  embFailed = false;
+  subEl.textContent = '';
+  subEl._t = null;
+  v.selectTextTrack(n, function (ms, text) {
+    cues = text ? [{ s: 0, e: v.currentTime + ms / 1000, t: text }] : [];
+    renderSub();
+  });
+}
 function setEmbSub(n, ti) {
+  if (v.selectTextTrack) return setPlayerTextTrack(n);
   curSub = 'emb:' + n;
   trackChosenAt = Date.now();
   embN = n;
@@ -1743,6 +1813,7 @@ function playerBusy() {
   return now - audioChosenAt < 15000 && v.readyState < 3;
 }
 function subsOff() {
+  if (v.selectTextTrack) v.selectTextTrack(-1);
   curSub = 'off';
   embN = -1;
   cues = null;
@@ -1940,7 +2011,7 @@ function nextEp() {
     rememberNextSource();
     openNextDirect();
   } catch (e) {
-    location.replace(NEXTHREF);
+    location.replace(appUrl(NEXTHREF));
   }
 }
 var mode = 'video',
@@ -2040,7 +2111,7 @@ function tryAnotherSource() {
       JSON.stringify({ at: Date.now(), addon: ADDON, text: SNAME })
     );
   } catch (e) {}
-  location.replace('/' + (BACK || 'beta'));
+  location.replace(appUrl('/' + (BACK || 'beta')));
 }
 v.addEventListener('error', function () {
   if (retryStartup('error')) return;
@@ -2166,30 +2237,7 @@ function health(cb) {
   }
 }
 function startRuntime(cb) {
-  var done = false,
-    b = null;
-  function end(ok) {
-    if (done) return;
-    done = true;
-    b = null;
-    cb(ok);
-  }
-  try {
-    if (typeof PalmServiceBridge === 'undefined') {
-      end(false);
-      return;
-    }
-    b = new PalmServiceBridge();
-    b.onservicecallback = function () {
-      end(true);
-    };
-    b.call('luna://' + SERVICE_ID + '/start', '{}');
-    setTimeout(function () {
-      end(false);
-    }, 2600);
-  } catch (e) {
-    end(false);
-  }
+  startService(SERVICE_ID, cb);
 }
 var wasPlayingBeforeHide = false,
   resumeRecovering = false;
@@ -2211,7 +2259,7 @@ function recoverPlayerRuntime() {
         health(function (ok) {
           if (ok) {
             diag('player_resume_recovered', { tries: tries });
-            location.replace('http://127.0.0.1:' + APP_PORT + '/' + (BACK || 'beta'));
+            location.replace(appUrl('http://127.0.0.1:' + APP_PORT + '/' + (BACK || 'beta')));
             return;
           }
           tries++;
@@ -2402,7 +2450,7 @@ function leavePlayer() {
       return;
     } catch (e) {}
   }
-  location.replace('/' + (BACK || 'beta'));
+  location.replace(appUrl('/' + (BACK || 'beta')));
 }
 function repush() {
   try {
@@ -2735,7 +2783,7 @@ function fillBadges(j) {
 fillBadges(null);
 var techProbed = false;
 function ensureTechProbe() {
-  if (techProbed) return;
+  if (techProbed || !HAS_MEDIA_TOOLS) return;
   techProbed = true;
   xhr('/probe?u=' + encodeURIComponent(URL), function (j) {
     if (j) fillBadges(j);
@@ -2809,7 +2857,7 @@ function npGo() {
     try {
       saveProgress();
     } catch (e) {}
-    location.replace(SIMHREF);
+    location.replace(appUrl(SIMHREF));
   }
 }
 function checkNp() {
@@ -2877,7 +2925,7 @@ function openNextDirect() {
   function giveUp() {
     if (ended || exited) return;
     ended = true;
-    location.replace(NEXTHREF);
+    location.replace(appUrl(NEXTHREF));
   }
   function play(source) {
     postStreamRef(source, function (ref) {
@@ -2887,16 +2935,18 @@ function openNextDirect() {
       clearTimeout(limit);
       forgetNextSource();
       location.replace(
-        '/play?ref=' +
-          encodeURIComponent(ref) +
-          '&type=' +
-          encodeURIComponent(TYPE) +
-          '&id=' +
-          encodeURIComponent(ID) +
-          '&vid=' +
-          encodeURIComponent(NEXTVID) +
-          '&back=' +
-          encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + NEXTVID)
+        appUrl(
+          '/play?ref=' +
+            encodeURIComponent(ref) +
+            '&type=' +
+            encodeURIComponent(TYPE) +
+            '&id=' +
+            encodeURIComponent(ID) +
+            '&vid=' +
+            encodeURIComponent(NEXTVID) +
+            '&back=' +
+            encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + NEXTVID)
+        )
       );
     });
   }
@@ -3161,12 +3211,12 @@ document.addEventListener(
       e.preventDefault();
       return;
     }
-    if (k === 179 || key === 'MediaPlayPause') {
+    if (k === 179 || k === 10252 || key === 'MediaPlayPause') {
       tog();
       e.preventDefault();
       return;
     }
-    if (k === 461 || k === 8 || k === 27) {
+    if (isBackKey(k)) {
       e.preventDefault();
       e.stopPropagation();
       /* leaving now means the next episode was not wanted after all */

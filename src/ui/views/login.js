@@ -33,13 +33,13 @@ var login = {
           el,
           'keydown',
           function (e) {
-            if (e.keyCode === 13 || e.keyCode === 40) {
+            if (e.keyCode === 13 || e.keyCode === 40 || e.keyCode === 65376) {
               e.preventDefault();
               e.stopPropagation();
               el.blur();
               self.zone = next;
               self.paint();
-            } else if (e.keyCode === 461 || e.keyCode === 27) {
+            } else if (isRemoteBack(e.keyCode) || e.keyCode === 65385) {
               e.preventDefault();
               e.stopPropagation();
               el.blur();

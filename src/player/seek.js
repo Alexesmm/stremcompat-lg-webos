@@ -139,7 +139,7 @@ function leavePlayer() {
       return;
     } catch (e) {}
   }
-  location.replace('/' + (BACK || 'beta'));
+  location.replace(appUrl('/' + (BACK || 'beta')));
 }
 function repush() {
   try {

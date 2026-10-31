@@ -1,4 +1,6 @@
 [
+  "../platform/lg/common.js",
+  "../platform/lg/player.js",
   "../shared/strings.js",
   "../shared/watch-state.js",
   "../shared/stream-addons.js",

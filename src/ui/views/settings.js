@@ -242,6 +242,10 @@ var settings = {
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
+    /* these depend on FFmpeg or on memory only the LG packages can spare */
+    if (!HAS_MEDIA_TOOLS)
+      for (var nf = this.defs.length - 1; nf >= 0; nf--)
+        if (/^(scrubPreview|embSubsMode|bgTrailer)$/.test(this.defs[nf].k || '')) this.defs.splice(nf, 1);
     var host = $('setItems');
     host.innerHTML = '';
     this.els = [];

@@ -43,30 +43,7 @@ function runtimePing(cb) {
   }
 }
 function runtimeStart(cb) {
-  var done = false,
-    bridge = null;
-  function finish(ok) {
-    if (done) return;
-    done = true;
-    bridge = null;
-    cb(ok);
-  }
-  try {
-    if (typeof PalmServiceBridge === 'undefined') {
-      finish(false);
-      return;
-    }
-    bridge = new PalmServiceBridge();
-    bridge.onservicecallback = function () {
-      finish(true);
-    };
-    bridge.call('luna://' + TV_PROFILE.serviceId + '/start', '{}');
-    setTimeout(function () {
-      finish(false);
-    }, 2600);
-  } catch (e) {
-    finish(false);
-  }
+  startService(TV_PROFILE.serviceId, cb);
 }
 function runtimeRecover() {
   if (runtimeRecovering) return;
@@ -104,7 +81,7 @@ function runtimeRecover() {
 }
 window.__STREMIO_RESUME_CHECK__ = runtimeRecover;
 function reloadUi() {
-  var url = '/beta?recover=' + Date.now();
+  var url = appUrl('/beta?recover=' + Date.now());
   try {
     location.replace(url);
   } catch (e) {

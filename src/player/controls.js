@@ -51,7 +51,7 @@ function nextEp() {
     rememberNextSource();
     openNextDirect();
   } catch (e) {
-    location.replace(NEXTHREF);
+    location.replace(appUrl(NEXTHREF));
   }
 }
 var mode = 'video',
@@ -151,7 +151,7 @@ function tryAnotherSource() {
       JSON.stringify({ at: Date.now(), addon: ADDON, text: SNAME })
     );
   } catch (e) {}
-  location.replace('/' + (BACK || 'beta'));
+  location.replace(appUrl('/' + (BACK || 'beta')));
 }
 v.addEventListener('error', function () {
   if (retryStartup('error')) return;
@@ -277,30 +277,7 @@ function health(cb) {
   }
 }
 function startRuntime(cb) {
-  var done = false,
-    b = null;
-  function end(ok) {
-    if (done) return;
-    done = true;
-    b = null;
-    cb(ok);
-  }
-  try {
-    if (typeof PalmServiceBridge === 'undefined') {
-      end(false);
-      return;
-    }
-    b = new PalmServiceBridge();
-    b.onservicecallback = function () {
-      end(true);
-    };
-    b.call('luna://' + SERVICE_ID + '/start', '{}');
-    setTimeout(function () {
-      end(false);
-    }, 2600);
-  } catch (e) {
-    end(false);
-  }
+  startService(SERVICE_ID, cb);
 }
 var wasPlayingBeforeHide = false,
   resumeRecovering = false;
@@ -322,7 +299,7 @@ function recoverPlayerRuntime() {
         health(function (ok) {
           if (ok) {
             diag('player_resume_recovered', { tries: tries });
-            location.replace('http://127.0.0.1:' + APP_PORT + '/' + (BACK || 'beta'));
+            location.replace(appUrl('http://127.0.0.1:' + APP_PORT + '/' + (BACK || 'beta')));
             return;
           }
           tries++;

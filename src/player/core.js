@@ -1,5 +1,5 @@
 // Element references, XHR helper, loading artwork and the startup watchdog.
-var v = document.getElementById('v'),
+var v = createVideo(),
   bar = document.getElementById('bar'),
   fill = document.getElementById('fill'),
   timeEl = document.getElementById('time'),

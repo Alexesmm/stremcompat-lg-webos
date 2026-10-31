@@ -1,5 +1,7 @@
 [
   "_prelude.js",
+  "../platform/lg/common.js",
+  "../platform/lg/ui.js",
   "core/base.js",
   "core/net.js",
   "core/storage.js",

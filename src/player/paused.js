@@ -51,7 +51,7 @@ function fillBadges(j) {
 fillBadges(null);
 var techProbed = false;
 function ensureTechProbe() {
-  if (techProbed) return;
+  if (techProbed || !HAS_MEDIA_TOOLS) return;
   techProbed = true;
   xhr('/probe?u=' + encodeURIComponent(URL), function (j) {
     if (j) fillBadges(j);

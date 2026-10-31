@@ -26,7 +26,7 @@ function playUrl(source, type, id, vid, backHash) {
       body,
       function (j) {
         if (j && j.ref) {
-          location.assign('/play?ref=' + encodeURIComponent(j.ref) + tail);
+          location.assign(appUrl('/play?ref=' + encodeURIComponent(j.ref) + tail));
           return;
         }
         if (attempt < 2) {
@@ -62,7 +62,7 @@ function resumeSearch(id, vid) {
 }
 function playStored(q, backHash) {
   q = q.replace(/&back=[^&]*/, '');
-  location.assign('/play' + q + '&back=' + encodeURIComponent(backHash));
+  location.assign(appUrl('/play' + q + '&back=' + encodeURIComponent(backHash)));
 }
 /* Left by the player when a source would not play (player controls.js): the title page
    reopens the sources and plays the next one, skipping the failed source. */

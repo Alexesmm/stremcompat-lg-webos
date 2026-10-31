@@ -54,7 +54,7 @@ var search = {
         box,
         'keydown',
         function (e) {
-          if (e.keyCode === 13) {
+          if (e.keyCode === 13 || e.keyCode === 65376) {
             e.preventDefault();
             e.stopPropagation();
             $('sBox').blur();
@@ -67,7 +67,7 @@ var search = {
             self.text = $('sBox').value;
             self.zone = 'keys';
             self.paint();
-          } else if (e.keyCode === 461 || e.keyCode === 27) {
+          } else if (isRemoteBack(e.keyCode) || e.keyCode === 65385) {
             e.preventDefault();
             e.stopPropagation();
             $('sBox').blur();

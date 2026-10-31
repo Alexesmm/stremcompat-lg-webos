@@ -100,7 +100,7 @@ function nextDirect(streams, opts) {
     setTimeout: function (f) { timers.push(f); return timers.length; }, clearTimeout: function () {}
   };
   vm.runInNewContext(
-    src('shared/strings.js') + src('shared/stream-addons.js') + src('shared/source-info.js') + src('player/strings.js') + src('player/up-next.js') +
+    src('platform/lg/common.js') + src('shared/strings.js') + src('shared/stream-addons.js') + src('shared/source-info.js') + src('player/strings.js') + src('player/up-next.js') +
     ';function nextSourcePref(){return{addon:ADDON,quality:QUALITY,compat:COMPAT,text:SNAME,binge:BINGE,langs:subtitleLanguagesOnly({name:SNAME})?[]:streamLanguages({name:SNAME})};}' +
     ';openNextDirect();',
     ctx
@@ -137,7 +137,7 @@ assert.deepStrictEqual(nextDirect([], { silent: true, timeout: true }).went, ['/
 function subtitlePrefs(stored) {
   var storage = memoryStorage(stored);
   var ctx = {
-    ID: 'tt9', TYPE: 'series', VID: '', URL: '', localStorage: storage,
+    ID: 'tt9', TYPE: 'series', VID: '', URL: '', localStorage: storage, HAS_MEDIA_TOOLS: true,
     v: { addEventListener: function () {}, textTracks: [], currentTime: 0 },
     document: { getElementById: element, createElement: element },
     xhr: function () {}, showToast: function () {}, subEl: element('sub')
@@ -158,7 +158,7 @@ assert.strictEqual(remembered.delay, 1.5, 'the subtitle delay for this title was
 
 // ---- the controls stay up while a subtitle or audio track is loading (subtitles.js playerBusy) ----
 var busyCtx = {
-  ID: 'tt9', TYPE: 'series', VID: '', URL: 'u', localStorage: memoryStorage({}), mode: 'menu',
+  ID: 'tt9', TYPE: 'series', VID: '', URL: 'u', localStorage: memoryStorage({}), mode: 'menu', HAS_MEDIA_TOOLS: true,
   v: { addEventListener: function () {}, textTracks: [], currentTime: 0, readyState: 4 },
   document: { getElementById: element, createElement: element }, location: { search: '' },
   xhr: function () {}, showToast: function () {}, subEl: element('sub')
@@ -178,7 +178,7 @@ assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'a subtit
 function holdSession(paused) {
   var timers = [], xhrs = [], toasts = [];
   var ctx = {
-    ID: 'tt9', TYPE: 'series', VID: '', URL: 'u', localStorage: memoryStorage({}), mode: 'video', EMBMODE: 'server',
+    ID: 'tt9', TYPE: 'series', VID: '', URL: 'u', localStorage: memoryStorage({}), mode: 'video', EMBMODE: 'server', HAS_MEDIA_TOOLS: true,
     NO_HISTORY: false, load: { style: { display: 'none' } },
     v: {
       paused: !!paused, ended: false, addEventListener: function () {}, textTracks: [], currentTime: 0, readyState: 4,

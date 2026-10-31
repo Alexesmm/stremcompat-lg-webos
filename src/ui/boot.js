@@ -36,7 +36,7 @@ function boot() {
       goScr('sim', { type: ms[1], id: ms[2] });
     }
     try {
-      history.replaceState(history.state, '', '/beta');
+      history.replaceState(history.state, '', appUrl('/beta'));
     } catch (e) {}
     setTimeout(function () {
       window.__STREMIO_BOOT_DONE__ = true;
