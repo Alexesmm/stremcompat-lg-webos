@@ -2,8 +2,11 @@
 #lgWrap{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #lgLang{position:fixed;top:34px;right:42px;padding:12px 22px;border-radius:24px;font-size:22px;color:rgba(255,255,255,.78);background:rgba(255,255,255,.08);z-index:3}
 #lgLang.f{background:#fff;color:#0c0b11;font-weight:700}
+#lgAccount{position:fixed;left:0;right:0;bottom:60px;text-align:center;font-size:24px;color:rgba(255,255,255,.82)}
+body:not(.login) #lgAccount{display:none}
 #lgNote{position:fixed;left:0;right:0;bottom:26px;text-align:center;font-size:20px;color:rgba(255,255,255,.45)}
 body:not(.login) #lgNote{display:none}
+@media(max-height:800px){#lgAccount{bottom:44px;font-size:17px}#lgNote{bottom:18px;font-size:15px}}
 #lgBox{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
 #lgQr{text-align:center;padding-right:90px;border-right:1px solid rgba(255,255,255,.14)}
 #lgQr h2{font-size:40px;margin:0 0 10px}

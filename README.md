@@ -43,12 +43,13 @@ Captured at the 1920x1080 size the interface uses on the TV. Sources are shown w
 1. [Downloads](#downloads)
 2. [Compatibility](#compatibility)
 3. [Installation](#installation)
-4. [Features](#features)
-5. [How it works](#how-it-works)
-6. [Troubleshooting](#troubleshooting)
-7. [Feedback and compatibility reports](#feedback-and-compatibility-reports)
-8. [Support development](#support-development)
-9. [Credits and licensing](#credits-and-licensing)
+4. [First use](#first-use)
+5. [Features](#features)
+6. [How it works](#how-it-works)
+7. [Troubleshooting](#troubleshooting)
+8. [Feedback and compatibility reports](#feedback-and-compatibility-reports)
+9. [Support development](#support-development)
+10. [Credits and licensing](#credits-and-licensing)
 
 ## Downloads
 
@@ -93,6 +94,14 @@ Root access is not required.
 The IPK is about 46 MiB and uses about 92 MiB once installed. Developer Mode installations expire with the Developer Mode timer, so renew it before it reaches zero.
 
 > **After updating over an existing installation**, the app's local service from the previous version can keep running in the background. From 1.3.3 on, the new version replaces it by itself. If the app ever stays on the loading screen (`RUNTIME_START_TIMEOUT`), unplug the television for at least 30 seconds and open it again; turning it off with the remote is not enough when Quick Start+ is on. This does not erase your account or settings.
+
+## First use
+
+StremCompat has no accounts or sources of its own. It uses your Stremio account and the addons installed on it.
+
+1. Create a free account at [stremio.com/register](https://www.stremio.com/register), if you do not have one.
+2. Install your addons in the Stremio app or website. They come from the account, so without any addon that provides sources, titles open but have nothing to play.
+3. On the TV, sign in with the QR code or with your email and password.
 
 ## Features
 
