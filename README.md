@@ -23,6 +23,21 @@ It combines its own lightweight television interface with a bundled ARMv7 Node.j
 
 This project is not affiliated with or endorsed by Stremio or LG Electronics. Use only addons and media sources that you are authorized to access.
 
+## Screenshots
+
+Captured at the 1920x1080 size the interface uses on the TV. Sources are shown with an example addon.
+
+<table>
+  <tr>
+    <td><img src="docs/assets/screens/discover.jpg" alt="Discover grid with filters" width="100%"></td>
+    <td><img src="docs/assets/screens/series.jpg" alt="Series page with episodes" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/screens/sources.jpg" alt="Source list with quality and language tags" width="100%"></td>
+    <td><img src="docs/assets/screens/settings.jpg" alt="Settings screen" width="100%"></td>
+  </tr>
+</table>
+
 ## Table of contents
 
 1. [Downloads](#downloads)

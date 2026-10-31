@@ -14,6 +14,8 @@ var appPort = parseInt(process.argv[3], 10) || profile.port;
 var appVersion = process.argv[4] || profile.version;
 var forceEmbedded = process.argv[5] === 'embedded';
 var childLogGlobal = '';
+/* service modules loaded by this test must not leave a log in the staged package */
+process.env.TVSERVER_LOG = path.join(os.tmpdir(), 'stremcompat-selftest-modules-' + process.pid + '.log');
 
 var nextEpisodeId = require(path.join(root, 'service', 'server', 'episodes.js')).nextEpisodeId;
 // subtitle decoding without the streaming server's converter (what the TV does when it is not ready)
