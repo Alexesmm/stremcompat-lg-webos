@@ -26,7 +26,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 #serverPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #srvBox{width:968px;margin:12vh auto 0;padding:32px 40px 26px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
 #srvTitle{font-size:32px;font-weight:700;color:#fff}
-#srvValue{height:68px;margin:20px 0 16px;padding:0 20px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:36px;line-height:68px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden;direction:rtl}
+#srvValue{height:68px;margin:20px 0 16px;padding:0 20px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:36px;line-height:68px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden}
 #srvKeys{text-align:left}
 .srvkey{display:inline-block;vertical-align:top;width:80px;height:56px;margin:4px;text-align:center;line-height:56px;border-radius:10px;background:#27303a;color:#fff;font-size:26px;font-weight:600;box-sizing:border-box;cursor:pointer}
 .srvkey.srvact{width:212px;font-size:22px;margin-top:10px}

@@ -177,6 +177,8 @@ npm run package:uj3-native-hd
 
 The first runtime preparation downloads the pinned runtime archive from the `runtime-v2.0.0` build-dependency prerelease and verifies its SHA-256 (`3a63ba8ce3c3a6cafc3fd1eb6d0187231c8261150b06868a0b67835224ad246b`). Runtime binaries are not committed to this repository. `scripts/make-runtime-archive.js` builds that archive from the StremioBrew 1.0.0 package, keeping Node.js, its libraries, FFmpeg and FFprobe and leaving out Stremio's streaming server. It is not a TV application download.
 
+Torrent links name the server on the TV (`127.0.0.1:11470`). `service/server/server-address.js` keeps the optional address from Settings in `$HOME/.stremcompat/server-address.json` and rewrites those links when a stream reference is stored, so the player and the interface do not need to know which server is in use. An address is kept only after `/settings` or `/stats.json` answers there. `/serverconfig` refuses a POST that is not `application/json`, so a web page cannot change it without a preflight, which this server never allows.
+
 Stremio's streaming server is not packaged. On first use, the TV downloads the pinned webOS build from `dl.strem.io`, verifies its SHA-256 and stores it in `$HOME/.stremcompat/`, or in the app's folder when that fails. A file that does not match is never executed. The version and checksum are in `service/server/streaming-file.js`.
 
 To add another profile:

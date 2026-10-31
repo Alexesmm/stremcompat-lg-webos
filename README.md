@@ -56,10 +56,10 @@ Download the IPK that matches your television's webOS generation and graphics mo
 
 | Package | For | Status | App name on the TV |
 |---|---|---|---|
-| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-2.0.0.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | StremCompat |
-| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-2.0.0.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | StremCompat HD |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-2.0.0.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | StremCompat UJ3 |
-| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-2.0.0.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | StremCompat UJ3 HD |
+| `StremCompat-webOS4-UM4-armv7-graphics-1920x1080-2.1.0.ipk` | webOS 4.x | Confirmed on LG 50UM7500PSB | StremCompat |
+| `StremCompat-webOS4-UM4-armv7-graphics-1280x720-2.1.0.ipk` | webOS 4.x, 720p/HD interface | Locally validated, reports welcome | StremCompat HD |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1920x1080-2.1.0.ipk` | webOS 3.x | Confirmed on LG 49UJ6565-SB (webOS 3.9.3) | StremCompat UJ3 |
+| `StremCompat-webOS3-UJ3-armv7-graphics-1280x720-2.1.0.ipk` | webOS 3.x, 720p/HD interface | Locally validated, reports welcome | StremCompat UJ3 HD |
 
 How to choose:
 
@@ -102,7 +102,8 @@ The IPK is about 46 MiB and uses about 92 MiB once installed. Developer Mode ins
 - Library, watched state, progress and addon synchronization with the Stremio account, in both directions: episodes and films watched on the TV show as watched in the other Stremio apps, and the other way round.
 - Continue Watching with the episode and minutes left; a finished episode becomes the next one, also when it was finished on another device.
 - Home rows for New episodes of followed series and My list.
-- History controls to clear recent searches or Continue Watching.
+- The next episode starts straight from the player, with the same release when the addon marks it, or the same addon, quality and audio language. When nothing matches, the source list opens instead of changing language silently.
+- History controls to clear recent searches or Continue Watching, and **Do not save history**: while it is on, no progress, watched state, played source or search is saved on the TV or sent to your account. Addons and streaming servers still receive their normal requests.
 
 **Browsing**
 
@@ -117,6 +118,8 @@ The IPK is about 46 MiB and uses about 92 MiB once installed. Developer Mode ins
 - Optional preferred source language that lists sources in that language first, and a language filter when the sources come in several languages.
 - Addons that do not answer are named, and a source that will not play offers another one.
 - Direct, debrid, torrent and HLS playback through the local bridge, using the TV's hardware decoder.
+- Playback waits up to ten seconds for a subtitle you choose in the menu, so it starts with the line being spoken.
+- Torrents can use a streaming server on another computer: **Settings > Streaming server > Address**. The address is saved only after a server answers there, and **Use this TV** goes back to the built-in behaviour. Nothing is downloaded to the TV while another server is set.
 - Subtitles and audio-track selection, remembered per title along with the subtitle delay.
 - Next-episode countdown with an "are you still watching?" check.
 - LG remote shortcuts: red subtitles, green audio, yellow skips 85 seconds, blue settings, digits jump through the video.

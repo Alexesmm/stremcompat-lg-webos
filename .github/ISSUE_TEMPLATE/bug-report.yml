@@ -48,7 +48,7 @@ body:
     attributes:
       label: Exact IPK filename
       description: Include the generation, graphics resolution and version from the downloaded filename.
-      placeholder: StremCompat-webOS3-UJ3-armv7-graphics-1280x720-2.0.0.ipk
+      placeholder: StremCompat-webOS3-UJ3-armv7-graphics-1280x720-2.1.0.ipk
     validations:
       required: true
   - type: input

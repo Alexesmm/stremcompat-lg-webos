@@ -6835,7 +6835,8 @@ var serverPanel = {
     $('srvStatus').textContent = text;
   },
   paint: function () {
-    $('srvValue').textContent = this.text || ' ';
+    /* a long address keeps its end in view, where the typing happens */
+    $('srvValue').textContent = this.text.length > 40 ? '…' + this.text.slice(-39) : this.text || ' ';
     setF(this.els, this.idx);
   },
   close: function () {
@@ -6845,7 +6846,7 @@ var serverPanel = {
   press: function (i) {
     if (this.busy) return;
     if (i < SERVER_KEYS.length) {
-      if (this.text.length < 120) this.text += SERVER_KEYS[i];
+      this.type(SERVER_KEYS[i]);
     } else {
       var action = this.actions[i - SERVER_KEYS.length];
       if (action === 'serverDelete') this.text = this.text.slice(0, -1);
@@ -6854,6 +6855,11 @@ var serverPanel = {
       else if (action === 'serverSave') this.submit(this.text);
     }
     this.paint();
+  },
+  type: function (ch) {
+    if (this.busy || this.text.length >= 120) return;
+    this.text += ch;
+    this.status(tx('serverHint'));
   },
   submit: function (address) {
     var self = this;
@@ -6884,7 +6890,7 @@ var serverPanel = {
     var n = SERVER_KEYS.length,
       i = this.idx;
     if (k >= 48 && k <= 57) {
-      if (!this.busy && this.text.length < 120) this.text += String(k - 48);
+      this.type(String(k - 48));
     } else if (k === 13) {
       this.press(i);
       return;

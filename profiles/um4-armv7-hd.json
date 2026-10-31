@@ -4,7 +4,7 @@
   "appId": "io.github.alexesmm.legacytv.hd",
   "title": "StremCompat HD",
   "serviceId": "io.github.alexesmm.legacytv.hd.server",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "port": 8084,
   "graphicsResolution": "1280x720",
   "ecmaTarget": "chrome53",
