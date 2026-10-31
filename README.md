@@ -19,7 +19,7 @@
 
 StremCompat is an independent, unofficial client for older LG televisions that cannot install the official Stremio app. It works with your Stremio account and addons, with an interface designed for the TV remote. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access or Homebrew Channel.
 
-It combines its own lightweight television interface with a bundled ARMv7 Node.js runtime, FFmpeg tools and a local compatibility server, so legacy webOS televisions can sign in, sync the account library and addons, browse catalogs and play media with the TV's hardware video decoder. Stremio's streaming server, which torrents need, is not part of the package: the TV downloads it directly from Stremio on first use.
+It combines its own lightweight television interface with a bundled ARMv7 Node.js runtime, FFmpeg tools and a local compatibility server, so legacy webOS televisions can sign in, sync the account library and addons, browse catalogs and play media with the TV's hardware video decoder. Stremio's streaming server, which torrents need, is not part of the package: the TV downloads it directly from Stremio the first time the app opens.
 
 This project is not affiliated with or endorsed by Stremio or LG Electronics. Use only addons and media sources that you are authorized to access.
 

@@ -28,7 +28,7 @@ The bundled FFmpeg binary identifies itself as configured with `--enable-gpl` an
 
 ## Downloaded by the television
 
-Stremio's streaming server (`https://dl.strem.io/server/v4.20.17/webos/server.js`, SHA-256 `ecef1b5a4f67f5fd94ffc0c39e7567d6a6efdd46849ea7a2da48ccc84bd49c1d`) is closed-source and is not part of the release packages. The television downloads it directly from Stremio on first use. Its use remains subject to Stremio's terms.
+Stremio's streaming server (`https://dl.strem.io/server/v4.20.17/webos/server.js`, SHA-256 `ecef1b5a4f67f5fd94ffc0c39e7567d6a6efdd46849ea7a2da48ccc84bd49c1d`) is closed-source and is not part of the release packages. The television downloads it directly from Stremio the first time the app opens. Its use remains subject to Stremio's terms.
 
 ## Bundled font
 

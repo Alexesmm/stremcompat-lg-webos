@@ -179,7 +179,7 @@ The first runtime preparation downloads the pinned runtime archive from the `run
 
 Torrent links name the server on the TV (`127.0.0.1:11470`). `service/server/server-address.js` keeps the optional address from Settings in `$HOME/.stremcompat/server-address.json` and rewrites those links when a stream reference is stored, so the player and the interface do not need to know which server is in use. An address is kept only after `/settings` or `/stats.json` answers there. `/serverconfig` refuses a POST that is not `application/json`, so a web page cannot change it without a preflight, which this server never allows.
 
-Stremio's streaming server is not packaged. On first use, the TV downloads the pinned webOS build from `dl.strem.io`, verifies its SHA-256 and stores it in `$HOME/.stremcompat/`, or in the app's folder when that fails. A file that does not match is never executed. The version and checksum are in `service/server/streaming-file.js`.
+Stremio's streaming server is not packaged. The first time the app opens, the TV downloads in the background the pinned webOS build from `dl.strem.io`, verifies its SHA-256 and stores it in `$HOME/.stremcompat/`, or in the app's folder when that fails. A file that does not match is never executed. The version and checksum are in `service/server/streaming-file.js`.
 
 To add another profile:
 
