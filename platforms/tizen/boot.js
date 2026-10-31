@@ -67,6 +67,32 @@
       again();
     });
   }
-  launch();
-  ping();
+  /* On some launches the TV opens the page without its system objects; a reload brings them.
+     The count survives the reload and has a limit, so this cannot loop forever. */
+  var RELOAD_KEY = 'tizenBootReloads',
+    RELOAD_LIMIT = 3;
+  function reloadForSystem() {
+    var count = -1;
+    try {
+      count = parseInt(sessionStorage.getItem(RELOAD_KEY), 10) || 0;
+      if (count < RELOAD_LIMIT) sessionStorage.setItem(RELOAD_KEY, String(count + 1));
+    } catch (e) {
+      count = RELOAD_LIMIT;
+    }
+    if (count >= RELOAD_LIMIT) {
+      window.__STREMIO_BOOT_ERROR__('The TV did not give the app access to its system functions.', 'TIZEN');
+      return;
+    }
+    location.reload();
+  }
+  function begin() {
+    if (typeof tizen === 'undefined') return reloadForSystem();
+    try {
+      sessionStorage.removeItem(RELOAD_KEY);
+    } catch (e) {}
+    launch();
+    ping();
+  }
+  /* the objects can arrive just after the first script runs */
+  setTimeout(begin, 300);
 })();

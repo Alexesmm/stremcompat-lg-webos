@@ -21,7 +21,9 @@ StremCompat is an independent, unofficial client for older LG televisions that c
 
 It combines its own lightweight television interface with a bundled ARMv7 Node.js runtime, FFmpeg tools and a local compatibility server, so legacy webOS televisions can sign in, sync the account library and addons, browse catalogs and play media with the TV's hardware video decoder. Stremio's streaming server, which torrents need, is not part of the package: the TV downloads it directly from Stremio the first time the app opens.
 
-This project is not affiliated with or endorsed by Stremio or LG Electronics. Use only addons and media sources that you are authorized to access.
+**The stable version is the one for LG.** There is also a [test version for older Samsung TVs](#samsung-tvs-test-version).
+
+This project is not affiliated with or endorsed by Stremio, LG Electronics or Samsung. Use only addons and media sources that you are authorized to access.
 
 ## Screenshots
 
@@ -46,10 +48,11 @@ Captured at the 1920x1080 size the interface uses on the TV. Sources are shown w
 4. [First use](#first-use)
 5. [Features](#features)
 6. [How it works](#how-it-works)
-7. [Troubleshooting](#troubleshooting)
-8. [Feedback and compatibility reports](#feedback-and-compatibility-reports)
-9. [Support development](#support-development)
-10. [Credits and licensing](#credits-and-licensing)
+7. [Samsung TVs (test version)](#samsung-tvs-test-version)
+8. [Troubleshooting](#troubleshooting)
+9. [Feedback and compatibility reports](#feedback-and-compatibility-reports)
+10. [Support development](#support-development)
+11. [Credits and licensing](#credits-and-licensing)
 
 ## Downloads
 
@@ -145,6 +148,26 @@ The package contains a small webOS launcher and a background service written in 
 
 webOS 3 and 4 need separate packages because they ship different browser engines (Chromium 38 and 53), and each generation comes in a 1920x1080 and a 1280x720 interface edition. Architecture details, memory limits per generation, how to adapt the project to another TV and how builds are verified and released are in [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
+## Samsung TVs (test version)
+
+> **This is a test version.** It has only been tested on one TV (Samsung UN75NU7100, Tizen 4.0), so expect problems. The stable version is the one for LG webOS.
+
+| Samsung TVs | Tizen | Status |
+|---|---|---|
+| 2018, N series | 4.0 | Tested on one TV |
+| 2017, M series | 3.0 | Should work, not tested yet |
+| 2019 and 2020, R and T series | 5.0 and 5.5 | May work, not tested |
+| 2021 and 2022 | 6.0 and 6.5 | May work, not tested; these TVs can use the official Stremio app |
+| 2023 and newer | 7.0 and newer | Not tested; the package has to be signed again with your own Samsung certificate |
+| 2015 and 2016 | 2.x | Not supported |
+
+It differs from the LG version in a few ways:
+
+- **Torrents** need a streaming server on another computer: **Settings > Streaming server > Address**. Debrid and direct links work without one.
+- **Not available:** seek previews, technical badges on the paused screen and background trailers, which depend on FFmpeg.
+
+Download the package from the [test release](https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/tizen-beta-1), which has the installation steps. Please report how it went with your TV model and Tizen version in [Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions).
+
 ## Troubleshooting
 
 - **"Can't reach Stremio" message, or nothing loads (login QR code, email login or catalogs) while other TV apps and Stremio on a phone work:** your network probably hands out IPv6 without a working IPv6 connection. Update to 1.2.3 or later, which tries IPv4 first. On older versions, turn IPv6 off on the television (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router.
@@ -178,4 +201,4 @@ StremCompat is free to use, and donations are never required.
 - **[kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos)**: StremCompat started as a fork of this project, whose earlier interface came from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The launcher and interface have since been rewritten.
 - Stremio, Node.js, FFmpeg, the Inter typeface and LG webOS tooling are also used or interoperated with. Stremio is a trademark of its owner; the streaming server belongs to Stremio and is downloaded from them.
 
-See [NOTICE.md](NOTICE.md) and [THIRD_PARTY.md](THIRD_PARTY.md) for project lineage, component provenance and redistribution caveats. No repository-wide open-source license is currently asserted.
+StremCompat is licensed under [GPL-3.0](LICENSE). The license does not cover Stremio's streaming server, other third-party components, or the names and logos of StremCompat, Stremio, LG and Samsung. See [NOTICE.md](NOTICE.md) and [THIRD_PARTY.md](THIRD_PARTY.md) for project lineage, component provenance and open items.

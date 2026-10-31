@@ -230,3 +230,20 @@ git push origin v1.0.4
 ```
 
 Users do not need to create a Release. They only download the matching IPK from the Releases page.
+
+## Samsung Tizen (test version)
+
+The Samsung package shares the interface, the player and the local server with the LG packages. `src/platform/lg` and `src/platform/tizen` hold what differs, and `scripts/build-ui.js` picks one folder per platform.
+
+- **Pages:** `index.html` and `player.html` are files inside the `.wgt`, so they can reach the `tizen` and `webapis` objects. A `<base>` tag points their requests at the local server. `appUrl()` handles moving between pages.
+- **Service:** `platforms/tizen/service/main.js` runs `service/server/*.js` on the TV's own Node (4.4.3 on Tizen 3 and 4). `scripts/build-tizen.js` rewrites `var { A } = require()` and stops the build on anything else Node 4 cannot run. `node4.js` fills in missing APIs and shares one TLS context with current root certificates, since Node 4's own list rejects Let's Encrypt's current chain. The service leaves about 90 seconds after the last request, and the pages ask it something every 30 seconds.
+- **Player:** `src/platform/tizen/player.js` exposes AVPlay as the `<video>` element the player code expects.
+- **What Tizen does not allow:** other programs cannot run, so there is no Node 18, FFmpeg or FFprobe. Features that need them are off through `HAS_MEDIA_TOOLS`. The local streaming server is off through `localTorrents` in the profile.
+- **Security:** a POST preflight is only answered for the app's own pages (`Origin: file://` or `null`).
+
+```powershell
+npm run build:tizen     # stage .build/tizen-armv7
+npm run package:tizen   # build and sign dist/tizen/*.wgt (needs the Tizen CLI and the author certificate)
+```
+
+`NODE4=path\to\node.exe npm test` also checks the certificates and the API shims on a real Node 4. Updates must be signed with the same author certificate, which is kept outside the repository.

@@ -1,3 +1,7 @@
+StremCompat
+  License: LICENSE.gpl-3.0.txt (GPL-3.0-only)
+  Source: https://github.com/Alexesmm/stremcompat-lg-webos
+
 Third-party components in this package
 
 Node.js 18 (with OpenSSL, libuv, c-ares, nghttp2 and other bundled libraries)

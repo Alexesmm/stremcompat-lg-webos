@@ -50,6 +50,34 @@ var sizeOf = function (dir) {
 var stageMb = sizeOf(stage) / 1048576;
 assert.ok(stageMb < 4, 'the Samsung package grew to ' + stageMb.toFixed(1) + ' MB');
 
+// ---- a launch without the TV's system objects recovers by itself (boot.js) ----
+function bootRun(hasTizen, reloads) {
+  var stored = {}, timers = [], reloaded = 0, launched = 0, errors = [];
+  if (reloads) stored.tizenBootReloads = String(reloads);
+  var ctx = {
+    window: { __STREMCOMPAT_APP__: function () {}, __STREMIO_SCRIPT_LOADED__: function () {}, __STREMIO_BOOT_ERROR__: function (m) { errors.push(m); } },
+    location: { reload: function () { reloaded++; } },
+    sessionStorage: { getItem: function (k) { return k in stored ? stored[k] : null; }, setItem: function (k, v) { stored[k] = v; }, removeItem: function (k) { delete stored[k]; } },
+    setTimeout: function (f) { timers.push(f); },
+    XMLHttpRequest: function () { this.open = function () {}; this.send = function () {}; },
+    Date: Date, JSON: JSON, parseInt: parseInt, String: String
+  };
+  if (hasTizen) ctx.tizen = { ApplicationControl: function () {}, application: { launchAppControl: function () { launched++; } } };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'platforms', 'tizen', 'boot.js'), 'utf8'), ctx);
+  timers.shift()();
+  return { reloaded: reloaded, launched: launched, errors: errors, stored: stored };
+}
+var firstLoad = bootRun(false);
+assert.strictEqual(firstLoad.reloaded, 1, 'a page without the system objects stayed loading forever');
+assert.strictEqual(firstLoad.stored.tizenBootReloads, '1', 'the reload was not counted');
+var gaveUp = bootRun(false, 3);
+assert.strictEqual(gaveUp.reloaded, 0, 'the page kept reloading past the limit');
+assert.strictEqual(gaveUp.errors.length, 1, 'giving up must say why');
+var recovered = bootRun(true, 2);
+assert.strictEqual(recovered.launched, 1, 'the service was not started');
+assert.ok(!('tizenBootReloads' in recovered.stored), 'the reload count stayed after a good start');
+assert.ok(player.indexOf('tizenPlayerReloads') > 0, 'the player page must recover the same way');
+
 // ---- every constant of the player page has a variable ----
 var script = fs.readFileSync(path.join(root, 'scripts', 'build-tizen.js'), 'utf8');
 var names = script.match(/var PLAYER_CONSTANTS = \[([\s\S]*?)\];/)[1].match(/'[A-Z_]+'/g).map(function (s) { return s.slice(1, -1); });

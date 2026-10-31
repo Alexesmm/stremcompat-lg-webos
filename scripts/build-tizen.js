@@ -147,9 +147,12 @@ function playerPage() {
     'var m=location.search.match(/[?&]back=([^&]*)/),back=m?decodeURIComponent(m[1]):"",x=new XMLHttpRequest(),done=false;' +
     'function answer(){if(done)return;done=true;var j=null;try{j=JSON.parse(x.responseText)}catch(e){}' +
     'if(!j||j.gone||!j.URL)return home(back);run(j);}' +
-    'x.open("GET","/playinfo"+location.search,true);' +
-    'x.onreadystatechange=function(){if(x.readyState===4)answer();};' +
-    'x.send();})();';
+    'function fetchInfo(){x.open("GET","/playinfo"+location.search,true);' +
+    'x.onreadystatechange=function(){if(x.readyState===4)answer();};x.send();}' +
+    /* as in boot.js: a page opened without the TV's system objects needs a reload */
+    'setTimeout(function(){if(typeof webapis!=="undefined"&&typeof tizen!=="undefined"){try{sessionStorage.removeItem("tizenPlayerReloads")}catch(e){}return fetchInfo();}' +
+    'var n=3;try{n=parseInt(sessionStorage.getItem("tizenPlayerReloads"),10)||0;if(n<3)sessionStorage.setItem("tizenPlayerReloads",String(n+1));}catch(e){}' +
+    'if(n<3)location.reload();else home(back);},300);})();';
   return (
     '<!doctype html><html><head><meta charset="utf-8">' + viewportTag +
     '<script src="$WEBAPIS/webapis/webapis.js"></script>' + baseTag +

@@ -106,4 +106,6 @@ Working rules:
 - Do not copy source, artwork, fonts or binaries unless you have the right to contribute and redistribute them.
 - Preserve third-party notices and document newly introduced components in `THIRD_PARTY.md`.
 
-The repository currently does not assert one project-wide open-source license because parts of its inherited source and bundled runtime still have unresolved provenance. Discuss substantial code reuse or a new bundled dependency before investing in an implementation. Submitting a contribution does not override third-party copyright or license terms.
+## License of contributions
+
+StremCompat is licensed under [GPL-3.0](LICENSE). By submitting a contribution, you confirm that you have the right to submit it, you license it under GPL-3.0, and you allow the project maintainer to also release it under other license terms, for example if the project becomes part of an official app.

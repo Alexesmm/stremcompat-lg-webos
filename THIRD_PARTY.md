@@ -1,6 +1,6 @@
 # Third-party components and provenance
 
-This repository is an unofficial compatibility project and is not affiliated with or endorsed by LG Electronics or Stremio.
+This repository is an unofficial compatibility project and is not affiliated with or endorsed by LG Electronics, Samsung or Stremio.
 
 ## Source lineage
 
@@ -26,9 +26,13 @@ The extracted package includes:
 
 The bundled FFmpeg binary identifies itself as configured with `--enable-gpl` and `--enable-version3`, along with GPL-enabled libraries including libx264. Treat that binary as GPLv3-covered distribution material. The pinned IPK does not identify the exact FFmpeg source revision or provide a corresponding source offer, so the runtime provenance is not yet sufficient for a fully documented public redistribution. A future release should replace it with a reproducible build and publish the exact corresponding source and build configuration.
 
+## Samsung package
+
+The Samsung test package contains no Node.js, FFmpeg or FFprobe binary, because it runs on the television's own service runtime. It carries the Inter font and a list of root certificates generated at build time from `tls.rootCertificates` in Node.js, which comes from the Mozilla CA store. It does not download Stremio's streaming server. Packaging uses [Samsung's Tizen CLI tools](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/installing-tv-sdk.html).
+
 ## Downloaded by the television
 
-Stremio's streaming server (`https://dl.strem.io/server/v4.20.17/webos/server.js`, SHA-256 `ecef1b5a4f67f5fd94ffc0c39e7567d6a6efdd46849ea7a2da48ccc84bd49c1d`) is closed-source and is not part of the release packages. The television downloads it directly from Stremio the first time the app opens. Its use remains subject to Stremio's terms.
+On LG televisions, Stremio's streaming server (`https://dl.strem.io/server/v4.20.17/webos/server.js`, SHA-256 `ecef1b5a4f67f5fd94ffc0c39e7567d6a6efdd46849ea7a2da48ccc84bd49c1d`) is closed-source and is not part of the release packages. The television downloads it directly from Stremio the first time the app opens. Its use remains subject to Stremio's terms.
 
 ## Bundled font
 
@@ -43,6 +47,6 @@ Stremio's streaming server (`https://dl.strem.io/server/v4.20.17/webos/server.js
 
 ## Trademarks, services and addons
 
-Stremio and LG are trademarks of their respective owners. Addons and media services are external to this repository. Users are responsible for complying with the terms of the addons and media sources they choose to use.
+Stremio, LG and Samsung are trademarks of their respective owners. Addons and media services are external to this repository. Users are responsible for complying with the terms of the addons and media sources they choose to use.
 
-Third-party binaries and source code remain subject to their respective licenses and terms. This repository does not grant additional rights to those components. See [NOTICE.md](NOTICE.md) before redistributing source or release packages.
+Third-party binaries and source code remain subject to their respective licenses and terms. The [GPL-3.0 license of this repository](LICENSE) does not grant additional rights to those components. See [NOTICE.md](NOTICE.md) before redistributing source or release packages.
