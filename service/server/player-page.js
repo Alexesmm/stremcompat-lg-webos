@@ -56,7 +56,8 @@ function cleanTitle(stream) {
   return stream.name || 'Stremio';
 }
 
-function playerPage(stream, ctx) {
+/* What the player needs to know about this stream, by the names its code uses. */
+function playerConstants(stream, ctx) {
   var streamUrl = stream.url || '';
   ctx = ctx || {};
   var streamHeaders = stream.headers || {};
@@ -76,6 +77,36 @@ function playerPage(stream, ctx) {
       encodeURIComponent(ctx.id || '') +
       '/' +
       encodeURIComponent(nextVid);
+  return {
+    URL: streamUrl,
+    ADDON: stream.addon || '',
+    QUALITY: stream.quality || '',
+    TITLE: title,
+    TYPE: ctx.type || '',
+    ID: ctx.id || '',
+    VID: ctx.vid || '',
+    LOGO: meta.logo || '',
+    BG: meta.background || '',
+    POSTER: meta.poster || '',
+    SEASON: ctx.season || '',
+    EPISODE: ctx.episode || '',
+    EPTITLE: ctx.epTitle || '',
+    NEXTVID: nextVid,
+    NEXTHREF: nextHref,
+    BACK: ctx.back || '',
+    NEXTTITLE: ctx.nextTitle || '',
+    NEXTTHUMB: ctx.nextThumb || '',
+    SNAME: String((stream.name || '') + ' ' + (stream.title || stream.description || '')).slice(0, 400),
+    CERT: (ctx.meta && ctx.meta.cert) || '',
+    COMPAT: stream.compat || '',
+    BINGE: stream.bingeGroup || '',
+    SERVICE_ID: SERVICE_ID,
+    APP_PORT: PORT
+  };
+}
+
+function playerPage(stream, ctx) {
+  var constants = playerConstants(stream, ctx);
   return (
     '<!doctype html><html><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
@@ -83,57 +114,12 @@ function playerPage(stream, ctx) {
     PLAYER.css +
     '</style></head><body>' +
     PLAYER.body +
-    '<script>(function(){' +
-    'var URL=' +
-    safeScriptJson(streamUrl) +
-    ',ADDON=' +
-    safeScriptJson(stream.addon || '') +
-    ',QUALITY=' +
-    safeScriptJson(stream.quality || '') +
-    ',TITLE=' +
-    safeScriptJson(title) +
-    ',TYPE=' +
-    safeScriptJson(ctx.type || '') +
-    ',ID=' +
-    safeScriptJson(ctx.id || '') +
-    ',VID=' +
-    safeScriptJson(ctx.vid || '') +
-    ',LOGO=' +
-    safeScriptJson(meta.logo || '') +
-    ',BG=' +
-    safeScriptJson(meta.background || '') +
-    ',POSTER=' +
-    safeScriptJson(meta.poster || '') +
-    ',SEASON=' +
-    safeScriptJson(ctx.season || '') +
-    ',EPISODE=' +
-    safeScriptJson(ctx.episode || '') +
-    ',EPTITLE=' +
-    safeScriptJson(ctx.epTitle || '') +
-    ',NEXTVID=' +
-    safeScriptJson(nextVid) +
-    ',NEXTHREF=' +
-    safeScriptJson(nextHref) +
-    ',BACK=' +
-    safeScriptJson(ctx.back || '') +
-    ',NEXTTITLE=' +
-    safeScriptJson(ctx.nextTitle || '') +
-    ',NEXTTHUMB=' +
-    safeScriptJson(ctx.nextThumb || '') +
-    ',SNAME=' +
-    safeScriptJson(
-      String((stream.name || '') + ' ' + (stream.title || stream.description || '')).slice(0, 400)
-    ) +
-    ',CERT=' +
-    safeScriptJson((ctx.meta && ctx.meta.cert) || '') +
-    ',COMPAT=' +
-    safeScriptJson(stream.compat || '') +
-    ',BINGE=' +
-    safeScriptJson(stream.bingeGroup || '') +
-    ',SERVICE_ID=' +
-    safeScriptJson(SERVICE_ID) +
-    ',APP_PORT=' +
-    safeScriptJson(PORT) +
+    '<script>(function(){var ' +
+    Object.keys(constants)
+      .map(function (name) {
+        return name + '=' + safeScriptJson(constants[name]);
+      })
+      .join(',') +
     ';' +
     PLAYER.client +
     '})();</script></body></html>'
@@ -141,5 +127,6 @@ function playerPage(stream, ctx) {
 }
 
 module.exports = {
+  playerConstants: playerConstants,
   playerPage: playerPage
 };

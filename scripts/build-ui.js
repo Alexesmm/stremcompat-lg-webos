@@ -5,6 +5,7 @@
 //   src/ui/*.js      -> service/beta-app.js            (order: src/ui/modules.json)
 //   src/player/*.js  -> service/player/player-client.js (order: src/player/modules.json)
 //   src/ui/index.html + src/ui/styles/*.css -> service/beta.html (order: src/ui/styles/styles.json)
+//   the same scripts with src/platform/tizen -> platforms/tizen/generated/ (see build-tizen.js)
 //
 // Scripts are plain fragments concatenated in order. In the interface, _prelude.js
 // opens the single strict-mode IIFE and _epilogue.js closes it; the player is
@@ -24,9 +25,9 @@ function lf(text) { return text.replace(/\r\n/g, '\n'); }
 function read(file) { return lf(fs.readFileSync(file, 'utf8')); }
 function list(dir, manifest) { return JSON.parse(read(path.join(dir, manifest))); }
 
-function scripts(dir) {
+function scripts(dir, platform) {
   return list(dir, 'modules.json').map(function (name) {
-    var text = read(path.join(dir, name));
+    var text = read(path.join(dir, platform ? name.replace('platform/lg/', 'platform/' + platform + '/') : name));
     return text.endsWith('\n') ? text : text + '\n';
   }).join('');
 }
@@ -45,7 +46,9 @@ function page(dir) {
 var targets = [
   { out: 'service/beta-app.js', build: function () { return scripts(path.join(root, 'src', 'ui')); } },
   { out: 'service/player/player-client.js', build: function () { return scripts(path.join(root, 'src', 'player')); } },
-  { out: 'service/beta.html', build: function () { return page(path.join(root, 'src', 'ui')); } }
+  { out: 'service/beta.html', build: function () { return page(path.join(root, 'src', 'ui')); } },
+  { out: 'platforms/tizen/generated/beta-app.js', build: function () { return scripts(path.join(root, 'src', 'ui'), 'tizen'); } },
+  { out: 'platforms/tizen/generated/player-client.js', build: function () { return scripts(path.join(root, 'src', 'player'), 'tizen'); } }
 ];
 
 var check = process.argv.indexOf('--check') >= 0,
@@ -57,6 +60,7 @@ targets.forEach(function (target) {
     var current = fs.existsSync(file) ? read(file) : '';
     if (current !== output) stale.push(target.out);
   } else {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, output);
     console.log('Built ' + target.out);
   }

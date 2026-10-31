@@ -17,7 +17,7 @@ var browserCorrectness = Object.assign({}, correctness, { 'no-redeclare': 'off' 
 
 module.exports = [
   {
-    ignores: ['node_modules/**', '.build/**', '.cache/**', 'dist/**', 'service/server.js', 'service/bin/**', 'src/ui/**']
+    ignores: ['node_modules/**', '.build/**', '.cache/**', 'dist/**', 'service/server.js', 'service/bin/**', 'src/ui/**', 'src/player/**', 'src/shared/**', 'src/platform/**', 'platforms/tizen/spike/**']
   },
   {
     // Node 18 local server and its modules.
@@ -33,23 +33,23 @@ module.exports = [
   },
   {
     // The generated interface bundle (src/ui modules share one scope, so lint the bundle).
-    files: ['service/beta-app.js'],
+    files: ['service/beta-app.js', 'platforms/tizen/generated/beta-app.js'],
     languageOptions: {
       ecmaVersion: 5,
       sourceType: 'script',
-      globals: Object.assign({}, globals.browser, { PalmServiceBridge: 'readonly' })
+      globals: Object.assign({}, globals.browser, { PalmServiceBridge: 'readonly', tizen: 'readonly' })
     },
     rules: browserCorrectness
   },
   {
     // Player client: wrapped by tvserver.js in an IIFE after the per-stream constants.
-    files: ['service/player/player-client.js'],
+    files: ['service/player/player-client.js', 'platforms/tizen/generated/player-client.js'],
     languageOptions: {
       ecmaVersion: 5,
       sourceType: 'script',
       parserOptions: { ecmaFeatures: { globalReturn: true } },
       globals: Object.assign({}, globals.browser, {
-        PalmServiceBridge: 'readonly',
+        PalmServiceBridge: 'readonly', tizen: 'readonly',
         URL: 'readonly', ADDON: 'readonly', QUALITY: 'readonly', TITLE: 'readonly', TYPE: 'readonly',
         ID: 'readonly', VID: 'readonly', LOGO: 'readonly', BG: 'readonly', POSTER: 'readonly',
         SEASON: 'readonly', EPISODE: 'readonly', EPTITLE: 'readonly', NEXTVID: 'readonly', NEXTHREF: 'readonly', BACK: 'readonly',
@@ -58,6 +58,18 @@ module.exports = [
       })
     },
     rules: browserCorrectness
+  },
+  {
+    // The Tizen launcher, inline in index.html.
+    files: ['platforms/tizen/boot.js'],
+    languageOptions: { ecmaVersion: 5, sourceType: 'script', globals: Object.assign({}, globals.browser, { tizen: 'readonly' }) },
+    rules: browserCorrectness
+  },
+  {
+    // The Tizen service, on the TV's Node 4.4.3.
+    files: ['platforms/tizen/service/*.js'],
+    languageOptions: { ecmaVersion: 5, sourceType: 'commonjs', globals: Object.assign({}, globals.node, { tizen: 'readonly' }) },
+    rules: correctness
   },
   {
     files: ['scripts/**/*.js', 'eslint.config.js'],

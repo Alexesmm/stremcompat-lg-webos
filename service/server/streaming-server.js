@@ -4,7 +4,7 @@ var fs = require('fs');
 var net = require('net');
 var path = require('path');
 var spawn = require('child_process').spawn;
-var { DIR, LIB, LOADER, NODE, SERVER_PORT } = require('./config');
+var { DIR, LIB, LOADER, NODE, PROFILE, SERVER_PORT } = require('./config');
 var { ensureServerFile, serverFileStatus } = require('./streaming-file');
 var { probeAddress, remoteAddress } = require('./server-address');
 
@@ -39,7 +39,7 @@ function startStreamingServer() {
   if (now - streamingServerStartedAt < 30000) return;
   streamingServerStartedAt = now;
   /* the runtime only exists on the TV: tests and source checkouts download nothing */
-  if (remoteAddress() || !fs.existsSync(LOADER)) return;
+  if (remoteAddress() || PROFILE.localTorrents === false || !fs.existsSync(LOADER)) return;
   ensureServerFile(function (err, file) {
     if (!err) spawnStreamingServer(file);
   });
@@ -73,6 +73,8 @@ function streamingServerUp(cb) {
 // playback never starts before its backend is ready. Gives up after ~maxMs.
 function waitForServer(cb, waited) {
   waited = waited || 0;
+  /* this platform has no server of its own: nothing is coming */
+  if (PROFILE.localTorrents === false && !remoteAddress()) return cb(false);
   portUp(SERVER_PORT, function (up) {
     if (up) return cb(true);
     if (waited === 0) startStreamingServer();

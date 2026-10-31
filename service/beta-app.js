@@ -283,6 +283,7 @@ var UI_TEXT = {
     exitStay: 'Stay',
     exitLeave: 'Leave the app',
     removedFromCw: 'Removed from Continue watching',
+    torrentsNeedServer: 'This TV cannot run torrents by itself. Set a server in Settings > Streaming server.',
     serverGroup: 'Streaming server',
     serverAddress: 'Address',
     serverHere: 'This TV',
@@ -414,6 +415,7 @@ var UI_TEXT = {
     diagUnavailable: 'The local service did not answer',
     diagServer: 'Local server: {0} MB in use (JS {1} MB) · running for {2} min',
     diagTv: 'Television: {0} MB free of {1} MB · CPU load {2}',
+    diagDisk: 'Storage: {0} MB free of {1} MB',
     diagStreaming: 'Streaming server: {0}',
     diagDownloading: 'downloading from Stremio',
     diagStreamFailed: 'download failed ({0})',
@@ -616,6 +618,8 @@ var UI_TEXT = {
     exitStay: 'Continuar no app',
     exitLeave: 'Sair do app',
     removedFromCw: 'Removido de Continuar assistindo',
+    torrentsNeedServer:
+      'Esta TV não roda torrents sozinha. Defina um servidor em Configurações > Servidor de streaming.',
     serverGroup: 'Servidor de streaming',
     serverAddress: 'Endereço',
     serverHere: 'Esta TV',
@@ -747,6 +751,7 @@ var UI_TEXT = {
     diagUnavailable: 'O serviço local não respondeu',
     diagServer: 'Servidor local: {0} MB em uso (JS {1} MB) · ativo há {2} min',
     diagTv: 'TV: {0} MB livres de {1} MB · carga da CPU {2}',
+    diagDisk: 'Armazenamento: {0} MB livres de {1} MB',
     diagStreaming: 'Servidor de streaming: {0}',
     diagDownloading: 'baixando do Stremio',
     diagStreamFailed: 'falha no download ({0})',
@@ -2227,12 +2232,14 @@ function playUrl(source, type, id, vid, backHash) {
     xhrJson(
       '/streamfile',
       function (j) {
-        if (j && j.state === 'downloading') toast(tx('preparingTorrents'));
+        if (j && j.state === 'needs-server') toast(tx('torrentsNeedServer'), 6000);
+        else if (j && j.state === 'downloading') toast(tx('preparingTorrents'));
         else if (j && j.state === 'failed') toast(tx('torrentsUnavailable'));
+        if (!HAS_MEDIA_TOOLS && !(j && j.state === 'needs-server')) prepare(1);
       },
       2000
     );
-  prepare(1);
+  if (HAS_MEDIA_TOOLS || !/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(s.url)) prepare(1);
 }
 function resumeSearch(id, vid) {
   var q = null;
@@ -6678,6 +6685,7 @@ var settings = {
         var lines = [
           tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
+          j.disk ? tx('diagDisk', j.disk.freeMb, j.disk.totalMb) : '',
           tx('diagStreaming', diagStreamingState(j)),
           tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
@@ -6687,6 +6695,7 @@ var settings = {
         for (var ev = 0; ev < events.length && ev < 5; ev++) lines.push(diagEventLine(events[ev]));
         box.textContent = '';
         for (var i = 0; i < lines.length; i++) {
+          if (!lines[i]) continue;
           var line = document.createElement('div');
           line.textContent = lines[i];
           box.appendChild(line);

@@ -380,6 +380,7 @@ var settings = {
         var lines = [
           tx('diagServer', j.server.rssMb, j.server.heapMb, j.uptimeMin),
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
+          j.disk ? tx('diagDisk', j.disk.freeMb, j.disk.totalMb) : '',
           tx('diagStreaming', diagStreamingState(j)),
           tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
@@ -389,6 +390,7 @@ var settings = {
         for (var ev = 0; ev < events.length && ev < 5; ev++) lines.push(diagEventLine(events[ev]));
         box.textContent = '';
         for (var i = 0; i < lines.length; i++) {
+          if (!lines[i]) continue;
           var line = document.createElement('div');
           line.textContent = lines[i];
           box.appendChild(line);

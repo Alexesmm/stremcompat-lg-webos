@@ -46,12 +46,14 @@ function playUrl(source, type, id, vid, backHash) {
     xhrJson(
       '/streamfile',
       function (j) {
-        if (j && j.state === 'downloading') toast(tx('preparingTorrents'));
+        if (j && j.state === 'needs-server') toast(tx('torrentsNeedServer'), 6000);
+        else if (j && j.state === 'downloading') toast(tx('preparingTorrents'));
         else if (j && j.state === 'failed') toast(tx('torrentsUnavailable'));
+        if (!HAS_MEDIA_TOOLS && !(j && j.state === 'needs-server')) prepare(1);
       },
       2000
     );
-  prepare(1);
+  if (HAS_MEDIA_TOOLS || !/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(s.url)) prepare(1);
 }
 function resumeSearch(id, vid) {
   var q = null;

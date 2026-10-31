@@ -1,7 +1,7 @@
 // HTTP routing for the local compatibility server.
 
 var urlmod = require('url');
-var { APP_VERSION, PORT } = require('./config');
+var { APP_VERSION, PORT, PROFILE } = require('./config');
 var { dbg } = require('./log');
 var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
@@ -12,7 +12,7 @@ var { serverFileStatus } = require('./streaming-file');
 var { remoteAddress, setServerAddress, streamingUrl } = require('./server-address');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
 var { proxySignature, proxyStream, redirectedHeaders, resolvedFor } = require('./proxy');
-var { playerPage } = require('./player-page');
+var { playerConstants, playerPage } = require('./player-page');
 var { embCues, embStart, embTracks, subtitleCues } = require('./subtitles');
 var { addonSubtitles } = require('./subtitle-addons');
 var { postStremioApi } = require('./stremio-api');
@@ -24,6 +24,85 @@ var { diagnostics, netcheck, recordEvent } = require('./diag');
 var { cachedAddonJson } = require('./addon-cache');
 var { handleTakeover } = require('./takeover');
 var { decodeField, rememberVideos, seriesVideos, setWatched } = require('./watched');
+
+// Artwork and episode details for the player, once the streaming server can answer.
+function playerContext(stream, q, done) {
+  var ctx = {
+    type: q.type || '',
+    id: q.id || '',
+    vid: q.vid || '',
+    back: q.back || '',
+    streamRef: q.ref || '',
+    meta: null
+  };
+  var playerSent = false;
+  function sendPlayer() {
+    if (playerSent) return;
+    playerSent = true;
+    done(ctx);
+  }
+  function servePlayer() {
+    /* Torrent addon URLs point at the bundled Stremio server. The local UI now
+       starts much faster than the old remote shell, so the first selected source
+       can beat :11470 on a cold boot. Wait only for those sources; direct/debrid
+       URLs still open immediately. */
+    if (/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(stream.url || '')) {
+      waitForServer(function (ready) {
+        ctx.streamServerReady = ready;
+        sendPlayer();
+      });
+    } else sendPlayer();
+  }
+  // Fetch artwork server-side so the loading screen shows the logo/backdrop
+  // immediately (no plain-text flash). Short timeout; falls back to text.
+  if (!ctx.type || !ctx.id) return servePlayer();
+  var settled = false;
+  fetchJson(
+    'https://v3-cinemeta.strem.io/meta/' +
+      encodeURIComponent(ctx.type) +
+      '/' +
+      encodeURIComponent(ctx.id) +
+      '.json',
+    function (j) {
+      if (settled) return;
+      settled = true;
+      var m = (j && j.meta) || {};
+      ctx.meta = {
+        name: m.name || '',
+        logo: m.logo || '',
+        background: m.background || m.poster || '',
+        poster: m.poster || '',
+        cert: m.certification || ''
+      };
+      // Series: pull season/episode + episode title, and compute the next episode id.
+      var vid = ctx.vid || '';
+      if (vid.indexOf(':') >= 0) {
+        var pp = vid.split(':');
+        ctx.episode = pp[pp.length - 1];
+        ctx.season = pp[pp.length - 2];
+        ctx.nextVid = nextEpisodeId(m.videos, vid);
+        rememberVideos(ctx.id, m.videos);
+        if (m.videos) {
+          for (var i = 0; i < m.videos.length; i++) {
+            var mv = m.videos[i];
+            if (mv.id === vid) ctx.epTitle = mv.name || mv.title || '';
+            if (mv.id === ctx.nextVid) {
+              ctx.nextTitle = mv.name || mv.title || '';
+              ctx.nextThumb = mv.thumbnail || '';
+            }
+          }
+        }
+      }
+      servePlayer();
+    }
+  );
+  setTimeout(function () {
+    if (!settled) {
+      settled = true;
+      servePlayer();
+    }
+  }, 2500);
+}
 
 // Routes every request of the local compatibility server.
 function handleRequest(req, res) {
@@ -41,7 +120,9 @@ function handleRequest(req, res) {
   } else if (p === '/takeover') {
     handleTakeover(req, res);
   } else if (p === '/streamfile') {
-    sendJson(res, remoteAddress() ? { state: 'ready', remote: true } : serverFileStatus());
+    if (remoteAddress()) sendJson(res, { state: 'ready', remote: true });
+    else if (PROFILE.localTorrents === false) sendJson(res, { state: 'needs-server' });
+    else sendJson(res, serverFileStatus());
   } else if (p === '/serverconfig') {
     if (req.method !== 'POST') return sendJson(res, { address: remoteAddress() });
     /* A page on the web can only send this content type after a preflight, which this server
@@ -163,85 +244,17 @@ function handleRequest(req, res) {
       );
       return;
     }
-    var ctx = {
-      type: q.type || '',
-      id: q.id || '',
-      vid: q.vid || '',
-      back: q.back || '',
-      streamRef: q.ref || '',
-      meta: null
-    };
-    var playerSent = false;
-    function sendPlayer() {
-      if (playerSent) return;
-      playerSent = true;
+    playerContext(stream, q, function (ctx) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(playerPage(stream, ctx));
-    }
-    function servePlayer() {
-      /* Torrent addon URLs point at the bundled Stremio server. The local UI now
-         starts much faster than the old remote shell, so the first selected source
-         can beat :11470 on a cold boot. Wait only for those sources; direct/debrid
-         URLs still open immediately. */
-      if (/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(stream.url || '')) {
-        waitForServer(function (ready) {
-          ctx.streamServerReady = ready;
-          sendPlayer();
-        });
-      } else sendPlayer();
-    }
-    // Fetch artwork server-side so the loading screen shows the logo/backdrop
-    // immediately (no plain-text flash). Short timeout; falls back to text.
-    if (ctx.type && ctx.id) {
-      var settled = false;
-      fetchJson(
-        'https://v3-cinemeta.strem.io/meta/' +
-          encodeURIComponent(ctx.type) +
-          '/' +
-          encodeURIComponent(ctx.id) +
-          '.json',
-        function (j) {
-          if (settled) return;
-          settled = true;
-          var m = (j && j.meta) || {};
-          ctx.meta = {
-            name: m.name || '',
-            logo: m.logo || '',
-            background: m.background || m.poster || '',
-            poster: m.poster || '',
-            cert: m.certification || ''
-          };
-          // Series: pull season/episode + episode title, and compute the next episode id.
-          var vid = ctx.vid || '';
-          if (vid.indexOf(':') >= 0) {
-            var pp = vid.split(':');
-            ctx.episode = pp[pp.length - 1];
-            ctx.season = pp[pp.length - 2];
-            ctx.nextVid = nextEpisodeId(m.videos, vid);
-            rememberVideos(ctx.id, m.videos);
-            if (m.videos) {
-              for (var i = 0; i < m.videos.length; i++) {
-                var mv = m.videos[i];
-                if (mv.id === vid) ctx.epTitle = mv.name || mv.title || '';
-                if (mv.id === ctx.nextVid) {
-                  ctx.nextTitle = mv.name || mv.title || '';
-                  ctx.nextThumb = mv.thumbnail || '';
-                }
-              }
-            }
-          }
-          servePlayer();
-        }
-      );
-      setTimeout(function () {
-        if (!settled) {
-          settled = true;
-          servePlayer();
-        }
-      }, 2500);
-    } else {
-      servePlayer();
-    }
+    });
+  } else if (p === '/playinfo') {
+    /* the same answer for a player page that does not come from this server */
+    var infoStream = getStreamRef(q.ref || '');
+    if (!infoStream || !infoStream.url) return sendJson(res, { gone: true });
+    playerContext(infoStream, q, function (ctx) {
+      sendJson(res, playerConstants(infoStream, ctx));
+    });
   } else if (p === '/meta') {
     fetchJson(
       'https://v3-cinemeta.strem.io/meta/' +

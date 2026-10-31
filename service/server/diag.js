@@ -1,5 +1,6 @@
 // Runtime numbers for the Settings diagnostics: this server, the television and the streaming server.
 
+var exec = require('child_process').exec;
 var fs = require('fs');
 var https = require('https');
 var os = require('os');
@@ -31,6 +32,16 @@ function systemMemory() {
       };
   } catch (e) {}
   return { totalMb: mb(os.totalmem()), availableMb: mb(os.freemem()) };
+}
+
+/* Free space where this app keeps its files, or null where df is not available. */
+function diskSpace(cb) {
+  var dir = process.env.HOME || __dirname;
+  exec('df -k "' + dir + '"', { timeout: 3000 }, function (err, out) {
+    var row = !err && String(out).trim().split('\n').pop().trim().split(/\s+/);
+    if (!row || row.length < 4 || !/^\d+$/.test(row[1]) || !/^\d+$/.test(row[3])) return cb(null);
+    cb({ totalMb: mb(row[1] * 1024), freeMb: mb(row[3] * 1024) });
+  });
 }
 
 /* Sampled every 30 s so a reading after some use shows the worst moment, not just now. */
@@ -66,19 +77,22 @@ function diagnostics(res) {
   sample();
   var mem = process.memoryUsage();
   streamingServerUp(function (up) {
-    sendJson(res, {
-      version: APP_VERSION,
-      profile: PROFILE.profile,
-      server: { rssMb: mb(mem.rss), heapMb: mb(mem.heapUsed), externalMb: mb(mem.external) },
-      uptimeMin: Math.round(process.uptime() / 60),
-      system: systemMemory(),
-      load: Math.round(os.loadavg()[0] * 100) / 100,
-      streamingServer: !!up,
-      serverAddress: remoteAddress(),
-      streamingFile: serverFileStatus(),
-      peakRssMb: peakRss,
-      minAvailableMb: minAvailable,
-      events: events.slice().reverse()
+    diskSpace(function (disk) {
+      sendJson(res, {
+        version: APP_VERSION,
+        profile: PROFILE.profile,
+        server: { rssMb: mb(mem.rss), heapMb: mb(mem.heapUsed), externalMb: mb(mem.external) },
+        uptimeMin: Math.round(process.uptime() / 60),
+        system: systemMemory(),
+        disk: disk,
+        load: Math.round(os.loadavg()[0] * 100) / 100,
+        streamingServer: !!up,
+        serverAddress: remoteAddress(),
+        streamingFile: serverFileStatus(),
+        peakRssMb: peakRss,
+        minAvailableMb: minAvailable,
+        events: events.slice().reverse()
+      });
     });
   });
 }
