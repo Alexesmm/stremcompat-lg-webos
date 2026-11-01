@@ -59,7 +59,10 @@ var stats = null;
 var lastUse = 0;
 
 function engineFolder() {
-  var candidates = [path.join(process.env.HOME || DIR, '.stremcompat', 'torrents'), path.join(DIR, 'torrents')];
+  var candidates = [
+    path.join(process.env.HOME || DIR, '.stremcompat', 'torrents'),
+    path.join(DIR, 'torrents')
+  ];
   for (var i = 0; i < candidates.length; i++) {
     try {
       fs.mkdirSync(candidates[i], { recursive: true });

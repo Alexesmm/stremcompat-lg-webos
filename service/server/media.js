@@ -1,4 +1,4 @@
-// ffprobe tech info and seek-preview frames.
+// What the player shows about a video: the badges on the paused screen and the seek previews.
 
 var crypto = require('crypto');
 var spawn = require('child_process').spawn;
@@ -8,122 +8,128 @@ var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
 var { probeStreams } = require('./probe');
 
-// ---- stream tech-info probe (for the paused-player vignette badges) ----
-var infoCache = {};
+/* ---------- the badges ---------- */
+var VIDEO_NAMES = { hevc: 'HEVC', h264: 'H.264', av1: 'AV1' };
+var AUDIO_NAMES = { eac3: 'Dolby Digital+', ac3: 'Dolby Digital', truehd: 'Dolby TrueHD' };
+var CHANNEL_NAMES = { 8: '7.1', 6: '5.1', 2: '2.0' };
+var COVER_ART = ['mjpeg', 'png'];
+var GiB = 1073741824;
+var MiB = 1048576;
+
+function firstStream(streams, test) {
+  return streams.filter(test)[0] || null;
+}
+
+function resolutionName(height) {
+  if (height >= 2000) return '4K';
+  if (height >= 1000) return '1080p';
+  if (height >= 690) return '720p';
+  return height ? height + 'p' : '';
+}
+
+function hdrName(video) {
+  var sideData = video.side_data_list || [];
+  var dolby =
+    String(video.codec_tag_string || '')
+      .toLowerCase()
+      .indexOf('dvh') === 0 ||
+    sideData.some(function (item) {
+      return (
+        String(item.side_data_type || '')
+          .toLowerCase()
+          .indexOf('dovi') >= 0
+      );
+    });
+  if (dolby) return 'Dolby Vision';
+  var transfer = String(video.color_transfer || '').toLowerCase();
+  return transfer === 'smpte2084' ? 'HDR10' : transfer === 'arib-std-b67' ? 'HLG' : '';
+}
+
+function audioName(audio) {
+  var codec = String(audio.codec_name || '').toLowerCase();
+  var name = AUDIO_NAMES[codec] || (codec.indexOf('dts') === 0 ? 'DTS' : codec.toUpperCase());
+  var channels = audio.channels || 0;
+  var layout = CHANNEL_NAMES[channels] || (channels ? channels + 'ch' : '');
+  return layout ? name + ' ' + layout : name;
+}
+
+function describe(streams, format) {
+  var info = {};
+  var video = firstStream(streams, function (s) {
+    return s.codec_type === 'video' && COVER_ART.indexOf(String(s.codec_name || '')) < 0;
+  });
+  var audio = firstStream(streams, function (s) {
+    return s.codec_type === 'audio';
+  });
+  if (video) {
+    var codec = String(video.codec_name || '').toLowerCase();
+    info.res = resolutionName(video.height || 0);
+    info.vcodec = VIDEO_NAMES[codec] || codec.toUpperCase();
+    var hdr = hdrName(video);
+    if (hdr) info.hdr = hdr;
+  }
+  if (audio) info.audio = audioName(audio);
+  var size = parseInt(format.size || '0', 10);
+  if (size > 0)
+    info.size = size >= GiB ? Math.round((size * 10) / GiB) / 10 + ' GB' : Math.round(size / MiB) + ' MB';
+  var bitrate = parseInt(format.bit_rate || '0', 10);
+  if (bitrate > 0) info.br = Math.round(bitrate / 100000) / 10 + ' Mb/s';
+  return info;
+}
+
+var described = {};
 
 function probeInfo(u, res) {
   if (!u) return sendJson(res, {});
-  if (infoCache[u]) return sendJson(res, infoCache[u]);
-  probeStreams(u, function (j) {
-    var info = {};
-    if (j.err) return sendJson(res, info);
-    try {
-      var ss = j.streams || [],
-        fmtI = j.format || {},
-        vs = null,
-        as = null;
-      for (var i = 0; i < ss.length; i++) {
-        var cn = String(ss[i].codec_name || '');
-        if (!vs && ss[i].codec_type === 'video' && cn !== 'mjpeg' && cn !== 'png') vs = ss[i];
-        if (!as && ss[i].codec_type === 'audio') as = ss[i];
-      }
-      if (vs) {
-        var h = vs.height || 0;
-        info.res = h >= 2000 ? '4K' : h >= 1000 ? '1080p' : h >= 690 ? '720p' : h ? h + 'p' : '';
-        var vc = String(vs.codec_name || '').toLowerCase();
-        info.vcodec =
-          vc === 'hevc' ? 'HEVC' : vc === 'h264' ? 'H.264' : vc === 'av1' ? 'AV1' : vc.toUpperCase();
-        var trc = String(vs.color_transfer || '').toLowerCase();
-        if (
-          String(vs.codec_tag_string || '')
-            .toLowerCase()
-            .indexOf('dvh') === 0
-        )
-          info.hdr = 'Dolby Vision';
-        else if (trc === 'smpte2084') info.hdr = 'HDR10';
-        else if (trc === 'arib-std-b67') info.hdr = 'HLG';
-        var sd = vs.side_data_list || [];
-        for (var s2 = 0; s2 < sd.length; s2++) {
-          if (
-            String(sd[s2].side_data_type || '')
-              .toLowerCase()
-              .indexOf('dovi') >= 0
-          )
-            info.hdr = 'Dolby Vision';
-        }
-      }
-      if (as) {
-        var ac = String(as.codec_name || '').toLowerCase();
-        var nm =
-          ac === 'eac3'
-            ? 'Dolby Digital+'
-            : ac === 'ac3'
-              ? 'Dolby Digital'
-              : ac === 'truehd'
-                ? 'Dolby TrueHD'
-                : ac.indexOf('dts') === 0
-                  ? 'DTS'
-                  : ac.toUpperCase();
-        var ch = as.channels || 0;
-        var lay = ch === 8 ? '7.1' : ch === 6 ? '5.1' : ch === 2 ? '2.0' : ch ? ch + 'ch' : '';
-        info.audio = nm + (lay ? ' ' + lay : '');
-      }
-      var sz = parseInt(fmtI.size || '0', 10);
-      if (sz > 0)
-        info.size =
-          sz >= 1073741824 ? Math.round(sz / 107374182.4) / 10 + ' GB' : Math.round(sz / 1048576) + ' MB';
-      var br = parseInt(fmtI.bit_rate || '0', 10);
-      if (br > 0) info.br = Math.round(br / 100000) / 10 + ' Mb/s';
-    } catch (e) {}
-    if (Object.keys(infoCache).length > 20) infoCache = {};
-    infoCache[u] = info;
-    console.log('[probe] ' + JSON.stringify(info));
+  if (described[u]) return sendJson(res, described[u]);
+  probeStreams(u, function (probe) {
+    if (probe.err) return sendJson(res, {});
+    var info = describe(probe.streams || [], probe.format || {});
+    if (Object.keys(described).length > 20) described = {};
+    described[u] = info;
     sendJson(res, info);
   });
 }
 
-// ---- scrub-preview: background coarse-sprite cache (Netflix-style, adapted for a remote
-// stream on weak hardware). On player load /spritegen extracts ~SPRITE_N evenly-spaced
-// thumbnails ONE AT A TIME in the background; /frame snaps the seek target to the nearest
-// already-extracted bucket and serves it INSTANTLY (204 while that region isn't ready yet).
-// The header/Cues are fetched once by the first seek, so each extra thumb is cheap.
-var SPRITE_N = 24;
+/* ---------- the seek previews ----------
+   When a film opens, a few frames spread over its length are taken in the background, one at a
+   time so playback and the remote keep the processor. A seek gets the nearest frame already
+   taken, at once, and moves the frame it really wanted to the front of the line. */
+var PREVIEW_COUNT = 24;
+var SECONDS_PER_PREVIEW = 20;
+var FRAME_TIMEOUT_MS = 12000;
+var PAUSE_BETWEEN_MS = 250;
+var SMALLEST_FRAME = 500;
 
-var spriteJob = null;
+var previews = null;
 
-// { key, u, buckets:[t...], frames:{i:buf}, queue:[i...], act, prs:[], done }
-function spriteKeyOf(u) {
+function previewKey(u) {
   return crypto.createHash('sha1').update(String(u)).digest('hex').slice(0, 16);
 }
 
-function spriteExtractNext() {
-  var job = spriteJob;
-  if (!job) return;
-  if (!job.queue.length) {
-    if (!job.act) {
-      job.done = true;
-      console.log('[sprite] done ' + Object.keys(job.frames).length + '/' + job.buckets.length);
+/* every 6th first, then every 3rd, then the rest: the whole film gets rough coverage early */
+function coarseFirst(count) {
+  var order = [];
+  [6, 3, 1].forEach(function (stride) {
+    for (var i = 0; i < count; i += stride) {
+      if (order.indexOf(i) < 0) order.push(i);
     }
-    return;
-  }
-  while (job.act < 1 && job.queue.length) spriteSpawnOne(job); // one process: preserve CPU for playback and remote input
+  });
+  return order;
 }
 
-function spriteSpawnOne(job) {
-  var idx = job.queue.shift(),
-    t = job.buckets[idx];
-  job.act++;
-  var args = [
+function frameArguments(u, at) {
+  return [
     '-nostdin',
     '-probesize',
     '900000',
     '-analyzeduration',
     '900000',
     '-ss',
-    String(t),
+    String(at),
     '-noaccurate_seek',
     '-i',
-    localProxy(job.u),
+    localProxy(u),
     '-an',
     '-frames:v',
     '1',
@@ -135,142 +141,102 @@ function spriteSpawnOne(job) {
     'mjpeg',
     'pipe:1'
   ];
-  var chunks = [],
-    pr,
-    closed = false;
-  try {
-    pr = spawn(FFMPEG, args);
-    lowerPriority(pr, NICE.BACKGROUND);
-  } catch (e) {
-    job.act--;
-    return;
-  }
-  job.prs.push(pr);
-  var to = setTimeout(function () {
-    try {
-      pr.kill('SIGKILL');
-    } catch (e) {}
-  }, 12000);
-  pr.stdout.on('data', function (d) {
-    chunks.push(d);
-  });
-  function step() {
-    if (closed) return;
-    closed = true;
-    clearTimeout(to);
-    var pi = job.prs.indexOf(pr);
-    if (pi >= 0) job.prs.splice(pi, 1);
-    if (spriteJob !== job) return;
-    var buf = Buffer.concat(chunks);
-    if (buf.length > 500) job.frames[idx] = buf;
-    job.act--;
-    setTimeout(spriteExtractNext, 250);
-  }
-  pr.on('error', step);
-  pr.on('close', step);
 }
 
-// coarse-first order: every 6th bucket, then every 3rd, then the rest -> the WHOLE movie
-// gets rough coverage in the first ~10 extractions instead of baking left-to-right.
-function spriteOrder(n) {
-  var out = [],
-    seen = {},
-    strides = [6, 3, 1];
-  for (var s = 0; s < strides.length; s++)
-    for (var i = 0; i < n; i += strides[s])
-      if (!seen[i]) {
-        seen[i] = 1;
-        out.push(i);
-      }
-  return out;
+function takeNextFrame(set) {
+  if (previews !== set || set.worker) return;
+  if (!set.waiting.length) {
+    set.done = true;
+    return;
+  }
+  var index = set.waiting.shift();
+  var parts = [];
+  var finished = false;
+  var worker;
+  try {
+    worker = spawn(FFMPEG, frameArguments(set.u, set.times[index]));
+    lowerPriority(worker, NICE.BACKGROUND);
+  } catch (e) {
+    return;
+  }
+  set.worker = worker;
+  var timer = setTimeout(function () {
+    worker.kill('SIGKILL');
+  }, FRAME_TIMEOUT_MS);
+  function finish() {
+    if (finished) return;
+    finished = true;
+    clearTimeout(timer);
+    set.worker = null;
+    var frame = Buffer.concat(parts);
+    if (frame.length > SMALLEST_FRAME) set.frames[index] = frame;
+    setTimeout(function () {
+      takeNextFrame(set);
+    }, PAUSE_BETWEEN_MS);
+  }
+  worker.stdout.on('data', function (chunk) {
+    parts.push(chunk);
+  });
+  worker.on('error', finish);
+  worker.on('close', finish);
 }
 
 function spriteGen(q, res) {
-  var u = q.u || '',
-    dur = Math.floor(parseFloat(q.dur || '0') || 0);
-  if (!u || dur < 30) {
-    sendJson(res, { ok: false });
-    return;
-  }
-  var key = spriteKeyOf(u);
-  if (spriteJob && spriteJob.key === key) {
-    sendJson(res, { ok: true, buckets: spriteJob.buckets, done: spriteJob.done });
-    return;
-  }
-  if (spriteJob && spriteJob.prs) {
-    for (var kp = 0; kp < spriteJob.prs.length; kp++) {
-      try {
-        spriteJob.prs[kp].kill('SIGKILL');
-      } catch (e) {}
-    }
-  }
-  var n = Math.min(SPRITE_N, Math.max(10, Math.floor(dur / 20))); // ~1/20s, capped at 60
-  var buckets = [];
-  for (var i = 0; i < n; i++) buckets.push(Math.floor((dur * (i + 0.5)) / n));
-  spriteJob = {
+  var u = q.u || '';
+  var length = Math.floor(parseFloat(q.dur || '0') || 0);
+  if (!u || length < 30) return sendJson(res, { ok: false });
+  var key = previewKey(u);
+  if (previews && previews.key === key)
+    return sendJson(res, { ok: true, buckets: previews.times, done: previews.done });
+  if (previews && previews.worker) previews.worker.kill('SIGKILL');
+  var count = Math.min(PREVIEW_COUNT, Math.max(10, Math.floor(length / SECONDS_PER_PREVIEW)));
+  var times = [];
+  for (var i = 0; i < count; i++) times.push(Math.floor((length * (i + 0.5)) / count));
+  previews = {
     key: key,
     u: u,
-    buckets: buckets,
+    times: times,
     frames: {},
-    queue: spriteOrder(n),
-    act: 0,
-    prs: [],
+    waiting: coarseFirst(count),
+    worker: null,
     done: false
   };
-  console.log('[sprite] start n=' + n + ' dur=' + dur);
-  spriteExtractNext();
-  sendJson(res, { ok: true, buckets: buckets });
+  takeNextFrame(previews);
+  sendJson(res, { ok: true, buckets: times });
+}
+
+function nearestIndex(times, target, allowed) {
+  var best = -1;
+  times.forEach(function (time, i) {
+    if (allowed(i) && (best < 0 || Math.abs(time - target) < Math.abs(times[best] - target))) best = i;
+  });
+  return best;
 }
 
 function grabFrame(q, res) {
-  var u = q.u || '',
-    t = Math.max(0, parseInt(q.t || '0', 10) || 0);
+  var u = q.u || '';
   if (!u) {
     res.writeHead(404);
-    res.end();
-    return;
+    return res.end();
   }
-  if (spriteJob && spriteJob.key === spriteKeyOf(u)) {
-    var job = spriteJob,
-      b = job.buckets;
-    // nearest BAKED bucket
-    var best = -1,
-      bd = 1e9;
-    for (var i = 0; i < b.length; i++) {
-      if (job.frames[i] != null) {
-        var d = Math.abs(b[i] - t);
-        if (d < bd) {
-          bd = d;
-          best = i;
-        }
-      }
-    }
-    // nearest bucket overall; if it isn't baked yet, bump it to the FRONT of the queue so
-    // the region being scrubbed bakes next (priority-on-demand)
-    var want = -1,
-      wd = 1e9;
-    for (var j = 0; j < b.length; j++) {
-      var dj = Math.abs(b[j] - t);
-      if (dj < wd) {
-        wd = dj;
-        want = j;
-      }
-    }
-    if (want >= 0 && job.frames[want] == null && !job.done) {
-      var qi = job.queue.indexOf(want);
-      if (qi > 0) {
-        job.queue.splice(qi, 1);
-        job.queue.unshift(want);
-      }
-    }
-    if (best >= 0) {
+  var set = previews && previews.key === previewKey(u) ? previews : null;
+  if (set) {
+    var target = Math.max(0, parseInt(q.t || '0', 10) || 0);
+    var wanted = nearestIndex(set.times, target, function () {
+      return true;
+    });
+    var place = set.waiting.indexOf(wanted);
+    if (place > 0) set.waiting.unshift(set.waiting.splice(place, 1)[0]);
+    var taken = nearestIndex(set.times, target, function (i) {
+      return !!set.frames[i];
+    });
+    if (taken >= 0) {
       res.writeHead(200, {
         'Content-Type': 'image/jpeg',
         'Cache-Control': 'no-store',
         'Access-Control-Allow-Origin': '*'
       });
-      res.end(job.frames[best]);
-      return;
+      return res.end(set.frames[taken]);
     }
   }
   res.writeHead(204);

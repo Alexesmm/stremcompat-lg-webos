@@ -1,251 +1,184 @@
-// HTTP helpers: JSON responses, request bodies and bounded upstream fetches.
+// Requests this server makes on the interface's behalf, always with a limit on size and time,
+// since one broken addon must not be able to fill the TV's small memory.
 
 var http = require('http');
 var https = require('https');
 var urlmod = require('url');
 var zlib = require('zlib');
 
-function readJsonBody(req, maxBytes, cb) {
-  var chunks = [],
-    total = 0,
-    done = false;
-  function finish(v) {
-    if (done) return;
-    done = true;
-    cb(v);
-  }
-  req.on('data', function (d) {
-    total += d.length;
-    if (total > maxBytes) {
-      try {
-        req.destroy();
-      } catch (e) {}
-      finish(null);
-    } else chunks.push(d);
-  });
-  req.on('end', function () {
-    if (done) return;
-    try {
-      finish(JSON.parse(Buffer.concat(chunks).toString('utf8')));
-    } catch (e) {
-      finish(null);
+var MAX_REDIRECTS = 5;
+var FILE_LIMIT = 8 * 1024 * 1024;
+var ADDON_LIMIT = 4 * 1024 * 1024;
+
+function unpackGzip(buf) {
+  var gzipped = buf.length > 1 && buf[0] === 0x1f && buf[1] === 0x8b;
+  return gzipped ? zlib.gunzipSync(buf) : buf;
+}
+
+function collect(stream, limit, onDone) {
+  var parts = [];
+  var size = 0;
+  stream.on('data', function (chunk) {
+    size += chunk.length;
+    if (size <= limit) parts.push(chunk);
+    else {
+      if (stream.destroy) stream.destroy();
+      onDone('too large');
     }
   });
-  req.on('error', function () {
-    finish(null);
+  stream.on('end', function () {
+    onDone(null, Buffer.concat(parts));
+  });
+  stream.on('error', function (e) {
+    onDone((e && e.code) || 'error');
   });
 }
 
-// ---- helpers for meta/subtitle fetching ----
-function sendJson(res, obj) {
-  res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-  res.end(JSON.stringify(obj));
-}
-
-function fetchUrl(u, cb, depth, maxBytes) {
-  depth = depth || 0;
-  maxBytes = maxBytes || 8 * 1024 * 1024;
-  var pu,
-    done = false;
-  function finish(v) {
-    if (done) return;
-    done = true;
-    cb(v);
+/* GET with redirects. cb(why, body): why is 'HTTP 503', 'timeout', 'too large', a network error
+   code or 'error'; body is unpacked when it came gzipped. */
+function download(address, settings, cb, hops) {
+  var answered = false;
+  function answer(why, body) {
+    if (answered) return;
+    answered = true;
+    cb(why, body);
   }
+  var target;
   try {
-    pu = urlmod.parse(String(u || ''));
+    target = urlmod.parse(String(address || ''));
   } catch (e) {
-    return finish(null);
+    return answer('error');
   }
-  if ((pu.protocol !== 'http:' && pu.protocol !== 'https:') || !pu.hostname || depth > 5) return finish(null);
-  var lib = pu.protocol === 'https:' ? https : http;
-  var req;
+  var secure = target.protocol === 'https:';
+  if ((!secure && target.protocol !== 'http:') || !target.hostname || (hops || 0) > MAX_REDIRECTS)
+    return answer('error');
+  var request;
   try {
-    req = lib.get(u, onres);
-  } catch (e) {
-    return finish(null);
-  }
-  function onres(r) {
-    if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) {
-      r.resume();
-      var loc = r.headers.location;
-      if (loc.indexOf('http') !== 0)
-        loc = pu.protocol + '//' + pu.host + (loc.charAt(0) === '/' ? '' : '/') + loc;
-      done = true;
-      return fetchUrl(loc, cb, depth + 1, maxBytes);
-    }
-    if (r.statusCode < 200 || r.statusCode >= 300) {
-      r.resume();
-      return finish(null);
-    }
-    var chunks = [],
-      total = 0;
-    r.on('data', function (d) {
-      total += d.length;
-      if (total > maxBytes) {
-        try {
-          r.destroy();
-        } catch (e) {}
-        finish(null);
-      } else chunks.push(d);
-    });
-    r.on('end', function () {
-      if (done) return;
-      var buf = Buffer.concat(chunks);
-      if (buf.length > 1 && buf[0] === 0x1f && buf[1] === 0x8b) {
-        try {
-          buf = zlib.gunzipSync(buf);
-        } catch (e) {}
+    request = (secure ? https : http).request(
+      {
+        hostname: target.hostname,
+        port: target.port,
+        path: target.path,
+        method: 'GET',
+        headers: settings.headers || {}
+      },
+      function (res) {
+        var moved = res.statusCode >= 300 && res.statusCode < 400 && res.headers.location;
+        if (moved) {
+          res.resume();
+          answered = true;
+          return download(urlmod.resolve(target.href, res.headers.location), settings, cb, (hops || 0) + 1);
+        }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          res.resume();
+          return answer('HTTP ' + res.statusCode);
+        }
+        collect(res, settings.limit, function (why, body) {
+          if (why) return answer(why);
+          try {
+            body = unpackGzip(body);
+          } catch (e) {
+            return answer('invalid');
+          }
+          answer(body.length > settings.limit ? 'too large' : null, body);
+        });
       }
-      if (buf.length > maxBytes) return finish(null);
-      finish(buf);
-    });
+    );
+  } catch (e) {
+    return answer('error');
   }
-  req.on('error', function () {
-    finish(null);
+  request.on('error', function (e) {
+    answer((e && e.code) || 'error');
   });
-  req.setTimeout(12000, function () {
-    try {
-      req.abort();
-    } catch (e) {}
-    finish(null);
+  request.setTimeout(settings.timeout, function () {
+    answer('timeout');
+    request.abort();
   });
+  request.end();
+}
+
+function parseJson(buf) {
+  try {
+    return JSON.parse(buf.toString('utf8'));
+  } catch (e) {
+    return null;
+  }
+}
+
+/* cb(bytes), or cb(null) on any failure */
+function fetchUrl(u, cb, hops, limit) {
+  download(
+    u,
+    { limit: limit || FILE_LIMIT, timeout: 12000 },
+    function (why, body) {
+      cb(why ? null : body);
+    },
+    hops
+  );
 }
 
 function fetchJson(u, cb) {
   fetchUrl(u, function (buf) {
-    if (!buf) return cb(null);
-    try {
-      cb(JSON.parse(buf.toString('utf8')));
-    } catch (e) {
-      cb(null);
-    }
+    cb(buf ? parseJson(buf) : null);
   });
 }
 
-// Add-on GET bridge: Chromium 53 otherwise fails on modern TLS/CORS. Limit the
-// response so a broken add-on cannot exhaust the TV's very small RAM budget.
-function fetchAddonJson(u, cb, depth) {
-  depth = depth || 0;
-  var pu,
-    done = false;
-  /* why (on failure): 'HTTP 503', 'timeout', 'invalid', 'too large' or the network error */
-  function finish(v, why) {
-    if (done) return;
-    done = true;
-    cb(v, v ? '' : why || 'error');
-  }
-  try {
-    pu = urlmod.parse(String(u || ''));
-  } catch (e) {
-    return finish(null);
-  }
-  if ((pu.protocol !== 'http:' && pu.protocol !== 'https:') || !pu.hostname || depth > 5) return finish(null);
-  var lib = pu.protocol === 'https:' ? https : http;
-  var opts = {
-    protocol: pu.protocol,
-    hostname: pu.hostname,
-    port: pu.port,
-    path: pu.path,
-    method: 'GET',
-    headers: {
-      'User-Agent': 'Stremio/4.4 webOS-TV',
-      'Accept': 'application/json,*/*',
-      'Accept-Encoding': 'gzip'
-    }
+/* The addon bridge: old TV browsers fail on current TLS and CORS. cb(json, ''), or cb(null, why) */
+function fetchAddonJson(u, cb) {
+  var headers = {
+    'User-Agent': 'Stremio/4.4 webOS-TV',
+    'Accept': 'application/json,*/*',
+    'Accept-Encoding': 'gzip'
   };
-  var rq;
-  try {
-    rq = lib.request(opts, function (up) {
-      if (up.statusCode >= 300 && up.statusCode < 400 && up.headers.location) {
-        up.resume();
-        var loc = up.headers.location;
-        if (loc.indexOf('http') !== 0)
-          loc = pu.protocol + '//' + pu.host + (loc.charAt(0) === '/' ? '' : '/') + loc;
-        done = true;
-        return fetchAddonJson(loc, cb, depth + 1);
-      }
-      if (up.statusCode < 200 || up.statusCode >= 300) {
-        up.resume();
-        return finish(null, 'HTTP ' + up.statusCode);
-      }
-      var chunks = [],
-        total = 0;
-      up.on('data', function (d) {
-        total += d.length;
-        if (total > 4 * 1024 * 1024) {
-          try {
-            up.destroy();
-          } catch (e) {}
-          finish(null, 'too large');
-        } else chunks.push(d);
-      });
-      up.on('end', function () {
-        if (done) return;
-        var buf = Buffer.concat(chunks);
-        if (String(up.headers['content-encoding'] || '').toLowerCase() === 'gzip') {
-          try {
-            buf = zlib.gunzipSync(buf);
-          } catch (e) {
-            return finish(null, 'invalid');
-          }
-        }
-        if (buf.length > 4 * 1024 * 1024) return finish(null, 'too large');
-        try {
-          finish(JSON.parse(buf.toString('utf8')));
-        } catch (e) {
-          finish(null, 'invalid');
-        }
-      });
-      up.on('error', function (e) {
-        finish(null, (e && e.code) || 'error');
-      });
-    });
-  } catch (e) {
-    return finish(null);
-  }
-  rq.on('error', function (e) {
-    finish(null, (e && e.code) || 'error');
+  download(u, { limit: ADDON_LIMIT, timeout: 45000, headers: headers }, function (why, body) {
+    if (why) return cb(null, why);
+    var json = parseJson(body);
+    cb(json, json ? '' : 'invalid');
   });
-  rq.setTimeout(45000, function () {
-    try {
-      rq.abort();
-    } catch (e) {}
-    finish(null, 'timeout');
-  });
-  rq.end();
 }
 
-// videoId -> ts (10min negative cache; stop hammering dead videos)
 function postJsonUpstream(host, path, headers, body, cb) {
-  var req = https.request({ hostname: host, path: path, method: 'POST', headers: headers }, function (r) {
-    var chunks = [];
-    r.on('data', function (d) {
-      chunks.push(d);
-    });
-    r.on('end', function () {
-      var buf = Buffer.concat(chunks);
-      if (buf.length > 1 && buf[0] === 0x1f && buf[1] === 0x8b) {
+  var answered = false;
+  function answer(value) {
+    if (answered) return;
+    answered = true;
+    cb(value);
+  }
+  var request = https.request(
+    { hostname: host, path: path, method: 'POST', headers: headers },
+    function (res) {
+      collect(res, ADDON_LIMIT, function (why, data) {
+        if (why) return answer(null);
         try {
-          buf = zlib.gunzipSync(buf);
-        } catch (e) {}
-      }
-      try {
-        cb(JSON.parse(buf.toString('utf8')));
-      } catch (e) {
-        cb(null);
-      }
-    });
+          answer(parseJson(unpackGzip(data)));
+        } catch (e) {
+          answer(null);
+        }
+      });
+    }
+  );
+  request.on('error', function () {
+    answer(null);
   });
-  req.on('error', function () {
-    cb(null);
+  request.setTimeout(10000, function () {
+    answer(null);
+    request.abort();
   });
-  req.setTimeout(10000, function () {
-    try {
-      req.abort();
-    } catch (e) {}
+  request.end(body);
+}
+
+function readJsonBody(req, maxBytes, cb) {
+  var answered = false;
+  collect(req, maxBytes, function (why, body) {
+    if (answered) return;
+    answered = true;
+    cb(why ? null : parseJson(body));
   });
-  req.end(body);
+}
+
+function sendJson(res, value) {
+  res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+  res.end(JSON.stringify(value));
 }
 
 module.exports = {

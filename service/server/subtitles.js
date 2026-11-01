@@ -1,4 +1,4 @@
-// External subtitles and embedded-track extraction with ffmpeg.
+// Subtitles: external files turned into cues, and text tracks read out of the video with FFmpeg.
 
 var crypto = require('crypto');
 var fs = require('fs');
@@ -6,88 +6,130 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 var zlib = require('zlib');
 var { DIR, FFMPEG } = require('./config');
-var { streamingBase } = require('./server-address');
+var { remoteAddress } = require('./server-address');
 var { fetchUrl, sendJson } = require('./http-util');
 var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
 var { probeStreams } = require('./probe');
 
-var LANGS = {
-  eng: 'English',
-  spa: 'Spanish',
-  fre: 'French',
-  fra: 'French',
-  ger: 'German',
-  deu: 'German',
-  ita: 'Italian',
-  por: 'Portuguese',
-  rus: 'Russian',
-  ara: 'Arabic',
-  dut: 'Dutch',
-  nld: 'Dutch',
-  pol: 'Polish',
-  tur: 'Turkish',
-  swe: 'Swedish',
-  rum: 'Romanian',
-  ron: 'Romanian',
-  gre: 'Greek',
-  heb: 'Hebrew',
-  hin: 'Hindi',
-  kor: 'Korean',
-  jpn: 'Japanese',
-  chi: 'Chinese',
-  zho: 'Chinese',
-  cze: 'Czech',
-  dan: 'Danish',
-  fin: 'Finnish',
-  nor: 'Norwegian',
-  hun: 'Hungarian',
-  bul: 'Bulgarian',
-  ukr: 'Ukrainian',
-  srp: 'Serbian',
-  hrv: 'Croatian',
-  slo: 'Slovak',
-  slv: 'Slovenian',
-  spl: 'Spanish (LA)',
-  pob: 'Portuguese (BR)'
-};
+/* ISO 639 codes as tracks name their language */
+var LANGUAGE_NAMES = {};
+[
+  ['English', 'eng'],
+  ['Spanish', 'spa'],
+  ['French', 'fre fra'],
+  ['German', 'ger deu'],
+  ['Italian', 'ita'],
+  ['Portuguese', 'por'],
+  ['Russian', 'rus'],
+  ['Arabic', 'ara'],
+  ['Dutch', 'dut nld'],
+  ['Polish', 'pol'],
+  ['Turkish', 'tur'],
+  ['Swedish', 'swe'],
+  ['Romanian', 'rum ron'],
+  ['Greek', 'gre'],
+  ['Hebrew', 'heb'],
+  ['Hindi', 'hin'],
+  ['Korean', 'kor'],
+  ['Japanese', 'jpn'],
+  ['Chinese', 'chi zho'],
+  ['Czech', 'cze'],
+  ['Danish', 'dan'],
+  ['Finnish', 'fin'],
+  ['Norwegian', 'nor'],
+  ['Hungarian', 'hun'],
+  ['Bulgarian', 'bul'],
+  ['Ukrainian', 'ukr'],
+  ['Serbian', 'srp'],
+  ['Croatian', 'hrv'],
+  ['Slovak', 'slo'],
+  ['Slovenian', 'slv'],
+  ['Spanish (LA)', 'spl'],
+  ['Portuguese (BR)', 'pob']
+].forEach(function (entry) {
+  entry[1].split(' ').forEach(function (code) {
+    LANGUAGE_NAMES[code] = entry[0];
+  });
+});
 
-function langName(l) {
-  return LANGS[l] || (l ? l.toUpperCase() : 'Unknown');
+function langName(code) {
+  return LANGUAGE_NAMES[code] || (code ? code.toUpperCase() : 'Unknown');
 }
 
-/* SRT or WebVTT text to cues; VTT may leave out the hours */
-function parseSrt(srt) {
-  srt = srt.replace(/\r/g, '');
-  var blocks = srt.split(/\n\n+/),
-    cues = [];
-  for (var b = 0; b < blocks.length; b++) {
-    var lines = blocks[b].split('\n'),
-      tc = -1;
-    for (var i = 0; i < lines.length; i++) {
-      if (lines[i].indexOf('-->') >= 0) {
-        tc = i;
-        break;
-      }
-    }
-    if (tc < 0) continue;
-    var m = lines[tc].match(/(?:(\d+):)?(\d+):(\d+)[,.](\d+)\s*-->\s*(?:(\d+):)?(\d+):(\d+)[,.](\d+)/);
-    if (!m) continue;
-    var s = (+m[1] || 0) * 3600 + +m[2] * 60 + +m[3] + +m[4] / 1000;
-    var e = (+m[5] || 0) * 3600 + +m[6] * 60 + +m[7] + +m[8] / 1000;
-    var txt = lines
-      .slice(tc + 1)
-      .join('\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/\{[^}]*\}/g, '')
-      .replace(/\s+$/, ''); // a last cue without a blank line after it keeps a trailing break
-    if (txt) cues.push({ s: s, e: e, t: txt });
-  }
+/* ---------- from a subtitle file to cues ---------- */
+var TIMING = /(?:(\d+):)?(\d+):(\d+)[,.](\d+)\s*-->\s*(?:(\d+):)?(\d+):(\d+)[,.](\d+)/;
+
+function seconds(hours, minutes, secs, millis) {
+  return (Number(hours) || 0) * 3600 + Number(minutes) * 60 + Number(secs) + Number(millis) / 1000;
+}
+
+/* formatting tags and styling go: the player draws plain lines */
+function plainText(text) {
+  return text
+    .replace(/<[^>]+>/g, '')
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/\s+$/, '');
+}
+
+/* SRT or WebVTT; WebVTT may leave out the hours. */
+function parseSrt(source) {
+  var cues = [];
+  source
+    .replace(/\r/g, '')
+    .split(/\n\n+/)
+    .forEach(function (block) {
+      var lines = block.split('\n');
+      var at = -1;
+      lines.some(function (line, i) {
+        if (line.indexOf('-->') < 0) return false;
+        at = i;
+        return true;
+      });
+      var time = at >= 0 && TIMING.exec(lines[at]);
+      if (!time) return;
+      var text = plainText(lines.slice(at + 1).join('\n'));
+      if (text)
+        cues.push({
+          s: seconds(time[1], time[2], time[3], time[4]),
+          e: seconds(time[5], time[6], time[7], time[8]),
+          t: text
+        });
+    });
   return cues;
 }
 
-/* Subtitle file bytes as text: gzip is unpacked, and a file that is not valid UTF-8 is read
-   as Latin-1 (older Portuguese and Spanish subtitles are Windows-1252). */
+/* ASS and SSA: "Dialogue: layer,0:00:01.50,0:00:03.00,style,name,0,0,0,,text" */
+function parseAss(source) {
+  var cues = [];
+  source
+    .replace(/\r/g, '')
+    .split('\n')
+    .forEach(function (line) {
+      var m = /^Dialogue:\s*[^,]*,(\d+):(\d+):(\d+)\.(\d+),(\d+):(\d+):(\d+)\.(\d+),(?:[^,]*,){6}(.*)$/.exec(
+        line
+      );
+      if (!m) return;
+      var text = plainText(m[9].replace(/\\[Nn]/g, '\n').replace(/\\h/g, ' '));
+      /* hundredths of a second */
+      if (text)
+        cues.push({
+          s: seconds(m[1], m[2], m[3], m[4] + '0'),
+          e: seconds(m[5], m[6], m[7], m[8] + '0'),
+          t: text
+        });
+    });
+  return cues.sort(function (a, b) {
+    return a.s - b.s;
+  });
+}
+
+function parseCues(text) {
+  return /^\s*\[Script Info\]|^Dialogue:/m.test(text) ? parseAss(text) : parseSrt(text);
+}
+
+/* Bytes as text: gzip is unpacked, and what is not valid UTF-8 is read as Latin-1, as older
+   Portuguese and Spanish subtitles are (Windows-1252). */
 function subtitleText(buf) {
   if (buf.length > 2 && buf[0] === 0x1f && buf[1] === 0x8b) {
     try {
@@ -95,266 +137,237 @@ function subtitleText(buf) {
     } catch (e) {}
   }
   var text = buf.toString('utf8');
-  return text.indexOf('�') >= 0 ? buf.toString('binary') : text;
+  return text.indexOf('�') < 0 ? text : buf.toString('binary');
 }
 
-/* Cues of an external subtitle. The bundled streaming server converts any format (SRT, VTT,
-   ASS/SSA, any charset, gzip) to WebVTT, as in the official apps; when it is not ready the
-   file is read directly. */
+/* A streaming server on another computer converts any format, so it is asked first; the file
+   itself is read when there is none, or when it did not answer. */
 function subtitleCues(u, cb) {
   if (!/^https?:\/\//i.test(u)) return cb([]);
-  function direct() {
+  function readFile() {
     fetchUrl(u, function (buf) {
-      cb(buf ? parseSrt(subtitleText(buf)) : []);
+      cb(buf ? parseCues(subtitleText(buf)) : []);
     });
   }
-  fetchUrl(streamingBase() + '/subtitles.vtt?from=' + encodeURIComponent(u), function (buf) {
+  if (!remoteAddress()) return readFile();
+  fetchUrl(remoteAddress() + '/subtitles.vtt?from=' + encodeURIComponent(u), function (buf) {
     var cues = buf ? parseSrt(buf.toString('utf8')) : [];
     if (cues.length) cb(cues);
-    else direct();
+    else readFile();
   });
 }
 
-var IMG_SUB = { hdmv_pgs_subtitle: 1, dvd_subtitle: 1, dvb_subtitle: 1, xsub: 1, dvb_teletext: 1 };
+/* ---------- the text tracks inside a video ---------- */
+var IMAGE_CODECS = ['hdmv_pgs_subtitle', 'dvd_subtitle', 'dvb_subtitle', 'xsub', 'dvb_teletext'];
 
-/* The text subtitle tracks of the video, from the shared probe (probe.js). n is the
-   ffmpeg 0:s:n index, ti the index among text tracks (the TV's textTracks[]). A probe that
-   ran out of time says so (err 'timeout'), so the player can offer to try again. */
+/* n is FFmpeg's 0:s:n, counting every subtitle track; ti counts only text tracks, as the TV's
+   textTracks does. A probe that ran out of time says so, so the player can offer to try again. */
 function embTracks(u, res) {
   if (!u) return sendJson(res, { tracks: [] });
-  probeStreams(u, function (j) {
-    if (j.err) {
-      console.log('[embtracks] err=' + j.err);
-      return sendJson(res, { tracks: [], err: j.err, timeout: !!j.timedOut });
-    }
-    var tracks = [],
-      n = 0,
-      ti = 0;
-    for (var i = 0; i < j.streams.length; i++) {
-      var st = j.streams[i];
-      if (st.codec_type !== 'subtitle') continue;
-      if (!IMG_SUB[st.codec_name || '']) {
-        // image subs can't render as text
-        var tg = st.tags || {},
-          nm = langName((tg.language || '').toLowerCase());
-        if (tg.title) nm += ' — ' + tg.title;
-        tracks.push({ n: n, ti: ti, name: nm });
-        ti++;
-      }
-      n++;
-    }
-    console.log('[embtracks] found=' + tracks.length);
+  probeStreams(u, function (probe) {
+    if (probe.err) return sendJson(res, { tracks: [], err: probe.err, timeout: !!probe.timedOut });
+    var tracks = [];
+    probe.streams
+      .filter(function (stream) {
+        return stream.codec_type === 'subtitle';
+      })
+      .forEach(function (stream, n) {
+        if (IMAGE_CODECS.indexOf(stream.codec_name || '') >= 0) return;
+        var tags = stream.tags || {};
+        var name = langName((tags.language || '').toLowerCase());
+        tracks.push({ n: n, ti: tracks.length, name: tags.title ? name + ' — ' + tags.title : name });
+      });
     sendJson(res, { tracks: tracks, err: '' });
   });
 }
 
-// ---- progressive embedded-subtitle extraction ----
-// The windowed approach failed: every window re-seeked the container over the network
-// and got truncated. But a straight sequential read measured ~9x realtime on this TV.
-// So: ONE ffmpeg reading from the playhead to EOF, cues parsed as they stream out,
-// the player polls for increments, and finished tracks are cached on disk so a file
-// is only ever extracted once.
-var SUBCACHE = path.join(DIR, 'subcache');
+/* ---------- reading a track out, while the film plays ----------
+   Asking for small windows made FFmpeg seek over the network each time, and they came back cut
+   short. One FFmpeg reading from the playhead to the end is about 9 times faster than the film
+   on these TVs, so that is what runs: the player polls for what is new, and a track read from
+   the very start is kept on storage so a file only has to be read once. */
+var STORED_FOLDER = path.join(DIR, 'subcache');
+var STORED_MAX_FILES = 40;
+var STORED_MAX_BYTES = 24 * 1024 * 1024;
+var LEAD_IN_SECONDS = 30;
+var FAR_AHEAD_SECONDS = 300;
+var ABANDONED_AFTER_MS = 90000;
 
 try {
-  fs.mkdirSync(SUBCACHE);
+  fs.mkdirSync(STORED_FOLDER);
 } catch (e) {}
 
-function subKey(q) {
-  var tail = String(q.u || '')
+function trackKey(q) {
+  var fileName = String(q.u || '')
     .split('/')
     .pop()
     .slice(0, 48);
   return crypto
     .createHash('sha1')
-    .update((q.id || '') + '|' + (q.vid || '') + '|' + (q.n || 0) + '|' + tail)
+    .update([q.id || '', q.vid || '', q.n || 0, fileName].join('|'))
     .digest('hex');
 }
 
-function pruneSubcache() {
+function storedPath(key) {
+  return path.join(STORED_FOLDER, key + '.json');
+}
+
+function trimStored() {
   try {
-    var fl = fs.readdirSync(SUBCACHE);
-    var st = [],
-      total = 0,
-      maxBytes = 24 * 1024 * 1024;
-    for (var i = 0; i < fl.length; i++) {
-      try {
-        var si = fs.statSync(path.join(SUBCACHE, fl[i]));
-        st.push({ f: fl[i], m: si.mtimeMs, s: si.size || 0 });
-        total += si.size || 0;
-      } catch (e) {}
-    }
-    st.sort(function (a, b) {
-      return a.m - b.m;
+    var files = fs.readdirSync(STORED_FOLDER).map(function (name) {
+      var info = fs.statSync(path.join(STORED_FOLDER, name));
+      return { name: name, size: info.size || 0, at: info.mtime.getTime() };
     });
-    while (st.length > 40 || total > maxBytes) {
-      var old = st.shift();
-      if (!old) break;
-      try {
-        fs.unlinkSync(path.join(SUBCACHE, old.f));
-        total -= old.s;
-      } catch (e) {}
+    files.sort(function (a, b) {
+      return a.at - b.at;
+    });
+    var total = files.reduce(function (sum, file) {
+      return sum + file.size;
+    }, 0);
+    while (files.length && (files.length > STORED_MAX_FILES || total > STORED_MAX_BYTES)) {
+      var oldest = files.shift();
+      fs.unlinkSync(path.join(STORED_FOLDER, oldest.name));
+      total -= oldest.size;
     }
   } catch (e) {}
 }
 
-var embJob = null;
+/* one at a time: the TV has little memory */
+var reading = null;
 
-// single slot (low-RAM TV)
-function killJob() {
-  if (!embJob) return;
+function stopWorker(job) {
   try {
-    if (embJob.pr) embJob.pr.kill('SIGKILL');
+    if (job.worker) job.worker.kill('SIGKILL');
   } catch (e) {}
-  embJob = null;
 }
 
-function spawnJobProc(job, fromT) {
-  job.baseT = fromT;
-  job.tail = '';
-  job.startedAt = Date.now();
-  var args = ['-nostdin'];
-  if (fromT > 0) args.push('-ss', String(fromT));
-  // -copyts: keep ORIGINAL absolute timestamps. Without it, -ss output may be seek-relative
-  // or absolute depending on the file, which silently desynced mid-file extractions.
-  args.push('-i', localProxy(job.u), '-copyts', '-map', '0:s:' + job.n, '-f', 'srt', 'pipe:1');
-  var pr;
+function isCurrent(job, worker) {
+  return reading === job && job.worker === worker;
+}
+
+function addCues(job, text) {
+  parseSrt(text).forEach(function (cue) {
+    job.cues.push(cue);
+    job.frontier = Math.max(job.frontier, cue.e);
+  });
+}
+
+function readFrom(job, startAt) {
+  job.startedAt = startAt;
+  job.pending = '';
+  /* -copyts keeps the film's own timestamps: without it, what comes after -ss may count from the
+     seek or from the start depending on the file, and the subtitles drift */
+  var options = (startAt > 0 ? ['-nostdin', '-ss', String(startAt)] : ['-nostdin']).concat([
+    '-i',
+    localProxy(job.u),
+    '-copyts',
+    '-map',
+    '0:s:' + job.n,
+    '-f',
+    'srt',
+    'pipe:1'
+  ]);
+  var worker;
   try {
-    pr = spawn(FFMPEG, args);
-    lowerPriority(pr, NICE.SUBTITLES);
+    worker = spawn(FFMPEG, options);
+    lowerPriority(worker, NICE.SUBTITLES);
   } catch (e) {
     job.done = true;
     job.err = 'spawn failed';
     return;
   }
-  job.pr = pr;
-  pr.stdout.on('data', function (d) {
-    if (embJob !== job || job.pr !== pr) return;
-    job.tail += d.toString('utf8');
-    // parse only COMPLETE srt blocks; keep the trailing partial block for the next chunk
-    var cut = job.tail.lastIndexOf('\n\n');
-    if (cut < 0) return;
-    var ready = job.tail.slice(0, cut);
-    job.tail = job.tail.slice(cut + 2);
-    var cues = parseSrt(ready);
-    for (var i = 0; i < cues.length; i++) {
-      // -copyts => timestamps are already absolute; no offset arithmetic
-      job.cues.push(cues[i]);
-      if (cues[i].e > job.frontier) job.frontier = cues[i].e;
-    }
+  job.worker = worker;
+  worker.stdout.on('data', function (chunk) {
+    if (!isCurrent(job, worker)) return;
+    job.pending += chunk.toString('utf8');
+    /* only blocks that have ended; the rest waits for the next chunk */
+    var end = job.pending.lastIndexOf('\n\n');
+    if (end < 0) return;
+    addCues(job, job.pending.slice(0, end));
+    job.pending = job.pending.slice(end + 2);
   });
-  pr.stderr.on('data', function (d) {
-    job.errTail = (job.errTail + d.toString('utf8')).slice(-400);
-  });
-  pr.on('error', function () {
-    if (embJob === job && job.pr === pr) {
-      job.done = true;
-      job.err = 'ffmpeg error';
-    }
-  });
-  pr.on('close', function (code) {
-    if (embJob !== job || job.pr !== pr) return;
-    var last = parseSrt(job.tail); // flush the final block (timestamps already absolute via -copyts)
-    for (var i = 0; i < last.length; i++) job.cues.push(last[i]);
-    job.tail = '';
-    job.pr = null;
+  worker.stderr.on('data', function () {});
+  worker.on('error', function () {
+    if (!isCurrent(job, worker)) return;
     job.done = true;
-    var secs = ((Date.now() - job.startedAt) / 1000) | 0;
-    console.log(
-      '[embjob] done key=' +
-        job.key.slice(0, 8) +
-        ' cues=' +
-        job.cues.length +
-        ' base=' +
-        job.baseT +
-        ' took=' +
-        secs +
-        's code=' +
-        code
-    );
-    // cache only full-coverage runs (started at the very beginning) that yielded cues
-    if (code === 0 && job.baseT <= 5 && job.cues.length) {
-      try {
-        fs.writeFileSync(path.join(SUBCACHE, job.key + '.json'), JSON.stringify({ v: 1, cues: job.cues }));
-        pruneSubcache();
-      } catch (e) {}
-    }
+    job.err = 'ffmpeg error';
   });
+  worker.on('close', function (code) {
+    if (!isCurrent(job, worker)) return;
+    addCues(job, job.pending);
+    job.pending = '';
+    job.worker = null;
+    job.done = true;
+    if (code !== 0 || job.startedAt > 5 || !job.cues.length) return;
+    try {
+      fs.writeFileSync(storedPath(job.key), JSON.stringify({ v: 1, cues: job.cues }));
+      trimStored();
+    } catch (e) {}
+  });
+}
+
+function readStored(key) {
+  try {
+    var stored = JSON.parse(fs.readFileSync(storedPath(key), 'utf8'));
+    return stored && stored.cues && stored.cues.length ? stored.cues : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 function embStart(q, res) {
   if (!q.u) return sendJson(res, { err: 'no url' });
-  var key = subKey(q),
-    n = parseInt(q.n || '0', 10) || 0,
-    t = Math.max(0, Math.floor(parseFloat(q.t || '0') || 0));
-  // instant path: already extracted this track before
-  try {
-    var cachedRaw = fs.readFileSync(path.join(SUBCACHE, key + '.json'), 'utf8');
-    var cached = JSON.parse(cachedRaw);
-    if (cached && cached.cues && cached.cues.length) {
-      console.log('[embjob] cache hit key=' + key.slice(0, 8) + ' cues=' + cached.cues.length);
-      return sendJson(res, { cached: true, done: true, cues: cached.cues });
-    }
-  } catch (e) {}
-  if (embJob && embJob.key === key && !embJob.err) {
-    return sendJson(res, { started: true, cues: embJob.cues, done: embJob.done });
-  }
-  killJob();
-  // start slightly behind the playhead; if they later rewind past this, we restart from 0
-  var from = Math.max(0, t - 30);
-  embJob = {
+  var key = trackKey(q);
+  var stored = readStored(key);
+  if (stored) return sendJson(res, { cached: true, done: true, cues: stored });
+  if (reading && reading.key === key && !reading.err)
+    return sendJson(res, { started: true, cues: reading.cues, done: reading.done });
+  if (reading) stopWorker(reading);
+  var playhead = Math.max(0, Math.floor(parseFloat(q.t || '0') || 0));
+  var from = Math.max(0, playhead - LEAD_IN_SECONDS);
+  reading = {
     key: key,
     u: q.u,
-    n: n,
+    n: parseInt(q.n || '0', 10) || 0,
     cues: [],
     frontier: from,
-    baseT: from,
+    startedAt: from,
     done: false,
     err: '',
-    errTail: '',
-    lastPoll: Date.now(),
-    pr: null,
-    tail: ''
+    polledAt: Date.now(),
+    worker: null,
+    pending: '',
+    rewound: false,
+    jumped: false
   };
-  spawnJobProc(embJob, from);
-  console.log('[embjob] start key=' + key.slice(0, 8) + ' n=' + n + ' from=' + from);
+  readFrom(reading, from);
   sendJson(res, { started: true, cues: [], done: false });
 }
 
 function embCues(q, res) {
-  var key = subKey(q),
-    since = parseInt(q.since || '0', 10) || 0,
-    t = parseFloat(q.t || '0') || 0;
-  if (!embJob || embJob.key !== key) return sendJson(res, { cues: [], done: true, gone: true });
-  var job = embJob;
-  job.lastPoll = Date.now();
-  // user rewound before our start point -> restart from 0 (keeps already-parsed cues)
-  if (!job.done && job.baseT > 5 && t > 0 && t < job.baseT - 5 && !job.restarted0) {
-    job.restarted0 = true;
-    try {
-      if (job.pr) job.pr.kill('SIGKILL');
-    } catch (e) {}
-    console.log('[embjob] rewind -> restart from 0');
-    spawnJobProc(job, 0);
+  var job = reading;
+  if (!job || job.key !== trackKey(q)) return sendJson(res, { cues: [], done: true, gone: true });
+  var playhead = parseFloat(q.t || '0') || 0;
+  job.polledAt = Date.now();
+  if (!job.done && job.startedAt > 5 && playhead > 0 && playhead < job.startedAt - 5 && !job.rewound) {
+    /* the viewer went back before where reading began */
+    job.rewound = true;
+    stopWorker(job);
+    readFrom(job, 0);
+  } else if (!job.done && playhead > job.frontier + FAR_AHEAD_SECONDS && !job.jumped) {
+    /* the viewer went far past what has been read */
+    job.jumped = true;
+    stopWorker(job);
+    readFrom(job, Math.max(0, Math.floor(playhead - LEAD_IN_SECONDS)));
   }
-  // user jumped far past the extraction frontier -> hop the reader forward
-  else if (!job.done && t > job.frontier + 300 && !job.hopped) {
-    job.hopped = true; // one hop per job keeps it simple; cache is skipped anyway once baseT>5
-    try {
-      if (job.pr) job.pr.kill('SIGKILL');
-    } catch (e) {}
-    console.log('[embjob] far seek -> hop to ' + ((t - 30) | 0));
-    spawnJobProc(job, Math.max(0, Math.floor(t - 30)));
-  }
-  sendJson(res, { cues: job.cues.slice(since), done: job.done, err: job.err });
+  sendJson(res, { cues: job.cues.slice(parseInt(q.since || '0', 10) || 0), done: job.done, err: job.err });
 }
 
-// reap the job if the player stopped polling (left playback)
+/* the player left without saying so */
 setInterval(function () {
-  if (embJob && Date.now() - embJob.lastPoll > 90000) {
-    console.log('[embjob] idle reap');
-    killJob();
-  }
+  if (!reading || Date.now() - reading.polledAt <= ABANDONED_AFTER_MS) return;
+  stopWorker(reading);
+  reading = null;
 }, 30000).unref();
 
 module.exports = {
@@ -362,6 +375,7 @@ module.exports = {
   embStart: embStart,
   embTracks: embTracks,
   langName: langName,
+  parseCues: parseCues,
   parseSrt: parseSrt,
   subtitleCues: subtitleCues,
   subtitleText: subtitleText

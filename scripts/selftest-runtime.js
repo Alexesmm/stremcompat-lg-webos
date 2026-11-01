@@ -24,6 +24,8 @@ var directCues = subtitleLib.parseSrt(subtitleLib.subtitleText(Buffer.concat([
   Buffer.from('1\n00:00:01,000 --> 00:00:02,500\nCora'), Buffer.from([0xe7, 0xe3]), Buffer.from('o\n')
 ])));
 assert.strictEqual(directCues.length && directCues[0].t, 'Coração', 'a Windows-1252 subtitle read directly lost its accents or kept a line break');
+var assCues = subtitleLib.parseCues('[Script Info]\nTitle: x\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:05.50,0:00:07.00,Default,,0,0,0,,{\\i1}Second, with a comma\\Nline{\\i0}\nDialogue: 0,0:00:01.25,0:00:02.00,Default,,0,0,0,,First\n');
+assert.deepStrictEqual(assCues, [{ s: 1.25, e: 2, t: 'First' }, { s: 5.5, e: 7, t: 'Second, with a comma\nline' }], 'an ASS subtitle was not read');
 var vttCues = subtitleLib.parseSrt('WEBVTT\n\n01:02.500 --> 01:04.000 align:start\n<i>Olá</i>');
 assert.strictEqual(vttCues.length && vttCues[0].s + ':' + vttCues[0].t, '62.5:Olá', 'a WebVTT cue without hours was not read');
 var showVideos = [
@@ -350,7 +352,7 @@ async function main() {
     var tracks = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/embtracks?u=' + encodeURIComponent('http://127.0.0.1:9191/nothing.mkv') })).text);
     assert.ok(Array.isArray(tracks.tracks) && tracks.err, 'a failed track read did not report an error');
 
-    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons, subtitle decoding, protected takeover and the streaming server download.');
+    console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons, subtitle decoding, protected takeover.');
   } finally {
     try { child.kill(); } catch (e) {}
     await new Promise(function (resolve) { upstream.close(resolve); });

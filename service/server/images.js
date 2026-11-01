@@ -1,4 +1,5 @@
-// Backdrop downscaling (/bgz) to keep decoded textures small.
+// /bgz: a title's background art at the width this TV can hold. A full 1920x1080 image takes
+// about 8 MB once decoded; at 960 pixels it takes 2. The results are kept for the titles seen last.
 
 var crypto = require('crypto');
 var spawn = require('child_process').spawn;
@@ -6,101 +7,95 @@ var { FFMPEG, PROFILE } = require('./config');
 var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
 
-// ---- backdrop resizer: full-res art (1920x1080 = 8.3MB decoded) shrunk to 960x540
-// (2MB decoded) for the BROWSING backdrop — sharp enough upscaled, 4x lighter on the
-// decode cache that was thrashing during long sessions. LRU-cached per title.
-var bgzCache = {},
-  bgzOrder = [],
-  bgzActive = 0;
+var RESIZE_TIMEOUT_MS = 9000;
 
-function bgResize(q, res) {
-  var u = q.u || '';
-  if (!u) {
-    res.writeHead(404);
-    res.end();
-    return;
-  }
-  var key = crypto.createHash('sha1').update(u).digest('hex').slice(0, 16);
-  if (bgzCache[key]) {
-    res.writeHead(200, {
-      'Content-Type': 'image/jpeg',
-      'Cache-Control': 'max-age=86400',
-      'Access-Control-Allow-Origin': '*'
-    });
-    res.end(bgzCache[key]);
-    return;
-  }
-  if (bgzActive >= PROFILE.backdropWorkers) {
-    res.writeHead(204);
-    res.end();
-    return;
-  } // client falls back to /small
-  bgzActive++;
-  var args = [
+var finished = {};
+var finishedOrder = [];
+var running = 0;
+
+function sendImage(res, data) {
+  res.writeHead(200, {
+    'Content-Type': 'image/jpeg',
+    'Cache-Control': 'max-age=86400',
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.end(data);
+}
+
+/* no art for now: the interface shows the smaller image from the artwork server, and asks again */
+function sendNothing(res) {
+  res.writeHead(204);
+  res.end();
+}
+
+function remember(key, data) {
+  if (!finished[key]) finishedOrder.push(key);
+  finished[key] = data;
+  while (finishedOrder.length > PROFILE.backdropCache) delete finished[finishedOrder.shift()];
+}
+
+function resizeArguments(address) {
+  var quality = PROFILE.lowMemory ? '5' : '4';
+  return [
     '-nostdin',
     '-i',
-    localProxy(u),
+    localProxy(address),
     '-frames:v',
     '1',
     '-vf',
     'scale=' + PROFILE.backdropWidth + ':-2',
     '-q:v',
-    PROFILE.lowMemory ? '5' : '4',
+    quality,
     '-f',
     'mjpeg',
     'pipe:1'
   ];
-  var chunks = [],
-    done = false,
-    pr;
-  function finish(ok) {
-    if (done) return;
-    done = true;
-    clearTimeout(to);
-    bgzActive--;
-    var buf = Buffer.concat(chunks);
-    if (ok && buf.length > 2000) {
-      bgzCache[key] = buf;
-      bgzOrder.push(key);
-      while (bgzOrder.length > PROFILE.backdropCache) delete bgzCache[bgzOrder.shift()];
-      try {
-        res.writeHead(200, {
-          'Content-Type': 'image/jpeg',
-          'Cache-Control': 'max-age=86400',
-          'Access-Control-Allow-Origin': '*'
-        });
-        res.end(buf);
-      } catch (e) {}
-    } else {
-      try {
-        res.writeHead(204);
-        res.end();
-      } catch (e) {}
-    }
+}
+
+function bgResize(q, res) {
+  var address = q.u || '';
+  if (!address) {
+    res.writeHead(404);
+    return res.end();
   }
-  try {
-    pr = spawn(FFMPEG, args);
-    lowerPriority(pr, NICE.INTERACTIVE);
-  } catch (e) {
-    bgzActive--;
-    res.writeHead(204);
-    res.end();
-    return;
+  var key = crypto.createHash('sha1').update(address).digest('hex').slice(0, 16);
+  if (finished[key]) return sendImage(res, finished[key]);
+  if (running >= PROFILE.backdropWorkers) return sendNothing(res);
+
+  var parts = [];
+  var ended = false;
+  var worker;
+  function end(data) {
+    if (ended) return;
+    ended = true;
+    running--;
+    clearTimeout(timer);
+    if (!data) return sendNothing(res);
+    remember(key, data);
+    sendImage(res, data);
   }
-  var to = setTimeout(function () {
+  running++;
+  var timer = setTimeout(function () {
     try {
-      pr.kill('SIGKILL');
+      worker.kill('SIGKILL');
     } catch (e) {}
-    finish(false);
-  }, 9000);
-  pr.stdout.on('data', function (d) {
-    chunks.push(d);
+    end(null);
+  }, RESIZE_TIMEOUT_MS);
+  try {
+    worker = spawn(FFMPEG, resizeArguments(address));
+    lowerPriority(worker, NICE.INTERACTIVE);
+  } catch (e) {
+    return end(null);
+  }
+  worker.stdout.on('data', function (chunk) {
+    parts.push(chunk);
   });
-  pr.on('error', function () {
-    finish(false);
+  worker.on('error', function () {
+    end(null);
   });
-  pr.on('close', function (code) {
-    finish(code === 0);
+  worker.on('close', function (code) {
+    var data = Buffer.concat(parts);
+    end(code === 0 && data.length ? data : null);
   });
 }
 

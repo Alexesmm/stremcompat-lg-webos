@@ -10,19 +10,20 @@ The following source projects influenced or supplied parts of this repository:
 |---|---|---|
 | [kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos) | Starting point for the packaged webOS application bootstrap, manifest layout and service launcher. The audited upstream revision was `296548a52b45af19a6df9e083f117a485bd71afc`. | No license file was present in the audited repository. Copyright remains with its contributors. |
 | [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv) | Identified by `kieranbrown/stremio-webos` as the source of its Theater television interface. | No license file was present in the audited repository. Copyright remains with its contributors. |
-| [simussu9-wq/stremiobrew](https://github.com/simussu9-wq/stremiobrew) | Starting point for the local server architecture and source of the pinned ARMv7 runtime package. The current upstream revision audited was `4080c4e6119f39861714f71070216053b6f128b3`. | The current upstream repository publishes GPL-3.0. The pinned 1.0.0 IPK did not contain an embedded license or source-revision notice. |
+| [simussu9-wq/stremiobrew](https://github.com/simussu9-wq/stremiobrew) | Starting point for the local server architecture. Its 1.0.0 package supplied the ARMv7 runtime before StremCompat 3.0.0. The current upstream revision audited was `4080c4e6119f39861714f71070216053b6f128b3`. | The current upstream repository publishes GPL-3.0. The pinned 1.0.0 IPK did not contain an embedded license or source-revision notice. |
 
 StremCompat adds a separately implemented low-memory television UI, account and addon bridges, source filtering and sorting, playback helpers, profile-based packaging, compatibility diagnostics and verification tests. A list of changes does not override the rights or license status of inherited code.
 
-## Bundled runtime
+## Programs in the package
 
-The build uses a runtime archive (`runtime-v2.0.0`, SHA-256 `3a63ba8ce3c3a6cafc3fd1eb6d0187231c8261150b06868a0b67835224ad246b`) made by `scripts/make-runtime-archive.js` from the StremioBrew 1.0.0 IPK (SHA-256 `36c81015d851bfd4b12c40372edbe7b51fb67fe1d8cec828d0aefa6ce8343df7`). License texts ship in `service/licenses/`.
+Built from source by `native/build-ffmpeg.sh` and `native/build-engine.sh`, as static ARM executables. The result is published as the `runtime-v3.0.0` archive, which `scripts/fetch-runtime.ps1` checks against its SHA-256. License texts ship in `service/licenses/`.
 
-The extracted package includes:
+- FFmpeg and FFprobe 7.1.1, LGPL build: [FFmpeg legal information](https://ffmpeg.org/legal.html). Exact source and options: `service/licenses/ffmpeg-build-info.txt`
+- `sc-engine`: `native/engine/sc-engine.cpp` over [Nuvio Engine](https://github.com/NuvioMedia/nuvio-engine) (GPL-3.0-or-later) at a pinned commit, with [libtorrent](https://github.com/arvidn/libtorrent) and Boost
+- zlib, musl and LLVM libc++, linked into those programs
 
-- Node.js 18 for ARMv7: [Node.js licensing information](https://github.com/nodejs/node/blob/main/LICENSE)
-- FFmpeg and FFprobe: [FFmpeg legal information](https://ffmpeg.org/legal.html)
-- Shared libraries needed by the ARMv7 runtime
+The local server runs on the Node.js that comes with the television, which is not part of the package.
+
 
 The bundled FFmpeg binary identifies itself as configured with `--enable-gpl` and `--enable-version3`, along with GPL-enabled libraries including libx264. Treat that binary as GPLv3-covered distribution material. The pinned IPK does not identify the exact FFmpeg source revision or provide a corresponding source offer, so the runtime provenance is not yet sufficient for a fully documented public redistribution. A future release should replace it with a reproducible build and publish the exact corresponding source and build configuration.
 
@@ -32,7 +33,6 @@ The Samsung test package contains no Node.js, FFmpeg or FFprobe binary, because 
 
 ## Downloaded by the television
 
-On LG televisions, Stremio's streaming server (`https://dl.strem.io/server/v4.20.17/webos/server.js`, SHA-256 `ecef1b5a4f67f5fd94ffc0c39e7567d6a6efdd46849ea7a2da48ccc84bd49c1d`) is closed-source and is not part of the release packages. The television downloads it directly from Stremio the first time the app opens. Its use remains subject to Stremio's terms.
 
 ## Bundled font
 

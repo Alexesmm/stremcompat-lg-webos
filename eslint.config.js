@@ -20,7 +20,7 @@ module.exports = [
     ignores: ['node_modules/**', '.build/**', '.cache/**', 'dist/**', 'service/server.js', 'service/bin/**', 'src/ui/**', 'src/player/**', 'src/shared/**', 'src/platform/**', 'platforms/tizen/spike/**']
   },
   {
-    // Node 18 local server and its modules.
+    // local server and its modules.
     files: ['service/tvserver.js', 'service/server/**/*.js'],
     languageOptions: { ecmaVersion: 2022, sourceType: 'commonjs', globals: globals.node },
     rules: correctness
