@@ -17,13 +17,24 @@
 
 ## About
 
-StremCompat is an independent, unofficial client for older LG televisions that cannot install the official Stremio app. It works with your Stremio account and addons, with an interface designed for the TV remote. It installs through LG Developer Mode and webOS Dev Manager and does **not** require root access or Homebrew Channel.
-
-It combines its own lightweight television interface with a small local server that runs on the TV's own Node.js, FFmpeg built only with what the app needs and a torrent engine that runs only while a torrent plays. The whole package is about 6 MB and needs no computer, not even for torrents.
+StremCompat is an independent, unofficial client for older LG TVs that cannot install the official Stremio app. It works with your own Stremio account and addons, with an interface made for the TV remote. It needs no root and no computer, not even for torrents, and the whole package is about 6 MB.
 
 **The stable version is the one for LG.** There is also a [test version for older Samsung TVs](#samsung-tvs-test-version).
 
 This project is not affiliated with or endorsed by Stremio, LG Electronics or Samsung. Use only addons and media sources that you are authorized to access.
+
+## Features
+
+- **Your Stremio account:** sign in with a QR code or email. Library, progress, watched state and addons stay in sync with your other Stremio apps.
+- **Browsing:** Home, Discover, Search and Library from your addons, with Continue Watching and the minutes left.
+- **Best source:** one press goes straight to the film. It asks which quality you want, or uses the one set in Settings.
+- **Source list:** quality and language filters, compatibility warnings, and addons that fail are named.
+- **Playback:** direct, debrid, torrent and HLS, using the TV's hardware decoder. Torrents play on the TV itself, or through a streaming server on another computer if you prefer.
+- **Subtitles and audio:** from addons or inside the file, remembered for each title, with a backup language and a subtitle delay.
+- **Series:** the next episode starts with the same release or a matching source, with an "are you still watching?" check.
+- **Made for the TV:** remote and Magic Remote, color-button shortcuts and optional larger text.
+- **Seven languages:** English, Brazilian Portuguese, Spanish, French, German, Italian and Russian, following the TV's language at first. Corrections to the translations are welcome.
+- **Your control:** **Do not save history** keeps progress and searches off the TV and your account, and **Settings > Diagnostics** shows memory and recent problems.
 
 ## Screenshots
 
@@ -40,23 +51,33 @@ Captured from the real interface at 1920x1080, on a computer, with a demo librar
   </tr>
 </table>
 
-## Table of contents
+## Installation
 
-1. [Downloads](#downloads)
-2. [Compatibility](#compatibility)
-3. [Installation](#installation)
-4. [First use](#first-use)
-5. [Features](#features)
-6. [How it works](#how-it-works)
-7. [Samsung TVs (test version)](#samsung-tvs-test-version)
-8. [Troubleshooting](#troubleshooting)
-9. [Feedback and compatibility reports](#feedback-and-compatibility-reports)
-10. [Support development](#support-development)
-11. [Credits and licensing](#credits-and-licensing)
+**With the Homebrew Channel**, which also makes updates easy:
 
-## Downloads
+1. Install the [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) on the TV.
+2. In its settings, add this repository: `https://alexesmm.github.io/stremcompat-lg-webos/apps.json`
+3. Install StremCompat from the channel. The app tells you when a new version is out.
 
-One package for every supported LG TV: download `StremCompat-v3.0.1.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases). The app chooses its limits by itself when it opens, with lighter artwork and shorter lists on the weakest TVs.
+**With Developer Mode:**
+
+1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
+2. Add the TV in **webOS Dev Manager**.
+3. Download `StremCompat-v3.0.1.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+
+Developer Mode installations expire with its timer, so renew it before it reaches zero.
+
+The app uses about 13 MB once installed, plus up to 768 MB of free storage while a torrent plays, which is cleared when it stops.
+
+> **Coming from 2.x?** If you used `StremCompat`, this updates it. If you used `StremCompat HD`, `StremCompat UJ3` or `StremCompat UJ3 HD`, remove that app: this package replaces all of them. You may need to sign in again.
+
+### First use
+
+StremCompat has no accounts or sources of its own.
+
+1. Create a free account at [stremio.com/register](https://www.stremio.com/register), if you do not have one.
+2. Install your addons in the Stremio app or website. Without an addon that provides sources, titles open but have nothing to play.
+3. On the TV, sign in with the QR code or with your email and password.
 
 ## Compatibility
 
@@ -83,80 +104,11 @@ webOS 1.x and 2.x are not supported. LG can change processors inside a family, s
 
 Most reports come from versions before 3.0, whose packages were different, so a new report helps even for a model on this list. Tried it on another TV? [Send a compatibility report](https://github.com/Alexesmm/stremcompat-lg-webos/issues/new?template=compatibility-report.yml).
 
-## Installation
-
-Root access is not required.
-
-**With the Homebrew Channel**, which also makes updates easy:
-
-1. Install the [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) on the TV.
-2. In its settings, add this repository: `https://alexesmm.github.io/stremcompat-lg-webos/apps.json`
-3. Install StremCompat from the channel. The app tells you when a new version is out.
-
-**With Developer Mode:**
-
-1. Install LG's **Developer Mode** app on the television, sign in, and enable Developer Mode and Key Server.
-2. Add the television in **webOS Dev Manager**.
-3. Download the IPK from Releases and install it.
-4. Open `StremCompat`.
-
-> **Coming from 2.x?** If you used `StremCompat`, this updates it. If you used `StremCompat HD`, `StremCompat UJ3` or `StremCompat UJ3 HD`, remove that app: this package replaces all of them. Your library and addons are on your Stremio account, and you may need to sign in again.
-
-The IPK is about 6 MB and uses about 13 MB once installed, plus up to 768 MB of free storage while a torrent plays, which is cleared when it stops. Developer Mode installations expire with the Developer Mode timer, so renew it before it reaches zero.
-
-> **After updating over an existing installation**, the app's local service from the previous version can keep running in the background. From 1.3.3 on, the new version replaces it by itself. If the app ever stays on the loading screen (`RUNTIME_START_TIMEOUT`), unplug the television for at least 30 seconds and open it again; turning it off with the remote is not enough when Quick Start+ is on. This does not erase your account or settings.
-
-## First use
-
-StremCompat has no accounts or sources of its own. It uses your Stremio account and the addons installed on it.
-
-1. Create a free account at [stremio.com/register](https://www.stremio.com/register), if you do not have one.
-2. Install your addons in the Stremio app or website. They come from the account, so without any addon that provides sources, titles open but have nothing to play.
-3. On the TV, sign in with the QR code or with your email and password.
-
-## Features
-
-**Account and library**
-
-- Login by email or phone pairing code. Interface in English, Brazilian Portuguese, Spanish, French, German, Italian and Russian; corrections to the translations are welcome.
-- Library, watched state, progress and addon synchronization with the Stremio account, in both directions: episodes and films watched on the TV show as watched in the other Stremio apps, and the other way round.
-- Continue Watching with the episode and minutes left; a finished episode becomes the next one, also when it was finished on another device.
-- Home rows for New episodes of followed series and My list.
-- The next episode starts straight from the player, with the same release when the addon marks it, or the same addon, quality and audio language. When nothing matches, the source list opens instead of changing language silently.
-- History controls to clear recent searches or Continue Watching, and **Do not save history**: while it is on, no progress, watched state, played source or search is saved on the TV or sent to your account. Addons and streaming servers still receive their normal requests.
-
-**Browsing**
-
-- Addon-driven Home, Discover, Search and Library, with a See all card at the end of each catalog row.
-- On-screen search keyboard with results that update while typing, plus recent searches.
-- One-press Continue / Play buttons on title pages, episode details and continuous numbering for long series.
-- Audio and subtitle choices are remembered for each title, with a backup language when the first is not available.
-- **Best source** starts the source that suits this TV and the speed of its connection, without opening the list.
-- Remote and LG Magic Remote navigation built for the television, with an optional larger interface text.
-
-**Sources and playback**
-
-- Quality filters, duplicate removal and source tags (quality, language, HDR/DV, codec, audio, size, seeders), with a recommended source for the TV.
-- Optional preferred source language that lists sources in that language first, and a language filter when the sources come in several languages.
-- Addons that do not answer are named, and a source that will not play offers another one.
-- Direct, debrid, torrent and HLS playback through the local bridge, using the TV's hardware decoder.
-- Playback waits up to ten seconds for a subtitle you choose in the menu, so it starts with the line being spoken.
-- Torrents play on the TV itself. The engine starts with the first torrent and stops when nothing plays, keeping only part of the film on storage. A streaming server on another computer can be used instead: **Settings > Streaming server > Address**. The address is saved only after a server answers there, and **Use this TV** goes back to the built-in behaviour.
-- Subtitles and audio-track selection, remembered per title along with the subtitle delay.
-- Next-episode countdown with an "are you still watching?" check.
-- LG remote shortcuts: red subtitles, green audio, yellow skips 85 seconds, blue settings, digits jump through the video.
-
-**Television resources**
-
-- Separate memory profiles for webOS 3.x and 4.x hardware: the interface uses lighter artwork while the video keeps its full resolution.
-- The local server restarts on its own if it exits.
-- **Settings > Diagnostics** shows memory, CPU load, Home load time and recent playback or addon problems.
-
 ## How it works
 
-The package contains a small webOS launcher and a local server written for the television's own Node.js (0.12 on webOS 3 and 4). The interface, account and addon requests, stream headers, HLS handling and subtitles go through that server, which avoids the old browsers' TLS and CORS limits, and playback uses the TV's hardware decoder.
+A small webOS launcher starts a local server on the TV's own Node.js. The interface, addon requests and subtitles go through it, which avoids the old browser's TLS and CORS limits, and video uses the TV's hardware decoder.
 
-Two small programs built from source come with it: FFmpeg, for artwork, seek previews and subtitles inside the video, and a torrent engine over [Nuvio Engine](https://github.com/NuvioMedia/nuvio-engine) and libtorrent. Both are single files that depend on nothing in the TV's system, so a webOS version does not change how they run. Architecture details are in [docs/TECHNICAL.md](docs/TECHNICAL.md).
+Two small programs built from source come with it: FFmpeg, for artwork, seek previews and subtitles inside the video, and a torrent engine over [Nuvio Engine](https://github.com/NuvioMedia/nuvio-engine) and libtorrent. Details are in [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
 ## Samsung TVs (test version)
 
@@ -180,30 +132,17 @@ Download the package from the [test release](https://github.com/Alexesmm/stremco
 
 ## Troubleshooting
 
-- **"Can't reach Stremio" message, or nothing loads (login QR code, email login or catalogs) while other TV apps and Stremio on a phone work:** your network probably hands out IPv6 without a working IPv6 connection. Update to 1.2.3 or later, which tries IPv4 first. On older versions, turn IPv6 off on the television (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router.
-- **Check that the app's local service is running** by opening `http://127.0.0.1:8082/health` in the TV browser.
-- **App stuck after an update:** power cycle the television as described in [Installation](#installation).
-- **Interface only in the upper-left part of the screen:** install the `graphics-1280x720` package.
+- **"Can't reach Stremio", or nothing loads while other apps work:** your network probably hands out IPv6 without a working connection. Turn IPv6 off on the TV (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router.
+- **App stuck on the loading screen after an update (`RUNTIME_START_TIMEOUT`):** unplug the TV for at least 30 seconds and open it again. The remote is not enough when Quick Start+ is on. This does not erase your account or settings.
 - **Torrents do not start, but debrid and direct links work:** **Settings > Diagnostics** shows the state of the engine. Few seeders or little free storage can also keep a torrent from starting.
+- **A source appears but does not play:** usually a codec, bitrate or addon issue. Try a moderate H.264/AAC source first.
 - **Error screen at startup:** note the full `APP_BOOT` or `APP_ASSET` message before reinstalling.
-- **A source appears but does not play:** usually a codec, bitrate or addon issue. Try a moderate H.264/AAC source first; very large 4K remuxes and some audio formats can exceed what older firmware supports.
-- Make sure Developer Mode is still active, and remove old test versions if storage is low.
 
-## Feedback and compatibility reports
+## Feedback and support
 
-Use [GitHub Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions) for questions, ideas and compatibility results, and [GitHub Issues](https://github.com/Alexesmm/stremcompat-lg-webos/issues) for reproducible bugs. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a report, and [SECURITY.md](SECURITY.md) for security issues.
+Use [Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions) for questions, ideas and compatibility results, and [Issues](https://github.com/Alexesmm/stremcompat-lg-webos/issues) for reproducible bugs. See [CONTRIBUTING.md](CONTRIBUTING.md) first, and [SECURITY.md](SECURITY.md) for security issues. Never post passwords, tokens or an active pairing QR code.
 
-When reporting a television, include the full model and regional suffix, webOS TV version, firmware version, the exact IPK filename, and whether startup, login, catalogs and playback worked. Never post passwords, tokens or an active pairing QR code.
-
-## Support development
-
-StremCompat is a free community project developed and maintained in my spare time.
-
-If StremCompat has been useful to you and you'd like to support its continued development, you can buy me a coffee. Contributions are entirely optional and help support ongoing maintenance and compatibility improvements.
-
-[☕ Buy me a coffee](https://buymeacoffee.com/Alexesmm)
-
-StremCompat is free to use, and donations are never required.
+StremCompat is free and made in my spare time. If it has been useful to you, you can [buy me a coffee ☕](https://buymeacoffee.com/Alexesmm), which is entirely optional.
 
 ## Credits and licensing
 
