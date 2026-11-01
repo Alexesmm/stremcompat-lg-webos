@@ -20,19 +20,19 @@ img{border:0}
 /* Details use the same split composition, but allow the art to reach lower behind episodes. */
 body.detail #bg,body.detail #bg2{left:34%;height:100%;background-position:center top}
 body.detail #bg.on,body.detail #bg2.on{opacity:.88}
-body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 52%,rgba(9,11,18,.7) 82%,#090b12 100%),linear-gradient(to right,#090b12 34%,rgba(9,11,18,.93) 39%,rgba(9,11,18,.78) 46%,rgba(9,11,18,.56) 55%,rgba(9,11,18,.3) 66%,rgba(9,11,18,.08) 80%,rgba(9,11,18,0) 90%)}
+body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 46%,rgba(9,11,18,.72) 76%,#090b12 96%),linear-gradient(to right,#090b12 34%,rgba(9,11,18,.92) 41%,rgba(9,11,18,.7) 49%,rgba(9,11,18,.42) 58%,rgba(9,11,18,.16) 69%,rgba(9,11,18,0) 80%)}
 
 /* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
    available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same
    vignette + smooth edges, so it reads as the cover art coming to life. */
-#topnav,#hero,#rowsClip,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc,#heroCast{transition:opacity .9s ease}
+#topnav,#hero,#rowsClip,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc{transition:opacity .9s ease}
 body.idle #topnav,body.idle #hero,body.idle #rowsClip,body.idle #dWrap{opacity:.82}
 body.trailer #bg.on,body.trailer #bg2.on{opacity:0}
 /* trailer playing: everything on the upper half melts to near-nothing; only the title
    cover-art/logo stays (~.78). Smooth .9s fades. */
 body.trailer #hero{opacity:1}
 body.trailer #topnav{opacity:.16}
-body.trailer #heroMeta,body.trailer #heroDesc,body.trailer #heroCast{opacity:.1}
+body.trailer #heroMeta,body.trailer #heroDesc{opacity:.1}
 body.trailer #heroTitle,body.trailer #heroLogo{opacity:.78}
 /* first row overlaps the trailer -> very low; the rows below it stay readable at .75 */
 body.trailer #rowsClip{opacity:1}

@@ -47,9 +47,6 @@ var detail = {
      paint() can reveal the previous title while the replacement is still loading. */
     $('dLogo').style.display = 'none';
     $('dLogo').src = BLANK_IMG;
-    $('dPoster').style.display = 'none';
-    $('dPoster').src = BLANK_IMG;
-    $('dPoster')._detailId = '';
     $('dBtns').innerHTML = '';
     $('dSeasons').style.display = 'none';
     $('dEps').style.display = 'none';
@@ -96,44 +93,13 @@ var detail = {
     } else {
       $('dTitle').style.display = 'block';
     }
-    if (m.poster) {
-      var pi = new Image();
-      pi.onload = function () {
-        if (detail.meta === m && detail.id === mediaId) {
-          var dp = $('dPoster');
-          dp.src = m.poster;
-          dp._detailId = mediaId;
-          if (detail.zone !== 'eps') dp.style.display = 'block';
-        }
-      };
-      pi.src = m.poster;
-    }
     /* the same info line as the Home hero, followed by the genres */
     $('dMeta').innerHTML =
       heroMetaHtml(m) +
       (m.genres && m.genres.length ? '<span>' + esc(m.genres.slice(0, 3).join(' · ')) + '</span>' : '');
-    var info = '';
-    if (m.cast && m.cast.length)
-      info +=
-        '<div><span class="dlbl">' + tx('cast') + '</span>' + esc(m.cast.slice(0, 5).join(', ')) + '</div>';
-    if (m.director && m.director.length)
-      info +=
-        '<div><span class="dlbl">' +
-        tx('director') +
-        '</span>' +
-        esc(m.director.slice(0, 2).join(', ')) +
-        '</div>';
-    if (m.writer && m.writer.length)
-      info +=
-        '<div><span class="dlbl">' +
-        tx('writers') +
-        '</span>' +
-        esc(m.writer.slice(0, 3).join(', ')) +
-        '</div>';
-    if (m.country) info += '<div><span class="dlbl">' + tx('country') + '</span>' + esc(m.country) + '</div>';
-    if (m.awards)
-      info +=
-        '<div><span class="dlbl">' + tx('awards') + '</span>' + esc(String(m.awards).slice(0, 80)) + '</div>';
+    var people = m.cast && m.cast.length ? m.cast : m.director || [];
+    var info = people.length ? '<div>' + esc(people.slice(0, 4).join(', ')) + '</div>' : '';
+    if (m.awards) info += '<div class="awards">' + esc(m.awards) + '</div>';
     $('dInfo').innerHTML = info;
     $('dDesc').textContent = m.description || '';
     this.baseMeta = $('dMeta').innerHTML;
@@ -173,20 +139,36 @@ var detail = {
       });
     }
     if (this.type !== 'series')
-      this.addBtn(tx('watch'), function () {
-        self.openStreams(self.id);
-      });
+      this.addBtn(
+        tx('watch'),
+        function () {
+          self.openStreams(self.id);
+        },
+        primary ? ICON.similar : ''
+      );
     var hasTr = (m.trailers && m.trailers.length) || (m.trailerStreams && m.trailerStreams.length);
     if (hasTr)
-      this.addBtn(tx('trailer'), function () {
-        self.playTrailer();
-      });
-    this.addBtn(tx('similar'), function () {
-      goScr('sim', { type: self.type, id: self.id, name: m.name });
-    });
-    this.addBtn(this.inLib() ? tx('inLibrary') : tx('libraryButton'), function () {
-      self.toggleLib();
-    });
+      this.addBtn(
+        tx('trailer'),
+        function () {
+          self.playTrailer();
+        },
+        ICON.trailer
+      );
+    this.addBtn(
+      tx('similar'),
+      function () {
+        goScr('sim', { type: self.type, id: self.id, name: m.name });
+      },
+      ICON.grid
+    );
+    this.libBtn = this.addBtn(
+      this.inLib() ? tx('inLibrary') : tx('libraryButton'),
+      function () {
+        self.toggleLib();
+      },
+      this.inLib() ? ICON.check : ICON.plus
+    );
     this.paint();
     if (this.type === 'series') {
       if (av) {
@@ -244,13 +226,16 @@ var detail = {
       );
     else this.openStreams(c.videoId);
   },
-  addBtn: function (label, act) {
+  /* With an icon it is a round button that shows its label while it has the focus; without
+     one it is the main action, which always shows its label. */
+  addBtn: function (label, act, icon) {
     var b = document.createElement('div');
-    b.className = 'btn';
-    b.textContent = label;
+    b.className = icon ? 'btn ico' : 'btn main';
+    b.innerHTML = (icon || ICON.play) + '<span class="bl">' + esc(label) + '</span>';
     $('dBtns').appendChild(b);
     this.btnEls.push(b);
     this.btnActs.push(act);
+    return b;
   },
   inLib: function () {
     var it = lsJson(PRE + this.id);
@@ -301,11 +286,12 @@ var detail = {
     }
     pushLib(lsJson(PRE + this.id));
     invalidateBoards();
-    var lbl = this.inLib() ? tx('inLibrary') : tx('libraryButton');
-    for (var i = 0; i < this.btnEls.length; i++) {
-      var t = this.btnEls[i].textContent;
-      if (t === tx('libraryButton') || t === tx('inLibrary')) this.btnEls[i].textContent = lbl;
-    }
+    var inLib = this.inLib();
+    this.libBtn.innerHTML =
+      (inLib ? ICON.check : ICON.plus) +
+      '<span class="bl">' +
+      esc(inLib ? tx('inLibrary') : tx('libraryButton')) +
+      '</span>';
   },
   playTrailer: function () {
     var t = trailerIdOf(this.meta);
@@ -352,9 +338,8 @@ var detail = {
     if (episodeMode) {
       bodyAdd('series-episode');
       $('dInfo').style.display = 'none';
-      $('dPoster').style.display = 'none';
       $('dBtns').style.display = 'none';
-      $('dDesc').style.display = 'block';
+      $('dDesc').style.display = '';
       $('dMeta').textContent = cv ? episodeMetaLine(cv) : '';
       $('dDesc').textContent = (cv && (cv.overview || cv.description)) || '';
       if (cv) setBg(episodeImage(cv, this.meta) || episodeFallback(this.meta, false));
@@ -362,13 +347,11 @@ var detail = {
     } else {
       bodyRemove('series-episode');
       $('dBtns').style.display = 'block';
-      $('dDesc').style.display = 'block';
+      $('dDesc').style.display = '';
       $('dInfo').style.display = 'block';
       $('dMeta').innerHTML = this.baseMeta;
       $('dInfo').innerHTML = this.baseInfo;
       $('dDesc').textContent = this.baseDesc;
-      var posterReady = this.meta && this.meta.poster && $('dPoster')._detailId === this.id;
-      $('dPoster').style.display = posterReady ? 'block' : 'none';
       if (this.meta) setBg(this.meta.background || bgOf({ id: this.id, poster: this.meta.poster }));
     }
   },

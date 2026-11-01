@@ -135,7 +135,6 @@ qualities.forEach(function (quality) {
 assert.ok(!sourceHas(source, "location.assign('/play?u='"), 'beta player fallback leaked a source URL into browser history');
 assert.ok(!sourceHas(source, 'self.poll=setInterval'), 'QR polling still allows overlapping interval requests');
 assert.ok(sourceHas(source, "if(this.type!=='series')this.addBtn(tx('watch')"), 'movie details do not expose an explicit Watch action');
-assert.ok(sourceHas(source, "$('dPoster')._detailId===this.id"), 'detail poster is not tied to the current title');
 assert.ok(sourceHas(source, 'detail.meta===m&&detail.id===mediaId'), 'late detail artwork can overwrite the current title');
 assert.ok(sourceHas(source, 'function queuePointerHover(target)'), 'Magic Remote hover navigation is not debounced');
 assert.ok(sourceHas(source, "def.k==='__reload'"), 'Settings recovery action is not wired');

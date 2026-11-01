@@ -216,11 +216,11 @@ async function main() {
     fs.writeFileSync(output.replace(/\.png$/i, '-sources.png'), Buffer.from(sourcesShot.data, 'base64'));
     await protocol.call('Runtime.evaluate', { expression: "document.getElementById('streams').style.display='none';(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(37);key(40);key(40);key(40);key(40);key(39);})()" });
     await delay(150);
-    var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl');return JSON.stringify({screen:document.getElementById('scrSet').className,firstLabel:labels.length?labels[0].textContent:'',firstValue:values.length?values[0].textContent:''});})()", returnByValue: true });
+    var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl'),language=-1;for(var i=0;i<labels.length;i++)if(labels[i].textContent==='Interface language')language=i;return JSON.stringify({screen:document.getElementById('scrSet').className,languageRow:language,languageValue:language>=0?values[language].textContent:''});})()", returnByValue: true });
     var settingsState = JSON.parse(settingsView.result.value);
     assert.ok(/\bon\b/.test(settingsState.screen), 'Remote navigation did not open Settings.');
-    assert.strictEqual(settingsState.firstLabel, 'Interface language', 'Interface language setting is missing.');
-    assert.ok(settingsState.firstValue.indexOf('English') >= 0, 'Saved interface language is not shown in Settings.');
+    assert.ok(settingsState.languageRow >= 0, 'Interface language setting is missing.');
+    assert.ok(settingsState.languageValue.indexOf('English') >= 0, 'Saved interface language is not shown in Settings.');
     await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(13);})()" });
     var editingView = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({editing:/\\bediting\\b/.test(document.querySelector('#setItems .set').className),hint:document.getElementById('setHint').textContent})", returnByValue: true });
     var editingState = JSON.parse(editingView.result.value);
@@ -240,13 +240,16 @@ async function main() {
     await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('beta_meta_series_visual-series',JSON.stringify({t:Date.now(),meta:" + JSON.stringify(seriesMeta) + "}))" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta#detail/series/visual-series' });
     await delay(500);
+    /* the page opens on its first button: Down twice passes the seasons and reaches the episodes */
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(40);key(40);})()" });
+    await delay(150);
     var seriesView = await protocol.call('Runtime.evaluate', { expression: "(function(){var eps=document.querySelectorAll('#dEpsInner .ep'),first=eps[0]&&eps[0].getBoundingClientRect(),second=eps[1]&&eps[1].getBoundingClientRect();return JSON.stringify({screen:document.getElementById('scrDetail').className,episodes:eps.length,first:first?{left:first.left,top:first.top,right:first.right,bottom:first.bottom}:null,second:second?{left:second.left,top:second.top}:null,desc:getComputedStyle(document.getElementById('dDesc')).display,info:getComputedStyle(document.getElementById('dInfo')).display,buttons:getComputedStyle(document.getElementById('dBtns')).display});})()", returnByValue: true });
     var seriesState = JSON.parse(seriesView.result.value);
     assert.ok(/\bon\b/.test(seriesState.screen), 'Series detail screen did not open.');
     assert.strictEqual(seriesState.episodes, 8, 'Series episode rail is incomplete.');
     assert.ok(seriesState.first && seriesState.second && seriesState.second.left > seriesState.first.left, 'Episodes are not arranged in a horizontal rail.');
     assert.ok(seriesState.first.bottom <= height, 'Episode rail is clipped.');
-    assert.strictEqual(seriesState.desc, 'block', 'Focused episode summary is hidden.');
+    assert.notStrictEqual(seriesState.desc, 'none', 'Focused episode summary is hidden.');
     assert.strictEqual(seriesState.info, 'none', 'Long title metadata competes with the episode rail.');
     assert.strictEqual(seriesState.buttons, 'none', 'Detail buttons compete with the focused episode rail.');
     var seriesShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });

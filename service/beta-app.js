@@ -358,11 +358,6 @@ var UI_TEXT = {
     findingSimilar: 'Finding similar titles…',
     nothingFound: 'Nothing found.',
     couldNotLoad: 'Could not load title',
-    cast: 'Cast',
-    director: 'Director',
-    writers: 'Writers',
-    country: 'Country',
-    awards: 'Awards',
     specials: 'Specials',
     season: 'Season {0}',
     episode: 'Episode {0}',
@@ -694,11 +689,6 @@ var UI_TEXT = {
     findingSimilar: 'Buscando títulos parecidos…',
     nothingFound: 'Nada encontrado.',
     couldNotLoad: 'Não foi possível carregar o título',
-    cast: 'Elenco',
-    director: 'Direção',
-    writers: 'Roteiro',
-    country: 'País',
-    awards: 'Prêmios',
     specials: 'Especiais',
     season: 'Temporada {0}',
     episode: 'Episódio {0}',
@@ -1548,6 +1538,7 @@ var ICON = {
   similar: '<svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>',
   trailer:
     '<svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg>',
+  grid: '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>',
   check: '<svg viewBox="0 0 24 24"><path d="M9 16.17l-3.88-3.88L3.7 13.7 9 19 21 7l-1.41-1.42z"/></svg>',
   plus: '<svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>',
   close:
@@ -2363,6 +2354,23 @@ function showBg(u) {
     bgDipT = setTimeout(swap, BG_DIP_MS);
   } else swap();
 }
+/* The local server answers "busy" while it reduces another image, and the title gets the
+   480 px version meanwhile. Ask again, so it does not stay on the blurry one. */
+function retryBgz(u, raw, left) {
+  setTimeout(function () {
+    if (bgCur !== raw) return;
+    var im = new Image();
+    im.onload = function () {
+      if (bgCur !== raw || !im.naturalWidth) return;
+      bgCur = u;
+      $('bg').style.backgroundImage = 'url("' + u + '")';
+    };
+    im.onerror = function () {
+      if (left > 1) retryBgz(u, raw, left - 1);
+    };
+    im.src = u;
+  }, 1500);
+}
 /* This TV has ~38MB free RAM + a weak GPU, so large backdrop textures are the
    scroll-jank/"black blockiness" culprit. Keep one cropped texture, swap only after the
    replacement decodes, and debounce hard so rapid scrolling never thrashes the decoder. */
@@ -2404,6 +2412,7 @@ function setBg(u) {
         im2.onload = function () {
           if (bgCur !== raw) return;
           showBg(raw);
+          retryBgz(u, raw, 3);
         };
         im2.src = raw;
       }
@@ -2996,18 +3005,15 @@ function makeBoard(loader) {
       }
       $('heroMeta').innerHTML = it.metaHtml || '';
       $('heroDesc').textContent = it.description || '';
-      $('heroCast').textContent = it.castLine || '';
       setBg(bgMid(it));
       if (!it.description && it.id) {
         getMeta(it.type, it.id, function (m) {
           if (!m) return;
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
-          it.castLine = m.cast && m.cast.length ? m.cast.slice(0, 3).join(', ') : '';
           if (self.focusedItem() === it) {
             $('heroDesc').textContent = it.description;
             $('heroMeta').innerHTML = it.metaHtml;
-            $('heroCast').textContent = it.castLine;
           }
         });
       }
@@ -4554,9 +4560,6 @@ var detail = {
      paint() can reveal the previous title while the replacement is still loading. */
     $('dLogo').style.display = 'none';
     $('dLogo').src = BLANK_IMG;
-    $('dPoster').style.display = 'none';
-    $('dPoster').src = BLANK_IMG;
-    $('dPoster')._detailId = '';
     $('dBtns').innerHTML = '';
     $('dSeasons').style.display = 'none';
     $('dEps').style.display = 'none';
@@ -4603,44 +4606,13 @@ var detail = {
     } else {
       $('dTitle').style.display = 'block';
     }
-    if (m.poster) {
-      var pi = new Image();
-      pi.onload = function () {
-        if (detail.meta === m && detail.id === mediaId) {
-          var dp = $('dPoster');
-          dp.src = m.poster;
-          dp._detailId = mediaId;
-          if (detail.zone !== 'eps') dp.style.display = 'block';
-        }
-      };
-      pi.src = m.poster;
-    }
     /* the same info line as the Home hero, followed by the genres */
     $('dMeta').innerHTML =
       heroMetaHtml(m) +
       (m.genres && m.genres.length ? '<span>' + esc(m.genres.slice(0, 3).join(' · ')) + '</span>' : '');
-    var info = '';
-    if (m.cast && m.cast.length)
-      info +=
-        '<div><span class="dlbl">' + tx('cast') + '</span>' + esc(m.cast.slice(0, 5).join(', ')) + '</div>';
-    if (m.director && m.director.length)
-      info +=
-        '<div><span class="dlbl">' +
-        tx('director') +
-        '</span>' +
-        esc(m.director.slice(0, 2).join(', ')) +
-        '</div>';
-    if (m.writer && m.writer.length)
-      info +=
-        '<div><span class="dlbl">' +
-        tx('writers') +
-        '</span>' +
-        esc(m.writer.slice(0, 3).join(', ')) +
-        '</div>';
-    if (m.country) info += '<div><span class="dlbl">' + tx('country') + '</span>' + esc(m.country) + '</div>';
-    if (m.awards)
-      info +=
-        '<div><span class="dlbl">' + tx('awards') + '</span>' + esc(String(m.awards).slice(0, 80)) + '</div>';
+    var people = m.cast && m.cast.length ? m.cast : m.director || [];
+    var info = people.length ? '<div>' + esc(people.slice(0, 4).join(', ')) + '</div>' : '';
+    if (m.awards) info += '<div class="awards">' + esc(m.awards) + '</div>';
     $('dInfo').innerHTML = info;
     $('dDesc').textContent = m.description || '';
     this.baseMeta = $('dMeta').innerHTML;
@@ -4680,20 +4652,36 @@ var detail = {
       });
     }
     if (this.type !== 'series')
-      this.addBtn(tx('watch'), function () {
-        self.openStreams(self.id);
-      });
+      this.addBtn(
+        tx('watch'),
+        function () {
+          self.openStreams(self.id);
+        },
+        primary ? ICON.similar : ''
+      );
     var hasTr = (m.trailers && m.trailers.length) || (m.trailerStreams && m.trailerStreams.length);
     if (hasTr)
-      this.addBtn(tx('trailer'), function () {
-        self.playTrailer();
-      });
-    this.addBtn(tx('similar'), function () {
-      goScr('sim', { type: self.type, id: self.id, name: m.name });
-    });
-    this.addBtn(this.inLib() ? tx('inLibrary') : tx('libraryButton'), function () {
-      self.toggleLib();
-    });
+      this.addBtn(
+        tx('trailer'),
+        function () {
+          self.playTrailer();
+        },
+        ICON.trailer
+      );
+    this.addBtn(
+      tx('similar'),
+      function () {
+        goScr('sim', { type: self.type, id: self.id, name: m.name });
+      },
+      ICON.grid
+    );
+    this.libBtn = this.addBtn(
+      this.inLib() ? tx('inLibrary') : tx('libraryButton'),
+      function () {
+        self.toggleLib();
+      },
+      this.inLib() ? ICON.check : ICON.plus
+    );
     this.paint();
     if (this.type === 'series') {
       if (av) {
@@ -4751,13 +4739,16 @@ var detail = {
       );
     else this.openStreams(c.videoId);
   },
-  addBtn: function (label, act) {
+  /* With an icon it is a round button that shows its label while it has the focus; without
+     one it is the main action, which always shows its label. */
+  addBtn: function (label, act, icon) {
     var b = document.createElement('div');
-    b.className = 'btn';
-    b.textContent = label;
+    b.className = icon ? 'btn ico' : 'btn main';
+    b.innerHTML = (icon || ICON.play) + '<span class="bl">' + esc(label) + '</span>';
     $('dBtns').appendChild(b);
     this.btnEls.push(b);
     this.btnActs.push(act);
+    return b;
   },
   inLib: function () {
     var it = lsJson(PRE + this.id);
@@ -4808,11 +4799,12 @@ var detail = {
     }
     pushLib(lsJson(PRE + this.id));
     invalidateBoards();
-    var lbl = this.inLib() ? tx('inLibrary') : tx('libraryButton');
-    for (var i = 0; i < this.btnEls.length; i++) {
-      var t = this.btnEls[i].textContent;
-      if (t === tx('libraryButton') || t === tx('inLibrary')) this.btnEls[i].textContent = lbl;
-    }
+    var inLib = this.inLib();
+    this.libBtn.innerHTML =
+      (inLib ? ICON.check : ICON.plus) +
+      '<span class="bl">' +
+      esc(inLib ? tx('inLibrary') : tx('libraryButton')) +
+      '</span>';
   },
   playTrailer: function () {
     var t = trailerIdOf(this.meta);
@@ -4859,9 +4851,8 @@ var detail = {
     if (episodeMode) {
       bodyAdd('series-episode');
       $('dInfo').style.display = 'none';
-      $('dPoster').style.display = 'none';
       $('dBtns').style.display = 'none';
-      $('dDesc').style.display = 'block';
+      $('dDesc').style.display = '';
       $('dMeta').textContent = cv ? episodeMetaLine(cv) : '';
       $('dDesc').textContent = (cv && (cv.overview || cv.description)) || '';
       if (cv) setBg(episodeImage(cv, this.meta) || episodeFallback(this.meta, false));
@@ -4869,13 +4860,11 @@ var detail = {
     } else {
       bodyRemove('series-episode');
       $('dBtns').style.display = 'block';
-      $('dDesc').style.display = 'block';
+      $('dDesc').style.display = '';
       $('dInfo').style.display = 'block';
       $('dMeta').innerHTML = this.baseMeta;
       $('dInfo').innerHTML = this.baseInfo;
       $('dDesc').textContent = this.baseDesc;
-      var posterReady = this.meta && this.meta.poster && $('dPoster')._detailId === this.id;
-      $('dPoster').style.display = posterReady ? 'block' : 'none';
       if (this.meta) setBg(this.meta.background || bgOf({ id: this.id, poster: this.meta.poster }));
     }
   },

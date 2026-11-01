@@ -21,6 +21,23 @@ function showBg(u) {
     bgDipT = setTimeout(swap, BG_DIP_MS);
   } else swap();
 }
+/* The local server answers "busy" while it reduces another image, and the title gets the
+   480 px version meanwhile. Ask again, so it does not stay on the blurry one. */
+function retryBgz(u, raw, left) {
+  setTimeout(function () {
+    if (bgCur !== raw) return;
+    var im = new Image();
+    im.onload = function () {
+      if (bgCur !== raw || !im.naturalWidth) return;
+      bgCur = u;
+      $('bg').style.backgroundImage = 'url("' + u + '")';
+    };
+    im.onerror = function () {
+      if (left > 1) retryBgz(u, raw, left - 1);
+    };
+    im.src = u;
+  }, 1500);
+}
 /* This TV has ~38MB free RAM + a weak GPU, so large backdrop textures are the
    scroll-jank/"black blockiness" culprit. Keep one cropped texture, swap only after the
    replacement decodes, and debounce hard so rapid scrolling never thrashes the decoder. */
@@ -62,6 +79,7 @@ function setBg(u) {
         im2.onload = function () {
           if (bgCur !== raw) return;
           showBg(raw);
+          retryBgz(u, raw, 3);
         };
         im2.src = raw;
       }

@@ -190,18 +190,15 @@ function makeBoard(loader) {
       }
       $('heroMeta').innerHTML = it.metaHtml || '';
       $('heroDesc').textContent = it.description || '';
-      $('heroCast').textContent = it.castLine || '';
       setBg(bgMid(it));
       if (!it.description && it.id) {
         getMeta(it.type, it.id, function (m) {
           if (!m) return;
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
-          it.castLine = m.cast && m.cast.length ? m.cast.slice(0, 3).join(', ') : '';
           if (self.focusedItem() === it) {
             $('heroDesc').textContent = it.description;
             $('heroMeta').innerHTML = it.metaHtml;
-            $('heroCast').textContent = it.castLine;
           }
         });
       }

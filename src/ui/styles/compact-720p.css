@@ -3,34 +3,32 @@
    actual application surface so a focused catalog card never sits below the viewport. */
 @media (max-height:800px){
   #topnav{width:86px}
-  #brand{left:25px;top:20px;width:36px;height:36px}
-  .chip{width:50px;height:46px;margin:3px 0;border-radius:10px}
-  .chip svg{width:23px;height:23px}
-  .chip.f:before{left:-9px;top:13px;width:3px;height:20px}
-  .navlabel{left:62px;margin-top:-12px;line-height:24px;font-size:19px}
+  #brand{left:28px;top:24px;width:30px;height:30px}
+  .chip{width:44px;height:40px;margin:3px 0;border-radius:10px}
+  .chip svg{width:20px;height:20px}
+  .navlabel{left:58px;margin-top:-12px;line-height:24px;font-size:18px}
   #topnav:before{width:330px}
-  #hero{top:38px;left:112px;width:39%}
-  #heroLogo{width:320px;height:88px}
-  #heroTitle{font-size:45px;height:94px}
-  #heroTitle.long{font-size:34px}
-  #heroMeta{margin-top:9px;height:24px;line-height:24px;font-size:17px}
-  #heroMeta span{margin-right:20px}
-  #heroMeta .imdb{margin-left:6px;padding:0 4px;font-size:11px;line-height:16px;vertical-align:1px}
-  #heroCast{margin-top:5px;height:20px;line-height:20px;font-size:15px}
-  #heroDesc{margin-top:7px;font-size:17px;line-height:1.34;max-height:46px}
-  #rowsClip{top:258px;left:86px}
+  #hero{top:44px;left:112px;width:36%}
+  #heroLogo{width:280px;height:80px}
+  #heroTitle{font-size:40px;height:80px}
+  #heroTitle.long{font-size:30px}
+  #heroMeta{margin-top:10px;height:22px;line-height:22px;font-size:15px}
+  #heroMeta span{margin-right:16px}
+  #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:10px;line-height:14px;vertical-align:1px}
+  #heroDesc{margin-top:7px;font-size:16px;line-height:1.4;max-height:45px}
+  #rowsClip{top:250px;left:86px}
   #boardMsg{top:270px;left:112px;font-size:20px}
-  .row{padding:10px 0 22px 26px;transform:translateY(10px)}
-  .rowtitle{font-size:24px;margin:0 0 12px 3px}
-  .card{width:176px;height:264px;margin-right:16px;border-radius:9px}
-  .card img{border-radius:9px}
+  .row{padding:9px 0 18px 26px;transform:translateY(10px)}
+  .rowtitle{font-size:18px;margin:0 0 10px 2px}
+  .card{width:176px;height:264px;margin-right:16px;border-radius:8px}
+  .card img{border-radius:8px}
   .card .nm{padding:10px;font-size:18px}
   .titlelabel{padding:23px 10px 9px;font-size:17px}
-  .card.f{box-shadow:0 0 0 2px #090b12,0 0 0 5px #fff !important;transform:translateY(-5px)}
+  .card.f{box-shadow:0 0 0 2px #090b12,0 0 0 5px #fff !important;transform:translateY(-4px)}
   .card.wide{width:287px;height:161px}
   .morelbl{margin-top:-13px;font-size:20px}
-  .pbar{height:6px}
-  .cwlabel{bottom:6px;padding:8px 10px;font-size:17px}
+  .pbar{left:9px;right:9px;bottom:8px;height:4px;border-radius:2px}
+  .cwlabel{bottom:0;padding:28px 10px 17px;font-size:17px}
   .cwlabel .sub{margin-top:1px;font-size:13px}
   .epbadge{left:7px;top:7px;padding:3px 7px;font-size:12px}
   .wbadge{top:8px;right:8px;width:31px;height:31px}
@@ -47,17 +45,16 @@
   .st .compat{margin-top:4px;font-size:16px}
   .st .tags{margin-top:5px}.tg{padding:2px 7px;margin:0 5px 4px 0;border-radius:4px;font-size:14px}
   .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
-  #dWrap{top:32px;left:112px;right:30px}
-  #dPoster{top:12px;width:220px;height:330px;border-radius:11px}
-  #dLogo{width:380px;height:112px}
-  #dTitle{font-size:52px;max-height:108px}
-  #dMeta{margin-top:10px;font-size:21px}
-  #dMeta span{margin-right:20px}
-  #dMeta .imdb{margin-left:6px;padding:0 4px;font-size:13px;line-height:18px;vertical-align:2px}
-  #dInfo{margin-top:10px;font-size:18px}.dlbl{width:128px;font-size:16px}
-  #dDesc{margin-top:8px;font-size:19px;line-height:1.35;max-height:78px}
-  #dBtns{margin-top:16px}.btn{padding:12px 30px;margin-right:12px;border-radius:9px;font-size:21px}
-  #dSeasons{margin-top:17px}.schip{padding:9px 21px;margin-right:9px;font-size:19px}
+  #dWrap{top:36px;left:112px;right:40px}
+  #dLogo{width:320px;height:100px}
+  #dTitle{font-size:46px;max-height:100px}
+  #dMeta{margin-top:11px;font-size:16px}
+  #dMeta span{margin-right:16px}
+  #dMeta .imdb{margin-left:5px;padding:0 4px;font-size:11px;line-height:15px;vertical-align:1px}
+  #dInfo{margin-top:8px;font-size:15px}#dInfo div{margin-bottom:3px}#dInfo .awards{font-size:14px}
+  #dDesc{margin-top:8px;font-size:17px;line-height:1.4;max-height:72px}
+  #dBtns{margin-top:16px}.btn{height:44px;margin-right:8px;border-radius:22px;font-size:18px}.btn svg{width:21px;height:21px}.btn .bl{margin-left:7px}.btn.main{padding:0 24px 0 18px}.btn.ico{width:44px}.btn.ico.f{padding:0 19px 0 13px}
+  #dSeasons{margin-top:15px}.schip{padding:7px 16px;margin-right:7px;font-size:15px}
   #simWrap,#discWrap,#sWrap,#setWrap,#aWrap{top:30px;left:112px;right:30px}
   #discTitle{font-size:34px;margin-bottom:12px}
   #discFilters{height:47px}
@@ -75,14 +72,14 @@
   #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
   #sRowsClip{top:110px;left:376px}
   #sRows{left:-20px}
-  #dEps{height:224px;margin-top:12px;padding:5px 5px 0}
+  #dEps{height:224px;margin-top:12px;margin-right:-40px;padding:5px 5px 0}
   .ep{width:287px;height:202px;margin-right:16px;border-radius:9px}
   .ep .th{width:287px;height:161px;border-radius:8px}.ep .th img{border-radius:8px}
-  .ep .bd{padding:8px 10px}.ep .t{font-size:18px}.ep.f{box-shadow:0 0 0 3px #fff;transform:translateY(-3px)}
-  body.series-episode #dLogo{width:310px;height:76px}
+  .ep .bd{padding:7px 6px}.ep .t{font-size:16px}.ep.f{box-shadow:0 0 0 3px #fff;transform:translateY(-3px)}
+  body.series-episode #dLogo{width:280px;height:76px}
   body.series-episode #dTitle{font-size:38px}
-  body.series-episode #dMeta{margin-top:8px;font-size:20px}
-  body.series-episode #dDesc{margin-top:6px;height:46px;max-height:none;font-size:17px;line-height:1.35}
+  body.series-episode #dMeta{margin-top:8px;font-size:18px}
+  body.series-episode #dDesc{margin-top:6px;height:46px;max-height:none;font-size:16px;line-height:1.4}
   body.series-episode #dSeasons{margin-top:12px}
   #aHead{height:78px;padding-right:175px}
   #aTitle{font-size:36px;margin-bottom:6px}
