@@ -1,4 +1,4 @@
-// HTTP routing for the local compatibility server.
+// Every address of the local server: a table from path to what answers it.
 
 var fs = require('fs');
 var path = require('path');
@@ -9,366 +9,318 @@ var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
 var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
-var { engineStatus, waitForServer } = require('./streaming-server');
+var { engineStatus } = require('./streaming-server');
 var { remoteAddress, setServerAddress, streamingUrl } = require('./server-address');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
-var { proxySignature, proxyStream, redirectedHeaders, resolvedFor } = require('./proxy');
-var { playerConstants, playerPage } = require('./player-page');
+var { handleProxy } = require('./proxy');
+var { playerConstants, playerContext, playerPage } = require('./player-page');
 var { embCues, embStart, embTracks, subtitleCues } = require('./subtitles');
 var { addonSubtitles } = require('./subtitle-addons');
 var { postStremioApi } = require('./stremio-api');
 var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
-var { nextEpisodeId } = require('./episodes');
 var { diagnostics, netcheck, recordEvent } = require('./diag');
 var { cachedAddonJson } = require('./addon-cache');
 var { handleTakeover } = require('./takeover');
-var { decodeField, rememberVideos, seriesVideos, setWatched } = require('./watched');
+var { decodeField, seriesVideos, setWatched } = require('./watched');
 
-// Artwork and episode details for the player, once the streaming server can answer.
-function playerContext(stream, q, done) {
-  var ctx = {
-    type: q.type || '',
-    id: q.id || '',
-    vid: q.vid || '',
-    back: q.back || '',
-    streamRef: q.ref || '',
-    meta: null
-  };
-  var playerSent = false;
-  function sendPlayer() {
-    if (playerSent) return;
-    playerSent = true;
-    done(ctx);
-  }
-  function servePlayer() {
-    /* Torrent addon URLs point at the bundled Stremio server. The local UI now
-       starts much faster than the old remote shell, so the first selected source
-       can beat :11470 on a cold boot. Wait only for those sources; direct/debrid
-       URLs still open immediately. */
-    if (/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(stream.url || '')) {
-      waitForServer(function (ready) {
-        ctx.streamServerReady = ready;
-        sendPlayer();
-      });
-    } else sendPlayer();
-  }
-  // Fetch artwork server-side so the loading screen shows the logo/backdrop
-  // immediately (no plain-text flash). Short timeout; falls back to text.
-  if (!ctx.type || !ctx.id) return servePlayer();
-  var settled = false;
-  fetchJson(
-    'https://v3-cinemeta.strem.io/meta/' +
-      encodeURIComponent(ctx.type) +
-      '/' +
-      encodeURIComponent(ctx.id) +
-      '.json',
-    function (j) {
-      if (settled) return;
-      settled = true;
-      var m = (j && j.meta) || {};
-      ctx.meta = {
-        name: m.name || '',
-        logo: m.logo || '',
-        background: m.background || m.poster || '',
-        poster: m.poster || '',
-        cert: m.certification || ''
-      };
-      // Series: pull season/episode + episode title, and compute the next episode id.
-      var vid = ctx.vid || '';
-      if (vid.indexOf(':') >= 0) {
-        var pp = vid.split(':');
-        ctx.episode = pp[pp.length - 1];
-        ctx.season = pp[pp.length - 2];
-        ctx.nextVid = nextEpisodeId(m.videos, vid);
-        rememberVideos(ctx.id, m.videos);
-        if (m.videos) {
-          for (var i = 0; i < m.videos.length; i++) {
-            var mv = m.videos[i];
-            if (mv.id === vid) ctx.epTitle = mv.name || mv.title || '';
-            if (mv.id === ctx.nextVid) {
-              ctx.nextTitle = mv.name || mv.title || '';
-              ctx.nextThumb = mv.thumbnail || '';
-            }
-          }
-        }
-      }
-      servePlayer();
-    }
-  );
-  setTimeout(function () {
-    if (!settled) {
-      settled = true;
-      servePlayer();
-    }
-  }, 2500);
+var LANGUAGE_FILE = /^\/lang\/[a-zA-Z-]{2,5}\.json$/;
+/* what the player may report; nothing else reaches the log */
+var LOGGED_FIELDS = [
+  'ev',
+  'screen',
+  'quality',
+  'compat',
+  'seeders',
+  'code',
+  'ready',
+  'network',
+  't',
+  'playing',
+  'awaySec',
+  'tries',
+  'reason',
+  'addon'
+];
+
+function megabytes(bytes) {
+  return Math.round(bytes / 1048576);
 }
 
-// Routes every request of the local compatibility server.
-function handleRequest(req, res) {
-  var p = req.url.split('?')[0];
-  var q = urlmod.parse(req.url, true).query;
-  if (p === '/health') {
-    var hm = process.memoryUsage();
+function sendText(res, text) {
+  res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+  res.end(text);
+}
+
+function notFound(res) {
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end();
+}
+
+function health(req, res) {
+  var memory = process.memoryUsage();
+  sendJson(res, {
+    ok: true,
+    version: APP_VERSION,
+    port: PORT,
+    runtime: process.version,
+    memory: { rssMiB: megabytes(memory.rss), heapMiB: megabytes(memory.heapUsed) }
+  });
+}
+
+/* A page on the web can only send this content type after a preflight, which this server never
+   allows, so only the app can change where torrents are sent. */
+function serverConfig(req, res) {
+  if (req.method !== 'POST') return sendJson(res, { address: remoteAddress() });
+  if (String(req.headers['content-type'] || '').indexOf('application/json') !== 0) {
+    res.writeHead(403);
+    return res.end();
+  }
+  readJsonBody(req, 1024, function (body) {
+    setServerAddress(body && body.address, function (result) {
+      sendJson(res, result);
+    });
+  });
+}
+
+function storeStream(req, res) {
+  readJsonBody(req, 16384, function (body) {
+    var ref = body && storeStreamRef(body);
+    sendJson(res, ref ? { ref: ref } : { error: 'invalid_stream' });
+  });
+}
+
+function addon(req, res, q) {
+  cachedAddonJson(q.u || '', function (answer, why) {
+    if (answer) return sendJson(res, answer);
+    var host = String(q.u || '').replace(/^https?:\/\/([^/]+).*$/, '$1');
+    recordEvent('addon_unavailable', why ? host + ' · ' + why : host);
+    res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end('{"error":"addon_unavailable"}');
+  });
+}
+
+function clientLog(req, res, q) {
+  var entry = {};
+  var memory = process.memoryUsage();
+  LOGGED_FIELDS.forEach(function (field) {
+    if (q[field] != null) entry[field] = safeText(q[field], 160);
+  });
+  entry.rssMiB = megabytes(memory.rss);
+  entry.heapMiB = megabytes(memory.heapUsed);
+  dbg('[clientlog] ' + JSON.stringify(entry));
+  recordEvent(entry.ev, [entry.addon, entry.quality].filter(Boolean).join(' '));
+  sendText(res, 'ok');
+}
+
+/* ---------- the interface's files: on disk, with a copy inside the server ---------- */
+function sendInterfaceFile(res, name, embedded, type, transform) {
+  readUiAsset(name, embedded, function (err, buf) {
+    if (err) {
+      dbg('[ui] ' + name + ' failed: ' + err.message);
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('UJ3_ASSET ' + name + ' ' + err.message);
+    }
+    res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store, max-age=0' });
+    res.end(transform ? transform(buf) : buf);
+  });
+}
+
+function interfacePage(req, res) {
+  PROFILE_MODULE.useSmallTvLimits(PROFILE, req.headers['user-agent']);
+  sendInterfaceFile(
+    res,
+    'beta.html',
+    EMBEDDED_BETA_HTML_B64,
+    'text/html; charset=utf-8',
+    renderInterfaceHtml
+  );
+}
+
+function interfaceScript(req, res) {
+  sendInterfaceFile(res, 'beta-app.js', EMBEDDED_BETA_APP_B64, 'application/javascript; charset=utf-8');
+}
+
+function toInterface(req, res) {
+  res.writeHead(302, { Location: '/beta?v=' + APP_VERSION });
+  res.end();
+}
+
+/* ---------- the player ---------- */
+function play(req, res, q) {
+  var stream = getStreamRef(q.ref || '') || (q.u ? { url: streamingUrl(q.u) } : null);
+  if (stream && stream.url) {
+    return playerContext(stream, q, function (context) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(playerPage(stream, context));
+    });
+  }
+  if (q.ref && q.back) {
+    res.writeHead(302, { Location: 'http://127.0.0.1:' + PORT + '/' + String(q.back).replace(/^\/+/, '') });
+    return res.end();
+  }
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(
+    '<body style="background:#000;color:#fff;font-family:sans-serif;text-align:center;padding-top:40vh">Could not read stream. <a style="color:#8c5cff" href="/beta">Back</a></body>'
+  );
+}
+
+/* the same answer for a player page that does not come from this server */
+function playInfo(req, res, q) {
+  var stream = getStreamRef(q.ref || '');
+  if (!stream || !stream.url) return sendJson(res, { gone: true });
+  playerContext(stream, q, function (context) {
+    sendJson(res, playerConstants(stream, context));
+  });
+}
+
+function titleArt(req, res, q) {
+  var address =
+    'https://v3-cinemeta.strem.io/meta/' +
+    encodeURIComponent(q.type || 'movie') +
+    '/' +
+    encodeURIComponent(q.id || '') +
+    '.json';
+  fetchJson(address, function (answer) {
+    var meta = (answer && answer.meta) || {};
     sendJson(res, {
-      ok: true,
-      version: APP_VERSION,
-      port: PORT,
-      runtime: process.version,
-      memory: { rssMiB: Math.round(hm.rss / 1048576), heapMiB: Math.round(hm.heapUsed / 1048576) }
+      name: meta.name || '',
+      poster: (meta.poster || '').replace('/small/', '/medium/'),
+      background: meta.background || meta.poster || '',
+      logo: meta.logo || ''
     });
-  } else if (p === '/takeover') {
-    handleTakeover(req, res);
-  } else if (p === '/streamfile') {
+  });
+}
+
+/* the account's subtitle addons, sent by the player; a plain GET asks about a title directly */
+function subtitleList(req, res, q) {
+  function answer(list) {
+    sendJson(res, { subtitles: list });
+  }
+  if (req.method !== 'POST') return addonSubtitles({ type: q.type, vid: q.vid }, answer);
+  readJsonBody(req, 32768, function (body) {
+    addonSubtitles(body, answer);
+  });
+}
+
+function watchedSet(req, res, q) {
+  seriesVideos(String(q.id || ''), function (videos) {
+    var field = videos ? setWatched(String(q.f || ''), videos, String(q.vid || ''), q.w !== '0') : '';
+    sendJson(res, field ? { watched: field } : { error: 'unknown_video' });
+  });
+}
+
+function logo(req, res) {
+  if (!logoPng()) return notFound(res);
+  res.writeHead(200, {
+    'Content-Type': 'image/png',
+    'Cache-Control': 'max-age=86400',
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.end(logoPng());
+}
+
+function languageFile(req, res, q, pathname) {
+  fs.readFile(path.join(DIR, 'lang', pathname.slice(6)), function (err, body) {
+    res.writeHead(err ? 404 : 200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-cache'
+    });
+    res.end(err ? '{}' : body);
+  });
+}
+
+var ROUTES = {
+  '/health': health,
+  '/takeover': handleTakeover,
+  '/serverconfig': serverConfig,
+  '/addon': addon,
+  '/log': clientLog,
+  '/': toInterface,
+  '/index.html': toInterface,
+  '/beta': interfacePage,
+  '/beta-app.js': interfaceScript,
+  '/play': play,
+  '/playinfo': playInfo,
+  '/meta': titleArt,
+  '/subs': subtitleList,
+  '/watchedset': watchedSet,
+  '/logo.png': logo,
+  '/streamfile': function (req, res) {
     sendJson(res, engineStatus());
-  } else if (p === '/serverconfig') {
-    if (req.method !== 'POST') return sendJson(res, { address: remoteAddress() });
-    /* A page on the web can only send this content type after a preflight, which this server
-       never allows, so only the app can change where torrents are sent. */
-    if (String(req.headers['content-type'] || '').indexOf('application/json') !== 0) {
-      res.writeHead(403);
-      res.end();
-      return;
-    }
-    readJsonBody(req, 1024, function (body) {
-      setServerAddress(body && body.address, function (result) {
-        sendJson(res, result);
-      });
-    });
-  } else if (p === '/diag') {
+  },
+  '/diag': function (req, res) {
     diagnostics(res);
-  } else if (p === '/netcheck') {
+  },
+  '/netcheck': function (req, res) {
     netcheck(res);
-  } else if (p === '/ping') {
-    // Instant readiness probe for the app launcher — proves the app port is bound so it can
-    // redirect here instead of guessing on a timer (which races a cold node start).
-    res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
-    res.end('ok');
-  } else if (p === '/stremioapi' && req.method === 'POST') {
-    postStremioApi(String(q.path || ''), req, res);
-  } else if (p === '/streamref' && req.method === 'POST') {
-    readJsonBody(req, 16384, function (body) {
-      var ref = body && storeStreamRef(body);
-      sendJson(res, ref ? { ref: ref } : { error: 'invalid_stream' });
-    });
-  } else if (p === '/addon') {
-    cachedAddonJson(q.u || '', function (j, why) {
-      if (!j) {
-        recordEvent(
-          'addon_unavailable',
-          String(q.u || '').replace(/^https?:\/\/([^/]+).*$/, '$1') + (why ? ' · ' + why : '')
-        );
-        res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-        res.end('{"error":"addon_unavailable"}');
-      } else sendJson(res, j);
-    });
-  } else if (p === '/log') {
-    var allowedLog = [
-      'ev',
-      'screen',
-      'quality',
-      'compat',
-      'seeders',
-      'code',
-      'ready',
-      'network',
-      't',
-      'playing',
-      'awaySec',
-      'tries',
-      'reason',
-      'addon'
-    ];
-    var entry = {},
-      lm = process.memoryUsage();
-    allowedLog.forEach(function (key) {
-      if (q[key] != null) entry[key] = safeText(q[key], 160);
-    });
-    entry.rssMiB = Math.round(lm.rss / 1048576);
-    entry.heapMiB = Math.round(lm.heapUsed / 1048576);
-    dbg('[clientlog] ' + JSON.stringify(entry));
-    recordEvent(entry.ev, [entry.addon, entry.quality].filter(Boolean).join(' '));
-    res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
-    res.end('ok');
-  } else if (p === '/' || p === '/index.html') {
-    res.writeHead(302, { Location: '/beta?v=' + APP_VERSION });
-    res.end();
-  } else if (p === '/beta') {
-    PROFILE_MODULE.useSmallTvLimits(PROFILE, req.headers['user-agent']);
-    // The television interface — a real file on disk, with an embedded fallback copy.
-    // Read per-request: tiny file, always fresh after an scp, no restart needed.
-    // NO waitForServer here: the interface doesn't need :11470 at boot
-    // (only torrent playback does, and server.js starts in parallel) — faster cold start.
-    readUiAsset('beta.html', EMBEDDED_BETA_HTML_B64, function (err, buf) {
-      if (err) {
-        dbg('[ui] beta.html failed: ' + err.message);
-        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('UJ3_ASSET HTML ' + err.message);
-        return;
-      }
-      res.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-store, max-age=0'
-      });
-      res.end(renderInterfaceHtml(buf));
-    });
-  } else if (p === '/beta-app.js') {
-    readUiAsset('beta-app.js', EMBEDDED_BETA_APP_B64, function (err, buf) {
-      if (err) {
-        dbg('[ui] beta-app.js failed: ' + err.message);
-        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('UJ3_ASSET SCRIPT ' + err.message);
-        return;
-      }
-      res.writeHead(200, {
-        'Content-Type': 'application/javascript; charset=utf-8',
-        'Cache-Control': 'no-store, max-age=0'
-      });
-      res.end(buf);
-    });
-  } else if (p === '/play') {
-    var stream = getStreamRef(q.ref || '');
-    if (!stream && q.u) stream = { url: streamingUrl(q.u) }; // direct URL fallback: the interface passes the stream URL directly
-    if (!stream || !stream.url) {
-      if (q.ref && q.back) {
-        res.writeHead(302, {
-          Location: 'http://127.0.0.1:' + PORT + '/' + String(q.back).replace(/^\/+/, '')
-        });
-        res.end();
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(
-        '<body style="background:#000;color:#fff;font-family:sans-serif;text-align:center;padding-top:40vh">Could not read stream. <a style="color:#8c5cff" href="/beta">Back</a></body>'
-      );
-      return;
-    }
-    playerContext(stream, q, function (ctx) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(playerPage(stream, ctx));
-    });
-  } else if (p === '/playinfo') {
-    /* the same answer for a player page that does not come from this server */
-    var infoStream = getStreamRef(q.ref || '');
-    if (!infoStream || !infoStream.url) return sendJson(res, { gone: true });
-    playerContext(infoStream, q, function (ctx) {
-      sendJson(res, playerConstants(infoStream, ctx));
-    });
-  } else if (p === '/meta') {
-    fetchJson(
-      'https://v3-cinemeta.strem.io/meta/' +
-        encodeURIComponent(q.type || 'movie') +
-        '/' +
-        encodeURIComponent(q.id || '') +
-        '.json',
-      function (j) {
-        var meta = (j && j.meta) || {};
-        sendJson(res, {
-          name: meta.name || '',
-          poster: (meta.poster || '').replace('/small/', '/medium/'),
-          background: meta.background || meta.poster || '',
-          logo: meta.logo || ''
-        });
-      }
-    );
-  } else if (p === '/subs') {
-    // External subtitles: the account's subtitle addons (POST from the player), or the
-    // public OpenSubtitles addon for a plain GET.
-    if (req.method === 'POST')
-      readJsonBody(req, 32768, function (body) {
-        addonSubtitles(body, function (list) {
-          sendJson(res, { subtitles: list });
-        });
-      });
-    else
-      addonSubtitles({ type: q.type, vid: q.vid }, function (list) {
-        sendJson(res, { subtitles: list });
-      });
-  } else if (p === '/sub') {
+  },
+  /* proves the port is bound, so the launcher can move on instead of guessing on a timer */
+  '/ping': function (req, res) {
+    sendText(res, 'ok');
+  },
+  '/sub': function (req, res, q) {
     subtitleCues(String(q.u || ''), function (cues) {
       sendJson(res, { cues: cues });
     });
-  } else if (p === '/proxy') {
-    var refStream = getStreamRef(q.ref || '');
-    var signedTarget = refStream && q.u && q.sig === proxySignature(q.ref, q.u) ? String(q.u) : '';
-    var orig = signedTarget || (refStream ? refStream.url : q.u || '');
-    var cacheKey = refStream ? 'ref:' + q.ref + ':' + orig : orig;
-    var customHeaders = refStream ? redirectedHeaders(refStream.url, orig, refStream.headers) : null;
-    var c = resolvedFor(cacheKey);
-    var start = c && Date.now() - c.at < 120000 ? c.url : orig; // reuse a fresh resolved CDN url
-    var startHeaders = start === orig ? customHeaders : redirectedHeaders(orig, start, customHeaders);
-    proxyStream(
-      start,
-      req.headers.range,
-      req.method,
-      res,
-      orig,
-      0,
-      false,
-      startHeaders,
-      cacheKey,
-      customHeaders,
-      refStream ? String(q.ref) : ''
-    );
-  } else if (p === '/watchedbits') {
-    // Decode Stremio's watched field; the browser has no zlib, so hand back raw bits.
+  },
+  '/proxy': function (req, res, q) {
+    handleProxy(q, req, res);
+  },
+  /* the browser has no zlib, so it gets Stremio's watched field as plain bits */
+  '/watchedbits': function (req, res, q) {
     sendJson(res, decodeField(q.f));
-  } else if (p === '/watchedset') {
-    // Mark one episode in the watched field, as the official apps write it.
-    seriesVideos(String(q.id || ''), function (videos) {
-      var field = videos ? setWatched(String(q.f || ''), videos, String(q.vid || ''), q.w !== '0') : '';
-      sendJson(res, field ? { watched: field } : { error: 'unknown_video' });
+  },
+  '/yt': function (req, res, q) {
+    ytResolve(String(q.v || ''), !!q.lq, function (link, why) {
+      sendJson(res, link ? { url: link } : { err: why || 'unavailable' });
     });
-  } else if (/^\/lang\/[a-zA-Z-]{2,5}\.json$/.test(p)) {
-    fs.readFile(path.join(DIR, 'lang', p.slice(6)), function (err, body) {
-      res.writeHead(err ? 404 : 200, {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-cache'
-      });
-      res.end(err ? '{}' : body);
-    });
-  } else if (p === '/logo.png') {
-    if (logoPng()) {
-      res.writeHead(200, {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'max-age=86400',
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end(logoPng());
-    } else {
-      res.writeHead(404);
-      res.end();
-    }
-  } else if (fontFile(p)) {
-    res.writeHead(200, {
-      'Content-Type': 'font/woff',
-      'Cache-Control': 'max-age=31536000',
-      'Access-Control-Allow-Origin': '*'
-    });
-    res.end(fontFile(p));
-  } else if (p === '/yt') {
-    ytResolve(String(q.v || ''), !!q.lq, function (url, err) {
-      sendJson(res, url ? { url: url } : { err: err || 'unavailable' });
-    });
-  } else if (p === '/probe') {
+  },
+  '/probe': function (req, res, q) {
     probeInfo(q.u || '', res);
-  } else if (p === '/frame') {
+  },
+  '/frame': function (req, res, q) {
     grabFrame(q, res);
-  } else if (p === '/spritegen') {
+  },
+  '/spritegen': function (req, res, q) {
     spriteGen(q, res);
-  } else if (p === '/bgz') {
+  },
+  '/bgz': function (req, res, q) {
     bgResize(q, res);
-  } else if (p === '/embtracks') {
+  },
+  '/embtracks': function (req, res, q) {
     embTracks(q.u || '', res);
-  } else if (p === '/embstart') {
+  },
+  '/embstart': function (req, res, q) {
     embStart(q, res);
-  } else if (p === '/embcues') {
+  },
+  '/embcues': function (req, res, q) {
     embCues(q, res);
-  } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end();
   }
+};
+
+var POST_ONLY = {
+  '/stremioapi': function (req, res, q) {
+    postStremioApi(String(q.path || ''), req, res);
+  },
+  '/streamref': storeStream
+};
+
+function handleRequest(req, res) {
+  var parsed = urlmod.parse(req.url, true);
+  var pathname = req.url.split('?')[0];
+  var route = ROUTES[pathname] || (req.method === 'POST' && POST_ONLY[pathname]);
+  if (route) return route(req, res, parsed.query, pathname);
+  if (LANGUAGE_FILE.test(pathname)) return languageFile(req, res, parsed.query, pathname);
+  var font = fontFile(pathname);
+  if (!font) return notFound(res);
+  res.writeHead(200, {
+    'Content-Type': 'font/woff',
+    'Cache-Control': 'max-age=31536000',
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.end(font);
 }
 
 module.exports = {

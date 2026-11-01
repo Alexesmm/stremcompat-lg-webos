@@ -1,286 +1,224 @@
-// Stream byte proxy with signed HLS rewriting, redirect handling and header forwarding.
+// /proxy: bytes of a video, fetched by this server for whoever cannot fetch them itself. The TV's
+// player needs it for sources with headers, FFmpeg needs it because it only speaks plain HTTP
+// here, and old browsers need it for current TLS. It honours Range, so both can seek.
 
 var crypto = require('crypto');
 var http = require('http');
 var https = require('https');
 var urlmod = require('url');
 var { APP_VERSION, PORT } = require('./config');
+var { getStreamRef } = require('./stream-refs');
 
-var proxySecret = crypto.randomBytes(32);
+var MAX_HOPS = 6;
+var PLAYLIST_LIMIT = 2 * 1024 * 1024;
+var IDLE_LIMIT_MS = 20000;
+var LINK_REMEMBERED_MS = 120000;
+var MAX_LINKS_REMEMBERED = 80;
+var PASSED_ON = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified', 'etag'];
+var EXPIRED = { 403: true, 404: true, 410: true };
 
-function proxySignature(ref, target) {
-  return crypto
-    .createHmac('sha256', proxySecret)
-    .update(String(ref) + '\n' + String(target))
-    .digest('hex')
-    .slice(0, 32);
+/* ---------- links inside a playlist, signed so they only work for that stream ---------- */
+var signingKey = crypto.randomBytes(32);
+
+function signature(ref, address) {
+  var mac = crypto.createHmac('sha256', signingKey);
+  mac.update(String(ref) + '\n' + String(address));
+  return mac.digest('hex').slice(0, 32);
 }
 
-function signedProxyUrl(ref, target) {
+function localBase() {
+  return 'http://127.0.0.1:' + PORT + '/proxy?';
+}
+
+function localProxy(address) {
+  return localBase() + 'u=' + encodeURIComponent(address);
+}
+
+function linkInPlaylist(ref, base, written) {
+  if (!written || /^data:/i.test(written)) return written;
+  var address = urlmod.resolve(base, written);
   return (
-    'http://127.0.0.1:' +
-    PORT +
-    '/proxy?ref=' +
+    localBase() +
+    'ref=' +
     encodeURIComponent(ref) +
     '&u=' +
-    encodeURIComponent(target) +
+    encodeURIComponent(address) +
     '&sig=' +
-    proxySignature(ref, target)
+    signature(ref, address)
   );
 }
 
-function rewriteHls(body, baseUrl, ref) {
-  function link(raw) {
-    if (!raw || /^data:/i.test(raw)) return raw;
-    var absolute;
-    try {
-      absolute = urlmod.resolve(baseUrl, raw);
-    } catch (e) {
-      return raw;
-    }
-    return signedProxyUrl(ref, absolute);
-  }
-  return String(body)
-    .replace(/URI="([^"]+)"/g, function (all, u) {
-      return 'URI="' + link(u) + '"';
+function rewritePlaylist(text, base, ref) {
+  return text
+    .replace(/URI="([^"]+)"/g, function (all, written) {
+      return 'URI="' + linkInPlaylist(ref, base, written) + '"';
     })
     .split(/\r?\n/)
     .map(function (line) {
-      var clean = line.trim();
-      return clean && clean.charAt(0) !== '#' ? link(clean) : line;
+      var content = line.trim();
+      return !content || content.charAt(0) === '#' ? line : linkInPlaylist(ref, base, content);
     })
     .join('\n');
 }
 
-// ---- byte proxy for ffmpeg ----
-// The bundled ffmpeg/ffprobe are statically linked against glibc, so getaddrinfo
-// can't load libnss_dns and EVERY hostname fails ("Name or service not known").
-// So ffmpeg never touches the network directly: it talks plain HTTP to us on
-// 127.0.0.1 and node (which resolves DNS fine) does the real HTTPS fetch, follows
-// debrid redirects, and streams the bytes back, honouring Range so ffmpeg can seek.
-function localProxy(u) {
-  return 'http://127.0.0.1:' + PORT + '/proxy?u=' + encodeURIComponent(u);
+function looksLikePlaylist(address, upstream) {
+  var type = String(upstream.headers['content-type'] || '').toLowerCase();
+  return type.indexOf('mpegurl') >= 0 || /\.m3u8(?:$|\?)/i.test(address);
 }
 
-var resolveCache = {};
+/* ---------- following a link ---------- */
+/* debrid link -> the CDN link it led to, so a seek does not ask the debrid service again */
+var remembered = {};
 
-// original debrid url -> { url: resolved-CDN-url, at: ts }
-function redirectedHeaders(fromUrl, toUrl, headers) {
-  var out = headers || {};
+function remember(key, address) {
+  if (Object.keys(remembered).length > MAX_LINKS_REMEMBERED) remembered = {};
+  remembered[key] = { address: address, at: Date.now() };
+}
+
+/* credentials stay with the host they were given for */
+function headersFor(from, to, headers) {
+  if (!headers || urlmod.parse(from).hostname === urlmod.parse(to).hostname) return headers;
+  var kept = Object.assign({}, headers);
+  delete kept.Authorization;
+  delete kept.Cookie;
+  return kept;
+}
+
+function refuse(res, status) {
   try {
-    if (urlmod.parse(fromUrl).hostname !== urlmod.parse(toUrl).hostname) {
-      out = Object.assign({}, out);
-      delete out.Authorization;
-      delete out.Cookie;
-    }
+    if (!res.headersSent) res.writeHead(status);
+    res.end();
   } catch (e) {}
+}
+
+function passedOnHeaders(upstream) {
+  var out = {};
+  PASSED_ON.forEach(function (name) {
+    if (upstream.headers[name] != null) out[name] = upstream.headers[name];
+  });
   return out;
 }
 
-function proxyStream(
-  target,
-  range,
-  method,
-  clientRes,
-  orig,
-  depth,
-  triedFresh,
-  customHeaders,
-  cacheKey,
-  originalHeaders,
-  refId
-) {
-  depth = depth || 0;
-  originalHeaders = originalHeaders || customHeaders || {};
-  if (!target || depth > 6) {
-    try {
-      if (!clientRes.headersSent) clientRes.writeHead(502);
-      clientRes.end();
-    } catch (e) {}
-    return;
-  }
-  var pu;
-  try {
-    pu = urlmod.parse(target);
-  } catch (e) {
-    try {
-      clientRes.writeHead(502);
-      clientRes.end();
-    } catch (x) {}
-    return;
-  }
-  if ((pu.protocol !== 'http:' && pu.protocol !== 'https:') || !pu.hostname) {
-    try {
-      clientRes.writeHead(400);
-      clientRes.end();
-    } catch (x) {}
-    return;
-  }
-  var lib = pu.protocol === 'https:' ? https : http;
-  var hdrs = { 'User-Agent': 'Stremio-TV/' + APP_VERSION, 'Accept': '*/*', 'Accept-Encoding': 'identity' };
-  Object.keys(customHeaders || {}).forEach(function (k) {
-    hdrs[k] = customHeaders[k];
+function sendPlaylist(transfer, address, upstream) {
+  var parts = [];
+  var size = 0;
+  var res = transfer.res;
+  upstream.on('data', function (chunk) {
+    size += chunk.length;
+    if (size <= PLAYLIST_LIMIT) return parts.push(chunk);
+    upstream.destroy();
+    refuse(res, 502);
   });
-  if (range) hdrs.Range = range;
-  var opts = {
-    protocol: pu.protocol,
-    hostname: pu.hostname,
-    port: pu.port,
-    path: pu.path,
-    method: method === 'HEAD' ? 'HEAD' : 'GET',
-    headers: hdrs
-  };
-  var upReq;
-  try {
-    upReq = lib.request(opts, onUp);
-  } catch (e) {
-    try {
-      clientRes.writeHead(502);
-      clientRes.end();
-    } catch (x) {}
-    return;
-  }
-  function onUp(up) {
-    var sc = up.statusCode;
-    if (sc >= 300 && sc < 400 && up.headers.location) {
-      up.resume();
-      var loc = up.headers.location;
-      if (loc.indexOf('http') !== 0)
-        loc = pu.protocol + '//' + pu.host + (loc.charAt(0) === '/' ? '' : '/') + loc;
-      var nextHeaders = redirectedHeaders(target, loc, customHeaders);
-      return proxyStream(
-        loc,
-        range,
-        method,
-        clientRes,
-        orig,
-        depth + 1,
-        triedFresh,
-        nextHeaders,
-        cacheKey,
-        originalHeaders,
-        refId
-      );
-    }
-    // A cached signed CDN url likely expired — restart from the original once.
-    if ((sc === 403 || sc === 410 || sc === 404) && !triedFresh && target !== orig) {
-      up.resume();
-      delete resolveCache[cacheKey || orig];
-      return proxyStream(
-        orig,
-        range,
-        method,
-        clientRes,
-        orig,
-        0,
-        true,
-        originalHeaders,
-        cacheKey,
-        originalHeaders,
-        refId
-      );
-    }
-    if (orig) {
-      if (Object.keys(resolveCache).length > 80) resolveCache = {};
-      resolveCache[cacheKey || orig] = { url: target, at: Date.now() };
-    } // remember the working CDN url
-    var h = {};
-    ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified', 'etag'].forEach(
-      function (k) {
-        if (up.headers[k] != null) h[k] = up.headers[k];
-      }
-    );
-    var isHls =
-      refId &&
-      method !== 'HEAD' &&
-      (String(up.headers['content-type'] || '')
-        .toLowerCase()
-        .indexOf('mpegurl') >= 0 ||
-        /\.m3u8(?:$|\?)/i.test(target));
-    if (isHls) {
-      var playlist = [],
-        playlistBytes = 0,
-        playlistDone = false;
-      function failPlaylist() {
-        if (playlistDone) return;
-        playlistDone = true;
-        try {
-          if (!clientRes.headersSent) clientRes.writeHead(502);
-          clientRes.end();
-        } catch (e) {}
-      }
-      up.on('data', function (d) {
-        playlistBytes += d.length;
-        if (playlistBytes > 2 * 1024 * 1024) {
-          try {
-            up.destroy();
-          } catch (e) {}
-          failPlaylist();
-        } else playlist.push(d);
-      });
-      up.on('end', function () {
-        if (playlistDone) return;
-        playlistDone = true;
-        var rewritten = Buffer.from(
-          rewriteHls(Buffer.concat(playlist).toString('utf8'), target, refId),
-          'utf8'
-        );
-        h['content-type'] = 'application/vnd.apple.mpegurl';
-        h['content-length'] = rewritten.length;
-        delete h['content-range'];
-        h['accept-ranges'] = 'none';
-        try {
-          clientRes.writeHead(sc, h);
-          clientRes.end(rewritten);
-        } catch (e) {}
-      });
-      up.on('error', failPlaylist);
-      return;
-    }
-    if (!h['accept-ranges']) h['accept-ranges'] = 'bytes';
-    try {
-      clientRes.writeHead(sc, h);
-    } catch (e) {
-      try {
-        up.destroy();
-      } catch (x) {}
-      return;
-    }
-    up.pipe(clientRes);
-    up.on('error', function () {
-      try {
-        clientRes.end();
-      } catch (e) {}
-    });
-  }
-  upReq.on('error', function () {
-    try {
-      if (!clientRes.headersSent) clientRes.writeHead(502);
-      clientRes.end();
-    } catch (x) {}
+  upstream.on('error', function () {
+    refuse(res, 502);
   });
-  upReq.setTimeout(20000, function () {
-    try {
-      upReq.abort();
-    } catch (e) {}
+  upstream.on('end', function () {
+    if (size > PLAYLIST_LIMIT) return;
+    var text = rewritePlaylist(Buffer.concat(parts).toString('utf8'), address, transfer.ref);
+    var body = Buffer.from(text, 'utf8');
+    var headers = passedOnHeaders(upstream);
+    delete headers['content-range'];
+    headers['content-type'] = 'application/vnd.apple.mpegurl';
+    headers['content-length'] = body.length;
+    headers['accept-ranges'] = 'none';
+    res.writeHead(upstream.statusCode, headers);
+    res.end(body);
   });
-  clientRes.on('close', function () {
-    try {
-      upReq.abort();
-    } catch (e) {}
-  }); // ffmpeg drops the connection on every seek
-  upReq.end();
 }
 
-// resolveCache is replaced when it grows; read it through this accessor.
-function resolvedFor(key) {
-  return resolveCache[key];
+function sendBytes(transfer, upstream) {
+  var headers = passedOnHeaders(upstream);
+  headers['accept-ranges'] = headers['accept-ranges'] || 'bytes';
+  transfer.res.writeHead(upstream.statusCode, headers);
+  upstream.on('error', function () {
+    transfer.res.end();
+  });
+  upstream.pipe(transfer.res);
+}
+
+function requestHeaders(transfer, custom) {
+  var headers = {
+    'User-Agent': 'StremCompat/' + APP_VERSION,
+    'Accept': '*/*',
+    'Accept-Encoding': 'identity'
+  };
+  Object.keys(custom || {}).forEach(function (name) {
+    headers[name] = custom[name];
+  });
+  if (transfer.range) headers.Range = transfer.range;
+  return headers;
+}
+
+function follow(transfer, address, custom, hops) {
+  var target = urlmod.parse(String(address || ''));
+  if (!address || hops > MAX_HOPS) return refuse(transfer.res, 502);
+  if ((target.protocol !== 'http:' && target.protocol !== 'https:') || !target.hostname)
+    return refuse(transfer.res, 400);
+
+  var request = (target.protocol === 'https:' ? https : http).request(
+    {
+      hostname: target.hostname,
+      port: target.port,
+      path: target.path,
+      method: transfer.method === 'HEAD' ? 'HEAD' : 'GET',
+      headers: requestHeaders(transfer, custom)
+    },
+    function (upstream) {
+      var status = upstream.statusCode;
+      if (status >= 300 && status < 400 && upstream.headers.location) {
+        upstream.resume();
+        var next = urlmod.resolve(address, upstream.headers.location);
+        return follow(transfer, next, headersFor(address, next, custom), hops + 1);
+      }
+      /* a remembered CDN link probably expired: the original link gives a new one, once */
+      if (EXPIRED[status] && address !== transfer.original && !transfer.startedOver) {
+        upstream.resume();
+        transfer.startedOver = true;
+        delete remembered[transfer.key];
+        return follow(transfer, transfer.original, transfer.originalHeaders, 0);
+      }
+      remember(transfer.key, address);
+      if (transfer.ref && transfer.method !== 'HEAD' && looksLikePlaylist(address, upstream)) {
+        return sendPlaylist(transfer, address, upstream);
+      }
+      sendBytes(transfer, upstream);
+    }
+  );
+  request.on('error', function () {
+    refuse(transfer.res, 502);
+  });
+  request.setTimeout(IDLE_LIMIT_MS, function () {
+    request.abort();
+  });
+  /* FFmpeg drops the connection on every seek */
+  transfer.res.on('close', function () {
+    request.abort();
+  });
+  request.end();
+}
+
+function handleProxy(query, req, res) {
+  var stream = getStreamRef(query.ref || '');
+  var signed = stream && query.u && query.sig === signature(query.ref, query.u) ? String(query.u) : '';
+  var original = signed || (stream ? stream.url : query.u || '');
+  var headers = stream ? headersFor(stream.url, original, stream.headers) : null;
+  var transfer = {
+    res: res,
+    range: req.headers.range,
+    method: req.method,
+    ref: stream ? String(query.ref) : '',
+    key: stream ? 'ref:' + query.ref + ':' + original : original,
+    original: original,
+    originalHeaders: headers,
+    startedOver: false
+  };
+  var known = remembered[transfer.key];
+  var fresh = known && Date.now() - known.at < LINK_REMEMBERED_MS;
+  if (fresh) follow(transfer, known.address, headersFor(original, known.address, headers), 0);
+  else follow(transfer, original, headers, 0);
 }
 
 module.exports = {
-  localProxy: localProxy,
-  proxySignature: proxySignature,
-  proxyStream: proxyStream,
-  redirectedHeaders: redirectedHeaders,
-  resolvedFor: resolvedFor
+  handleProxy: handleProxy,
+  localProxy: localProxy
 };

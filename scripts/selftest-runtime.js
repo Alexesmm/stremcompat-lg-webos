@@ -195,6 +195,62 @@ async function engineRoutesTests() {
   console.log('OK: torrent address, redirect to the engine, file choice, OpenSubtitles hash, refused torrent.');
 }
 
+var proxyHits = { debrid: 0, cdn: [] };
+
+/* /proxy, as the player and FFmpeg use it */
+async function proxyTests() {
+  function viaProxy(target, options) {
+    return request(Object.assign({ hostname: '127.0.0.1', port: appPort, path: '/proxy?u=' + encodeURIComponent('http://127.0.0.1:9191' + target) }, options || {}));
+  }
+  async function reference(url, headers) {
+    var payload = JSON.stringify({ url: url, headers: headers });
+    var made = await request({ hostname: '127.0.0.1', port: appPort, path: '/streamref', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, payload);
+    return JSON.parse(made.text).ref;
+  }
+  var whole = await viaProxy('/ranged');
+  assert.strictEqual(whole.text, '0123456789', 'a file did not come through the proxy');
+  assert.strictEqual(whole.headers['accept-ranges'], 'bytes', 'the player was not told it can seek');
+  assert.strictEqual(whole.headers.etag, '"v1"', 'a useful header was dropped');
+  assert.strictEqual(whole.headers['x-secret-server'], undefined, 'other headers from the server were passed on');
+  var part = await viaProxy('/ranged', { headers: { Range: 'bytes=2-4' } });
+  assert.strictEqual(part.status, 206, 'a Range request lost its status');
+  assert.strictEqual(part.text, '234', 'a Range request returned the wrong bytes');
+  assert.strictEqual(part.headers['content-range'], 'bytes 2-4/10', 'Content-Range was lost');
+  var head = await viaProxy('/echo-headers', { method: 'HEAD' });
+  assert.strictEqual(head.status, 200, 'HEAD failed');
+  assert.strictEqual((await viaProxy('/moved-loop')).status, 502, 'endless redirects were not stopped');
+  assert.strictEqual((await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?u=' + encodeURIComponent('file:///etc/passwd') })).status, 400, 'another protocol was accepted');
+  assert.strictEqual((await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy' })).status, 502, 'a request with no target was not refused');
+
+  var secrets = { Authorization: 'Bearer secret', Cookie: 'a=b', Referer: 'https://addon.example/' };
+  var sameRef = await reference('http://127.0.0.1:9191/moved-same', secrets);
+  var same = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + sameRef })).text);
+  assert.strictEqual(same.auth, 'Bearer secret', 'a redirect on the same host lost its credentials');
+  var awayRef = await reference('http://127.0.0.1:9191/moved-away', secrets);
+  var away = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + awayRef })).text);
+  assert.strictEqual(away.auth, '', 'credentials went to another host');
+  assert.strictEqual(away.cookie, '', 'a cookie went to another host');
+  assert.strictEqual(away.referer, 'https://addon.example/', 'an ordinary header was lost on a redirect');
+
+  /* the working CDN link is remembered; once it expires, the original link gives a new one */
+  assert.strictEqual((await viaProxy('/debrid')).text, 'from /cdn-1', 'the redirect was not followed');
+  assert.strictEqual((await viaProxy('/debrid')).text, 'from /cdn-2', 'an expired CDN link was not replaced');
+  assert.strictEqual(proxyHits.debrid, 2, 'the working link was not remembered');
+  assert.strictEqual((await viaProxy('/debrid')).text, 'from /cdn-2', 'the new link was not remembered');
+  assert.strictEqual(proxyHits.debrid, 2, 'the new link was not reused');
+
+  var hlsRef = await reference('http://127.0.0.1:9191/attrs.m3u8');
+  var list = await request({ hostname: '127.0.0.1', port: appPort, path: '/proxy?ref=' + hlsRef });
+  assert.strictEqual(list.headers['content-type'], 'application/vnd.apple.mpegurl', 'a playlist kept the wrong type');
+  assert.strictEqual(list.headers['content-length'], String(Buffer.byteLength(list.text)), 'a rewritten playlist kept the old length');
+  assert.ok(/URI="http:\/\/127\.0\.0\.1:\d+\/proxy\?ref=[^"]*key\.bin[^"]*"/.test(list.text), 'an attribute in a playlist was not rewritten');
+  assert.ok(list.text.indexOf('URI="data:text/plain,x"') >= 0, 'a data link was rewritten');
+  assert.ok(list.text.indexOf('seg%2Fone.ts') >= 0 && list.text.indexOf('other.example') >= 0, 'playlist lines were not rewritten');
+  var forged = list.text.split('\n').filter(function (l) { return /one\.ts/.test(l); })[0].replace(/sig=[0-9a-f]+/, 'sig=00');
+  assert.ok(/sig=00/.test(forged), 'no signature in a playlist line');
+  console.log('OK: proxy Range, HEAD, redirects, credentials kept from other hosts, expired CDN links, playlists.');
+}
+
 async function main() {
   engineLogicTests();
   await serverAddressTests();
@@ -211,6 +267,30 @@ async function main() {
     }
     if (req.url === '/latin.srt') {
       res.end(Buffer.concat([Buffer.from('1\n00:00:01,000 --> 00:00:02,500\nCora'), Buffer.from([0xe7, 0xe3]), Buffer.from('o\n')]));
+      return;
+    }
+    /* what /proxy meets out there: moved links, a CDN link that expires, a file with Range */
+    if (req.url === '/moved-same') { res.writeHead(302, { Location: '/echo-headers' }); res.end(); return; }
+    if (req.url === '/moved-away') { res.writeHead(302, { Location: 'http://localhost:9191/echo-headers' }); res.end(); return; }
+    if (req.url === '/moved-loop') { res.writeHead(302, { Location: '/moved-loop' }); res.end(); return; }
+    if (req.url === '/echo-headers') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ auth: req.headers.authorization || '', cookie: req.headers.cookie || '', referer: req.headers.referer || '', method: req.method })); return; }
+    if (req.url === '/debrid') { proxyHits.debrid++; res.writeHead(302, { Location: '/cdn-' + proxyHits.debrid }); res.end(); return; }
+    if (/^\/cdn-\d+$/.test(req.url)) {
+      proxyHits.cdn.push(req.url);
+      if (req.url === '/cdn-1' && proxyHits.cdn.length > 1) { res.writeHead(403); res.end(); return; }
+      res.setHeader('Content-Type', 'video/mp4'); res.end('from ' + req.url);
+      return;
+    }
+    if (req.url === '/ranged') {
+      var askedRange = /bytes=(\d+)-(\d+)/.exec(req.headers.range || '');
+      if (!askedRange) { res.setHeader('Content-Type', 'video/mp4'); res.setHeader('ETag', '"v1"'); res.setHeader('X-Secret-Server', 'no'); res.end('0123456789'); return; }
+      res.writeHead(206, { 'Content-Type': 'video/mp4', 'Content-Range': 'bytes ' + askedRange[1] + '-' + askedRange[2] + '/10', 'Accept-Ranges': 'bytes' });
+      res.end('0123456789'.slice(+askedRange[1], +askedRange[2] + 1));
+      return;
+    }
+    if (req.url === '/attrs.m3u8') {
+      res.setHeader('Content-Type', 'application/x-mpegURL');
+      res.end('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin"\n#EXT-X-MEDIA:TYPE=AUDIO,URI="data:text/plain,x"\n#EXTINF:4,\nseg/one.ts\n\nhttp://other.example/two.ts\n');
       return;
     }
     if (req.url === '/playlist.m3u8') {
@@ -243,6 +323,7 @@ async function main() {
     assert.strictEqual(healthJson.version, appVersion);
     assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
     await engineRoutesTests();
+    await proxyTests();
     var spanish = await request({ hostname: '127.0.0.1', port: appPort, path: '/lang/es.json' });
     assert.strictEqual(JSON.parse(spanish.text).navHome, 'Inicio', 'a language file was not served');
     assert.strictEqual((await request({ hostname: '127.0.0.1', port: appPort, path: '/lang/..%2fprofile.json' })).status, 404, 'a file outside the language folder was reachable');

@@ -1,87 +1,160 @@
-// The bare player page assembled from service/player assets.
+// The player's page: its files, with what it needs to know about the stream it will play.
 
 var fs = require('fs');
 var path = require('path');
 var { DIR, PORT, SERVICE_ID } = require('./config');
 var { dbg } = require('./log');
 var { EMBEDDED_PLAYER_B64 } = require('./embedded');
+var { nextEpisodeId } = require('./episodes');
+var { fetchJson } = require('./http-util');
+var { waitForServer } = require('./streaming-server');
 var { safeScriptJson } = require('./text');
+var { rememberVideos } = require('./watched');
 
-function loadPlayerAssets() {
-  var names = ['player.css', 'player-body.html', 'player-client.js'],
-    text = {},
-    embedded = null;
-  names.forEach(function (name) {
-    if (process.env.TVSERVER_FORCE_EMBEDDED_UI !== '1') {
-      try {
-        text[name] = fs.readFileSync(path.join(DIR, 'player', name), 'utf8');
-      } catch (e) {
-        dbg('[player] ' + name + ' read failed: ' + e.message);
-      }
-    }
-    if (!text[name] && EMBEDDED_PLAYER_B64.indexOf('__EMBEDDED_') !== 0) {
-      if (!embedded) embedded = JSON.parse(Buffer.from(EMBEDDED_PLAYER_B64, 'base64').toString('utf8'));
-      text[name] = embedded[name] || '';
-    }
-  });
-  function joined(name) {
-    return String(text[name] || '').replace(/\r?\n/g, '');
-  }
-  return {
-    css: joined('player.css'),
-    body: joined('player-body.html'),
-    client: String(text['player-client.js'] || '')
-  };
+var TORRENT_ADDRESS = /^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i;
+var ARTWORK_WAIT_MS = 2500;
+/* where a release name stops being a title */
+var RELEASE_WORDS =
+  /\b(1080p|720p|2160p|4k|web[- ]?dl|bluray|x264|x265|h ?264|h ?265|hevc|amzn|ddp?5 1|aac|atmos)\b.*$/i;
+
+/* ---------- the player's files ---------- */
+function embeddedFiles() {
+  if (EMBEDDED_PLAYER_B64.indexOf('__EMBEDDED_') === 0) return {};
+  return JSON.parse(Buffer.from(EMBEDDED_PLAYER_B64, 'base64').toString('utf8'));
 }
 
-var PLAYER = loadPlayerAssets();
+function readPlayerFile(name, embedded) {
+  if (process.env.TVSERVER_FORCE_EMBEDDED_UI !== '1') {
+    try {
+      return fs.readFileSync(path.join(DIR, 'player', name), 'utf8');
+    } catch (e) {
+      dbg('[player] ' + name + ' read failed: ' + e.message);
+    }
+  }
+  return embedded()[name] || '';
+}
 
-function cleanTitle(stream) {
-  // Prefer a human title from the description (addons put "🎬 Movie (Year)" on
-  // the first line); fall back to a cleaned filename; then the stream name.
-  var desc = stream.description || stream.title || '';
-  var first = (desc.split('\n')[0] || '').replace(/^[^0-9A-Za-z(]+/, '').trim();
-  if (first && first.length >= 2) return first;
-  var fn = stream.behaviorHints && stream.behaviorHints.filename;
-  if (fn) {
-    return fn
+var PLAYER_FILES = (function () {
+  var cached = null;
+  function embedded() {
+    cached = cached || embeddedFiles();
+    return cached;
+  }
+  function oneLine(name) {
+    return readPlayerFile(name, embedded).replace(/\r?\n/g, '');
+  }
+  return {
+    css: oneLine('player.css'),
+    body: oneLine('player-body.html'),
+    client: readPlayerFile('player-client.js', embedded)
+  };
+})();
+
+/* ---------- what is known about the title ---------- */
+function titleFromStream(stream) {
+  /* addons put something like "Movie (Year)" on the first line of the description */
+  var written = String(stream.description || stream.title || '').split('\n')[0];
+  var firstLine = written.replace(/^[^0-9A-Za-z(]+/, '').trim();
+  if (firstLine.length >= 2) return firstLine;
+  var fileName = stream.behaviorHints && stream.behaviorHints.filename;
+  if (fileName)
+    return fileName
       .replace(/\.[^.]+$/, '')
       .replace(/[._]/g, ' ')
-      .replace(
-        /\b(1080p|720p|2160p|4k|web[- ]?dl|bluray|x264|x265|h ?264|h ?265|hevc|amzn|ddp?5 1|aac|atmos)\b.*$/i,
-        ''
-      )
+      .replace(RELEASE_WORDS, '')
       .trim();
+  return stream.name || 'StremCompat';
+}
+
+function addEpisodeDetails(context, videos) {
+  var parts = context.vid.split(':');
+  context.episode = parts[parts.length - 1];
+  context.season = parts[parts.length - 2];
+  context.nextVid = nextEpisodeId(videos, context.vid);
+  rememberVideos(context.id, videos);
+  (videos || []).forEach(function (video) {
+    var name = video.name || video.title || '';
+    if (video.id === context.vid) context.epTitle = name;
+    if (video.id === context.nextVid) {
+      context.nextTitle = name;
+      context.nextThumb = video.thumbnail || '';
+    }
+  });
+}
+
+/* Artwork and episode details, fetched here so the loading screen shows the logo at once. It
+   waits only a moment for them; a torrent also waits for its address to answer. */
+function playerContext(stream, query, done) {
+  var context = {
+    type: query.type || '',
+    id: query.id || '',
+    vid: query.vid || '',
+    back: query.back || '',
+    streamRef: query.ref || '',
+    meta: null
+  };
+  var artworkSettled = false;
+  function ready() {
+    if (!TORRENT_ADDRESS.test(stream.url || '')) return done(context);
+    waitForServer(function (up) {
+      context.streamServerReady = up;
+      done(context);
+    });
   }
-  return stream.name || 'Stremio';
+  if (!context.type || !context.id) return ready();
+  function settled() {
+    if (artworkSettled) return;
+    artworkSettled = true;
+    ready();
+  }
+  var address =
+    'https://v3-cinemeta.strem.io/meta/' +
+    encodeURIComponent(context.type) +
+    '/' +
+    encodeURIComponent(context.id) +
+    '.json';
+  fetchJson(address, function (answer) {
+    if (artworkSettled) return;
+    var meta = (answer && answer.meta) || {};
+    context.meta = {
+      name: meta.name || '',
+      logo: meta.logo || '',
+      background: meta.background || meta.poster || '',
+      poster: meta.poster || '',
+      cert: meta.certification || ''
+    };
+    if (context.vid.indexOf(':') >= 0) addEpisodeDetails(context, meta.videos);
+    settled();
+  });
+  setTimeout(settled, ARTWORK_WAIT_MS);
+}
+
+/* A source with headers, or one the TV cannot read directly, goes through the proxy. */
+function playableAddress(stream, context) {
+  var needsProxy = stream.notWebReady || Object.keys(stream.headers || {}).length > 0;
+  if (context.streamRef && needsProxy)
+    return 'http://127.0.0.1:' + PORT + '/proxy?ref=' + encodeURIComponent(context.streamRef);
+  return stream.url || '';
+}
+
+/* where the player goes when it cannot start the next episode by itself (up-next.js) */
+function nextEpisodePage(context) {
+  if (!context.nextVid) return '';
+  return (
+    '/beta#detail/' +
+    [context.type || '', context.id || '', context.nextVid].map(encodeURIComponent).join('/')
+  );
 }
 
 /* What the player needs to know about this stream, by the names its code uses. */
-function playerConstants(stream, ctx) {
-  var streamUrl = stream.url || '';
-  ctx = ctx || {};
-  var streamHeaders = stream.headers || {};
-  if (ctx.streamRef && (stream.notWebReady || Object.keys(streamHeaders).length)) {
-    streamUrl = 'http://127.0.0.1:' + PORT + '/proxy?ref=' + encodeURIComponent(ctx.streamRef);
-  }
+function playerConstants(stream, context) {
+  var ctx = context || {};
   var meta = ctx.meta || {};
-  var title = meta.name || cleanTitle(stream);
-  var nextVid = ctx.nextVid || '';
-  // The title page of the next episode: where the player goes when it cannot start that
-  // episode by itself (up-next.js).
-  var nextHref = !nextVid
-    ? ''
-    : '/beta#detail/' +
-      encodeURIComponent(ctx.type || '') +
-      '/' +
-      encodeURIComponent(ctx.id || '') +
-      '/' +
-      encodeURIComponent(nextVid);
   return {
-    URL: streamUrl,
+    URL: playableAddress(stream, ctx),
     ADDON: stream.addon || '',
     QUALITY: stream.quality || '',
-    TITLE: title,
+    TITLE: meta.name || titleFromStream(stream),
     TYPE: ctx.type || '',
     ID: ctx.id || '',
     VID: ctx.vid || '',
@@ -91,13 +164,13 @@ function playerConstants(stream, ctx) {
     SEASON: ctx.season || '',
     EPISODE: ctx.episode || '',
     EPTITLE: ctx.epTitle || '',
-    NEXTVID: nextVid,
-    NEXTHREF: nextHref,
+    NEXTVID: ctx.nextVid || '',
+    NEXTHREF: nextEpisodePage(ctx),
     BACK: ctx.back || '',
     NEXTTITLE: ctx.nextTitle || '',
     NEXTTHUMB: ctx.nextThumb || '',
     SNAME: String((stream.name || '') + ' ' + (stream.title || stream.description || '')).slice(0, 400),
-    CERT: (ctx.meta && ctx.meta.cert) || '',
+    CERT: meta.cert || '',
     COMPAT: stream.compat || '',
     BINGE: stream.bingeGroup || '',
     SERVICE_ID: SERVICE_ID,
@@ -105,28 +178,24 @@ function playerConstants(stream, ctx) {
   };
 }
 
-function playerPage(stream, ctx) {
-  var constants = playerConstants(stream, ctx);
-  return (
-    '<!doctype html><html><head><meta charset="utf-8">' +
-    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    '<style>' +
-    PLAYER.css +
-    '</style></head><body>' +
-    PLAYER.body +
-    '<script>(function(){var ' +
-    Object.keys(constants)
-      .map(function (name) {
-        return name + '=' + safeScriptJson(constants[name]);
-      })
-      .join(',') +
-    ';' +
-    PLAYER.client +
+function playerPage(stream, context) {
+  var constants = playerConstants(stream, context);
+  var declarations = Object.keys(constants).map(function (name) {
+    return name + '=' + safeScriptJson(constants[name]);
+  });
+  return [
+    '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>',
+    PLAYER_FILES.css,
+    '</style></head><body>',
+    PLAYER_FILES.body,
+    '<script>(function(){var ' + declarations.join(',') + ';',
+    PLAYER_FILES.client,
     '})();</script></body></html>'
-  );
+  ].join('');
 }
 
 module.exports = {
   playerConstants: playerConstants,
+  playerContext: playerContext,
   playerPage: playerPage
 };
