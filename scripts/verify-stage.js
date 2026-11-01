@@ -42,7 +42,10 @@ if (['1920x1080', '1280x720'].indexOf(app.resolution) < 0) throw new Error('Unsu
 if (service.name !== profile.serviceId || service.version !== profile.version) throw new Error('Service manifest does not match profile.');
 if (serviceManifest.id !== profile.serviceId || serviceManifest.services[0].name !== profile.serviceId || appServices[0].name !== profile.serviceId) throw new Error('Service ID mismatch.');
 
-assert.deepStrictEqual(JSON.parse(read('service/profile.json')), profile, 'Generated profile.json does not match the profile.');
+var stagedProfile = JSON.parse(read('service/profile.json'));
+assert.ok(stagedProfile.build, 'Generated profile.json has no build stamp.');
+delete stagedProfile.build;
+assert.deepStrictEqual(stagedProfile, profile, 'Generated profile.json does not match the profile.');
 var loaded = require(path.join(stage, 'service', 'profile.js')).current;
 ['port', 'version', 'serviceId', 'appId', 'backdropWidth', 'backdropCache', 'backdropWorkers', 'catalogRowsCap', 'discoverCap'].forEach(function (key) {
   if (loaded[key] !== profile[key]) throw new Error('Staged service does not load profile.' + key);
