@@ -257,7 +257,13 @@ function chooseMenu() {
     saveTitlePref('embLang', '');
   } else if (it.k === 'ext') {
     setExtSub(it.u);
-    for (var x = 0; x < extSubs.length; x++) if (extSubs[x].u === it.u) saveTitlePref('sub', extSubs[x].lang);
+    for (var x = 0; x < extSubs.length; x++) {
+      if (extSubs[x].u === it.u) {
+        saveTitlePref('sub', extSubs[x].lang);
+        saveTitlePref('subUrl', it.u);
+        saveTitlePref('subSrc', extSubs[x].src || '');
+      }
+    }
     saveTitlePref('embLang', '');
   } else if (it.k === 'emb') {
     setEmbSub(it.idx, it.ti);

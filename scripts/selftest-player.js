@@ -189,6 +189,13 @@ assert.strictEqual(primary.chosen.ext, 'pt', 'the primary subtitle language lost
 var backup = languagePlayer({ subsLang: 'jpn', subsLang2: 'eng' });
 backup.withSubs(subs);
 assert.strictEqual(backup.chosen.ext, 'en', 'the backup subtitle language was not used');
+var twoPt = [{ lang: 'pob', name: 'PT-BR', u: 'sense1', src: 'SubSense' }, { lang: 'pob', name: 'Portuguese (BR)', u: 'comm1', src: 'Community' }];
+var sameOne = languagePlayer({ tvtitle_tt9: JSON.stringify({ sub: 'pob', subUrl: 'comm1', subSrc: 'Community' }) });
+sameOne.withSubs(twoPt);
+assert.strictEqual(sameOne.chosen.ext, 'comm1', 'the subtitle chosen lost to another in the same language');
+var nextEp = languagePlayer({ tvtitle_tt9: JSON.stringify({ sub: 'pob', subUrl: 'old', subSrc: 'Community' }) });
+nextEp.withSubs(twoPt);
+assert.strictEqual(nextEp.chosen.ext, 'comm1', 'another episode did not keep the addon chosen');
 var noBackup = languagePlayer({ subsLang: 'jpn' });
 noBackup.withSubs(subs);
 assert.strictEqual(noBackup.chosen.ext, '', 'a subtitle in another language came on');

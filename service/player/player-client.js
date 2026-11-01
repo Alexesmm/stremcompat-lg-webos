@@ -1618,7 +1618,9 @@ function sameLanguage(a, b) {
    win over the Settings defaults, so an anime watched in Japanese with Portuguese subtitles
    stays that way. */
 var TITLE_PREF_KEY = 'tvtitle_' + ID;
-var WANT_EMB = '';
+var WANT_EMB = '',
+  WANT_SUB_URL = '',
+  WANT_SUB_SRC = '';
 function titlePref() {
   try {
     return JSON.parse(localStorage.getItem(TITLE_PREF_KEY) || 'null') || {};
@@ -1639,6 +1641,8 @@ function saveTitlePref(field, value) {
   if (p.aud) WANTAUD = p.aud;
   if (p.sub) WANTSUB = p.sub === 'off' ? '' : p.sub;
   if (p.embLang) WANT_EMB = p.embLang;
+  WANT_SUB_URL = p.subUrl || '';
+  WANT_SUB_SRC = p.subSrc || '';
   if (typeof p.delay === 'number') subDelay = p.delay;
 })();
 var embTracks = null,
@@ -1655,9 +1659,18 @@ function subOfLanguage(lang) {
   for (var i = 0; i < extSubs.length; i++) if (sameLanguage(extSubs[i].lang, lang)) return extSubs[i];
   return null;
 }
+/* The subtitle chosen for this title: the same one in this episode, or the same addon's in
+   that language in another. */
+function chosenSub() {
+  var i;
+  for (i = 0; WANT_SUB_URL && i < extSubs.length; i++) if (extSubs[i].u === WANT_SUB_URL) return extSubs[i];
+  for (i = 0; WANT_SUB_SRC && i < extSubs.length; i++)
+    if (extSubs[i].src === WANT_SUB_SRC && sameLanguage(extSubs[i].lang, WANTSUB)) return extSubs[i];
+  return null;
+}
 function autoSub() {
   if (autoSubDone || curSub !== 'off' || !WANTSUB || WANT_EMB) return;
-  var found = subOfLanguage(WANTSUB) || (WANTSUB2 && subOfLanguage(WANTSUB2));
+  var found = chosenSub() || subOfLanguage(WANTSUB) || (WANTSUB2 && subOfLanguage(WANTSUB2));
   if (!found) return;
   autoSubDone = true;
   setExtSub(found.u);
@@ -2844,7 +2857,13 @@ function chooseMenu() {
     saveTitlePref('embLang', '');
   } else if (it.k === 'ext') {
     setExtSub(it.u);
-    for (var x = 0; x < extSubs.length; x++) if (extSubs[x].u === it.u) saveTitlePref('sub', extSubs[x].lang);
+    for (var x = 0; x < extSubs.length; x++) {
+      if (extSubs[x].u === it.u) {
+        saveTitlePref('sub', extSubs[x].lang);
+        saveTitlePref('subUrl', it.u);
+        saveTitlePref('subSrc', extSubs[x].src || '');
+      }
+    }
     saveTitlePref('embLang', '');
   } else if (it.k === 'emb') {
     setEmbSub(it.idx, it.ti);
