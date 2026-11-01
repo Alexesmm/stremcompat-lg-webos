@@ -376,4 +376,42 @@ vm.runInNewContext('pushLib(true, function () { doneCalled = true; })', Object.a
 pushed = off.doneCalled;
 assert.strictEqual(pushed, true, 'leaving the player would wait for a push that never happens');
 
+// ---- a torrent's link ending during a long pause (controls.js) ----
+(function () {
+  var code = src('player/controls.js');
+  var body = code.slice(code.indexOf('var reopenedAt = 0;'), code.indexOf("v.addEventListener('error', function () {"));
+  function player(address, usable) {
+    var listeners = {};
+    var video = {
+      currentTime: 1234, src: 'old', loads: 0, plays: 0,
+      addEventListener: function (name, fn) { listeners[name] = fn; },
+      removeEventListener: function (name) { delete listeners[name]; },
+      load: function () { this.loads++; },
+      play: function () { this.plays++; }
+    };
+    var context = {
+      URL: address, mediaUsable: usable, v: video, P: { retrying: '' }, Date: Date,
+      diag: function () {}, showToast: function () {}
+    };
+    vm.runInNewContext(body, context);
+    return { context: context, video: video, listeners: listeners };
+  }
+  var torrent = 'http://127.0.0.1:11470/' + 'a'.repeat(40) + '/0';
+
+  var paused = player(torrent, true);
+  assert.strictEqual(paused.context.reopenTorrent(), true, 'a torrent whose link ended was not opened again');
+  assert.strictEqual(paused.video.src, torrent, 'the torrent did not go back to its address on :11470');
+  assert.strictEqual(paused.video.loads, 1);
+  paused.video.currentTime = 0;
+  paused.listeners.loadedmetadata();
+  assert.strictEqual(paused.video.currentTime, 1234, 'the film did not return to where it was');
+  assert.strictEqual(paused.video.plays, 1, 'the film did not start again');
+  assert.strictEqual(paused.listeners.loadedmetadata, undefined, 'a later load would jump back to the old position');
+  assert.strictEqual(paused.context.reopenTorrent(), false, 'a link that keeps failing must offer another source, not loop');
+
+  assert.strictEqual(player('http://example.com/film.mp4', true).context.reopenTorrent(), false, 'only torrents have a new link to ask for');
+  assert.strictEqual(player(torrent, false).context.reopenTorrent(), false, 'a torrent that never played is a startup failure, not a pause');
+})();
+
+console.log('OK: torrent opened again after a long pause.');
 console.log('OK: watched state like the official apps, next-episode countdown, next episode opened directly, waiting for a chosen subtitle, do not save history, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');
