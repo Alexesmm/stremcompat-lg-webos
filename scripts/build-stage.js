@@ -75,6 +75,8 @@ serviceManifest.id = profile.serviceId;
 serviceManifest.services[0].name = profile.serviceId;
 writeJson(serviceManifestPath, serviceManifest);
 
+// a package installed over the same version must still replace the running server (takeover.js)
+profile.build = Date.now().toString(36);
 fs.writeFileSync(path.join(stageService, 'profile.json'), JSON.stringify(profile, null, 2) + '\n');
 
 replaceTokens(path.join(stageApp, 'index.html'), {

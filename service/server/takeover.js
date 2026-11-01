@@ -3,7 +3,7 @@
 var fs = require('fs');
 var http = require('http');
 var path = require('path');
-var { APP_VERSION, DIR, PORT, SERVICE_ID } = require('./config');
+var { APP_VERSION, DIR, PORT, PROFILE, SERVICE_ID } = require('./config');
 var { dbg } = require('./log');
 
 /* The local server runs detached from the webOS service, so removing or updating the app
@@ -192,7 +192,7 @@ function handleTakeover(req, res) {
 /* The other half: this server leaves by itself once it has been replaced, which needs no
    permission at all (the jail may hide it from the new version, so it cannot be stopped
    from outside). Every few seconds it checks two signs:
-   - the installed profile.json no longer names this version, or is gone (updated/removed);
+   - the installed profile.json no longer names this version or build, or is gone (updated/removed);
    - the claim file in the app's home folder, which every starting version writes and
      which is shared by all runs of the app, names another version.
    Two checks in a row are needed, so a file caught half written does not count. */
@@ -214,8 +214,9 @@ function claimPort() {
 function replacedBy() {
   var installed = path.join(DIR, 'profile.json');
   try {
-    var v = JSON.parse(fs.readFileSync(installed, 'utf8')).version;
-    if (v && v !== APP_VERSION) return 'installed ' + v;
+    var profile = JSON.parse(fs.readFileSync(installed, 'utf8'));
+    if (profile.version && profile.version !== APP_VERSION) return 'installed ' + profile.version;
+    if (profile.build && profile.build !== PROFILE.build) return 'installed build ' + profile.build;
   } catch (e) {
     if (e && e.code === 'ENOENT') return 'app removed';
   }
