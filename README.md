@@ -67,7 +67,21 @@ The package targets LG televisions with an ARM processor running **webOS 3.x and
 | 3.0 / 3.5 | 2016-2017 | OLED B6/C6/E6/G6, B7/C7/E7/G7/W7; LCD UH6x-UH9x, SJ8x-SJ9x, UJ6x-UJ7x, LJ5x |
 | 4.0 / 4.5 | 2018-2019 | OLED B8/C8/E8/W8/Z8, B9/C9/E9/W9/Z9; LCD SK8x-SK9x, UK6x-UK7x, SM8x-SM9x, UM69-UM80, LK5x-LK6x, LM5x-LM6x |
 
-Earlier versions ran on the LG 50UM7500PSB (webOS 4.x) and the LG 49UJ6565-SB (webOS 3.9.3); other models are candidates until someone reports them, since LG can change processors inside a family. webOS 1.x and 2.x are not supported.
+webOS 1.x and 2.x are not supported. LG can change processors inside a family, so a model not listed below is a candidate until someone reports it.
+
+### Tested televisions
+
+| Television | webOS / firmware | App version | Result | Source |
+|---|---|---|---|---|
+| LG 50UM7500PSB | 4.x | 3.0.0 | Working | Maintainer |
+| LG 49UJ6565-SB | 3.9.3 | Before 3.0 | Working | Maintainer |
+| LG 43LH600T | 3.4.3 / 05.70.50 | 2.1.0, 1280x720 | Working; Magic Remote not tested | User report |
+| LG UJ6300 | Not stated | Not stated | Working so far | User report |
+| LG OLED C9 | Not stated | Not stated | Working | User report |
+| Not stated | 4.5 | Not stated | Working | User report |
+| Not stated | 7.0.0 / 4.60.90 | Not stated | Working | User report |
+
+Most reports come from versions before 3.0, whose packages were different, so a new report helps even for a model on this list. Tried it on another TV? [Send a compatibility report](https://github.com/Alexesmm/stremcompat-lg-webos/issues/new?template=compatibility-report.yml).
 
 ## Installation
 

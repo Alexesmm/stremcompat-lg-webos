@@ -194,10 +194,9 @@ var settings = {
       {
         k: UI_LANG_KEY,
         lb: tx('interfaceLanguage'),
-        opts: [
-          ['en-US', tx('english')],
-          ['pt-BR', tx('portugueseBrazil')]
-        ],
+        opts: Object.keys(UI_LANGUAGES).map(function (code) {
+          return [code, UI_LANGUAGES[code]];
+        }),
         d: 'en-US'
       },
       {

@@ -4,7 +4,7 @@ function applyTextSize() {
   else bodyRemove('bigtext');
 }
 function uiLanguageLabel(code) {
-  return code === 'pt-BR' ? tx('portugueseBrazil') : tx('english');
+  return UI_LANGUAGES[code];
 }
 function applyStaticLanguage() {
   var navPairs = {
@@ -44,6 +44,7 @@ function applyStaticLanguage() {
 }
 function setUILanguage(value) {
   var next = normalizeUILanguage(value);
+  loadUILanguage(next);
   UI_LANG = next;
   lsRawSet(UI_LANG_KEY, next);
   applyStaticLanguage();

@@ -1,6 +1,7 @@
-// Interface and player strings (en-US, pt-BR), shared by both bundles.
-/* Adding a language means adding one block here: the interface reads it with tx(),
-   the player through playerText() in src/player/strings.js. */
+// Interface and player strings, shared by both bundles. English and Portuguese are built in; the
+// others are service/lang/<code>.json, read only when chosen, so a TV holds just its own language.
+/* Adding a language means adding its file and its name in UI_LANGUAGES: the interface reads it
+   with tx(), the player through playerText() in src/player/strings.js. */
 /* Interface language is deliberately local to the television. It does not follow
    the Stremio account and it does not change subtitle/audio preferences. English is
    the reliable first-run and fallback language; Portuguese remains an explicit choice. */
@@ -167,9 +168,8 @@ var UI_TEXT = {
     diagTv: 'Television: {0} MB free of {1} MB · CPU load {2}',
     diagDisk: 'Storage: {0} MB free of {1} MB',
     diagStreaming: 'Streaming server: {0}',
-    diagStreamFailed: 'download failed ({0})',
-    torrentsUnavailable:
-      'The streaming server could not be downloaded. Torrents may not play. Check the connection.',
+    diagStreamFailed: 'not available ({0})',
+    torrentsUnavailable: 'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
     diagRunning: 'running',
     diagStopped: 'stopped',
@@ -497,9 +497,8 @@ var UI_TEXT = {
     diagTv: 'TV: {0} MB livres de {1} MB · carga da CPU {2}',
     diagDisk: 'Armazenamento: {0} MB livres de {1} MB',
     diagStreaming: 'Servidor de streaming: {0}',
-    diagStreamFailed: 'falha no download ({0})',
-    torrentsUnavailable:
-      'Não foi possível baixar o servidor de streaming. Torrents podem não tocar. Verifique a conexão.',
+    diagStreamFailed: 'indisponível ({0})',
+    torrentsUnavailable: 'O motor de torrents não está disponível nesta TV. Fontes debrid e diretas continuam funcionando.',
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     diagRunning: 'ativo',
     diagStopped: 'parado',
@@ -666,8 +665,28 @@ var UI_TEXT = {
     }
   }
 };
+/* in the language itself, whichever one the interface is in */
+var UI_LANGUAGES = {
+  'en-US': 'English',
+  'pt-BR': 'Português (Brasil)',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
+  it: 'Italiano',
+  ru: 'Русский'
+};
 function normalizeUILanguage(value) {
-  return value === 'pt-BR' ? 'pt-BR' : 'en-US';
+  return Object.prototype.hasOwnProperty.call(UI_LANGUAGES, value) ? value : 'en-US';
+}
+/* what the file does not have, or a file that cannot be read, falls back to English */
+function loadUILanguage(code) {
+  if (UI_TEXT[code]) return;
+  try {
+    var request = new XMLHttpRequest();
+    request.open('GET', '/lang/' + code + '.json', false);
+    request.send();
+    if (request.status === 200) UI_TEXT[code] = JSON.parse(request.responseText);
+  } catch (e) {}
 }
 var UI_LANG = normalizeUILanguage(
   (function () {
@@ -678,6 +697,7 @@ var UI_LANG = normalizeUILanguage(
     }
   })()
 );
+loadUILanguage(UI_LANG);
 function tx(key) {
   var args = arguments,
     text = (UI_TEXT[UI_LANG] && UI_TEXT[UI_LANG][key]) || UI_TEXT['en-US'][key] || key;

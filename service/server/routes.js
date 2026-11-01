@@ -1,7 +1,9 @@
 // HTTP routing for the local compatibility server.
 
+var fs = require('fs');
+var path = require('path');
 var urlmod = require('url');
-var { APP_VERSION, PORT, PROFILE, PROFILE_MODULE } = require('./config');
+var { APP_VERSION, DIR, PORT, PROFILE, PROFILE_MODULE } = require('./config');
 var { dbg } = require('./log');
 var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
@@ -317,6 +319,14 @@ function handleRequest(req, res) {
     seriesVideos(String(q.id || ''), function (videos) {
       var field = videos ? setWatched(String(q.f || ''), videos, String(q.vid || ''), q.w !== '0') : '';
       sendJson(res, field ? { watched: field } : { error: 'unknown_video' });
+    });
+  } else if (/^\/lang\/[a-zA-Z-]{2,5}\.json$/.test(p)) {
+    fs.readFile(path.join(DIR, 'lang', p.slice(6)), function (err, body) {
+      res.writeHead(err ? 404 : 200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-cache'
+      });
+      res.end(err ? '{}' : body);
     });
   } else if (p === '/logo.png') {
     if (logoPng()) {

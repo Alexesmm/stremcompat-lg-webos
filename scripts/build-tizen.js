@@ -122,6 +122,9 @@ copy('service/app-logo.png', 'service/app-logo.png');
 fs.readdirSync(path.join(root, 'service', 'fonts')).forEach(function (name) {
   copy('service/fonts/' + name, 'service/fonts/' + name);
 });
+fs.readdirSync(path.join(root, 'service', 'lang')).forEach(function (name) {
+  copy('service/lang/' + name, 'service/lang/' + name);
+});
 fs.readdirSync(path.join(root, 'service', 'licenses')).forEach(function (name) {
   copy('service/licenses/' + name, 'service/licenses/' + name);
 });

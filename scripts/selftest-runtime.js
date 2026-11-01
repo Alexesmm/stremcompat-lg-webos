@@ -243,6 +243,9 @@ async function main() {
     assert.strictEqual(healthJson.version, appVersion);
     assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
     await engineRoutesTests();
+    var spanish = await request({ hostname: '127.0.0.1', port: appPort, path: '/lang/es.json' });
+    assert.strictEqual(JSON.parse(spanish.text).navHome, 'Inicio', 'a language file was not served');
+    assert.strictEqual((await request({ hostname: '127.0.0.1', port: appPort, path: '/lang/..%2fprofile.json' })).status, 404, 'a file outside the language folder was reachable');
 
     var logged = await request({ hostname: '127.0.0.1', port: appPort, path: '/log?ev=selftest&compat=AV1&ignored=secret' });
     assert.strictEqual(logged.status, 200);

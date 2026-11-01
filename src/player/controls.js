@@ -153,8 +153,28 @@ function tryAnotherSource() {
   } catch (e) {}
   location.replace(appUrl('/' + (BACK || 'beta')));
 }
+/* The engine's link for a torrent ends after a long pause. The address on :11470 leads to a new
+   one, so the film opens again where it was instead of offering another source. */
+var reopenedAt = 0;
+function reopenTorrent() {
+  if (!mediaUsable || !/:11470\/[0-9a-f]{40}\//i.test(URL) || Date.now() - reopenedAt < 60000) return false;
+  reopenedAt = Date.now();
+  var at = v.currentTime;
+  diag('media_reopen', { at: Math.round(at) });
+  showToast(P.retrying);
+  function back() {
+    v.removeEventListener('loadedmetadata', back);
+    v.currentTime = at;
+    var playing = v.play();
+    if (playing && playing.catch) playing.catch(function () {});
+  }
+  v.addEventListener('loadedmetadata', back);
+  v.src = URL;
+  v.load();
+  return true;
+}
 v.addEventListener('error', function () {
-  if (retryStartup('error')) return;
+  if (retryStartup('error') || reopenTorrent()) return;
   lname.textContent = P.playbackError;
   if (ID && BACK.indexOf('beta#detail/') === 0) showSourceFailed();
   diag('media_error', {

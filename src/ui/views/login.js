@@ -71,7 +71,8 @@ var login = {
     }
   },
   toggleLanguage: function () {
-    setUILanguage(UI_LANG === 'en-US' ? 'pt-BR' : 'en-US');
+    var codes = Object.keys(UI_LANGUAGES);
+    setUILanguage(codes[(codes.indexOf(UI_LANG) + 1) % codes.length]);
     this.setStatus(this.statusKey);
     this.paint();
   },

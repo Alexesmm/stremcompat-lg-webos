@@ -296,6 +296,23 @@ assert.strictEqual(matchNext([strongEn,multiAudio],{addon:'Torrentio',quality:'1
 assert.strictEqual(matchNext([strongEn,plain],{addon:'Torrentio',quality:'1080p',langs:[]}),plain,'a dub replaced a source that names no language');
 assert.strictEqual(matchNext([strongEn],{addon:'Torrentio',quality:'1080p'}).title,'English','an older saved preference was judged by language');
 assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',compatRank:4,langs:[] }],{addon:'Torrentio',quality:'1080p',langs:[]}),null,'an archive was chosen for the next episode');
+(function languageFiles() {
+  var english = {};
+  var stringsContext = { localStorage: { getItem: function () { return null; } } };
+  require('vm').runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'shared', 'strings.js'), 'utf8'), stringsContext);
+  english = stringsContext.UI_TEXT['en-US'];
+  function holes(text) { return (String(text).match(/\{\d+\}/g) || []).sort().join(); }
+  function compare(base, other, name) {
+    Object.keys(base).forEach(function (key) {
+      if (typeof base[key] === 'object') return compare(base[key], other[key] || {}, name);
+      assert.ok(other[key], name + ' lacks ' + key);
+      assert.strictEqual(holes(other[key]), holes(base[key]), name + ': placeholders of ' + key);
+    });
+  }
+  Object.keys(stringsContext.UI_LANGUAGES).filter(function (code) { return !stringsContext.UI_TEXT[code]; }).forEach(function (code) {
+    compare(english, JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'service', 'lang', code + '.json'), 'utf8')), code);
+  });
+})();
 firstRun.context.__STREMIO_SET_UI_LANGUAGE__('pt-BR');
 assert.strictEqual(firstRun.context.__STREMIO_UI_LANGUAGE__(), 'pt-BR');
 assert.strictEqual(firstRun.context.localStorage.getItem('uiLanguage'), 'pt-BR', 'language preference was not persisted');

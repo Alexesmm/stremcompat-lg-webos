@@ -15,8 +15,6 @@ body:
       options:
         - label: I tested this on the physical television named below.
           required: true
-        - label: I used the package matching the webOS generation and graphics mode.
-          required: true
         - label: I removed passwords, tokens and active pairing codes from all evidence.
           required: true
   - type: input

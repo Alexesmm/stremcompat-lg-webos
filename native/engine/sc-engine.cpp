@@ -8,6 +8,8 @@
 //         prepare <TAB> tag <TAB> torrent <TAB> file index
 //         stop <TAB> stream                  remove <TAB> torrent          stats
 //   out:  one JSON object per line
+//
+// Usage: sc-engine <folder> [milliseconds a stream stays open without requests]
 #include <sys/statvfs.h>
 
 #include <algorithm>
@@ -181,7 +183,7 @@ int main(int argc, char** argv) {
   config.upload_mode = NUVIO_ENGINE_UPLOAD_LIMITED;
   config.upload_limit_bytes_per_second = 256 * 1024;
   /* a paused film keeps its link for a while: the player does not ask for a new one */
-  config.stream_inactivity_timeout_milliseconds = 15 * 60 * 1000;
+  config.stream_inactivity_timeout_milliseconds = argc > 2 ? static_cast<std::uint32_t>(std::strtoul(argv[2], nullptr, 10)) : 15 * 60 * 1000;
   config.warm_torrent_timeout_milliseconds = 60 * 1000;
   config.torrent_profile = is_small_tv() ? NUVIO_ENGINE_TORRENT_PROFILE_SOFT : NUVIO_ENGINE_TORRENT_PROFILE_BALANCED;
 
