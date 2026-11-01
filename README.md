@@ -76,7 +76,7 @@ Developer Mode installations expire with its timer, so renew it before it reache
 
 The app uses about 13 MB once installed, plus up to 768 MB of free storage while a torrent plays, which is cleared when it stops.
 
-> **Coming from 2.x?** If you used `StremCompat`, this updates it. If you used `StremCompat HD`, `StremCompat UJ3` or `StremCompat UJ3 HD`, remove that app: this package replaces all of them. You may need to sign in again.
+> **Coming from 2.x?** If you used `StremCompat`, this updates it. If you used `StremCompat HD`, `StremCompat UJ3` or `StremCompat UJ3 HD`, remove that app and install the package for your screen: it replaces all of them. You may need to sign in again.
 
 ### First use
 
