@@ -133,6 +133,11 @@ function sendBytes(transfer, upstream) {
   upstream.on('error', function () {
     transfer.res.end();
   });
+  /* cut short: closing lets the player ask again from where it stopped, instead of waiting */
+  upstream.on('aborted', function () {
+    transfer.res.destroy();
+  });
+  transfer.upstream = upstream;
   upstream.pipe(transfer.res);
 }
 
@@ -187,7 +192,9 @@ function follow(transfer, address, custom, hops) {
   request.on('error', function () {
     refuse(transfer.res, 502);
   });
+  /* a paused player stops reading, so the connection goes quiet without the source being stuck */
   request.setTimeout(IDLE_LIMIT_MS, function () {
+    if (transfer.upstream && transfer.upstream.isPaused()) return;
     request.abort();
   });
   /* FFmpeg drops the connection on every seek */

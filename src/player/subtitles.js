@@ -287,6 +287,8 @@ function pollEmbCues() {
       }
       if (j.err && !cues.length) {
         embFailed = true;
+        /* said once: nothing more will come */
+        embN = -1;
         showToast(P.subtitleFailed);
         releaseSubHold();
       }

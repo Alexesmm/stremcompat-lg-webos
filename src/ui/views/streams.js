@@ -134,7 +134,9 @@ var streamsUI = {
       '/speed',
       function (answer) {
         if (!self.open || self.requestSeq !== request) return;
-        var best = bestSource(self.all().slice().sort(sourceOrder), (answer && answer.mbps) || 0);
+        /* in the order of the list on screen, which follows the preferred language and quality */
+        self.flush();
+        var best = bestSource(self.items, (answer && answer.mbps) || 0);
         if (!best) return;
         toast(tx('playingBest', best.quality || best.addon || ''));
         playUrl(
@@ -448,6 +450,7 @@ var streamsUI = {
       return true;
     }
     if (k === 40) {
+      if (!this.els.length) return true;
       this.idx = Math.min(this.els.length - 1, this.idx + 1);
       this.moved = true;
       this.paint();

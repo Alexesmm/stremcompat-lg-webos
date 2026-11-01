@@ -57,16 +57,19 @@ var mediaUsable = false,
   startupRetry = 0,
   startupResetting = false,
   startupWatch = null;
+/* a torrent can take over a minute to find its peers, and starting over would not help it */
+var STARTUP_LIMIT_MS = /:11470\/[0-9a-f]{40}\//i.test(URL) ? 45000 : 18000;
 function armStartupWatch() {
   if (startupWatch) clearTimeout(startupWatch);
   startupWatch = setTimeout(function () {
     if (!mediaUsable && !retryStartup('timeout') && ID && BACK.indexOf('beta#detail/') === 0)
       showSourceFailed();
-  }, 18000);
+  }, STARTUP_LIMIT_MS);
 }
 function mediaReady() {
   mediaUsable = true;
   startupResetting = false;
+  hideSourceFailed();
   if (startupWatch) {
     clearTimeout(startupWatch);
     startupWatch = null;

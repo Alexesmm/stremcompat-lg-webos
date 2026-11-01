@@ -204,10 +204,14 @@ try {
 } catch (e) {}
 
 function trackKey(q) {
-  var fileName = String(q.u || '')
-    .split('/')
-    .pop()
-    .slice(0, 48);
+  /* a torrent's address ends in its file number: what tells two releases apart is the hash */
+  var torrent = /\/([0-9a-f]{40})\/(\d+)/i.exec(String(q.u || ''));
+  var fileName = torrent
+    ? torrent[1].toLowerCase() + '/' + torrent[2]
+    : String(q.u || '')
+        .split('/')
+        .pop()
+        .slice(0, 48);
   return crypto
     .createHash('sha1')
     .update([q.id || '', q.vid || '', q.n || 0, fileName].join('|'))
@@ -304,6 +308,7 @@ function readFrom(job, startAt) {
     job.pending = '';
     job.worker = null;
     job.done = true;
+    if (code !== 0 && !job.cues.length) job.err = 'ffmpeg failed';
     if (code !== 0 || job.startedAt > 5 || !job.cues.length) return;
     try {
       fs.writeFileSync(storedPath(job.key), JSON.stringify({ v: 1, cues: job.cues }));
@@ -355,9 +360,10 @@ function embCues(q, res) {
   if (!job || job.key !== trackKey(q)) return sendJson(res, { cues: [], done: true, gone: true });
   var playhead = parseFloat(q.t || '0') || 0;
   job.polledAt = Date.now();
-  if (!job.done && job.startedAt > 5 && playhead > 0 && playhead < job.startedAt - 5 && !job.rewound) {
-    /* the viewer went back before where reading began */
+  if (job.startedAt > 5 && playhead > 0 && playhead < job.startedAt - 5 && !job.rewound) {
+    /* the viewer went back before where reading began, even if it has reached the end */
     job.rewound = true;
+    job.done = false;
     stopWorker(job);
     readFrom(job, 0);
   } else if (!job.done && playhead > job.frontier + FAR_AHEAD_SECONDS && !job.jumped) {

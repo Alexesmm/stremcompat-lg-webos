@@ -227,6 +227,11 @@ var afterFail = firstRun.context.__SC_NEXT_AFTER_FAILURE__([
   { addon:'Torrentio', name:'B', title:'good' }
 ], { addon:'Torrentio', text:'A broken' });
 assert.strictEqual(afterFail && afterFail.name, 'B', 'the failed source was offered again');
+var afterFailLines = firstRun.context.__SC_NEXT_AFTER_FAILURE__([
+  { addon:'Torrentio', name:'Torrentio\n1080p', title:'file\n2 GB' },
+  { addon:'Torrentio', name:'Torrentio\n720p', title:'other' }
+], { addon:'Torrentio', text:'Torrentio 1080p file 2 GB' });
+assert.strictEqual(afterFailLines && afterFailLines.title, 'other', 'a source with line breaks in its name was offered again after failing');
 var newEp = firstRun.context.__SC_FIRST_NEW_EPISODE__({ videos: [
   { id:'s:1:1', season:1, episode:1, released:'2020-01-01T00:00:00Z' },
   { id:'s:2:1', season:2, episode:1, released:'2021-03-01T00:00:00Z' },

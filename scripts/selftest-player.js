@@ -167,12 +167,42 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   shown = [slow, fast, faster];
   list.rebuild();
   assert.strictEqual(list.items[list.idx], faster, 'a late addon pulled the focus down the list');
+  var noSources = Object.assign(Object.create(list), { open: true, zone: 'list', els: [], items: [], idx: 0, moved: false });
+  noSources.key(40);
+  assert.strictEqual(noSources.idx, 0, 'Down on an empty list lost the focus');
+  assert.strictEqual(noSources.moved, false, 'Down on an empty list counted as moving');
   list.moved = true;
   list.idx = 1;
   shown = [slow, fast, faster, { seeds: 7 }];
   var on = list.items[1];
   list.rebuild();
   assert.strictEqual(list.items[list.idx], on, 'after the viewer moved, the focus left the source it was on');
+})();
+
+// ---- a source that answers after being given up on (core.js + controls.js) ----
+(function () {
+  function player(address) {
+    var listeners = {}, timers = [], fail = element('fail');
+    var ctx = {
+      URL: address, ID: 'tt9', BACK: 'beta#detail/movie/tt9', BG: '', LOGO: '', TITLE: 'x', SE: '', VID: '', ADDON: '', SNAME: '', QUALITY: '',
+      P: {}, location: { replace: function () {}, search: '' },
+      setTimeout: function (fn, ms) { timers.push(ms); return timers.length; }, clearTimeout: function () {},
+      diag: function () {}, showToast: function () {},
+      document: { getElementById: function (id) { return id === 'fail' ? fail : element(id); }, createElement: element },
+      createVideo: function () { return { addEventListener: function (name, fn) { (listeners[name] = listeners[name] || []).push(fn); } }; }
+    };
+    var controls = src('player/controls.js');
+    var failing = controls.slice(controls.indexOf('var failShown = false;'), controls.indexOf('function tryAnotherSource'));
+    vm.runInNewContext(src('player/core.js') + ';' + failing + ';this.fail=showSourceFailed;', ctx);
+    return { ctx: ctx, listeners: listeners, timers: timers, fail: fail };
+  }
+  var direct = player('http://example.com/film.mp4');
+  assert.strictEqual(direct.timers[0], 18000, 'a direct source lost its short wait');
+  assert.strictEqual(player('http://127.0.0.1:11470/' + 'a'.repeat(40) + '/0').timers[0], 45000, 'a torrent was given up on before finding its peers');
+  direct.ctx.fail();
+  assert.strictEqual(direct.fail.className, 'show');
+  direct.listeners.playing.forEach(function (fn) { fn(); });
+  assert.strictEqual(direct.fail.className, '', 'the failure message stayed over a film that started');
 })();
 
 // ---- a subtitle kept on storage loads once (subtitles.js) ----

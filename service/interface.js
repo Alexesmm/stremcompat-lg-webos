@@ -2322,8 +2322,11 @@ function nextSourceAfterFailure(items, pref) {
   for (var i = 0; i < items.length; i++) {
     var s = items[i];
     if (s.stored) continue;
-    if (s.addon === pref.addon && String((s.name || '') + ' ' + (s.title || '')).slice(0, 400) === pref.text)
-      continue;
+    /* the player knows this text after the server took its line breaks out */
+    var text = String((s.name || '') + ' ' + (s.title || ''))
+      .replace(/[\r\n\0]/g, ' ')
+      .slice(0, 400);
+    if (s.addon === pref.addon && text === pref.text) continue;
     return s;
   }
   return null;
@@ -5523,7 +5526,9 @@ var streamsUI = {
       '/speed',
       function (answer) {
         if (!self.open || self.requestSeq !== request) return;
-        var best = bestSource(self.all().slice().sort(sourceOrder), (answer && answer.mbps) || 0);
+        /* in the order of the list on screen, which follows the preferred language and quality */
+        self.flush();
+        var best = bestSource(self.items, (answer && answer.mbps) || 0);
         if (!best) return;
         toast(tx('playingBest', best.quality || best.addon || ''));
         playUrl(
@@ -5837,6 +5842,7 @@ var streamsUI = {
       return true;
     }
     if (k === 40) {
+      if (!this.els.length) return true;
       this.idx = Math.min(this.els.length - 1, this.idx + 1);
       this.moved = true;
       this.paint();

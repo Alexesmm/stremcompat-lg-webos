@@ -144,6 +144,12 @@ function showSourceFailed() {
   document.getElementById('failH').textContent = P.failHint;
   document.getElementById('fail').className = 'show';
 }
+/* the source answered after all, so the film is what stays on screen */
+function hideSourceFailed() {
+  if (!failShown) return;
+  failShown = false;
+  document.getElementById('fail').className = '';
+}
 function tryAnotherSource() {
   try {
     localStorage.setItem(

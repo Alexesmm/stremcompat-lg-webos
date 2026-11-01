@@ -85,8 +85,11 @@ function nextSourceAfterFailure(items, pref) {
   for (var i = 0; i < items.length; i++) {
     var s = items[i];
     if (s.stored) continue;
-    if (s.addon === pref.addon && String((s.name || '') + ' ' + (s.title || '')).slice(0, 400) === pref.text)
-      continue;
+    /* the player knows this text after the server took its line breaks out */
+    var text = String((s.name || '') + ' ' + (s.title || ''))
+      .replace(/[\r\n\0]/g, ' ')
+      .slice(0, 400);
+    if (s.addon === pref.addon && text === pref.text) continue;
     return s;
   }
   return null;
