@@ -57,8 +57,9 @@ var mediaUsable = false,
   startupRetry = 0,
   startupResetting = false,
   startupWatch = null;
+var IS_TORRENT = /:11470\/[0-9a-f]{40}\//i.test(URL);
 /* a torrent can take over a minute to find its peers, and starting over would not help it */
-var STARTUP_LIMIT_MS = /:11470\/[0-9a-f]{40}\//i.test(URL) ? 45000 : 18000;
+var STARTUP_LIMIT_MS = IS_TORRENT ? 45000 : 18000;
 function armStartupWatch() {
   if (startupWatch) clearTimeout(startupWatch);
   startupWatch = setTimeout(function () {

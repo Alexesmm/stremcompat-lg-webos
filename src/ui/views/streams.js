@@ -26,7 +26,6 @@ var streamsUI = {
   flushT: null,
   show: function (type, id, vid, title, playBest) {
     var request = ++this.requestSeq;
-    this.playBest = !!playBest;
     this.open = true;
     this.failed = [];
     this.title = title || '';
@@ -98,22 +97,13 @@ var streamsUI = {
           return;
         }
         self.flush();
-        if (self.playBest) {
-          self.playBest = false;
-          return self.startBest();
-        }
+        if (playBest) return self.startBest();
         if (self.retryPref) {
           var retry = nextSourceAfterFailure(self.items, self.retryPref);
           self.retryPref = null;
           if (retry) {
             toast(tx('tryingNextSource'));
-            playUrl(
-              retry,
-              self.type,
-              self.id,
-              self.vid,
-              'beta#detail/' + self.type + '/' + self.id + (self.vid !== self.id ? '/' + self.vid : '')
-            );
+            playUrl(retry, self.type, self.id, self.vid, self.backHash());
           } else toast(tx('noOtherSource'));
           return;
         }
@@ -126,6 +116,9 @@ var streamsUI = {
       }
     );
   },
+  backHash: function () {
+    return 'beta#detail/' + this.type + '/' + this.id + (this.vid !== this.id ? '/' + this.vid : '');
+  },
   /* the source list stays open underneath when nothing can be picked */
   startBest: function () {
     var self = this,
@@ -135,17 +128,10 @@ var streamsUI = {
       function (answer) {
         if (!self.open || self.requestSeq !== request) return;
         /* in the order of the list on screen, which follows the preferred language and quality */
-        self.flush();
         var best = bestSource(self.items, (answer && answer.mbps) || 0);
         if (!best) return;
         toast(tx('playingBest', best.quality || best.addon || ''));
-        playUrl(
-          best,
-          self.type,
-          self.id,
-          self.vid,
-          'beta#detail/' + self.type + '/' + self.id + (self.vid !== self.id ? '/' + self.vid : '')
-        );
+        playUrl(best, self.type, self.id, self.vid, self.backHash());
       },
       5000
     );
@@ -262,6 +248,9 @@ var streamsUI = {
     var n = this.langs.length;
     if (!n) return;
     this.langFilter = this.langs[(this.langs.indexOf(this.langFilter) + (step || 1) + n) % n];
+    this.refilter();
+  },
+  refilter: function () {
     this.idx = 0;
     this.moved = false;
     this.rebuild();
@@ -293,7 +282,7 @@ var streamsUI = {
     else if (left - pad < host.scrollLeft) host.scrollLeft = Math.max(0, left - pad);
   },
   rebuild: function () {
-    var sel = this.items[this.idx] || null,
+    var sel = this.moved ? this.items[this.idx] : null,
       flat = this.all(),
       self = this,
       pref = lsRaw('preferredSourceQuality', 'Auto'),
@@ -329,7 +318,7 @@ var streamsUI = {
     for (var r = 0; r < flat.length; r++) {
       if (flat[r].stored) continue;
       choices++;
-      if (rec < 0 && !(flat[r].compatRank > 0) && !(flat[r].compatLabels || []).length) rec = r;
+      if (rec < 0 && hasNoWarning(flat[r])) rec = r;
     }
     /* every source has a note: the list order still names the safest one */
     for (var rr = 0; rec < 0 && rr < flat.length; rr++)
@@ -384,11 +373,8 @@ var streamsUI = {
     }
     /* addons answer at different times: the focus stays on top until the viewer moves it, and
        only then follows the source it is on, so OK never starts another one */
-    if (!this.moved) this.idx = 0;
-    else if (sel) {
-      var at = this.items.indexOf(sel);
-      this.idx = at >= 0 ? at : Math.min(this.idx, Math.max(0, this.items.length - 1));
-    } else this.idx = Math.min(this.idx, Math.max(0, this.items.length - 1));
+    var at = sel ? this.items.indexOf(sel) : -1;
+    this.idx = at >= 0 ? at : Math.min(this.idx, Math.max(0, this.items.length - 1));
     this.paint();
   },
   paint: function () {
@@ -413,9 +399,8 @@ var streamsUI = {
       if (this.failed.length) this.show(this.type, this.id, this.vid, this.title);
       return true;
     }
-    var backHash = 'beta#detail/' + this.type + '/' + this.id + (this.vid !== this.id ? '/' + this.vid : '');
-    if (s.stored) playStored(s.stored, backHash);
-    else playUrl(s, this.type, this.id, this.vid, backHash);
+    if (s.stored) playStored(s.stored, this.backHash());
+    else playUrl(s, this.type, this.id, this.vid, this.backHash());
     return true;
   },
   key: function (k) {
@@ -444,9 +429,7 @@ var streamsUI = {
         return true;
       } else return true;
       this.filter = this.chips[this.chipIdx];
-      this.idx = 0;
-      this.moved = false;
-      this.rebuild();
+      this.refilter();
       return true;
     }
     if (k === 40) {

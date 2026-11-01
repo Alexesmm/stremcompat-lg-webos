@@ -1561,8 +1561,9 @@ var mediaUsable = false,
   startupRetry = 0,
   startupResetting = false,
   startupWatch = null;
+var IS_TORRENT = /:11470\/[0-9a-f]{40}\//i.test(URL);
 /* a torrent can take over a minute to find its peers, and starting over would not help it */
-var STARTUP_LIMIT_MS = /:11470\/[0-9a-f]{40}\//i.test(URL) ? 45000 : 18000;
+var STARTUP_LIMIT_MS = IS_TORRENT ? 45000 : 18000;
 function armStartupWatch() {
   if (startupWatch) clearTimeout(startupWatch);
   startupWatch = setTimeout(function () {
@@ -1949,10 +1950,10 @@ var PREVIEW_ON = HAS_MEDIA_TOOLS && lsGet('scrubPreview', 'false') === 'true';
 var rawSub = lsGet('subsLang', null);
 if (rawSub == null) rawSub = lsGet('subtitles', null);
 var WANTSUB = (rawSub == null ? defaultMediaLanguage() : rawSub).toLowerCase();
-var WANTSUB2 = (lsGet('subsLang2', '') || '').toLowerCase();
+var WANTSUB2 = lsGet('subsLang2', '');
 var AUDIO_AUTO = lsGet('enableDefaultAudioTrack', 'false') === 'true';
 var WANTAUD = AUDIO_AUTO ? (lsGet('defaultAudioTrack', defaultMediaLanguage()) || '').toLowerCase() : '';
-var WANTAUD2 = AUDIO_AUTO ? (lsGet('defaultAudioTrack2', '') || '').toLowerCase() : '';
+var WANTAUD2 = AUDIO_AUTO ? lsGet('defaultAudioTrack2', '') : '';
 /* TVs and addons name a language in two or three letters, sometimes with a region */
 var LANG_CODES = {
   pt: 'por',
@@ -1978,11 +1979,13 @@ var LANG_CODES = {
   zh: 'chi',
   zho: 'chi'
 };
+function languageCode(lang) {
+  var base = (lang || '').toLowerCase().split(/[-_]/)[0];
+  return LANG_CODES[base] || base;
+}
 function sameLanguage(a, b) {
-  a = (a || '').toLowerCase().split(/[-_]/)[0];
-  b = (b || '').toLowerCase().split(/[-_]/)[0];
-  a = LANG_CODES[a] || a;
-  return !!a && a === (LANG_CODES[b] || b);
+  a = languageCode(a);
+  return !!a && a === languageCode(b);
 }
 /* Choices remembered per title (the series, not the episode): the audio language, the
    subtitle language or Off, whether it was inside the file, and the subtitle delay. They
@@ -2000,9 +2003,14 @@ function titlePref() {
   }
 }
 function saveTitlePref(field, value) {
+  var fields = {};
+  fields[field] = value;
+  saveTitlePrefs(fields);
+}
+function saveTitlePrefs(fields) {
   if (!ID || NO_HISTORY) return;
   var p = titlePref();
-  p[field] = value;
+  for (var field in fields) p[field] = fields[field];
   try {
     localStorage.setItem(TITLE_PREF_KEY, JSON.stringify(p));
   } catch (e) {}
@@ -2041,7 +2049,7 @@ function chosenSub() {
 }
 function autoSub() {
   if (autoSubDone || curSub !== 'off' || !WANTSUB || WANT_EMB) return;
-  var found = chosenSub() || subOfLanguage(WANTSUB) || (WANTSUB2 && subOfLanguage(WANTSUB2));
+  var found = chosenSub() || subOfLanguage(WANTSUB) || subOfLanguage(WANTSUB2);
   if (!found) return;
   autoSubDone = true;
   setExtSub(found.u);
@@ -2105,7 +2113,7 @@ if (TYPE && VID) loadExtSubs();
 // honour the Settings default audio language: enable the matching embedded audio track
 var autoAudDone = false;
 function audioOfLanguage(ts, lang) {
-  for (var i = 0; lang && i < ts.length; i++) if (sameLanguage(ts[i].language, lang)) return i;
+  for (var i = 0; i < ts.length; i++) if (sameLanguage(ts[i].language, lang)) return i;
   return -1;
 }
 function autoAudio() {
@@ -2204,11 +2212,11 @@ function pollEmbCues() {
       }
       if (j.err && !cues.length) {
         embFailed = true;
-        /* said once: nothing more will come */
-        embN = -1;
         showToast(P.subtitleFailed);
         releaseSubHold();
       }
+      /* nothing more will come */
+      if (j.final) embN = -1;
     }
   );
 }
@@ -2263,7 +2271,7 @@ function setEmbSub(n, ti) {
       subEl._t = null;
       embFirst = true;
       /* a track kept on storage is complete: nothing is being read, so there is nothing to poll */
-      if (j.cached) embN = -1;
+      if (j.final) embN = -1;
       showToast(j.cached ? P.loaded : P.ready);
       releaseSubHold();
     } else if (j.started) {
@@ -2602,7 +2610,7 @@ function tryAnotherSource() {
    one, so the film opens again where it was instead of offering another source. */
 var reopenedAt = 0;
 function reopenTorrent() {
-  if (!mediaUsable || !/:11470\/[0-9a-f]{40}\//i.test(URL) || Date.now() - reopenedAt < 60000) return false;
+  if (!mediaUsable || !IS_TORRENT || Date.now() - reopenedAt < 60000) return false;
   reopenedAt = Date.now();
   var at = v.currentTime;
   diag('media_reopen', { at: Math.round(at) });
@@ -2988,6 +2996,9 @@ function onPop() {
 }
 window.addEventListener('popstate', onPop);
 // ---- menus (subtitles = Off + external English-first + embedded; audio = embedded) ----
+function choiceRow(label, on, tail) {
+  return '<div class="mi' + (on ? ' on' : '') + '">' + eh(selectedLabel(label, on)) + (tail || '') + '</div>';
+}
 function openMenu(view) {
   subView = view;
   menuItems = [];
@@ -3005,29 +3016,26 @@ function openMenu(view) {
       for (var a = 0; a < v.audioTracks.length; a++) {
         var at = v.audioTracks[a],
           al = at.label || at.language || P.audio + ' ' + (a + 1);
-        html +=
-          '<div class="mi' + (at.enabled ? ' on' : '') + '">' + eh(selectedLabel(al, at.enabled)) + '</div>';
-        menuItems.push({ k: 'aud', idx: a });
+        html += choiceRow(al, at.enabled);
+        menuItems.push({ k: 'aud', idx: a, on: at.enabled });
       }
     } catch (e) {}
     if (!menuItems.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
   } else if (view === 'subsroot') {
     html += '<div class=mh>' + P.subtitles + ': ' + eh(subtitleName()) + '</div>';
     var f0 = curSub === 'off';
-    html += '<div class="mi' + (f0 ? ' on' : '') + '">' + eh(selectedLabel(P.off, f0)) + '</div>';
-    menuItems.push({ k: 'off' });
+    html += choiceRow(P.off, f0);
+    menuItems.push({ k: 'off', on: f0 });
     /* the row that leads to the current subtitle says so, before opening it */
     var inEmb = curSub.indexOf('emb:') === 0,
       inExt = curSub.indexOf('ext:') === 0;
-    html +=
-      '<div class="mi' + (inEmb ? ' on' : '') + '">' + eh(selectedLabel(P.embedded, inEmb)) + ' \u203a</div>';
-    menuItems.push({ k: 'go', to: 'embedded' });
-    html +=
-      '<div class="mi' + (inExt ? ' on' : '') + '">' + eh(selectedLabel(P.external, inExt)) + ' \u203a</div>';
-    menuItems.push({ k: 'go', to: 'external' });
+    html += choiceRow(P.embedded, inEmb, ' \u203a');
+    menuItems.push({ k: 'go', to: 'embedded', on: inEmb });
+    html += choiceRow(P.external, inExt, ' \u203a');
+    menuItems.push({ k: 'go', to: 'external', on: inExt });
     html += '<div class=mi>' + P.style + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'style' });
-    if (curSub.indexOf('ext:') === 0) {
+    if (inExt) {
       html += '<div class=mi>' + P.delay + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'delay' });
     }
@@ -3058,8 +3066,8 @@ function openMenu(view) {
       for (var j = 0; j < embTracks.length; j++) {
         var et = embTracks[j];
         var fb = curSub === 'emb:' + et.n;
-        html += '<div class="mi' + (fb ? ' on' : '') + '">' + eh(selectedLabel(et.name, fb)) + '</div>';
-        menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang });
+        html += choiceRow(et.name, fb);
+        menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang, on: fb });
       }
     }
   } else if (view === 'external') {
@@ -3072,13 +3080,8 @@ function openMenu(view) {
       var L = extSubs[i].lang;
       if (!seen[L]) {
         seen[L] = 1;
-        html +=
-          '<div class="mi' +
-          (L === curLang ? ' on' : '') +
-          '">' +
-          eh(selectedLabel(extSubs[i].name, L === curLang)) +
-          ' \u203a</div>';
-        menuItems.push({ k: 'lang', lang: L });
+        html += choiceRow(extSubs[i].name, L === curLang, ' \u203a');
+        menuItems.push({ k: 'lang', lang: L, on: L === curLang });
       }
     }
   } else if (view === 'extlang') {
@@ -3096,13 +3099,8 @@ function openMenu(view) {
         c++;
         var fe = curSub === 'ext:' + extSubs[i].u;
         var srcName = extSubs[i].src ? '  ·  ' + extSubs[i].src : '';
-        html +=
-          '<div class="mi' +
-          (fe ? ' on' : '') +
-          '">' +
-          eh(selectedLabel(nm + ' ' + c + srcName, fe)) +
-          '</div>';
-        menuItems.push({ k: 'ext', u: extSubs[i].u });
+        html += choiceRow(nm + ' ' + c + srcName, fe);
+        menuItems.push({ k: 'ext', u: extSubs[i].u, lang: extSubs[i].lang, src: extSubs[i].src, on: fe });
       }
     }
   } else if (view === 'style') {
@@ -3134,13 +3132,7 @@ function openMenu(view) {
   mode = 'menu';
   /* the list opens on what is in use, not on its first row */
   mIdx = 0;
-  var rows = menu.querySelectorAll('.mi');
-  for (var r = 0; r < rows.length && r < menuItems.length; r++) {
-    if (/\bon\b/.test(rows[r].className)) {
-      mIdx = r;
-      break;
-    }
-  }
+  for (var r = menuItems.length - 1; r >= 0; r--) if (menuItems[r].on) mIdx = r;
   paintMenu();
 }
 function paintMenu() {
@@ -3232,24 +3224,13 @@ function chooseMenu() {
   }
   if (it.k === 'off') {
     subsOff();
-    saveTitlePref('sub', 'off');
-    saveTitlePref('embLang', '');
+    saveTitlePrefs({ sub: 'off', subUrl: '', subSrc: '', embLang: '' });
   } else if (it.k === 'ext') {
     setExtSub(it.u);
-    for (var x = 0; x < extSubs.length; x++) {
-      if (extSubs[x].u === it.u) {
-        saveTitlePref('sub', extSubs[x].lang);
-        saveTitlePref('subUrl', it.u);
-        saveTitlePref('subSrc', extSubs[x].src || '');
-      }
-    }
-    saveTitlePref('embLang', '');
+    saveTitlePrefs({ sub: it.lang, subUrl: it.u, subSrc: it.src || '', embLang: '' });
   } else if (it.k === 'emb') {
     setEmbSub(it.idx, it.ti);
-    if (it.lang) {
-      saveTitlePref('sub', it.lang);
-      saveTitlePref('embLang', it.lang);
-    }
+    if (it.lang) saveTitlePrefs({ sub: it.lang, subUrl: '', subSrc: '', embLang: it.lang });
   } else if (it.k === 'aud') {
     try {
       for (var j = 0; j < v.audioTracks.length; j++) v.audioTracks[j].enabled = j === it.idx;

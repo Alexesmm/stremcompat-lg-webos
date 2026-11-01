@@ -163,7 +163,7 @@ function tryAnotherSource() {
    one, so the film opens again where it was instead of offering another source. */
 var reopenedAt = 0;
 function reopenTorrent() {
-  if (!mediaUsable || !/:11470\/[0-9a-f]{40}\//i.test(URL) || Date.now() - reopenedAt < 60000) return false;
+  if (!mediaUsable || !IS_TORRENT || Date.now() - reopenedAt < 60000) return false;
   reopenedAt = Date.now();
   var at = v.currentTime;
   diag('media_reopen', { at: Math.round(at) });

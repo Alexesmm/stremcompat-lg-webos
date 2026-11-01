@@ -73,9 +73,7 @@ function pointerUI(target, activate) {
       streamsUI.paint();
       if (activate) {
         streamsUI.filter = streamsUI.chips[i];
-        streamsUI.idx = 0;
-        streamsUI.moved = false;
-        streamsUI.rebuild();
+        streamsUI.refilter();
       }
       return true;
     }

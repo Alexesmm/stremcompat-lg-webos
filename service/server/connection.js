@@ -13,6 +13,10 @@ var UPDATE_LIFETIME_MS = 6 * 60 * 60 * 1000;
 
 var measured = null;
 
+function toMbps(bytes, seconds) {
+  return Math.round((bytes * 8) / seconds / 100000) / 10;
+}
+
 /* a known image of about 650 KB, timed from its first byte to its last */
 function connectionSpeed(req, res) {
   if (measured && Date.now() - measured.at < SPEED_LIFETIME_MS) return sendJson(res, { mbps: measured.mbps });
@@ -32,16 +36,15 @@ function connectionSpeed(req, res) {
     });
     response.on('end', function () {
       var seconds = (Date.now() - firstByte) / 1000;
-      answer(bytes > 100000 && seconds > 0 ? Math.round((bytes * 8) / seconds / 100000) / 10 : 0);
+      answer(bytes > 100000 && seconds > 0 ? toMbps(bytes, seconds) : 0);
     });
   });
   request.on('error', function () {
     answer(0);
   });
   setTimeout(function () {
-    if (answered) return;
     /* slower than this is still a measure: what arrived in the time allowed */
-    answer(Math.round((bytes * 8) / (SPEED_LIMIT_MS / 1000) / 100000) / 10);
+    answer(toMbps(bytes, SPEED_LIMIT_MS / 1000));
     request.abort();
   }, SPEED_LIMIT_MS);
 }

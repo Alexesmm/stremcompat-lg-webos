@@ -192,11 +192,13 @@ function follow(transfer, address, custom, hops) {
   request.on('error', function () {
     refuse(transfer.res, 502);
   });
-  /* a paused player stops reading, so the connection goes quiet without the source being stuck */
-  request.setTimeout(IDLE_LIMIT_MS, function () {
-    if (transfer.upstream && transfer.upstream.isPaused()) return;
-    request.abort();
-  });
+  /* a paused player stops reading, so the connection goes quiet without the source being stuck;
+     this fires once, so it is armed again for when the player comes back */
+  function onIdle() {
+    if (transfer.upstream && transfer.upstream.isPaused()) request.setTimeout(IDLE_LIMIT_MS, onIdle);
+    else request.abort();
+  }
+  request.setTimeout(IDLE_LIMIT_MS, onIdle);
   /* FFmpeg drops the connection on every seek */
   transfer.res.on('close', function () {
     request.abort();

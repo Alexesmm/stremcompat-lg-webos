@@ -9,6 +9,9 @@ function onPop() {
 }
 window.addEventListener('popstate', onPop);
 // ---- menus (subtitles = Off + external English-first + embedded; audio = embedded) ----
+function choiceRow(label, on, tail) {
+  return '<div class="mi' + (on ? ' on' : '') + '">' + eh(selectedLabel(label, on)) + (tail || '') + '</div>';
+}
 function openMenu(view) {
   subView = view;
   menuItems = [];
@@ -26,29 +29,26 @@ function openMenu(view) {
       for (var a = 0; a < v.audioTracks.length; a++) {
         var at = v.audioTracks[a],
           al = at.label || at.language || P.audio + ' ' + (a + 1);
-        html +=
-          '<div class="mi' + (at.enabled ? ' on' : '') + '">' + eh(selectedLabel(al, at.enabled)) + '</div>';
-        menuItems.push({ k: 'aud', idx: a });
+        html += choiceRow(al, at.enabled);
+        menuItems.push({ k: 'aud', idx: a, on: at.enabled });
       }
     } catch (e) {}
     if (!menuItems.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
   } else if (view === 'subsroot') {
     html += '<div class=mh>' + P.subtitles + ': ' + eh(subtitleName()) + '</div>';
     var f0 = curSub === 'off';
-    html += '<div class="mi' + (f0 ? ' on' : '') + '">' + eh(selectedLabel(P.off, f0)) + '</div>';
-    menuItems.push({ k: 'off' });
+    html += choiceRow(P.off, f0);
+    menuItems.push({ k: 'off', on: f0 });
     /* the row that leads to the current subtitle says so, before opening it */
     var inEmb = curSub.indexOf('emb:') === 0,
       inExt = curSub.indexOf('ext:') === 0;
-    html +=
-      '<div class="mi' + (inEmb ? ' on' : '') + '">' + eh(selectedLabel(P.embedded, inEmb)) + ' \u203a</div>';
-    menuItems.push({ k: 'go', to: 'embedded' });
-    html +=
-      '<div class="mi' + (inExt ? ' on' : '') + '">' + eh(selectedLabel(P.external, inExt)) + ' \u203a</div>';
-    menuItems.push({ k: 'go', to: 'external' });
+    html += choiceRow(P.embedded, inEmb, ' \u203a');
+    menuItems.push({ k: 'go', to: 'embedded', on: inEmb });
+    html += choiceRow(P.external, inExt, ' \u203a');
+    menuItems.push({ k: 'go', to: 'external', on: inExt });
     html += '<div class=mi>' + P.style + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'style' });
-    if (curSub.indexOf('ext:') === 0) {
+    if (inExt) {
       html += '<div class=mi>' + P.delay + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'delay' });
     }
@@ -79,8 +79,8 @@ function openMenu(view) {
       for (var j = 0; j < embTracks.length; j++) {
         var et = embTracks[j];
         var fb = curSub === 'emb:' + et.n;
-        html += '<div class="mi' + (fb ? ' on' : '') + '">' + eh(selectedLabel(et.name, fb)) + '</div>';
-        menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang });
+        html += choiceRow(et.name, fb);
+        menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang, on: fb });
       }
     }
   } else if (view === 'external') {
@@ -93,13 +93,8 @@ function openMenu(view) {
       var L = extSubs[i].lang;
       if (!seen[L]) {
         seen[L] = 1;
-        html +=
-          '<div class="mi' +
-          (L === curLang ? ' on' : '') +
-          '">' +
-          eh(selectedLabel(extSubs[i].name, L === curLang)) +
-          ' \u203a</div>';
-        menuItems.push({ k: 'lang', lang: L });
+        html += choiceRow(extSubs[i].name, L === curLang, ' \u203a');
+        menuItems.push({ k: 'lang', lang: L, on: L === curLang });
       }
     }
   } else if (view === 'extlang') {
@@ -117,13 +112,8 @@ function openMenu(view) {
         c++;
         var fe = curSub === 'ext:' + extSubs[i].u;
         var srcName = extSubs[i].src ? '  ·  ' + extSubs[i].src : '';
-        html +=
-          '<div class="mi' +
-          (fe ? ' on' : '') +
-          '">' +
-          eh(selectedLabel(nm + ' ' + c + srcName, fe)) +
-          '</div>';
-        menuItems.push({ k: 'ext', u: extSubs[i].u });
+        html += choiceRow(nm + ' ' + c + srcName, fe);
+        menuItems.push({ k: 'ext', u: extSubs[i].u, lang: extSubs[i].lang, src: extSubs[i].src, on: fe });
       }
     }
   } else if (view === 'style') {
@@ -155,13 +145,7 @@ function openMenu(view) {
   mode = 'menu';
   /* the list opens on what is in use, not on its first row */
   mIdx = 0;
-  var rows = menu.querySelectorAll('.mi');
-  for (var r = 0; r < rows.length && r < menuItems.length; r++) {
-    if (/\bon\b/.test(rows[r].className)) {
-      mIdx = r;
-      break;
-    }
-  }
+  for (var r = menuItems.length - 1; r >= 0; r--) if (menuItems[r].on) mIdx = r;
   paintMenu();
 }
 function paintMenu() {
@@ -253,24 +237,13 @@ function chooseMenu() {
   }
   if (it.k === 'off') {
     subsOff();
-    saveTitlePref('sub', 'off');
-    saveTitlePref('embLang', '');
+    saveTitlePrefs({ sub: 'off', subUrl: '', subSrc: '', embLang: '' });
   } else if (it.k === 'ext') {
     setExtSub(it.u);
-    for (var x = 0; x < extSubs.length; x++) {
-      if (extSubs[x].u === it.u) {
-        saveTitlePref('sub', extSubs[x].lang);
-        saveTitlePref('subUrl', it.u);
-        saveTitlePref('subSrc', extSubs[x].src || '');
-      }
-    }
-    saveTitlePref('embLang', '');
+    saveTitlePrefs({ sub: it.lang, subUrl: it.u, subSrc: it.src || '', embLang: '' });
   } else if (it.k === 'emb') {
     setEmbSub(it.idx, it.ti);
-    if (it.lang) {
-      saveTitlePref('sub', it.lang);
-      saveTitlePref('embLang', it.lang);
-    }
+    if (it.lang) saveTitlePrefs({ sub: it.lang, subUrl: '', subSrc: '', embLang: it.lang });
   } else if (it.k === 'aud') {
     try {
       for (var j = 0; j < v.audioTracks.length; j++) v.audioTracks[j].enabled = j === it.idx;

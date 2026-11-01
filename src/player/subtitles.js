@@ -32,10 +32,10 @@ var PREVIEW_ON = HAS_MEDIA_TOOLS && lsGet('scrubPreview', 'false') === 'true';
 var rawSub = lsGet('subsLang', null);
 if (rawSub == null) rawSub = lsGet('subtitles', null);
 var WANTSUB = (rawSub == null ? defaultMediaLanguage() : rawSub).toLowerCase();
-var WANTSUB2 = (lsGet('subsLang2', '') || '').toLowerCase();
+var WANTSUB2 = lsGet('subsLang2', '');
 var AUDIO_AUTO = lsGet('enableDefaultAudioTrack', 'false') === 'true';
 var WANTAUD = AUDIO_AUTO ? (lsGet('defaultAudioTrack', defaultMediaLanguage()) || '').toLowerCase() : '';
-var WANTAUD2 = AUDIO_AUTO ? (lsGet('defaultAudioTrack2', '') || '').toLowerCase() : '';
+var WANTAUD2 = AUDIO_AUTO ? lsGet('defaultAudioTrack2', '') : '';
 /* TVs and addons name a language in two or three letters, sometimes with a region */
 var LANG_CODES = {
   pt: 'por',
@@ -61,11 +61,13 @@ var LANG_CODES = {
   zh: 'chi',
   zho: 'chi'
 };
+function languageCode(lang) {
+  var base = (lang || '').toLowerCase().split(/[-_]/)[0];
+  return LANG_CODES[base] || base;
+}
 function sameLanguage(a, b) {
-  a = (a || '').toLowerCase().split(/[-_]/)[0];
-  b = (b || '').toLowerCase().split(/[-_]/)[0];
-  a = LANG_CODES[a] || a;
-  return !!a && a === (LANG_CODES[b] || b);
+  a = languageCode(a);
+  return !!a && a === languageCode(b);
 }
 /* Choices remembered per title (the series, not the episode): the audio language, the
    subtitle language or Off, whether it was inside the file, and the subtitle delay. They
@@ -83,9 +85,14 @@ function titlePref() {
   }
 }
 function saveTitlePref(field, value) {
+  var fields = {};
+  fields[field] = value;
+  saveTitlePrefs(fields);
+}
+function saveTitlePrefs(fields) {
   if (!ID || NO_HISTORY) return;
   var p = titlePref();
-  p[field] = value;
+  for (var field in fields) p[field] = fields[field];
   try {
     localStorage.setItem(TITLE_PREF_KEY, JSON.stringify(p));
   } catch (e) {}
@@ -124,7 +131,7 @@ function chosenSub() {
 }
 function autoSub() {
   if (autoSubDone || curSub !== 'off' || !WANTSUB || WANT_EMB) return;
-  var found = chosenSub() || subOfLanguage(WANTSUB) || (WANTSUB2 && subOfLanguage(WANTSUB2));
+  var found = chosenSub() || subOfLanguage(WANTSUB) || subOfLanguage(WANTSUB2);
   if (!found) return;
   autoSubDone = true;
   setExtSub(found.u);
@@ -188,7 +195,7 @@ if (TYPE && VID) loadExtSubs();
 // honour the Settings default audio language: enable the matching embedded audio track
 var autoAudDone = false;
 function audioOfLanguage(ts, lang) {
-  for (var i = 0; lang && i < ts.length; i++) if (sameLanguage(ts[i].language, lang)) return i;
+  for (var i = 0; i < ts.length; i++) if (sameLanguage(ts[i].language, lang)) return i;
   return -1;
 }
 function autoAudio() {
@@ -287,11 +294,11 @@ function pollEmbCues() {
       }
       if (j.err && !cues.length) {
         embFailed = true;
-        /* said once: nothing more will come */
-        embN = -1;
         showToast(P.subtitleFailed);
         releaseSubHold();
       }
+      /* nothing more will come */
+      if (j.final) embN = -1;
     }
   );
 }
@@ -346,7 +353,7 @@ function setEmbSub(n, ti) {
       subEl._t = null;
       embFirst = true;
       /* a track kept on storage is complete: nothing is being read, so there is nothing to poll */
-      if (j.cached) embN = -1;
+      if (j.final) embN = -1;
       showToast(j.cached ? P.loaded : P.ready);
       releaseSubHold();
     } else if (j.started) {

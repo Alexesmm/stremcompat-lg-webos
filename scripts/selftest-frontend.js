@@ -303,7 +303,7 @@ assert.strictEqual(matchNext([strongEn],{addon:'Torrentio',quality:'1080p'}).tit
 assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',compatRank:4,langs:[] }],{addon:'Torrentio',quality:'1080p',langs:[]}),null,'an archive was chosen for the next episode');
 (function bestSourceRules() {
   var best = firstRun.context.__SC_BEST_SOURCE__;
-  var fourK = { addon: 'a', quality: '2160p', compatRank: 0 };
+  var fourK = { addon: 'a', quality: '4K', compatRank: 0 };
   var fullHd = { addon: 'a', quality: '1080p', compatRank: 0 };
   var hevc = { addon: 'a', quality: '1080p', compatRank: 2, compatLabels: ['HEVC 10-bit'] };
   var archive = { addon: 'a', quality: '1080p', compatRank: 4 };

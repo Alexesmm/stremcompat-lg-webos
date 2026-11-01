@@ -257,6 +257,10 @@ function isCurrent(job, worker) {
 
 function addCues(job, text) {
   parseSrt(text).forEach(function (cue) {
+    /* reading again after a rewind passes over lines it already has */
+    var seenKey = cue.s + '|' + cue.t;
+    if (job.seen[seenKey]) return;
+    job.seen[seenKey] = true;
     job.cues.push(cue);
     job.frontier = Math.max(job.frontier, cue.e);
   });
@@ -330,7 +334,7 @@ function embStart(q, res) {
   if (!q.u) return sendJson(res, { err: 'no url' });
   var key = trackKey(q);
   var stored = readStored(key);
-  if (stored) return sendJson(res, { cached: true, done: true, cues: stored });
+  if (stored) return sendJson(res, { cached: true, done: true, final: true, cues: stored });
   if (reading && reading.key === key && !reading.err)
     return sendJson(res, { started: true, cues: reading.cues, done: reading.done });
   if (reading) stopWorker(reading);
@@ -341,6 +345,7 @@ function embStart(q, res) {
     u: q.u,
     n: parseInt(q.n || '0', 10) || 0,
     cues: [],
+    seen: {},
     frontier: from,
     startedAt: from,
     done: false,
@@ -372,7 +377,13 @@ function embCues(q, res) {
     stopWorker(job);
     readFrom(job, Math.max(0, Math.floor(playhead - LEAD_IN_SECONDS)));
   }
-  sendJson(res, { cues: job.cues.slice(parseInt(q.since || '0', 10) || 0), done: job.done, err: job.err });
+  sendJson(res, {
+    cues: job.cues.slice(parseInt(q.since || '0', 10) || 0),
+    done: job.done,
+    /* a read that began later still has to watch for the viewer going back */
+    final: job.done && (!!job.err || job.startedAt <= 5),
+    err: job.err
+  });
 }
 
 /* the player left without saying so */

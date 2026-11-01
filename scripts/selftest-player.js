@@ -155,7 +155,7 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   var ctx = {
     document: { createElement: node }, $: node, tx: function () { return ''; }, lsRaw: function (k, d) { return d; },
     langRank: function () { return 0; }, langGroups: function () { return []; }, sourceTags: function () { return []; },
-    setF: function () {}, sourceOrder: function (a, b) { return b.seeds - a.seeds; }, window: {}
+    setF: function () {}, hasNoWarning: function () { return true; }, sourceOrder: function (a, b) { return b.seeds - a.seeds; }, window: {}
   };
   vm.runInNewContext(src('ui/views/streams.js') + ';this.list=streamsUI;', ctx);
   var list = ctx.list, slow = { seeds: 1 }, fast = { seeds: 5 }, faster = { seeds: 9 };
@@ -212,7 +212,7 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
     ID: 'tt9', TYPE: '', VID: '', URL: 'http://x/f.mkv', localStorage: memoryStorage({}), HAS_MEDIA_TOOLS: true,
     v: { addEventListener: function () {}, textTracks: [], currentTime: 0 },
     document: { getElementById: element, createElement: element },
-    xhr: function (url, cb) { requests.push(url); cb({ cached: true, done: true, cues: [{ s: 0, e: 1, t: 'x' }], gone: url.indexOf('/subtitle-cues') === 0 }); },
+    xhr: function (url, cb) { requests.push(url); cb({ cached: true, done: true, final: true, cues: [{ s: 0, e: 1, t: 'x' }], gone: url.indexOf('/subtitle-cues') === 0 }); },
     showToast: function () { toasts++; }, subEl: element('sub'), P: {},
     defaultMediaLanguage: function () { return 'por'; }
   };
@@ -582,7 +582,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
       play: function () { this.plays++; }
     };
     var context = {
-      URL: address, mediaUsable: usable, v: video, P: { retrying: '' }, Date: Date,
+      URL: address, IS_TORRENT: /:11470\//.test(address), mediaUsable: usable, v: video, P: { retrying: '' }, Date: Date,
       diag: function () {}, showToast: function () {}
     };
     vm.runInNewContext(body, context);
