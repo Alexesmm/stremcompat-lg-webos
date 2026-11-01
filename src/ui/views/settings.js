@@ -379,6 +379,7 @@ var settings = {
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
           j.disk ? tx('diagDisk', j.disk.freeMb, j.disk.totalMb) : '',
           tx('diagStreaming', diagStreamingState(j)),
+          j.nativeProbe ? 'Native code: ' + j.nativeProbe : '',
           tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
         ];

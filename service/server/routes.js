@@ -20,6 +20,7 @@ var { postStremioApi } = require('./stremio-api');
 var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
+var { checkUpdate, connectionSpeed } = require('./connection');
 var { diagnostics, netcheck, recordEvent } = require('./diag');
 var { cachedAddonJson } = require('./addon-cache');
 var { handleTakeover } = require('./takeover');
@@ -252,6 +253,8 @@ var ROUTES = {
   '/subs': subtitleList,
   '/watchedset': watchedSet,
   '/logo.png': logo,
+  '/speed': connectionSpeed,
+  '/update': checkUpdate,
   '/streamfile': function (req, res) {
     sendJson(res, engineStatus());
   },

@@ -114,6 +114,7 @@ write('index.html', inlineAssets(interfacePage()));
 write('player.html', inlineAssets(playerPage()));
 
 write('service/main.js', legacyNode.assertRunsOnOldNode(read(path.join(root, 'platforms', 'tizen', 'service', 'main.js')), 'main.js'));
+copy('platforms/tizen/service/native-probe.node', 'service/native-probe.node');
 write('service/compat.js', legacyNode.assertRunsOnOldNode(read(path.join(root, 'service', 'compat.js')), 'compat.js'));
 write('service/profile.js', legacyNode.assertRunsOnOldNode(read(path.join(root, 'service', 'profile.js')), 'profile.js'));
 write('service/profile.json', JSON.stringify(profile));

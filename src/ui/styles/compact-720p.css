@@ -26,6 +26,8 @@
   .titlelabel{padding:23px 10px 9px;font-size:17px}
   .card.f{box-shadow:0 0 0 2px #090b12,0 0 0 5px #fff !important;transform:translateY(-4px)}
   .card.wide{width:287px;height:161px}
+  #rows .card{width:155px;height:232px;margin-right:14px}
+  #rows .card.wide{width:267px;height:150px}
   .morelbl{margin-top:-13px;font-size:20px}
   .pbar{left:9px;right:9px;bottom:8px;height:4px;border-radius:2px}
   .cwlabel{bottom:0;padding:28px 10px 17px;font-size:17px}

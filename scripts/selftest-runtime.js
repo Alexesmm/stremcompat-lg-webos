@@ -324,6 +324,13 @@ async function main() {
     assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
     await engineRoutesTests();
     await proxyTests();
+    var noUpdate = await request({ hostname: '127.0.0.1', port: appPort, path: '/update' });
+    assert.strictEqual(noUpdate.status, 200, 'the update check did not answer');
+    var connection = require(path.join(root, 'service', 'server', 'connection.js'));
+    assert.strictEqual(connection.isNewer('3.1.0', '3.0.9'), true, 'a newer version was not noticed');
+    assert.strictEqual(connection.isNewer('3.0.10', '3.0.9'), true, 'versions were compared as text');
+    assert.strictEqual(connection.isNewer('3.0.0', '3.0.0'), false, 'the same version counted as new');
+    assert.strictEqual(connection.isNewer('2.9.9', '3.0.0'), false, 'an older version counted as new');
     var spanish = await request({ hostname: '127.0.0.1', port: appPort, path: '/lang/es.json' });
     assert.strictEqual(JSON.parse(spanish.text).navHome, 'Inicio', 'a language file was not served');
     assert.strictEqual((await request({ hostname: '127.0.0.1', port: appPort, path: '/lang/..%2fprofile.json' })).status, 404, 'a file outside the language folder was reachable');

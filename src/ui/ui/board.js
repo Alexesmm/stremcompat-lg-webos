@@ -15,6 +15,11 @@ function heroMetaHtml(m) {
   return html;
 }
 window.__SC_HERO_META__ = heroMetaHtml;
+/* a title in progress starts with where the viewer stopped */
+function heroMetaOf(it) {
+  var where = it.cw ? cwSubtitle(it) : '';
+  return (where ? '<span class="where">' + esc(where) + '</span>' : '') + (it.metaHtml || '');
+}
 /* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
 function makeBoard(loader) {
   return {
@@ -188,7 +193,7 @@ function makeBoard(loader) {
         tt.style.display = '';
         lg.style.display = 'none';
       }
-      $('heroMeta').innerHTML = it.metaHtml || '';
+      $('heroMeta').innerHTML = heroMetaOf(it);
       $('heroDesc').textContent = it.description || '';
       setBg(bgMid(it));
       if (!it.description && it.id) {
@@ -198,7 +203,7 @@ function makeBoard(loader) {
           it.metaHtml = heroMetaHtml(m);
           if (self.focusedItem() === it) {
             $('heroDesc').textContent = it.description;
-            $('heroMeta').innerHTML = it.metaHtml;
+            $('heroMeta').innerHTML = heroMetaOf(it);
           }
         });
       }

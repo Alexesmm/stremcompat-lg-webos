@@ -296,6 +296,21 @@ assert.strictEqual(matchNext([strongEn,multiAudio],{addon:'Torrentio',quality:'1
 assert.strictEqual(matchNext([strongEn,plain],{addon:'Torrentio',quality:'1080p',langs:[]}),plain,'a dub replaced a source that names no language');
 assert.strictEqual(matchNext([strongEn],{addon:'Torrentio',quality:'1080p'}).title,'English','an older saved preference was judged by language');
 assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',compatRank:4,langs:[] }],{addon:'Torrentio',quality:'1080p',langs:[]}),null,'an archive was chosen for the next episode');
+(function bestSourceRules() {
+  var best = firstRun.context.__SC_BEST_SOURCE__;
+  var fourK = { addon: 'a', quality: '2160p', compatRank: 0 };
+  var fullHd = { addon: 'a', quality: '1080p', compatRank: 0 };
+  var hevc = { addon: 'a', quality: '1080p', compatRank: 2, compatLabels: ['HEVC 10-bit'] };
+  var archive = { addon: 'a', quality: '1080p', compatRank: 4 };
+  var stored = { addon: 'a', stored: '?x', quality: 'Recent' };
+  assert.strictEqual(best([stored, fourK, fullHd], 100), fourK, 'a fast connection did not get the first source');
+  assert.strictEqual(best([fourK, fullHd], 10), fullHd, 'a source too heavy for the connection was chosen');
+  assert.strictEqual(best([fourK], 2), fourK, 'with nothing lighter, nothing was chosen');
+  assert.strictEqual(best([hevc, fullHd], 100), fullHd, 'a source with a warning won over one without');
+  assert.strictEqual(best([archive, hevc], 100), hevc, 'an archive was chosen over a source with a warning');
+  assert.strictEqual(best([archive, stored], 100), null, 'something that cannot play was chosen');
+  assert.strictEqual(best([fourK, fullHd], 0), fourK, 'an unknown speed changed the choice');
+})();
 (function languageFiles() {
   var english = {};
   var stringsContext = { localStorage: { getItem: function () { return null; } } };

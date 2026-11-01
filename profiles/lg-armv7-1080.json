@@ -19,6 +19,7 @@
   "backdropCache": 24,
   "backdropWorkers": 2,
   "serverSemiSpaceMB": 2,
+  "updateManifest": "https://alexesmm.github.io/stremcompat-lg-webos/api/apps/io.github.alexesmm.legacytv/manifest.json",
   "smallTv": {
     "lowMemory": true,
     "sourceCap": 30,

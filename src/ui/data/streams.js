@@ -75,6 +75,24 @@ function langRank(s, pref) {
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }
+/* What to play without asking: the list's order already puts language, compatibility and seeders
+   first, so the first that plays on this TV and that the connection can carry. With a measured
+   speed, a source of a quality too heavy for it gives way to a lighter one. */
+var MBPS_NEEDED = { '2160p': 25, '4K': 25, '1080p': 8, '720p': 3 };
+function bestSource(items, mbps) {
+  var playable = items.filter(function (s) {
+    return !s.stored && !(s.compatRank > 0) && !(s.compatLabels || []).length;
+  });
+  if (!playable.length)
+    playable = items.filter(function (s) {
+      return !s.stored && s.compatRank < 4;
+    });
+  var fits = playable.filter(function (s) {
+    return !mbps || !MBPS_NEEDED[s.quality] || MBPS_NEEDED[s.quality] <= mbps;
+  });
+  return fits[0] || playable[0] || null;
+}
+window.__SC_BEST_SOURCE__ = bestSource;
 function streamSourceKey(s) {
   if (s.stored) return 'stored';
   var u = String(s.url || '').replace(/#.*$/, '');

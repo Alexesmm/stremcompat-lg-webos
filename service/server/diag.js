@@ -88,6 +88,7 @@ function diagnostics(res) {
         streamingServer: !!up,
         serverAddress: remoteAddress(),
         torrentEngine: engineStatus(),
+        nativeProbe: process.env.SC_NATIVE_PROBE || '',
         peakRssMb: peakRss,
         minAvailableMb: minAvailable,
         events: events.slice().reverse()

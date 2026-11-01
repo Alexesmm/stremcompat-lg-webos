@@ -146,6 +146,16 @@ var detail = {
         },
         primary ? ICON.similar : ''
       );
+    /* straight to the best source, without the list */
+    var bestVid = this.type === 'series' ? av : this.id;
+    if (bestVid)
+      this.addBtn(
+        tx('playBest'),
+        function () {
+          streamsUI.show(self.type, self.id, bestVid, m.name, true);
+        },
+        ICON.bolt
+      );
     var hasTr = (m.trailers && m.trailers.length) || (m.trailerStreams && m.trailerStreams.length);
     if (hasTr)
       this.addBtn(

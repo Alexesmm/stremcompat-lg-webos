@@ -24,8 +24,9 @@ var streamsUI = {
   failed: [],
   title: '',
   flushT: null,
-  show: function (type, id, vid, title) {
+  show: function (type, id, vid, title, playBest) {
     var request = ++this.requestSeq;
+    this.playBest = !!playBest;
     this.open = true;
     this.failed = [];
     this.title = title || '';
@@ -96,6 +97,10 @@ var streamsUI = {
           return;
         }
         self.flush();
+        if (self.playBest) {
+          self.playBest = false;
+          return self.startBest();
+        }
         if (self.retryPref) {
           var retry = nextSourceAfterFailure(self.items, self.retryPref);
           self.retryPref = null;
@@ -118,6 +123,28 @@ var streamsUI = {
           playUrl(matched, self.type, self.id, self.vid, backHash);
         }
       }
+    );
+  },
+  /* the source list stays open underneath when nothing can be picked */
+  startBest: function () {
+    var self = this,
+      request = this.requestSeq;
+    xhrJson(
+      '/speed',
+      function (answer) {
+        if (!self.open || self.requestSeq !== request) return;
+        var best = bestSource(self.all().slice().sort(sourceOrder), (answer && answer.mbps) || 0);
+        if (!best) return;
+        toast(tx('playingBest', best.quality || best.addon || ''));
+        playUrl(
+          best,
+          self.type,
+          self.id,
+          self.vid,
+          'beta#detail/' + self.type + '/' + self.id + (self.vid !== self.id ? '/' + self.vid : '')
+        );
+      },
+      5000
     );
   },
   push: function (arr, gIdx, gName) {

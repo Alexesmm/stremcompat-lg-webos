@@ -7,6 +7,7 @@
 #heroTitle.long{font-size:44px}
 #heroMeta{margin-top:16px;height:32px;line-height:32px;font-size:22px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden}
 #heroMeta span{margin-right:24px}
+#heroMeta .where{color:#5EEAD4;font-weight:700}
 #heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:14px;font-weight:800;line-height:20px;vertical-align:2px}
 /* two lines ending in an ellipsis instead of a sentence cut in half */
 #heroDesc{margin-top:12px;font-size:23px;line-height:1.45;color:rgba(255,255,255,.72);max-height:67px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
@@ -26,6 +27,9 @@
 .titlelabel{position:absolute;left:0;right:0;bottom:0;padding:34px 15px 13px;font-size:24px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.92));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.f{box-shadow:0 0 0 3px #090b12,0 0 0 7px #fff !important;z-index:6;transform:translateY(-6px)}
 .card.wide{width:430px;height:242px}
+/* Home and Library show more titles at once; the grids keep the larger cards */
+#rows .card{width:232px;height:348px;margin-right:20px}
+#rows .card.wide{width:400px;height:225px}
 .card.more{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
 .morelbl{position:absolute;top:50%;left:0;right:0;margin-top:-20px;text-align:center;font-size:30px;font-weight:700;color:rgba(255,255,255,.85)}
 .card.noart{background:linear-gradient(155deg,#1c2733 0%,#11161d 72%)}

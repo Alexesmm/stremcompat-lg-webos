@@ -68,6 +68,19 @@ function boot() {
         if (changed) home.built = false;
       });
     }, 8000);
+    /* a new version, once per version */
+    setTimeout(function () {
+      xhrJson(
+        '/update',
+        function (answer) {
+          var version = answer && answer.version;
+          if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;
+          lsRawSet('updateShown', version);
+          toast(tx('updateAvailable', version), 8000);
+        },
+        8000
+      );
+    }, 12000);
     /* the long-press menu has no visible entry point: explain it once, on Home */
     setTimeout(function () {
       if (lsRaw('holdOkHintShown', '') || SCR !== 'home' || streamsUI.open || cwMenu.open) return;

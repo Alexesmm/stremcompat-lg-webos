@@ -139,6 +139,9 @@ var UI_TEXT = {
     tryingNextSource: 'Trying the next source…',
     noOtherSource: 'No other source to try',
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
+    playBest: 'Best source',
+    playingBest: 'Playing the best source: {0}',
+    updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -468,6 +471,9 @@ var UI_TEXT = {
     tryingNextSource: 'Tentando a próxima fonte…',
     noOtherSource: 'Não há outra fonte para tentar',
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
+    playBest: 'Melhor fonte',
+    playingBest: 'Tocando a melhor fonte: {0}',
+    updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:

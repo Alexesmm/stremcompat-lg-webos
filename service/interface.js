@@ -384,6 +384,9 @@ var UI_TEXT = {
     tryingNextSource: 'Trying the next source…',
     noOtherSource: 'No other source to try',
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
+    playBest: 'Best source',
+    playingBest: 'Playing the best source: {0}',
+    updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     recommendedSource: 'Recommended for this TV',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -713,6 +716,9 @@ var UI_TEXT = {
     tryingNextSource: 'Tentando a próxima fonte…',
     noOtherSource: 'Não há outra fonte para tentar',
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
+    playBest: 'Melhor fonte',
+    playingBest: 'Tocando a melhor fonte: {0}',
+    updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     recommendedSource: 'Recomendada para esta TV',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -1566,6 +1572,7 @@ var ICON = {
   similar: '<svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>',
   trailer:
     '<svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
   grid: '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>',
   check: '<svg viewBox="0 0 24 24"><path d="M9 16.17l-3.88-3.88L3.7 13.7 9 19 21 7l-1.41-1.42z"/></svg>',
   plus: '<svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>',
@@ -1587,7 +1594,8 @@ function bgMid(it) {
   /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
   if (!HAS_MEDIA_TOOLS) return bgSmall(it);
   return (
-    '/artwork?u=' + encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
+    '/artwork?u=' +
+    encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
   );
 }
 // Stremio account session and library synchronization.
@@ -2082,6 +2090,24 @@ function langRank(s, pref) {
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }
+/* What to play without asking: the list's order already puts language, compatibility and seeders
+   first, so the first that plays on this TV and that the connection can carry. With a measured
+   speed, a source of a quality too heavy for it gives way to a lighter one. */
+var MBPS_NEEDED = { '2160p': 25, '4K': 25, '1080p': 8, '720p': 3 };
+function bestSource(items, mbps) {
+  var playable = items.filter(function (s) {
+    return !s.stored && !(s.compatRank > 0) && !(s.compatLabels || []).length;
+  });
+  if (!playable.length)
+    playable = items.filter(function (s) {
+      return !s.stored && s.compatRank < 4;
+    });
+  var fits = playable.filter(function (s) {
+    return !mbps || !MBPS_NEEDED[s.quality] || MBPS_NEEDED[s.quality] <= mbps;
+  });
+  return fits[0] || playable[0] || null;
+}
+window.__SC_BEST_SOURCE__ = bestSource;
 function streamSourceKey(s) {
   if (s.stored) return 'stored';
   var u = String(s.url || '').replace(/#.*$/, '');
@@ -2857,6 +2883,11 @@ function heroMetaHtml(m) {
   return html;
 }
 window.__SC_HERO_META__ = heroMetaHtml;
+/* a title in progress starts with where the viewer stopped */
+function heroMetaOf(it) {
+  var where = it.cw ? cwSubtitle(it) : '';
+  return (where ? '<span class="where">' + esc(where) + '</span>' : '') + (it.metaHtml || '');
+}
 /* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
 function makeBoard(loader) {
   return {
@@ -3030,7 +3061,7 @@ function makeBoard(loader) {
         tt.style.display = '';
         lg.style.display = 'none';
       }
-      $('heroMeta').innerHTML = it.metaHtml || '';
+      $('heroMeta').innerHTML = heroMetaOf(it);
       $('heroDesc').textContent = it.description || '';
       setBg(bgMid(it));
       if (!it.description && it.id) {
@@ -3040,7 +3071,7 @@ function makeBoard(loader) {
           it.metaHtml = heroMetaHtml(m);
           if (self.focusedItem() === it) {
             $('heroDesc').textContent = it.description;
-            $('heroMeta').innerHTML = it.metaHtml;
+            $('heroMeta').innerHTML = heroMetaOf(it);
           }
         });
       }
@@ -4686,6 +4717,16 @@ var detail = {
         },
         primary ? ICON.similar : ''
       );
+    /* straight to the best source, without the list */
+    var bestVid = this.type === 'series' ? av : this.id;
+    if (bestVid)
+      this.addBtn(
+        tx('playBest'),
+        function () {
+          streamsUI.show(self.type, self.id, bestVid, m.name, true);
+        },
+        ICON.bolt
+      );
     var hasTr = (m.trailers && m.trailers.length) || (m.trailerStreams && m.trailerStreams.length);
     if (hasTr)
       this.addBtn(
@@ -5366,8 +5407,9 @@ var streamsUI = {
   failed: [],
   title: '',
   flushT: null,
-  show: function (type, id, vid, title) {
+  show: function (type, id, vid, title, playBest) {
     var request = ++this.requestSeq;
+    this.playBest = !!playBest;
     this.open = true;
     this.failed = [];
     this.title = title || '';
@@ -5438,6 +5480,10 @@ var streamsUI = {
           return;
         }
         self.flush();
+        if (self.playBest) {
+          self.playBest = false;
+          return self.startBest();
+        }
         if (self.retryPref) {
           var retry = nextSourceAfterFailure(self.items, self.retryPref);
           self.retryPref = null;
@@ -5460,6 +5506,28 @@ var streamsUI = {
           playUrl(matched, self.type, self.id, self.vid, backHash);
         }
       }
+    );
+  },
+  /* the source list stays open underneath when nothing can be picked */
+  startBest: function () {
+    var self = this,
+      request = this.requestSeq;
+    xhrJson(
+      '/speed',
+      function (answer) {
+        if (!self.open || self.requestSeq !== request) return;
+        var best = bestSource(self.all().slice().sort(sourceOrder), (answer && answer.mbps) || 0);
+        if (!best) return;
+        toast(tx('playingBest', best.quality || best.addon || ''));
+        playUrl(
+          best,
+          self.type,
+          self.id,
+          self.vid,
+          'beta#detail/' + self.type + '/' + self.id + (self.vid !== self.id ? '/' + self.vid : '')
+        );
+      },
+      5000
     );
   },
   push: function (arr, gIdx, gName) {
@@ -6700,6 +6768,7 @@ var settings = {
           tx('diagTv', j.system.availableMb, j.system.totalMb, j.load),
           j.disk ? tx('diagDisk', j.disk.freeMb, j.disk.totalMb) : '',
           tx('diagStreaming', diagStreamingState(j)),
+          j.nativeProbe ? 'Native code: ' + j.nativeProbe : '',
           tx('diagInterface', heap, shown, home),
           tx('diagPeak', j.peakRssMb, j.minAvailableMb)
         ];
@@ -7812,6 +7881,19 @@ function boot() {
         if (changed) home.built = false;
       });
     }, 8000);
+    /* a new version, once per version */
+    setTimeout(function () {
+      xhrJson(
+        '/update',
+        function (answer) {
+          var version = answer && answer.version;
+          if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;
+          lsRawSet('updateShown', version);
+          toast(tx('updateAvailable', version), 8000);
+        },
+        8000
+      );
+    }, 12000);
     /* the long-press menu has no visible entry point: explain it once, on Home */
     setTimeout(function () {
       if (lsRaw('holdOkHintShown', '') || SCR !== 'home' || streamsUI.open || cwMenu.open) return;

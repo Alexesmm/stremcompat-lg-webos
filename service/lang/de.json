@@ -323,5 +323,8 @@
     "loaded": "Untertitel geladen",
     "extracting": "wird extrahiert",
     "language": "Sprache"
-  }
+  },
+  "playBest": "Beste Quelle",
+  "playingBest": "Beste Quelle wird abgespielt: {0}",
+  "updateAvailable": "StremCompat {0} ist verfügbar. Aktualisiere es im Homebrew Channel."
 }

@@ -9,6 +9,18 @@ var os = require('os');
 var path = require('path');
 var PROFILE = require('./profile').current;
 
+/* Can this TV load native code? "did not self-register" means yes, since the library registers
+   nothing; it is the condition for the torrent engine here. Shown in Settings > Diagnostics. */
+function nativeLoadResult() {
+  try {
+    process.dlopen({ exports: {} }, path.join(__dirname, 'native-probe.node'));
+    return 'loaded';
+  } catch (e) {
+    return String(e.message).slice(0, 120);
+  }
+}
+process.env.SC_NATIVE_PROBE = nativeLoadResult();
+
 var IDLE_LIMIT_MS = 90000;
 var MAX_LOG_BYTES = 256 * 1024;
 var server = null;

@@ -323,5 +323,8 @@
     "loaded": "Субтитры загружены",
     "extracting": "извлечение",
     "language": "язык"
-  }
+  },
+  "playBest": "Лучший источник",
+  "playingBest": "Воспроизводится лучший источник: {0}",
+  "updateAvailable": "Доступен StremCompat {0}. Обновите его в Homebrew Channel."
 }

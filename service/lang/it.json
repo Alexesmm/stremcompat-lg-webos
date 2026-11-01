@@ -323,5 +323,8 @@
     "loaded": "Sottotitoli caricati",
     "extracting": "estrazione",
     "language": "lingua"
-  }
+  },
+  "playBest": "Fonte migliore",
+  "playingBest": "Riproduzione della fonte migliore: {0}",
+  "updateAvailable": "StremCompat {0} è disponibile. Aggiornalo in Homebrew Channel."
 }

@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   packages:
@@ -26,11 +28,18 @@ jobs:
       - name: Prepare clear release filenames
         shell: pwsh
         run: |
-          Move-Item -LiteralPath 'dist/io.github.alexesmm.legacytv_3.0.0_all.ipk' -Destination 'dist/StremCompat-3.0.0.ipk'
+          $version = (Get-Content app/appinfo.json -Raw | ConvertFrom-Json).version
+          Move-Item -LiteralPath "dist/io.github.alexesmm.legacytv_${version}_all.ipk" -Destination "dist/StremCompat-${{ github.ref_name }}.ipk"
+      - run: node scripts/make-homebrew-repo.js dist/StremCompat-${{ github.ref_name }}.ipk homebrew-repo
+        if: startsWith(github.ref, 'refs/tags/')
       - uses: actions/upload-artifact@v4
         with:
           name: webos-ipks
           path: dist/*.ipk
+      - uses: actions/upload-pages-artifact@v3
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          path: homebrew-repo
       - name: Publish tag assets
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
@@ -38,3 +47,12 @@ jobs:
           name: StremCompat for LG webOS ${{ github.ref_name }}
           body_path: docs/releases/${{ github.ref_name }}.md
           files: dist/*.ipk
+
+  homebrew-repository:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: packages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/deploy-pages@v4
