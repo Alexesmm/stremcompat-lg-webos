@@ -25,12 +25,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
       - run: npm test
       - run: npm run package
-      - name: Prepare clear release filenames
+      - name: Name the 1920x1080 package
         shell: pwsh
         run: |
           $version = (Get-Content app/appinfo.json -Raw | ConvertFrom-Json).version
-          Move-Item -LiteralPath "dist/io.github.alexesmm.legacytv_${version}_all.ipk" -Destination "dist/StremCompat-${{ github.ref_name }}.ipk"
-      - run: node scripts/make-homebrew-repo.js dist/StremCompat-${{ github.ref_name }}.ipk homebrew-repo
+          Move-Item -LiteralPath "dist/io.github.alexesmm.legacytv_${version}_all.ipk" -Destination "dist/StremCompat-${{ github.ref_name }}-1080p.ipk"
+      - run: npm run package:720
+      - name: Name the 1280x720 package
+        shell: pwsh
+        run: |
+          $version = (Get-Content app/appinfo.json -Raw | ConvertFrom-Json).version
+          Move-Item -LiteralPath "dist/io.github.alexesmm.legacytv_${version}_all.ipk" -Destination "dist/StremCompat-${{ github.ref_name }}-720p.ipk"
+      - run: node scripts/make-homebrew-repo.js dist/StremCompat-${{ github.ref_name }}-1080p.ipk homebrew-repo
+        if: startsWith(github.ref, 'refs/tags/')
+      - run: node scripts/make-homebrew-repo.js dist/StremCompat-${{ github.ref_name }}-720p.ipk homebrew-repo/720 https://alexesmm.github.io/stremcompat-lg-webos/720
         if: startsWith(github.ref, 'refs/tags/')
       - uses: actions/upload-artifact@v4
         with:

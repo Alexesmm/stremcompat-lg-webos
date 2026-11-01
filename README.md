@@ -8,7 +8,7 @@
   <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Alexesmm/stremcompat-lg-webos?display_name=tag&color=0F766E"></a>
   <img alt="LG webOS 3.x and 4.x" src="https://img.shields.io/badge/LG%20webOS-3.x%20%7C%204.x-0F766E">
   <img alt="ARMv7" src="https://img.shields.io/badge/architecture-ARMv7-0F766E">
-  <img alt="1920x1080 graphics" src="https://img.shields.io/badge/UI-1920x1080-0F766E">
+  <img alt="1280x720 and 1920x1080 graphics" src="https://img.shields.io/badge/UI-1280x720%20%7C%201920x1080-0F766E">
   <img alt="No root required" src="https://img.shields.io/badge/root-not%20required-2ea44f">
   <img alt="Unofficial community project" src="https://img.shields.io/badge/project-unofficial%20community-ea345e">
   <a href="https://github.com/Alexesmm/stremcompat-lg-webos/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/community-Discussions-2ea44f"></a>
@@ -53,17 +53,24 @@ Captured from the real interface at 1920x1080, on a computer, with a demo librar
 
 ## Installation
 
+There are two packages, and the video looks the same in both:
+
+- **1080p**, sharper, for Full HD and 4K screens.
+- **720p**, for smaller screens such as 1366x768, where the 1080p interface would be cut off. It also uses less memory.
+
 **With the Homebrew Channel**, which also makes updates easy:
 
 1. Install the [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) on the TV.
-2. In its settings, add this repository: `https://alexesmm.github.io/stremcompat-lg-webos/apps.json`
+2. In its settings, add one repository:
+   - 1080p: `https://alexesmm.github.io/stremcompat-lg-webos/apps.json`
+   - 720p: `https://alexesmm.github.io/stremcompat-lg-webos/720/apps.json`
 3. Install StremCompat from the channel. The app tells you when a new version is out.
 
 **With Developer Mode:**
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v3.0.1.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v3.0.2-1080p.ipk` or `StremCompat-v3.0.2-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 
@@ -132,6 +139,7 @@ Download the package from the [test release](https://github.com/Alexesmm/stremco
 
 ## Troubleshooting
 
+- **Interface cut off or only in part of the screen:** use the 720p package.
 - **"Can't reach Stremio", or nothing loads while other apps work:** your network probably hands out IPv6 without a working connection. Turn IPv6 off on the TV (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router.
 - **App stuck on the loading screen after an update (`RUNTIME_START_TIMEOUT`):** unplug the TV for at least 30 seconds and open it again. The remote is not enough when Quick Start+ is on. This does not erase your account or settings.
 - **Torrents do not start, but debrid and direct links work:** **Settings > Diagnostics** shows the state of the engine. Few seeders or little free storage can also keep a torrent from starting.
