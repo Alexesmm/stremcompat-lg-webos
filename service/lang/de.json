@@ -175,6 +175,8 @@
   "reloadingApp": "StremCompat wird neu geladen…",
   "sourceGroup": "Quellen",
   "preferredQuality": "Bevorzugte Qualität",
+  "qualityAsk": "Fragen",
+  "whichQuality": "Welche Qualität?",
   "preferredLanguage": "Bevorzugte Sprache der Quelle",
   "anyLanguage": "Beliebig",
   "langFilter": "Sprache: {0}",

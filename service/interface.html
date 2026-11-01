@@ -205,7 +205,9 @@ body.series-episode #dSeasons{margin-top:24px}
 .st.f .tg.q{background:#fff;color:#0F766E}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
-.st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.92);max-height:112px;overflow:hidden;white-space:normal;word-break:break-word}
+/* the file name takes one line, and two on the focused source */
+.st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.72);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.st.f .b{max-height:73px;color:#fff;white-space:normal;word-break:break-word}
 .st.f{background:#2a303a;box-shadow:inset 0 0 0 3px #fff}
 .stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.75)}
 .chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang{cursor:pointer}
@@ -352,7 +354,8 @@ body.series-episode #dSeasons{margin-top:24px}
   .st .rec{margin-bottom:5px;font-size:15px}
   .st .compat{margin-top:4px;font-size:16px}
   .st .tags{margin-top:5px}.tg{padding:2px 7px;margin:0 5px 4px 0;border-radius:4px;font-size:15px}
-  .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
+  .st .b{margin-top:5px;font-size:19px;line-height:1.3}
+  .st.f .b{max-height:50px}
   #dWrap{top:36px;left:112px;right:40px}
   #dLogo{width:320px;height:100px}
   #dTitle{font-size:46px;max-height:100px}
@@ -437,6 +440,7 @@ body.bigtext #dInfo{font-size:27px}
 body.bigtext .ep .t{font-size:28px}
 body.bigtext .st .a{font-size:32px}
 body.bigtext .st .b{font-size:29px}
+body.bigtext .st.f .b{max-height:82px}
 body.bigtext .set .lb{font-size:32px}
 body.bigtext .set .vl{font-size:29px}
 body.bigtext .cwmi{font-size:33px}
@@ -453,7 +457,8 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
   body.bigtext #dInfo{font-size:18px}
   body.bigtext .ep .t{font-size:18px}
   body.bigtext .st .a{font-size:24px}
-  body.bigtext .st .b{font-size:21px;max-height:56px}
+  body.bigtext .st .b{font-size:21px}
+  body.bigtext .st.f .b{max-height:56px}
   body.bigtext #sHint,body.bigtext .emptyh{font-size:19px}
 }
 /* empty states */

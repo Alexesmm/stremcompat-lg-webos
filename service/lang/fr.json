@@ -175,6 +175,8 @@
   "reloadingApp": "Rechargement de StremCompat…",
   "sourceGroup": "Sources",
   "preferredQuality": "Qualité préférée",
+  "qualityAsk": "Demander",
+  "whichQuality": "Quelle qualité ?",
   "preferredLanguage": "Langue préférée de la source",
   "anyLanguage": "Toutes",
   "langFilter": "Langue : {0}",

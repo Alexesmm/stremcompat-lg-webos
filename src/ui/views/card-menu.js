@@ -40,6 +40,27 @@ var cwMenu = {
     $('cwm').style.display = 'block';
     this.paint();
   },
+  /* Best source asks each time, unless Settings names a quality */
+  withPreferredQuality: function (then) {
+    var preferred = lsRaw('preferredSourceQuality', 'Ask');
+    if (preferred !== 'Ask') return then(preferred);
+    var self = this;
+    this.it = null;
+    this.begin(tx('whichQuality'), '');
+    [
+      ['1080p', '1080p'],
+      ['720p', '720p'],
+      ['4K', '4K'],
+      ['Auto', tx('automatic')]
+    ].forEach(function (option) {
+      self.add(ICON.bolt, option[1], function () {
+        self.close();
+        then(option[0]);
+      });
+    });
+    $('cwm').style.display = 'block';
+    this.paint();
+  },
   show: function (it) {
     this.it = it;
     var self = this;

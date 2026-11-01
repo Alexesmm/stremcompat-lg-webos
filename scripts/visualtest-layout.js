@@ -87,7 +87,7 @@ async function main() {
     await waitJson(appPort, '/health', 120);
     browser = childProcess.spawn(chrome, [
       '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-default-apps', '--disable-extensions',
-      '--disable-sync', '--hide-scrollbars', '--no-first-run', '--remote-debugging-port=' + debugPort,
+      '--disable-sync', '--hide-scrollbars', '--no-first-run', '--lang=en-US', '--remote-debugging-port=' + debugPort,
       '--window-size=' + width + ',' + height, '--user-data-dir=' + browserProfile,
       'http://127.0.0.1:' + appPort + '/beta?visualtest=1'
     ], { cwd: path.dirname(chrome), windowsHide: true, stdio: 'ignore' });

@@ -417,7 +417,8 @@ var UI_TEXT = {
     diagDisk: 'Storage: {0} MB free of {1} MB',
     diagStreaming: 'Streaming server: {0}',
     diagStreamFailed: 'not available ({0})',
-    torrentsUnavailable: 'The torrent engine is not available on this TV. Debrid and direct sources still work.',
+    torrentsUnavailable:
+      'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
     diagRunning: 'running',
     diagStopped: 'stopped',
@@ -433,6 +434,8 @@ var UI_TEXT = {
     reloadingApp: 'Reloading StremCompat…',
     sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
+    qualityAsk: 'Ask',
+    whichQuality: 'Which quality?',
     preferredLanguage: 'Preferred source language',
     anyLanguage: 'Any',
     langFilter: 'Language: {0}',
@@ -750,7 +753,8 @@ var UI_TEXT = {
     diagDisk: 'Armazenamento: {0} MB livres de {1} MB',
     diagStreaming: 'Servidor de streaming: {0}',
     diagStreamFailed: 'indisponível ({0})',
-    torrentsUnavailable: 'O motor de torrents não está disponível nesta TV. Fontes debrid e diretas continuam funcionando.',
+    torrentsUnavailable:
+      'O motor de torrents não está disponível nesta TV. Fontes debrid e diretas continuam funcionando.',
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     diagRunning: 'ativo',
     diagStopped: 'parado',
@@ -766,6 +770,8 @@ var UI_TEXT = {
     reloadingApp: 'Recarregando o StremCompat…',
     sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
+    qualityAsk: 'Perguntar',
+    whichQuality: 'Qual qualidade?',
     preferredLanguage: 'Idioma preferido das fontes',
     anyLanguage: 'Qualquer',
     langFilter: 'Idioma: {0}',
@@ -931,6 +937,13 @@ var UI_LANGUAGES = {
 function normalizeUILanguage(value) {
   return Object.prototype.hasOwnProperty.call(UI_LANGUAGES, value) ? value : 'en-US';
 }
+/* the TV's language, when the app has it */
+function tvLanguage() {
+  var base = String((typeof navigator !== 'undefined' && navigator.language) || '')
+    .toLowerCase()
+    .split('-')[0];
+  return base === 'pt' ? 'pt-BR' : base;
+}
 /* what the file does not have, or a file that cannot be read, falls back to English */
 function loadUILanguage(code) {
   if (UI_TEXT[code]) return;
@@ -944,9 +957,9 @@ function loadUILanguage(code) {
 var UI_LANG = normalizeUILanguage(
   (function () {
     try {
-      return localStorage.getItem(UI_LANG_KEY);
+      return localStorage.getItem(UI_LANG_KEY) || tvLanguage();
     } catch (e) {
-      return null;
+      return tvLanguage();
     }
   })()
 );
@@ -2034,8 +2047,8 @@ function qualityLabel(value) {
         : value;
 }
 window.__SC_STREAM_COMPAT__ = streamCompatibility;
-/* Short tags for the source list, read from the same advisory text: quality, HDR,
-   codec, audio, size and seeders, so a source can be judged without reading its name. */
+/* Short tags for the source list, read from the same advisory text: quality, language, HDR,
+   size and seeders. A codec or audio format only shows when it is a compatibility warning. */
 function sourceTags(s) {
   var t = streamText(s),
     low = t.toLowerCase(),
@@ -2045,12 +2058,6 @@ function sourceTags(s) {
   if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+' });
   else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR' });
   if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DV' });
-  if (/\b(hevc|x265|h[ ._-]?265)\b/.test(low)) out.push({ t: 'HEVC' });
-  else if (/\b(x264|h[ ._-]?264|avc)\b/.test(low)) out.push({ t: 'H.264' });
-  if (/\batmos\b/.test(low)) out.push({ t: 'Atmos' });
-  else if (/\b(ddp|dd\+|e[ ._-]?ac[ ._-]?3|eac3)/.test(low)) out.push({ t: 'DD+' });
-  else if (/\b(ac3|dd5[ ._]?1|dolby[ ._-]?digital)\b/.test(low)) out.push({ t: 'DD' });
-  else if (/\baac\b/.test(low)) out.push({ t: 'AAC' });
   m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
   if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
@@ -2096,28 +2103,24 @@ function langRank(s, pref) {
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }
-/* What to play without asking: the list's order already puts language, compatibility and seeders
-   first, so the first that plays on this TV and that the connection can carry. With a measured
-   speed, a source of a quality too heavy for it gives way to a lighter one. */
-var MBPS_NEEDED = { '4K': 25, '1080p': 8, '720p': 3 };
-function dependsOnSpeed(s) {
-  return !!MBPS_NEEDED[s.quality];
-}
-function hasNoWarning(s) {
-  return !(s.compatRank > 0) && !(s.compatLabels || []).length;
-}
-function bestSource(items, mbps) {
+/* What to play without choosing from the list, whose order already puts language, compatibility
+   and seeders first: the first without a warning in the quality asked for, or else in any known
+   quality, and a low or unknown quality only when nothing better has none. */
+function bestSource(items, quality) {
   var playable = items.filter(function (s) {
-    return !s.stored && hasNoWarning(s);
+    return !s.stored && !(s.compatRank > 0) && !(s.compatLabels || []).length;
   });
   if (!playable.length)
     playable = items.filter(function (s) {
       return !s.stored && s.compatRank < 4;
     });
-  var fits = playable.filter(function (s) {
-    return !mbps || !MBPS_NEEDED[s.quality] || MBPS_NEEDED[s.quality] <= mbps;
+  var asked = playable.filter(function (s) {
+    return s.quality === quality;
   });
-  return fits[0] || playable[0] || null;
+  var known = playable.filter(function (s) {
+    return s.quality !== 'Other' && s.quality !== 'SD';
+  });
+  return asked[0] || known[0] || playable[0] || null;
 }
 window.__SC_BEST_SOURCE__ = bestSource;
 function streamSourceKey(s) {
@@ -4110,6 +4113,27 @@ var cwMenu = {
     $('cwm').style.display = 'block';
     this.paint();
   },
+  /* Best source asks each time, unless Settings names a quality */
+  withPreferredQuality: function (then) {
+    var preferred = lsRaw('preferredSourceQuality', 'Ask');
+    if (preferred !== 'Ask') return then(preferred);
+    var self = this;
+    this.it = null;
+    this.begin(tx('whichQuality'), '');
+    [
+      ['1080p', '1080p'],
+      ['720p', '720p'],
+      ['4K', '4K'],
+      ['Auto', tx('automatic')]
+    ].forEach(function (option) {
+      self.add(ICON.bolt, option[1], function () {
+        self.close();
+        then(option[0]);
+      });
+    });
+    $('cwm').style.display = 'block';
+    this.paint();
+  },
   show: function (it) {
     this.it = it;
     var self = this;
@@ -4738,7 +4762,9 @@ var detail = {
       this.addBtn(
         tx('playBest'),
         function () {
-          streamsUI.show(self.type, self.id, bestVid, m.name, true);
+          cwMenu.withPreferredQuality(function (quality) {
+            streamsUI.show(self.type, self.id, bestVid, m.name, quality);
+          });
         },
         ICON.bolt
       );
@@ -5422,7 +5448,7 @@ var streamsUI = {
   failed: [],
   title: '',
   flushT: null,
-  show: function (type, id, vid, title, playBest) {
+  show: function (type, id, vid, title, bestQuality) {
     var request = ++this.requestSeq;
     this.open = true;
     this.failed = [];
@@ -5448,8 +5474,11 @@ var streamsUI = {
     this.chipIdx = 0;
     this.chips = [];
     this.chipEls = [];
-    $('streams').style.display = 'block';
-    bodyAdd('streamsopen');
+    /* Best source from the title page goes straight to the film; the list only appears if
+       nothing can be chosen */
+    this.searching = !!bestQuality;
+    if (bestQuality) toast(tx('findingSources'));
+    else this.reveal();
     $('stChips').innerHTML = '';
     $('stLang').style.display = 'none';
     $('stBest').style.display = 'none';
@@ -5488,6 +5517,7 @@ var streamsUI = {
         if (!self.open || self.requestSeq !== request) return;
         self.failed = failed || [];
         if (!self.pool.length) {
+          self.reveal();
           $('stInner').innerHTML =
             '<div class="stmsg">' +
             (self.failed.length
@@ -5497,7 +5527,10 @@ var streamsUI = {
           return;
         }
         self.flush();
-        if (playBest) return self.startBest();
+        if (bestQuality) {
+          if (!self.startBest(bestQuality)) self.reveal();
+          return;
+        }
         if (self.retryPref) {
           var retry = nextSourceAfterFailure(self.items, self.retryPref);
           self.retryPref = null;
@@ -5516,29 +5549,27 @@ var streamsUI = {
       }
     );
   },
+  reveal: function () {
+    this.searching = false;
+    $('streams').style.display = 'block';
+    bodyAdd('streamsopen');
+  },
   backHash: function () {
     return 'beta#detail/' + this.type + '/' + this.id + (this.vid !== this.id ? '/' + this.vid : '');
   },
+  chooseBest: function () {
+    var self = this;
+    cwMenu.withPreferredQuality(function (quality) {
+      self.startBest(quality);
+    });
+  },
   /* the source list stays open underneath when nothing can be picked */
-  startBest: function () {
-    var self = this,
-      request = this.requestSeq;
-    function start(best) {
-      if (!best) return;
-      toast(tx('playingBest', best.quality || best.addon || ''));
-      playUrl(best, self.type, self.id, self.vid, self.backHash());
-    }
-    /* in the order of the list on screen, which follows the preferred language and quality */
-    var first = bestSource(this.items, 0);
-    if (!first || !dependsOnSpeed(first)) return start(first);
-    xhrJson(
-      '/speed',
-      function (answer) {
-        if (!self.open || self.requestSeq !== request) return;
-        start(bestSource(self.items, (answer && answer.mbps) || 0));
-      },
-      5000
-    );
+  startBest: function (quality) {
+    var best = bestSource(this.items, quality);
+    if (!best) return false;
+    toast(tx('playingBest', best.quality || best.addon || ''));
+    playUrl(best, this.type, this.id, this.vid, this.backHash());
+    return true;
   },
   push: function (arr, gIdx, gName) {
     if (!this.open) return;
@@ -5717,19 +5748,11 @@ var streamsUI = {
     host.innerHTML = '';
     this.items = [];
     this.els = [];
-    /* The list is already ordered by compatibility and seeders; the first source with
-       no compatibility warning is named as the one to pick when there is a choice. */
-    var rec = -1,
-      choices = 0;
-    for (var r = 0; r < flat.length; r++) {
-      if (flat[r].stored) continue;
-      choices++;
-      if (rec < 0 && hasNoWarning(flat[r])) rec = r;
-    }
-    /* every source has a note: the list order still names the safest one */
-    for (var rr = 0; rec < 0 && rr < flat.length; rr++)
-      if (!flat[rr].stored && !(flat[rr].compatRank > 0)) rec = rr;
-    if (choices < 2) rec = -1;
+    /* named when there is a choice, and the same source the Best source button starts */
+    var choices = flat.filter(function (s) {
+      return !s.stored;
+    }).length;
+    var rec = choices < 2 ? -1 : flat.indexOf(bestSource(flat, pref));
     for (var i = 0; i < flat.length; i++) {
       var s = flat[i],
         d = document.createElement('div');
@@ -5810,8 +5833,9 @@ var streamsUI = {
     return true;
   },
   key: function (k) {
+    if (this.searching) return true;
     if (this.zone === 'best') {
-      if (k === 13) this.startBest();
+      if (k === 13) this.chooseBest();
       else if (k === 39 && this.langs.length) {
         this.zone = 'lang';
         this.paint();
@@ -6490,13 +6514,14 @@ var settings = {
         k: 'preferredSourceQuality',
         lb: tx('preferredQuality'),
         opts: [
+          ['Ask', tx('qualityAsk')],
           ['Auto', tx('automatic')],
           ['4K', '4K'],
           ['1080p', '1080p'],
           ['720p', '720p'],
           ['SD', 'SD']
         ],
-        d: 'Auto'
+        d: 'Ask'
       },
       {
         k: 'preferredSourceLanguage',
@@ -6617,7 +6642,7 @@ var settings = {
         opts: Object.keys(UI_LANGUAGES).map(function (code) {
           return [code, UI_LANGUAGES[code]];
         }),
-        d: 'en-US'
+        d: UI_LANG
       },
       {
         k: 'uiTextSize',
@@ -7369,7 +7394,7 @@ function pointerUI(target, activate) {
     if (pointerIndex(target, [$('stBest')]) === 0) {
       streamsUI.zone = 'best';
       streamsUI.paint();
-      if (activate) streamsUI.startBest();
+      if (activate) streamsUI.chooseBest();
       return true;
     }
     if (target && target.id === 'stLang') {

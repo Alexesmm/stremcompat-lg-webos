@@ -13,8 +13,8 @@ function qualityLabel(value) {
         : value;
 }
 window.__SC_STREAM_COMPAT__ = streamCompatibility;
-/* Short tags for the source list, read from the same advisory text: quality, HDR,
-   codec, audio, size and seeders, so a source can be judged without reading its name. */
+/* Short tags for the source list, read from the same advisory text: quality, language, HDR,
+   size and seeders. A codec or audio format only shows when it is a compatibility warning. */
 function sourceTags(s) {
   var t = streamText(s),
     low = t.toLowerCase(),
@@ -24,12 +24,6 @@ function sourceTags(s) {
   if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+' });
   else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR' });
   if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DV' });
-  if (/\b(hevc|x265|h[ ._-]?265)\b/.test(low)) out.push({ t: 'HEVC' });
-  else if (/\b(x264|h[ ._-]?264|avc)\b/.test(low)) out.push({ t: 'H.264' });
-  if (/\batmos\b/.test(low)) out.push({ t: 'Atmos' });
-  else if (/\b(ddp|dd\+|e[ ._-]?ac[ ._-]?3|eac3)/.test(low)) out.push({ t: 'DD+' });
-  else if (/\b(ac3|dd5[ ._]?1|dolby[ ._-]?digital)\b/.test(low)) out.push({ t: 'DD' });
-  else if (/\baac\b/.test(low)) out.push({ t: 'AAC' });
   m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
   if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
@@ -75,28 +69,24 @@ function langRank(s, pref) {
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }
-/* What to play without asking: the list's order already puts language, compatibility and seeders
-   first, so the first that plays on this TV and that the connection can carry. With a measured
-   speed, a source of a quality too heavy for it gives way to a lighter one. */
-var MBPS_NEEDED = { '4K': 25, '1080p': 8, '720p': 3 };
-function dependsOnSpeed(s) {
-  return !!MBPS_NEEDED[s.quality];
-}
-function hasNoWarning(s) {
-  return !(s.compatRank > 0) && !(s.compatLabels || []).length;
-}
-function bestSource(items, mbps) {
+/* What to play without choosing from the list, whose order already puts language, compatibility
+   and seeders first: the first without a warning in the quality asked for, or else in any known
+   quality, and a low or unknown quality only when nothing better has none. */
+function bestSource(items, quality) {
   var playable = items.filter(function (s) {
-    return !s.stored && hasNoWarning(s);
+    return !s.stored && !(s.compatRank > 0) && !(s.compatLabels || []).length;
   });
   if (!playable.length)
     playable = items.filter(function (s) {
       return !s.stored && s.compatRank < 4;
     });
-  var fits = playable.filter(function (s) {
-    return !mbps || !MBPS_NEEDED[s.quality] || MBPS_NEEDED[s.quality] <= mbps;
+  var asked = playable.filter(function (s) {
+    return s.quality === quality;
   });
-  return fits[0] || playable[0] || null;
+  var known = playable.filter(function (s) {
+    return s.quality !== 'Other' && s.quality !== 'SD';
+  });
+  return asked[0] || known[0] || playable[0] || null;
 }
 window.__SC_BEST_SOURCE__ = bestSource;
 function streamSourceKey(s) {

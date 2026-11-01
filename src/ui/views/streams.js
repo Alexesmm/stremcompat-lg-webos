@@ -24,7 +24,7 @@ var streamsUI = {
   failed: [],
   title: '',
   flushT: null,
-  show: function (type, id, vid, title, playBest) {
+  show: function (type, id, vid, title, bestQuality) {
     var request = ++this.requestSeq;
     this.open = true;
     this.failed = [];
@@ -50,8 +50,11 @@ var streamsUI = {
     this.chipIdx = 0;
     this.chips = [];
     this.chipEls = [];
-    $('streams').style.display = 'block';
-    bodyAdd('streamsopen');
+    /* Best source from the title page goes straight to the film; the list only appears if
+       nothing can be chosen */
+    this.searching = !!bestQuality;
+    if (bestQuality) toast(tx('findingSources'));
+    else this.reveal();
     $('stChips').innerHTML = '';
     $('stLang').style.display = 'none';
     $('stBest').style.display = 'none';
@@ -90,6 +93,7 @@ var streamsUI = {
         if (!self.open || self.requestSeq !== request) return;
         self.failed = failed || [];
         if (!self.pool.length) {
+          self.reveal();
           $('stInner').innerHTML =
             '<div class="stmsg">' +
             (self.failed.length
@@ -99,7 +103,10 @@ var streamsUI = {
           return;
         }
         self.flush();
-        if (playBest) return self.startBest();
+        if (bestQuality) {
+          if (!self.startBest(bestQuality)) self.reveal();
+          return;
+        }
         if (self.retryPref) {
           var retry = nextSourceAfterFailure(self.items, self.retryPref);
           self.retryPref = null;
@@ -118,29 +125,27 @@ var streamsUI = {
       }
     );
   },
+  reveal: function () {
+    this.searching = false;
+    $('streams').style.display = 'block';
+    bodyAdd('streamsopen');
+  },
   backHash: function () {
     return 'beta#detail/' + this.type + '/' + this.id + (this.vid !== this.id ? '/' + this.vid : '');
   },
+  chooseBest: function () {
+    var self = this;
+    cwMenu.withPreferredQuality(function (quality) {
+      self.startBest(quality);
+    });
+  },
   /* the source list stays open underneath when nothing can be picked */
-  startBest: function () {
-    var self = this,
-      request = this.requestSeq;
-    function start(best) {
-      if (!best) return;
-      toast(tx('playingBest', best.quality || best.addon || ''));
-      playUrl(best, self.type, self.id, self.vid, self.backHash());
-    }
-    /* in the order of the list on screen, which follows the preferred language and quality */
-    var first = bestSource(this.items, 0);
-    if (!first || !dependsOnSpeed(first)) return start(first);
-    xhrJson(
-      '/speed',
-      function (answer) {
-        if (!self.open || self.requestSeq !== request) return;
-        start(bestSource(self.items, (answer && answer.mbps) || 0));
-      },
-      5000
-    );
+  startBest: function (quality) {
+    var best = bestSource(this.items, quality);
+    if (!best) return false;
+    toast(tx('playingBest', best.quality || best.addon || ''));
+    playUrl(best, this.type, this.id, this.vid, this.backHash());
+    return true;
   },
   push: function (arr, gIdx, gName) {
     if (!this.open) return;
@@ -319,19 +324,11 @@ var streamsUI = {
     host.innerHTML = '';
     this.items = [];
     this.els = [];
-    /* The list is already ordered by compatibility and seeders; the first source with
-       no compatibility warning is named as the one to pick when there is a choice. */
-    var rec = -1,
-      choices = 0;
-    for (var r = 0; r < flat.length; r++) {
-      if (flat[r].stored) continue;
-      choices++;
-      if (rec < 0 && hasNoWarning(flat[r])) rec = r;
-    }
-    /* every source has a note: the list order still names the safest one */
-    for (var rr = 0; rec < 0 && rr < flat.length; rr++)
-      if (!flat[rr].stored && !(flat[rr].compatRank > 0)) rec = rr;
-    if (choices < 2) rec = -1;
+    /* named when there is a choice, and the same source the Best source button starts */
+    var choices = flat.filter(function (s) {
+      return !s.stored;
+    }).length;
+    var rec = choices < 2 ? -1 : flat.indexOf(bestSource(flat, pref));
     for (var i = 0; i < flat.length; i++) {
       var s = flat[i],
         d = document.createElement('div');
@@ -412,8 +409,9 @@ var streamsUI = {
     return true;
   },
   key: function (k) {
+    if (this.searching) return true;
     if (this.zone === 'best') {
-      if (k === 13) this.startBest();
+      if (k === 13) this.chooseBest();
       else if (k === 39 && this.langs.length) {
         this.zone = 'lang';
         this.paint();

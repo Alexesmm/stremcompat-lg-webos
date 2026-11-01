@@ -188,7 +188,7 @@ var pointer = cwCard({ _id:'tt8', type:'series', name:'Other', state:{ video_id:
 assert.strictEqual(pointer.upNext && pointer.videoId, 'tt8:1:4', 'the next episode set by another Stremio app was not offered');
 assert.strictEqual(cwCard({ _id:'m2', type:'movie', state:{ video_id:'m2', timeOffset:1, duration:0 } }).upNext, false, 'a film at the start became an up next card');
 var tagText = firstRun.context.__SC_SOURCE_TAGS__({ name:'Torrentio 4k', title:'Show.2160p.WEB-DL.DDP5.1.DV.HDR10.HEVC 24.5 GB', quality:'4K', seeders:532 }).map(function (x) { return x.t; }).join(',');
-assert.strictEqual(tagText, '4K,HDR,DV,HEVC,DD+,24.5 GB,532 seeds', 'source tags were not read from the stream text');
+assert.strictEqual(tagText, '4K,HDR,DV,24.5 GB,532 seeds', 'source tags were not read from the stream text');
 var langsOf = function (title, name) { return firstRun.context.__SC_STREAM_LANGUAGES__({ name: name || 'Torrentio', title: title }).join(','); };
 assert.strictEqual(langsOf('Show.S01E01.1080p\n👤 12 💾 1.2 GB\nMulti Audio / 🇬🇧 / 🇮🇹'), 'en,it,multi', 'flags and multi audio were not read');
 assert.strictEqual(langsOf('Filme.2023.1080p.WEB-DL.DUAL.5.1 Dublado'), 'pt-BR,multi', 'a Brazilian dubbed release was not detected');
@@ -304,20 +304,33 @@ assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',
 (function bestSourceRules() {
   var best = firstRun.context.__SC_BEST_SOURCE__;
   var fourK = { addon: 'a', quality: '4K', compatRank: 0 };
+  var unknown = { addon: 'a', quality: 'Other', compatRank: 0 };
+  var low = { addon: 'a', quality: 'SD', compatRank: 0 };
   var fullHd = { addon: 'a', quality: '1080p', compatRank: 0 };
   var hevc = { addon: 'a', quality: '1080p', compatRank: 2, compatLabels: ['HEVC 10-bit'] };
   var archive = { addon: 'a', quality: '1080p', compatRank: 4 };
   var stored = { addon: 'a', stored: '?x', quality: 'Recent' };
-  assert.strictEqual(best([stored, fourK, fullHd], 100), fourK, 'a fast connection did not get the first source');
-  assert.strictEqual(best([fourK, fullHd], 10), fullHd, 'a source too heavy for the connection was chosen');
-  assert.strictEqual(best([fourK], 2), fourK, 'with nothing lighter, nothing was chosen');
-  assert.strictEqual(best([hevc, fullHd], 100), fullHd, 'a source with a warning won over one without');
-  assert.strictEqual(best([archive, hevc], 100), hevc, 'an archive was chosen over a source with a warning');
-  assert.strictEqual(best([archive, stored], 100), null, 'something that cannot play was chosen');
-  assert.strictEqual(best([fourK, fullHd], 0), fourK, 'an unknown speed changed the choice');
+  assert.strictEqual(best([stored, fourK, fullHd]), fourK, 'the first source of the list was not chosen');
+  assert.strictEqual(best([unknown, low, fullHd]), fullHd, 'an unknown or low quality won over a known one');
+  assert.strictEqual(best([unknown, hevc]), unknown, 'a warning lost to nothing better without one');
+  assert.strictEqual(best([fourK, fullHd], '1080p'), fullHd, 'the quality asked for was not chosen');
+  assert.strictEqual(best([unknown, low], 'SD'), low, 'a low quality asked for was not chosen');
+  assert.strictEqual(best([fourK], '720p'), fourK, 'without the quality asked for, nothing was chosen');
+  assert.strictEqual(best([hevc, fullHd]), fullHd, 'a source with a warning won over one without');
+  assert.strictEqual(best([archive, hevc]), hevc, 'an archive was chosen over a source with a warning');
+  assert.strictEqual(best([archive, stored]), null, 'something that cannot play was chosen');
 })();
 (function languageFiles() {
   var english = {};
+  function languageOf(tv, stored) {
+    var context = { navigator: { language: tv }, localStorage: { getItem: function () { return stored || null; } } };
+    require('vm').runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'shared', 'strings.js'), 'utf8') + ';this.lang=UI_LANG;', context);
+    return context.lang;
+  }
+  assert.strictEqual(languageOf('pt-PT'), 'pt-BR', 'a TV in Portuguese did not open in Portuguese');
+  assert.strictEqual(languageOf('fr-FR'), 'fr', 'a TV in French did not open in French');
+  assert.strictEqual(languageOf('ja-JP'), 'en-US', 'a language the app does not have did not fall back to English');
+  assert.strictEqual(languageOf('pt-BR', 'de'), 'de', 'the language of the TV won over the viewer\'s choice');
   var stringsContext = { localStorage: { getItem: function () { return null; } } };
   require('vm').runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'shared', 'strings.js'), 'utf8'), stringsContext);
   english = stringsContext.UI_TEXT['en-US'];

@@ -73,13 +73,14 @@ var settings = {
         k: 'preferredSourceQuality',
         lb: tx('preferredQuality'),
         opts: [
+          ['Ask', tx('qualityAsk')],
           ['Auto', tx('automatic')],
           ['4K', '4K'],
           ['1080p', '1080p'],
           ['720p', '720p'],
           ['SD', 'SD']
         ],
-        d: 'Auto'
+        d: 'Ask'
       },
       {
         k: 'preferredSourceLanguage',
@@ -200,7 +201,7 @@ var settings = {
         opts: Object.keys(UI_LANGUAGES).map(function (code) {
           return [code, UI_LANGUAGES[code]];
         }),
-        d: 'en-US'
+        d: UI_LANG
       },
       {
         k: 'uiTextSize',

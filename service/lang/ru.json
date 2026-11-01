@@ -175,6 +175,8 @@
   "reloadingApp": "Перезапуск StremCompat…",
   "sourceGroup": "Источники",
   "preferredQuality": "Предпочитаемое качество",
+  "qualityAsk": "Спрашивать",
+  "whichQuality": "Какое качество?",
   "preferredLanguage": "Предпочитаемый язык источника",
   "anyLanguage": "Любой",
   "langFilter": "Язык: {0}",

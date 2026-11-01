@@ -220,7 +220,8 @@ var UI_TEXT = {
     diagDisk: 'Storage: {0} MB free of {1} MB',
     diagStreaming: 'Streaming server: {0}',
     diagStreamFailed: 'not available ({0})',
-    torrentsUnavailable: 'The torrent engine is not available on this TV. Debrid and direct sources still work.',
+    torrentsUnavailable:
+      'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
     diagRunning: 'running',
     diagStopped: 'stopped',
@@ -236,6 +237,8 @@ var UI_TEXT = {
     reloadingApp: 'Reloading StremCompat…',
     sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
+    qualityAsk: 'Ask',
+    whichQuality: 'Which quality?',
     preferredLanguage: 'Preferred source language',
     anyLanguage: 'Any',
     langFilter: 'Language: {0}',
@@ -553,7 +556,8 @@ var UI_TEXT = {
     diagDisk: 'Armazenamento: {0} MB livres de {1} MB',
     diagStreaming: 'Servidor de streaming: {0}',
     diagStreamFailed: 'indisponível ({0})',
-    torrentsUnavailable: 'O motor de torrents não está disponível nesta TV. Fontes debrid e diretas continuam funcionando.',
+    torrentsUnavailable:
+      'O motor de torrents não está disponível nesta TV. Fontes debrid e diretas continuam funcionando.',
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     diagRunning: 'ativo',
     diagStopped: 'parado',
@@ -569,6 +573,8 @@ var UI_TEXT = {
     reloadingApp: 'Recarregando o StremCompat…',
     sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
+    qualityAsk: 'Perguntar',
+    whichQuality: 'Qual qualidade?',
     preferredLanguage: 'Idioma preferido das fontes',
     anyLanguage: 'Qualquer',
     langFilter: 'Idioma: {0}',
@@ -734,6 +740,13 @@ var UI_LANGUAGES = {
 function normalizeUILanguage(value) {
   return Object.prototype.hasOwnProperty.call(UI_LANGUAGES, value) ? value : 'en-US';
 }
+/* the TV's language, when the app has it */
+function tvLanguage() {
+  var base = String((typeof navigator !== 'undefined' && navigator.language) || '')
+    .toLowerCase()
+    .split('-')[0];
+  return base === 'pt' ? 'pt-BR' : base;
+}
 /* what the file does not have, or a file that cannot be read, falls back to English */
 function loadUILanguage(code) {
   if (UI_TEXT[code]) return;
@@ -747,9 +760,9 @@ function loadUILanguage(code) {
 var UI_LANG = normalizeUILanguage(
   (function () {
     try {
-      return localStorage.getItem(UI_LANG_KEY);
+      return localStorage.getItem(UI_LANG_KEY) || tvLanguage();
     } catch (e) {
-      return null;
+      return tvLanguage();
     }
   })()
 );

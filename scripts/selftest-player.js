@@ -155,7 +155,7 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   var ctx = {
     document: { createElement: node }, $: node, tx: function () { return ''; }, lsRaw: function (k, d) { return d; },
     langRank: function () { return 0; }, langGroups: function () { return []; }, sourceTags: function () { return []; },
-    setF: function () {}, hasNoWarning: function () { return true; }, sourceOrder: function (a, b) { return b.seeds - a.seeds; }, window: {}
+    setF: function () {}, bestSource: function () { return null; }, sourceOrder: function (a, b) { return b.seeds - a.seeds; }, window: {}
   };
   vm.runInNewContext(src('ui/views/streams.js') + ';this.list=streamsUI;', ctx);
   var list = ctx.list, slow = { seeds: 1 }, fast = { seeds: 5 }, faster = { seeds: 9 };
@@ -171,8 +171,11 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   noSources.key(40);
   assert.strictEqual(noSources.idx, 0, 'Down on an empty list lost the focus');
   assert.strictEqual(noSources.moved, false, 'Down on an empty list counted as moving');
+  var hidden = Object.assign(Object.create(list), { open: true, searching: true, zone: 'list', els: [1, 2], idx: 0 });
+  hidden.key(40);
+  assert.strictEqual(hidden.idx, 0, 'a key moved a list that is not on screen');
   var started = 0;
-  var top = Object.assign(Object.create(list), { open: true, zone: 'chips', langs: ['All', 'en'], startBest: function () { started++; } });
+  var top = Object.assign(Object.create(list), { open: true, zone: 'chips', langs: ['All', 'en'], chooseBest: function () { started++; } });
   top.key(38);
   assert.strictEqual(top.zone, 'best', 'Up from the filters did not reach Best source');
   top.key(13);
@@ -214,6 +217,32 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   assert.strictEqual(direct.fail.className, 'show');
   direct.listeners.playing.forEach(function (fn) { fn(); });
   assert.strictEqual(direct.fail.className, '', 'the failure message stayed over a film that started');
+})();
+
+// ---- Best source asks for the quality each time, unless Settings names one (ui/views/card-menu.js) ----
+(function () {
+  var stored = {}, node = function () { return { style: {}, appendChild: function () {} }; };
+  var ctx = {
+    lsRaw: function (k, d) { return stored[k] || d; },
+    tx: function (k) { return k; }, esc: function (s) { return s; }, ICON: {}, setF: function () {}, $: node,
+    document: { createElement: node }
+  };
+  vm.runInNewContext(src('ui/views/card-menu.js') + ';this.menu=cwMenu;', ctx);
+  var chosen = [], go = function (quality) { chosen.push(quality); };
+  ctx.menu.withPreferredQuality(go);
+  assert.strictEqual(chosen.length, 0, 'Best source started before the quality was answered');
+  ctx.menu.key(37);
+  assert.strictEqual(chosen.length, 0, 'Back started a source');
+  ctx.menu.withPreferredQuality(go);
+  ctx.menu.key(40);
+  ctx.menu.key(13);
+  assert.deepStrictEqual(chosen, ['720p'], 'the answer was not used');
+  ctx.menu.withPreferredQuality(go);
+  assert.strictEqual(ctx.menu.open, true, 'the next press did not ask again');
+  ctx.menu.close();
+  stored.preferredSourceQuality = '1080p';
+  ctx.menu.withPreferredQuality(go);
+  assert.deepStrictEqual(chosen, ['720p', '1080p'], 'a quality set in Settings still asked');
 })();
 
 // ---- a subtitle kept on storage loads once (subtitles.js) ----

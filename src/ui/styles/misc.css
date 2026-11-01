@@ -12,6 +12,7 @@ body.bigtext #dInfo{font-size:27px}
 body.bigtext .ep .t{font-size:28px}
 body.bigtext .st .a{font-size:32px}
 body.bigtext .st .b{font-size:29px}
+body.bigtext .st.f .b{max-height:82px}
 body.bigtext .set .lb{font-size:32px}
 body.bigtext .set .vl{font-size:29px}
 body.bigtext .cwmi{font-size:33px}
@@ -28,7 +29,8 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
   body.bigtext #dInfo{font-size:18px}
   body.bigtext .ep .t{font-size:18px}
   body.bigtext .st .a{font-size:24px}
-  body.bigtext .st .b{font-size:21px;max-height:56px}
+  body.bigtext .st .b{font-size:21px}
+  body.bigtext .st.f .b{max-height:56px}
   body.bigtext #sHint,body.bigtext .emptyh{font-size:19px}
 }
 /* empty states */

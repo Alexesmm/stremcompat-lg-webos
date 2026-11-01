@@ -73,7 +73,7 @@ async function main() {
   try {
     await waitHealth(100);
     browser = childProcess.spawn(chrome, [
-      '--remote-debugging-port=9223', '--user-data-dir=' + profile, '--no-first-run',
+      '--remote-debugging-port=9223', '--user-data-dir=' + profile, '--no-first-run', '--lang=en-US',
       '--disable-default-apps', '--disable-extensions', '--disable-sync', '--disable-gpu',
       '--no-sandbox', '--window-position=-32000,-32000', 'http://127.0.0.1:' + appPort + '/beta?engine=38'
     ], { cwd: path.dirname(chrome), windowsHide: true, stdio: 'ignore' });

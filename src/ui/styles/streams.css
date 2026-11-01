@@ -31,7 +31,9 @@
 .st.f .tg.q{background:#fff;color:#0F766E}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
-.st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.92);max-height:112px;overflow:hidden;white-space:normal;word-break:break-word}
+/* the file name takes one line, and two on the focused source */
+.st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.72);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.st.f .b{max-height:73px;color:#fff;white-space:normal;word-break:break-word}
 .st.f{background:#2a303a;box-shadow:inset 0 0 0 3px #fff}
 .stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.75)}
 .chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang{cursor:pointer}

@@ -152,7 +152,9 @@ var detail = {
       this.addBtn(
         tx('playBest'),
         function () {
-          streamsUI.show(self.type, self.id, bestVid, m.name, true);
+          cwMenu.withPreferredQuality(function (quality) {
+            streamsUI.show(self.type, self.id, bestVid, m.name, quality);
+          });
         },
         ICON.bolt
       );
