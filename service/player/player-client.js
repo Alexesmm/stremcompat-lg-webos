@@ -1876,6 +1876,8 @@ function setEmbSub(n, ti) {
       cues = j.cues;
       subEl._t = null;
       embFirst = true;
+      /* a track kept on storage is complete: nothing is being read, so there is nothing to poll */
+      if (j.cached) embN = -1;
       showToast(j.cached ? P.loaded : P.ready);
       releaseSubHold();
     } else if (j.started) {

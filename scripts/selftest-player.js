@@ -149,6 +149,23 @@ function subtitlePrefs(stored) {
 assert.strictEqual(subtitlePrefs({}).sub, 'por', 'never configured, the subtitle language did not follow the interface');
 assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por', 'the audio language shown in Settings was not used');
 
+// ---- a subtitle kept on storage loads once (subtitles.js) ----
+(function () {
+  var requests = [], toasts = 0;
+  var ctx = {
+    ID: 'tt9', TYPE: '', VID: '', URL: 'http://x/f.mkv', localStorage: memoryStorage({}), HAS_MEDIA_TOOLS: true,
+    v: { addEventListener: function () {}, textTracks: [], currentTime: 0 },
+    document: { getElementById: element, createElement: element },
+    xhr: function (url, cb) { requests.push(url); cb({ cached: true, done: true, cues: [{ s: 0, e: 1, t: 'x' }], gone: url.indexOf('/subtitle-cues') === 0 }); },
+    showToast: function () { toasts++; }, subEl: element('sub'), P: {},
+    defaultMediaLanguage: function () { return 'por'; }
+  };
+  vm.runInNewContext(src('player/subtitles.js') + ';setEmbSub(2,0);pollEmbCues();pollEmbCues();this.state=curSub;', ctx);
+  assert.strictEqual(toasts, 1, 'a subtitle kept on storage kept loading again');
+  assert.strictEqual(requests.length, 1, 'the player kept asking for a complete subtitle');
+  assert.strictEqual(ctx.state, 'emb:2', 'the menu lost the subtitle in use');
+})();
+
 // ---- backup languages, and a subtitle from inside the file chosen before (subtitles.js) ----
 function languagePlayer(stored, tracks, audio) {
   var listeners = {}, chosen = { ext: '', emb: -1 };
