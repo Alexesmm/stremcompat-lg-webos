@@ -8,7 +8,7 @@
   <a href="https://github.com/Alexesmm/stremcompat-lg-webos/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Alexesmm/stremcompat-lg-webos?display_name=tag&color=0F766E"></a>
   <img alt="LG webOS 3.x and 4.x" src="https://img.shields.io/badge/LG%20webOS-3.x%20%7C%204.x-0F766E">
   <img alt="ARMv7" src="https://img.shields.io/badge/architecture-ARMv7-0F766E">
-  <img alt="1280x720 and 1920x1080 graphics" src="https://img.shields.io/badge/UI-1280x720%20%7C%201920x1080-0F766E">
+  <img alt="1920x1080 graphics" src="https://img.shields.io/badge/UI-1920x1080-0F766E">
   <img alt="No root required" src="https://img.shields.io/badge/root-not%20required-2ea44f">
   <img alt="Unofficial community project" src="https://img.shields.io/badge/project-unofficial%20community-ea345e">
   <a href="https://github.com/Alexesmm/stremcompat-lg-webos/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/community-Discussions-2ea44f"></a>
@@ -56,9 +56,7 @@ Captured at the 1920x1080 size the interface uses on the TV. Sources are shown w
 
 ## Downloads
 
-One package for every supported LG TV: download `StremCompat-3.0.0.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases). The app chooses its limits by itself when it opens, with lighter artwork and shorter lists on the weakest TVs.
-
-> Version 3.0.0 is in final testing. Until it is released, the Releases page offers 2.1.0 and the Homebrew repository below is not online.
+One package for every supported LG TV: download `StremCompat-v3.0.0.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases). The app chooses its limits by itself when it opens, with lighter artwork and shorter lists on the weakest TVs.
 
 ## Compatibility
 
@@ -76,7 +74,7 @@ webOS 1.x and 2.x are not supported. LG can change processors inside a family, s
 | Television | webOS / firmware | App version | Result | Source |
 |---|---|---|---|---|
 | LG 50UM7500PSB | 4.x | 3.0.0 | Working | Maintainer |
-| LG 49UJ6565-SB | 3.9.3 | Before 3.0 | Working | Maintainer |
+| LG 49UJ6565-SB | 3.9.3 | 3.0.0 | Working | Maintainer |
 | LG 43LH600T | 3.4.3 / 05.70.50 | 2.1.0, 1280x720 | Working; Magic Remote not tested | User report |
 | LG UJ6300 | Not stated | Not stated | Working so far | User report |
 | LG OLED C9 | Not stated | Not stated | Working | User report |

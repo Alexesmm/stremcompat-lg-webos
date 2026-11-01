@@ -13,13 +13,13 @@
     "format:check": "prettier --check \"src/ui/**/*.js\" \"src/player/*.js\" \"src/platform/**/*.js\" \"platforms/tizen/*.js\" \"platforms/tizen/service/*.js\" \"service/local-server.js\" \"service/server/*.js\"",
     "runtime": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-runtime.ps1",
     "build": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7 -SkipPackage",
-    "package": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7",
+    "package": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7-1080",
     "package:all": "npm run package && npm run package:1080",
     "test": "node ./scripts/selftest-frontend.js && node ./scripts/selftest-player.js && node ./scripts/selftest-runtime.js && node ./scripts/selftest-tizen.js",
     "test:chrome38": "node ./scripts/selftest-chromium38.js",
     "test:visual:layouts": "powershell -ExecutionPolicy Bypass -File ./scripts/visualtest-layouts.ps1",
     "verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify.ps1",
-    "package:1080": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7-1080"
+    "package:720": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7"
   },
   "devDependencies": {
     "@webos-tools/cli": "3.2.6",
