@@ -5,12 +5,12 @@
 #heroLogo{width:420px;height:122px;object-fit:contain;object-position:left bottom;display:none}
 #heroTitle{height:122px;overflow:hidden;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:flex-end;justify-content:flex-end;font-size:60px;font-weight:800;line-height:1.04;letter-spacing:-1px}
 #heroTitle.long{font-size:44px}
-#heroMeta{margin-top:16px;height:32px;line-height:32px;font-size:22px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden}
+#heroMeta{margin-top:16px;height:32px;line-height:32px;font-size:24px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden}
 #heroMeta span{margin-right:24px}
 #heroMeta .where{color:#5EEAD4;font-weight:700}
-#heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:14px;font-weight:800;line-height:20px;vertical-align:2px}
+#heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:16px;font-weight:800;line-height:22px;vertical-align:2px}
 /* two lines ending in an ellipsis instead of a sentence cut in half */
-#heroDesc{margin-top:12px;font-size:23px;line-height:1.45;color:rgba(255,255,255,.72);max-height:67px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+#heroDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-height:73px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 
 /* ---------- rows ---------- */
 #rowsClip{position:absolute;top:396px;left:128px;right:0;bottom:0;overflow:hidden}
@@ -38,7 +38,7 @@
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:14px;right:14px;bottom:12px;height:6px;border-radius:3px;background:rgba(255,255,255,.28);overflow:hidden}
 .pbar div{height:100%;background:#2DD4BF}
-.cwlabel .sub{margin-top:3px;font-size:19px;font-weight:400;color:rgba(255,255,255,.76);overflow:hidden;text-overflow:ellipsis}
+.cwlabel .sub{margin-top:3px;font-size:21px;font-weight:400;color:rgba(255,255,255,.76);overflow:hidden;text-overflow:ellipsis}
 .cwlabel .sub.next{color:#99F6E4}
 .cwlabel{position:absolute;left:0;right:0;bottom:0;padding:44px 16px 28px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.86));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wbadge{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:50%;background:rgba(15,118,110,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;z-index:3}

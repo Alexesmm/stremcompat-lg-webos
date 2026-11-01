@@ -12,10 +12,10 @@
   #heroLogo{width:280px;height:80px}
   #heroTitle{font-size:40px;height:80px}
   #heroTitle.long{font-size:30px}
-  #heroMeta{margin-top:10px;height:22px;line-height:22px;font-size:15px}
+  #heroMeta{margin-top:10px;height:24px;line-height:24px;font-size:16px}
   #heroMeta span{margin-right:16px}
-  #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:10px;line-height:14px;vertical-align:1px}
-  #heroDesc{margin-top:7px;font-size:16px;line-height:1.4;max-height:45px}
+  #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
+  #heroDesc{margin-top:7px;font-size:17px;line-height:1.4;max-height:48px}
   #rowsClip{top:250px;left:86px}
   #boardMsg{top:270px;left:112px;font-size:20px}
   .row{padding:9px 0 18px 26px;transform:translateY(10px)}
@@ -31,8 +31,8 @@
   .morelbl{margin-top:-13px;font-size:20px}
   .pbar{left:9px;right:9px;bottom:8px;height:4px;border-radius:2px}
   .cwlabel{bottom:0;padding:28px 10px 17px;font-size:17px}
-  .cwlabel .sub{margin-top:1px;font-size:13px}
-  .epbadge{left:7px;top:7px;padding:3px 7px;font-size:12px}
+  .cwlabel .sub{margin-top:1px;font-size:15px}
+  .epbadge{left:7px;top:7px;padding:3px 7px;font-size:14px}
   .wbadge{top:8px;right:8px;width:31px;height:31px}
   .wbadge svg{width:19px;height:19px}
   #streams{top:70px;width:620px;padding:20px}
@@ -45,18 +45,18 @@
   .st .a{font-size:22px}
   .st .rec{margin-bottom:5px;font-size:15px}
   .st .compat{margin-top:4px;font-size:16px}
-  .st .tags{margin-top:5px}.tg{padding:2px 7px;margin:0 5px 4px 0;border-radius:4px;font-size:14px}
+  .st .tags{margin-top:5px}.tg{padding:2px 7px;margin:0 5px 4px 0;border-radius:4px;font-size:15px}
   .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
   #dWrap{top:36px;left:112px;right:40px}
   #dLogo{width:320px;height:100px}
   #dTitle{font-size:46px;max-height:100px}
-  #dMeta{margin-top:11px;font-size:16px}
+  #dMeta{margin-top:11px;font-size:17px}
   #dMeta span{margin-right:16px}
-  #dMeta .imdb{margin-left:5px;padding:0 4px;font-size:11px;line-height:15px;vertical-align:1px}
-  #dInfo{margin-top:8px;font-size:15px}#dInfo div{margin-bottom:3px}#dInfo .awards{font-size:14px}
-  #dDesc{margin-top:8px;font-size:17px;line-height:1.4;max-height:72px}
+  #dMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
+  #dInfo{margin-top:8px;font-size:16px}#dInfo div{margin-bottom:3px}#dInfo .awards{font-size:15px}
+  #dDesc{margin-top:8px;font-size:18px;line-height:1.4;max-height:76px}
   #dBtns{margin-top:16px}.btn{height:44px;margin-right:8px;border-radius:22px;font-size:18px}.btn svg{width:21px;height:21px}.btn .bl{margin-left:7px}.btn.main{padding:0 24px 0 18px}.btn.ico{width:44px}.btn.ico.f{padding:0 19px 0 13px}
-  #dSeasons{margin-top:15px}.schip{padding:7px 16px;margin-right:7px;font-size:15px}
+  #dSeasons{margin-top:15px}.schip{padding:7px 16px;margin-right:7px;font-size:16px}
   #simWrap,#discWrap,#sWrap,#setWrap,#aWrap{top:30px;left:112px;right:30px}
   #discTitle{font-size:34px;margin-bottom:12px}
   #discFilters{height:47px}
@@ -64,14 +64,14 @@
   .fmenu{top:42px;min-width:190px;max-height:300px;padding:6px;border-radius:9px}.fopt{padding:10px 31px 10px 13px;font-size:17px}.fopt.cur:after{right:13px;width:7px;height:7px;margin-top:-4px}
   #discGridClip{top:92px}
   #sBox{width:348px;padding:15px 21px;font-size:23px;border-radius:10px}
-  #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:15px}
+  #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:16px}
   #sSide{left:384px}
   #sHint{margin-top:9px;font-size:17px}
   .empty{padding:40px 26px 0}.emptyic,.emptyic svg{width:38px;height:38px}.emptyt{font-size:23px}.emptyh{font-size:17px}
-  .setdiag{padding:9px 17px;font-size:15px}
-  #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:15px}
+  .setdiag{padding:9px 17px;font-size:16px}
+  #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:16px}
   #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
-  #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
+  #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:16px}#spDesc{margin-top:5px;font-size:16px;line-height:1.25;max-height:40px}
   #sRowsClip{top:110px;left:376px}
   #sRows{left:-20px}
   #dEps{height:224px;margin-top:12px;margin-right:-40px;padding:5px 5px 0}
@@ -81,7 +81,7 @@
   body.series-episode #dLogo{width:280px;height:76px}
   body.series-episode #dTitle{font-size:38px}
   body.series-episode #dMeta{margin-top:8px;font-size:18px}
-  body.series-episode #dDesc{margin-top:6px;height:46px;max-height:none;font-size:16px;line-height:1.4}
+  body.series-episode #dDesc{margin-top:6px;height:48px;max-height:none;font-size:17px;line-height:1.4}
   body.series-episode #dSeasons{margin-top:12px}
   #aHead{height:78px;padding-right:175px}
   #aTitle{font-size:36px;margin-bottom:6px}

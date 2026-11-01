@@ -6,7 +6,7 @@
 /* Login is intentionally standalone: navigation and the decorative watermark only
    become relevant after an account is connected. */
 body.login #topnav,body.login #logobg{display:none}
-.chip{position:relative;width:60px;height:56px;margin:4px 0;border-radius:14px;color:rgba(255,255,255,.45);background:transparent;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-sizing:border-box;transition:background .12s ease,color .12s ease}
+.chip{position:relative;width:60px;height:56px;margin:4px 0;border-radius:14px;color:rgba(255,255,255,.6);background:transparent;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-sizing:border-box;transition:background .12s ease,color .12s ease}
 .chip svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;-webkit-flex:none;flex:none}
 .navlabel{display:block;position:absolute;left:84px;top:50%;margin-top:-17px;line-height:34px;font-size:26px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap;pointer-events:none;opacity:0;-webkit-transform:translateX(-10px);transform:translateX(-10px);transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.2,.8,.2,1)}
 /* while the menu has focus the labels appear over a darker panel, without moving the page */

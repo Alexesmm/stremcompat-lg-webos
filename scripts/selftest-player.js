@@ -140,11 +140,64 @@ function subtitlePrefs(stored) {
     ID: 'tt9', TYPE: 'series', VID: '', URL: '', localStorage: storage, HAS_MEDIA_TOOLS: true,
     v: { addEventListener: function () {}, textTracks: [], currentTime: 0 },
     document: { getElementById: element, createElement: element },
-    xhr: function () {}, showToast: function () {}, subEl: element('sub')
+    xhr: function () {}, showToast: function () {}, subEl: element('sub'),
+    defaultMediaLanguage: function () { return 'por'; }
   };
   vm.runInNewContext(src('player/subtitles.js') + ';this.__out={sub:WANTSUB,aud:WANTAUD,delay:subDelay};', ctx);
   return ctx.__out;
 }
+assert.strictEqual(subtitlePrefs({}).sub, 'por', 'never configured, the subtitle language did not follow the interface');
+assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por', 'the audio language shown in Settings was not used');
+
+// ---- backup languages, and a subtitle from inside the file chosen before (subtitles.js) ----
+function languagePlayer(stored, tracks, audio) {
+  var listeners = {}, chosen = { ext: '', emb: -1 };
+  var ctx = {
+    ID: 'tt9', TYPE: '', VID: '', URL: '', localStorage: memoryStorage(stored), HAS_MEDIA_TOOLS: true,
+    v: { addEventListener: function (name, fn) { listeners[name] = fn; }, textTracks: [], currentTime: 0, audioTracks: audio || [] },
+    document: { getElementById: element, createElement: element },
+    xhr: function (url, cb) { cb({ tracks: tracks || [] }); }, showToast: function () {}, subEl: element('sub'), P: { subtitles: '' },
+    defaultMediaLanguage: function () { return 'por'; }
+  };
+  vm.runInNewContext(src('player/subtitles.js') + ';' +
+    'setExtSub=function(u){curSub="ext:"+u;this.chosen.ext=u}.bind(this);setEmbSub=function(n){curSub="emb:"+n;this.chosen.emb=n}.bind(this);' +
+    'this.withSubs=function(l){extSubs=l;autoSub()};this.autoAudio=autoAudio;', Object.assign(ctx, { chosen: chosen }));
+  ctx.listeners = listeners;
+  return ctx;
+}
+var subs = [{ lang: 'eng', name: 'English', u: 'en' }, { lang: 'pob', name: 'Portuguese', u: 'pt' }];
+var primary = languagePlayer({ subsLang: 'por', subsLang2: 'eng' });
+primary.withSubs(subs);
+assert.strictEqual(primary.chosen.ext, 'pt', 'the primary subtitle language lost to the backup, or pob was not Portuguese');
+var backup = languagePlayer({ subsLang: 'jpn', subsLang2: 'eng' });
+backup.withSubs(subs);
+assert.strictEqual(backup.chosen.ext, 'en', 'the backup subtitle language was not used');
+var noBackup = languagePlayer({ subsLang: 'jpn' });
+noBackup.withSubs(subs);
+assert.strictEqual(noBackup.chosen.ext, '', 'a subtitle in another language came on');
+var setOff = languagePlayer({ subsLang: '', subsLang2: 'eng' });
+setOff.withSubs(subs);
+assert.strictEqual(setOff.chosen.ext, '', 'subtitles set to Off came on through the backup');
+
+function audioChoice(stored, tracks) {
+  var player = languagePlayer(Object.assign({ enableDefaultAudioTrack: 'true' }, stored), null, tracks);
+  player.autoAudio();
+  return tracks.map(function (track) { return !!track.enabled; });
+}
+assert.deepStrictEqual(audioChoice({ defaultAudioTrack: 'por' }, [{ language: 'en', enabled: true }, { language: 'pt' }]), [false, true], 'a two-letter pt did not match por');
+assert.deepStrictEqual(audioChoice({ defaultAudioTrack: 'jpn', defaultAudioTrack2: 'eng' }, [{ language: 'pt', enabled: true }, { language: 'en' }]), [false, true], 'the backup audio language was not used');
+assert.deepStrictEqual(audioChoice({ defaultAudioTrack: 'por' }, [{ language: '' }, { language: 'en', enabled: true }]), [false, true], 'a track without a language was taken for the wanted one');
+
+var pref = JSON.stringify({ sub: 'jpn', embLang: 'jpn' });
+var inside = languagePlayer({ tvtitle_tt9: pref }, [{ n: 4, ti: 1, lang: 'jpn', name: 'Japanese' }]);
+inside.withSubs([{ lang: 'jpn', name: 'Japanese', u: 'ja' }]);
+assert.strictEqual(inside.chosen.ext, '', 'an external subtitle replaced the one from inside the file');
+inside.listeners.playing();
+assert.strictEqual(inside.chosen.emb, 4, 'the subtitle from inside the file was not chosen again');
+var gone = languagePlayer({ tvtitle_tt9: pref }, []);
+gone.withSubs([{ lang: 'jpn', name: 'Japanese', u: 'ja' }]);
+gone.listeners.playing();
+assert.strictEqual(gone.chosen.ext, 'ja', 'a file without that track did not fall back to an external subtitle');
 var defaults = subtitlePrefs({ subsLang: 'por', enableDefaultAudioTrack: 'true', defaultAudioTrack: 'eng' });
 assert.strictEqual(defaults.sub, 'por', 'Settings subtitle language was not used');
 assert.strictEqual(defaults.aud, 'eng', 'Settings audio language was not used');
@@ -163,7 +216,7 @@ var busyCtx = {
   document: { getElementById: element, createElement: element }, location: { search: '' },
   xhr: function () {}, showToast: function () {}, subEl: element('sub')
 };
-vm.runInNewContext(src('player/subtitles.js'), busyCtx);
+vm.runInNewContext('function defaultMediaLanguage(){return "por"}' + src('player/subtitles.js'), busyCtx);
 assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), false, 'the controls were held with nothing loading');
 vm.runInNewContext('embTracksLoading = true', busyCtx);
 assert.strictEqual(vm.runInNewContext('playerBusy()', busyCtx), true, 'the controls could hide while the track list was loading');
@@ -191,7 +244,7 @@ function holdSession(paused) {
     setTimeout: function (f) { timers.push(f); return timers.length; }, clearTimeout: function (i) { timers[i - 1] = null; },
     setInterval: function () { return 99; }, clearInterval: function () {}
   };
-  vm.runInNewContext(src('player/subtitles.js'), ctx);
+  vm.runInNewContext('function defaultMediaLanguage(){return "por"}' + src('player/subtitles.js'), ctx);
   ctx.fireTimer = function () { timers.filter(Boolean).forEach(function (f) { f(); }); };
   ctx.answer = function (j) { xhrs.shift()(j); };
   ctx.toasts = toasts;

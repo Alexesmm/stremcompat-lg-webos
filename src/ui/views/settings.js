@@ -65,7 +65,8 @@ var settings = {
     }
     $('setAcct').getElementsByClassName('pl')[0].textContent = prem;
     var langOpts = mediaLanguageOptions(),
-      audioOpts = langOpts.slice(1);
+      audioOpts = langOpts.slice(1),
+      backupOpts = [['', tx('none')]].concat(audioOpts);
     this.defs = [
       { head: tx('sourceGroup') },
       {
@@ -126,7 +127,8 @@ var settings = {
         d: 'false'
       },
       { head: tx('subtitlesGroup') },
-      { k: 'subsLang', lb: tx('defaultLanguage'), opts: langOpts, d: 'por' },
+      { k: 'subsLang', lb: tx('defaultLanguage'), opts: langOpts, d: defaultMediaLanguage() },
+      { k: 'subsLang2', lb: tx('backupLanguage'), opts: backupOpts, d: '' },
       {
         k: 'subtitleSize',
         lb: tx('subtitleSize'),
@@ -189,7 +191,8 @@ var settings = {
         ],
         d: 'false'
       },
-      { k: 'defaultAudioTrack', lb: tx('defaultAudio'), opts: audioOpts, d: 'por' },
+      { k: 'defaultAudioTrack', lb: tx('defaultAudio'), opts: audioOpts, d: defaultMediaLanguage() },
+      { k: 'defaultAudioTrack2', lb: tx('backupLanguage'), opts: backupOpts, d: '' },
       { head: tx('interfaceGroup') },
       {
         k: UI_LANG_KEY,

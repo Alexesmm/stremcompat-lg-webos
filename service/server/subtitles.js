@@ -174,8 +174,14 @@ function embTracks(u, res) {
       .forEach(function (stream, n) {
         if (IMAGE_CODECS.indexOf(stream.codec_name || '') >= 0) return;
         var tags = stream.tags || {};
-        var name = langName((tags.language || '').toLowerCase());
-        tracks.push({ n: n, ti: tracks.length, name: tags.title ? name + ' — ' + tags.title : name });
+        var lang = (tags.language || '').toLowerCase();
+        var name = langName(lang);
+        tracks.push({
+          n: n,
+          ti: tracks.length,
+          lang: lang,
+          name: tags.title ? name + ' — ' + tags.title : name
+        });
       });
     sendJson(res, { tracks: tracks, err: '' });
   });

@@ -80,7 +80,7 @@ function openMenu(view) {
         var et = embTracks[j];
         var fb = curSub === 'emb:' + et.n;
         html += '<div class="mi' + (fb ? ' on' : '') + '">' + eh(selectedLabel(et.name, fb)) + '</div>';
-        menuItems.push({ k: 'emb', idx: et.n, ti: et.ti });
+        menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang });
       }
     }
   } else if (view === 'external') {
@@ -254,11 +254,18 @@ function chooseMenu() {
   if (it.k === 'off') {
     subsOff();
     saveTitlePref('sub', 'off');
+    saveTitlePref('embLang', '');
   } else if (it.k === 'ext') {
     setExtSub(it.u);
     for (var x = 0; x < extSubs.length; x++) if (extSubs[x].u === it.u) saveTitlePref('sub', extSubs[x].lang);
-  } else if (it.k === 'emb') setEmbSub(it.idx, it.ti);
-  else if (it.k === 'aud') {
+    saveTitlePref('embLang', '');
+  } else if (it.k === 'emb') {
+    setEmbSub(it.idx, it.ti);
+    if (it.lang) {
+      saveTitlePref('sub', it.lang);
+      saveTitlePref('embLang', it.lang);
+    }
+  } else if (it.k === 'aud') {
     try {
       for (var j = 0; j < v.audioTracks.length; j++) v.audioTracks[j].enabled = j === it.idx;
       audioChosenAt = Date.now();

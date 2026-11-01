@@ -28,18 +28,51 @@ var SEEKSTEP = parseInt(lsGet('seekStep', '10'), 10) || 10;
 var EMBMODE = lsGet('embSubsMode', 'server');
 // "server"=our ffmpeg extraction, "native"=TV textTracks
 var PREVIEW_ON = HAS_MEDIA_TOOLS && lsGet('scrubPreview', 'false') === 'true';
-// default to English auto-subs when the setting was NEVER configured; a stored "" = user chose Off
+// the interface language's subtitles when the setting was NEVER configured; a stored "" = user chose Off
 var rawSub = lsGet('subsLang', null);
 if (rawSub == null) rawSub = lsGet('subtitles', null);
-var WANTSUB = (rawSub == null ? 'eng' : rawSub).toLowerCase();
-var WANTAUD =
-  lsGet('enableDefaultAudioTrack', 'false') === 'true'
-    ? (lsGet('defaultAudioTrack', '') || '').toLowerCase()
-    : '';
+var WANTSUB = (rawSub == null ? defaultMediaLanguage() : rawSub).toLowerCase();
+var WANTSUB2 = (lsGet('subsLang2', '') || '').toLowerCase();
+var AUDIO_AUTO = lsGet('enableDefaultAudioTrack', 'false') === 'true';
+var WANTAUD = AUDIO_AUTO ? (lsGet('defaultAudioTrack', defaultMediaLanguage()) || '').toLowerCase() : '';
+var WANTAUD2 = AUDIO_AUTO ? (lsGet('defaultAudioTrack2', '') || '').toLowerCase() : '';
+/* TVs and addons name a language in two or three letters, sometimes with a region */
+var LANG_CODES = {
+  pt: 'por',
+  pob: 'por',
+  en: 'eng',
+  es: 'spa',
+  fr: 'fre',
+  fra: 'fre',
+  it: 'ita',
+  de: 'ger',
+  deu: 'ger',
+  ar: 'ara',
+  ru: 'rus',
+  tr: 'tur',
+  pl: 'pol',
+  nl: 'dut',
+  nld: 'dut',
+  sv: 'swe',
+  he: 'heb',
+  hi: 'hin',
+  ja: 'jpn',
+  ko: 'kor',
+  zh: 'chi',
+  zho: 'chi'
+};
+function sameLanguage(a, b) {
+  a = (a || '').toLowerCase().split(/[-_]/)[0];
+  b = (b || '').toLowerCase().split(/[-_]/)[0];
+  a = LANG_CODES[a] || a;
+  return !!a && a === (LANG_CODES[b] || b);
+}
 /* Choices remembered per title (the series, not the episode): the audio language, the
-   subtitle language or Off, and the subtitle delay. They win over the Settings defaults,
-   so an anime watched in Japanese with Portuguese subtitles stays that way. */
+   subtitle language or Off, whether it was inside the file, and the subtitle delay. They
+   win over the Settings defaults, so an anime watched in Japanese with Portuguese subtitles
+   stays that way. */
 var TITLE_PREF_KEY = 'tvtitle_' + ID;
+var WANT_EMB = '';
 function titlePref() {
   try {
     return JSON.parse(localStorage.getItem(TITLE_PREF_KEY) || 'null') || {};
@@ -59,6 +92,7 @@ function saveTitlePref(field, value) {
   var p = titlePref();
   if (p.aud) WANTAUD = p.aud;
   if (p.sub) WANTSUB = p.sub === 'off' ? '' : p.sub;
+  if (p.embLang) WANT_EMB = p.embLang;
   if (typeof p.delay === 'number') subDelay = p.delay;
 })();
 var embTracks = null,
@@ -71,17 +105,37 @@ var embTracks = null,
   embFirst = false,
   embFailed = false;
 var autoSubDone = false;
+function subOfLanguage(lang) {
+  for (var i = 0; i < extSubs.length; i++) if (sameLanguage(extSubs[i].lang, lang)) return extSubs[i];
+  return null;
+}
 function autoSub() {
-  if (autoSubDone || curSub !== 'off' || !WANTSUB) return;
-  for (var i = 0; i < extSubs.length; i++) {
-    if ((extSubs[i].lang || '').toLowerCase() === WANTSUB) {
-      autoSubDone = true;
-      setExtSub(extSubs[i].u);
-      showToast(P.subtitles + ': ' + extSubs[i].name);
+  if (autoSubDone || curSub !== 'off' || !WANTSUB || WANT_EMB) return;
+  var found = subOfLanguage(WANTSUB) || (WANTSUB2 && subOfLanguage(WANTSUB2));
+  if (!found) return;
+  autoSubDone = true;
+  setExtSub(found.u);
+  showToast(P.subtitles + ': ' + found.name);
+}
+/* A subtitle from inside the file, chosen before for this title. Reading the tracks costs
+   the TV some effort, so only the titles that need it do so, once the film is playing. */
+function autoEmb() {
+  if (!WANT_EMB) return;
+  var want = WANT_EMB;
+  WANT_EMB = '';
+  if (curSub !== 'off') return;
+  for (var i = 0; embTracks && i < embTracks.length; i++) {
+    if (sameLanguage(embTracks[i].lang, want)) {
+      setEmbSub(embTracks[i].n, embTracks[i].ti);
+      showToast(P.subtitles + ': ' + embTracks[i].name);
       return;
     }
   }
+  autoSub();
 }
+v.addEventListener('playing', function () {
+  if (WANT_EMB) ensureEmbTracks();
+});
 /* External subtitles from the account's subtitle addons (same-origin localStorage, as the
    interface keeps them), asked by the local server with this file's name and hash; with
    none installed the server asks the public OpenSubtitles addon. */
@@ -120,19 +174,20 @@ function loadExtSubs() {
 if (TYPE && VID) loadExtSubs();
 // honour the Settings default audio language: enable the matching embedded audio track
 var autoAudDone = false;
+function audioOfLanguage(ts, lang) {
+  for (var i = 0; lang && i < ts.length; i++) if (sameLanguage(ts[i].language, lang)) return i;
+  return -1;
+}
 function autoAudio() {
   if (autoAudDone || !WANTAUD) return;
   try {
     var ts = v.audioTracks;
     if (!ts || !ts.length) return;
-    for (var i = 0; i < ts.length; i++) {
-      var l = (ts[i].language || '').toLowerCase();
-      if (l === WANTAUD || l.indexOf(WANTAUD) === 0 || WANTAUD.indexOf(l) === 0) {
-        autoAudDone = true;
-        for (var j = 0; j < ts.length; j++) ts[j].enabled = j === i;
-        return;
-      }
-    }
+    var found = audioOfLanguage(ts, WANTAUD);
+    if (found < 0) found = audioOfLanguage(ts, WANTAUD2);
+    if (found < 0) return;
+    autoAudDone = true;
+    for (var j = 0; j < ts.length; j++) ts[j].enabled = j === found;
   } catch (e) {}
 }
 v.addEventListener('loadeddata', autoAudio);
@@ -143,6 +198,7 @@ function ensureEmbTracks() {
   /* a player that decodes the file itself already knows its tracks */
   if (v.textTrackList) {
     embTracks = v.textTrackList();
+    autoEmb();
     return;
   }
   if (embTracksLoaded || embTracksLoading) return;
@@ -155,6 +211,7 @@ function ensureEmbTracks() {
     embTimeout = !!(j && j.timeout);
     /* a failed read is asked again the next time the menu opens (or on Try again) */
     if (embErr || !j) embTracksLoaded = false;
+    autoEmb();
   });
 }
 function setExtSub(u) {

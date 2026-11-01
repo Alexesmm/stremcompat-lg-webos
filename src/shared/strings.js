@@ -142,7 +142,7 @@ var UI_TEXT = {
     playBest: 'Best source',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
-    recommendedSource: 'Recommended for this TV',
+    recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
       "Can't reach Stremio. Check the TV's internet connection. If other apps work, turn off IPv6 in the TV's network settings. ({0})",
@@ -198,6 +198,7 @@ var UI_TEXT = {
     subtitlesGroup: 'Subtitles',
     subtitleSize: 'Subtitle size',
     defaultLanguage: 'Default language',
+    backupLanguage: 'Backup language',
     subtitleColor: 'Subtitle color',
     subtitleOutline: 'Subtitle outline',
     subtitleBackground: 'Subtitle background',
@@ -474,7 +475,7 @@ var UI_TEXT = {
     playBest: 'Melhor fonte',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
-    recommendedSource: 'Recomendada para esta TV',
+    recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
       'Não foi possível conectar ao Stremio. Verifique a internet da TV. Se outros apps funcionam, desative o IPv6 nas configurações de rede da TV. ({0})',
@@ -530,6 +531,7 @@ var UI_TEXT = {
     subtitlesGroup: 'Legendas',
     subtitleSize: 'Tamanho da legenda',
     defaultLanguage: 'Idioma padrão',
+    backupLanguage: 'Idioma de reserva',
     subtitleColor: 'Cor da legenda',
     subtitleOutline: 'Contorno da legenda',
     subtitleBackground: 'Fundo da legenda',
@@ -704,6 +706,10 @@ var UI_LANG = normalizeUILanguage(
   })()
 );
 loadUILanguage(UI_LANG);
+/* the language of audio and subtitles until the viewer picks one */
+function defaultMediaLanguage() {
+  return { 'pt-BR': 'por', es: 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus' }[UI_LANG] || 'eng';
+}
 function tx(key) {
   var args = arguments,
     text = (UI_TEXT[UI_LANG] && UI_TEXT[UI_LANG][key]) || UI_TEXT['en-US'][key] || key;

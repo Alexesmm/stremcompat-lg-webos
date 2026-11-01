@@ -54,7 +54,7 @@ body.trailer #dWrap{opacity:.14}
 /* Login is intentionally standalone: navigation and the decorative watermark only
    become relevant after an account is connected. */
 body.login #topnav,body.login #logobg{display:none}
-.chip{position:relative;width:60px;height:56px;margin:4px 0;border-radius:14px;color:rgba(255,255,255,.45);background:transparent;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-sizing:border-box;transition:background .12s ease,color .12s ease}
+.chip{position:relative;width:60px;height:56px;margin:4px 0;border-radius:14px;color:rgba(255,255,255,.6);background:transparent;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-sizing:border-box;transition:background .12s ease,color .12s ease}
 .chip svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;-webkit-flex:none;flex:none}
 .navlabel{display:block;position:absolute;left:84px;top:50%;margin-top:-17px;line-height:34px;font-size:26px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap;pointer-events:none;opacity:0;-webkit-transform:translateX(-10px);transform:translateX(-10px);transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.2,.8,.2,1)}
 /* while the menu has focus the labels appear over a darker panel, without moving the page */
@@ -80,12 +80,12 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 #heroLogo{width:420px;height:122px;object-fit:contain;object-position:left bottom;display:none}
 #heroTitle{height:122px;overflow:hidden;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:flex-end;justify-content:flex-end;font-size:60px;font-weight:800;line-height:1.04;letter-spacing:-1px}
 #heroTitle.long{font-size:44px}
-#heroMeta{margin-top:16px;height:32px;line-height:32px;font-size:22px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden}
+#heroMeta{margin-top:16px;height:32px;line-height:32px;font-size:24px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden}
 #heroMeta span{margin-right:24px}
 #heroMeta .where{color:#5EEAD4;font-weight:700}
-#heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:14px;font-weight:800;line-height:20px;vertical-align:2px}
+#heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:16px;font-weight:800;line-height:22px;vertical-align:2px}
 /* two lines ending in an ellipsis instead of a sentence cut in half */
-#heroDesc{margin-top:12px;font-size:23px;line-height:1.45;color:rgba(255,255,255,.72);max-height:67px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+#heroDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-height:73px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 
 /* ---------- rows ---------- */
 #rowsClip{position:absolute;top:396px;left:128px;right:0;bottom:0;overflow:hidden}
@@ -113,7 +113,7 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:14px;right:14px;bottom:12px;height:6px;border-radius:3px;background:rgba(255,255,255,.28);overflow:hidden}
 .pbar div{height:100%;background:#2DD4BF}
-.cwlabel .sub{margin-top:3px;font-size:19px;font-weight:400;color:rgba(255,255,255,.76);overflow:hidden;text-overflow:ellipsis}
+.cwlabel .sub{margin-top:3px;font-size:21px;font-weight:400;color:rgba(255,255,255,.76);overflow:hidden;text-overflow:ellipsis}
 .cwlabel .sub.next{color:#99F6E4}
 .cwlabel{position:absolute;left:0;right:0;bottom:0;padding:44px 16px 28px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.86));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wbadge{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:50%;background:rgba(15,118,110,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;z-index:3}
@@ -126,13 +126,13 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 /* fixed boxes: the logo is fitted inside, so its shape never moves what follows */
 #dLogo{width:480px;height:150px;object-fit:contain;object-position:left bottom;display:none}
 #dTitle{font-size:68px;font-weight:800;max-width:62%;line-height:1.05;letter-spacing:-1px}
-#dMeta{margin-top:18px;font-size:24px;color:rgba(255,255,255,.76)}
+#dMeta{margin-top:18px;font-size:26px;color:rgba(255,255,255,.76)}
 #dMeta span{margin-right:24px}
-#dMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:15px;font-weight:800;line-height:21px;vertical-align:2px}
-#dInfo{margin-top:12px;font-size:23px;color:rgba(255,255,255,.55);max-width:62%}
+#dMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:17px;font-weight:800;line-height:23px;vertical-align:2px}
+#dInfo{margin-top:12px;font-size:24px;color:rgba(255,255,255,.72);max-width:62%}
 #dInfo div{margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#dInfo .awards{font-size:21px;color:rgba(245,197,24,.86)}
-#dDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-width:60%;max-height:109px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+#dInfo .awards{font-size:23px;color:rgba(245,197,24,.86)}
+#dDesc{margin-top:12px;font-size:27px;line-height:1.45;color:rgba(255,255,255,.78);max-width:60%;max-height:118px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
 #dBtns{margin-top:32px}
 .btn{display:-webkit-inline-flex;display:inline-flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-sizing:border-box;height:64px;margin-right:12px;border-radius:32px;font-size:26px;font-weight:700;vertical-align:top;background:rgba(255,255,255,.1);color:rgba(255,255,255,.9);transition:background .12s ease}
 .btn svg{width:30px;height:30px;fill:currentColor;-webkit-flex:none;flex:none}
@@ -157,7 +157,7 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 .ep .th{width:430px;height:242px;border-radius:12px;background:#0a0a10;-webkit-flex:none;flex:none;overflow:hidden;position:relative}
 .ep .th img{width:100%;height:100%;border-radius:12px;object-fit:cover}
 .ep .th.fallback img{opacity:.52}
-.epbadge{position:absolute;left:10px;top:10px;z-index:2;padding:5px 11px;border-radius:7px;background:#0F766E;color:#fff;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.epbadge{position:absolute;left:10px;top:10px;z-index:2;padding:5px 11px;border-radius:7px;background:#0F766E;color:#fff;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
 .ep .th .pbar{z-index:2}
 .ep .th:after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(transparent,rgba(0,0,0,.5));border-radius:0 0 10px 10px;pointer-events:none}
 .ep .bd{padding:10px 8px;min-width:0}
@@ -176,12 +176,12 @@ body.series-episode #dSeasons{margin-top:24px}
 #streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(13,17,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 /* the poster would stick out above the panel */
 #streams h3{margin:0 0 8px;font-size:38px}
-#stSub{font-size:26px;color:rgba(255,255,255,.65);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stSub{font-size:26px;color:rgba(255,255,255,.72);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stChips{position:relative;white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
 .stchip.cur{background:rgba(20,184,166,.4);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
-#stLang{display:none;position:absolute;top:36px;right:54px;padding:7px 18px;border-radius:20px;font-size:20px;font-weight:600;color:rgba(255,255,255,.6);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);cursor:pointer}
+#stLang{display:none;position:absolute;top:36px;right:54px;padding:7px 18px;border-radius:20px;font-size:20px;font-weight:600;color:rgba(255,255,255,.72);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);cursor:pointer}
 #stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(20,184,166,.8)}
 #stLang.f{background:#fff;color:#0c0b11;box-shadow:none}
 #stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
@@ -202,19 +202,18 @@ body.series-episode #dSeasons{margin-top:24px}
 .st.f .tg.q{background:#fff;color:#0F766E}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
-.st.f .compat{color:#fff}
 .st .b{margin-top:9px;font-size:26px;line-height:1.4;color:rgba(255,255,255,.92);max-height:112px;overflow:hidden;white-space:normal;word-break:break-word}
-.st.f{background:#0F766E}
-.stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.65)}
+.st.f{background:#2a303a;box-shadow:inset 0 0 0 3px #fff}
+.stmsg{padding:22px;font-size:27px;color:rgba(255,255,255,.75)}
 .chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang{cursor:pointer}
 
 /* ---------- continue-watching long-press menu ---------- */
 #cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(13,17,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
 #cwmTitle{font-size:40px;font-weight:800;margin-bottom:8px;max-height:110px;overflow:hidden}
-#cwmSub{font-size:24px;color:rgba(255,255,255,.55);margin-bottom:34px}
+#cwmSub{font-size:24px;color:rgba(255,255,255,.72);margin-bottom:34px}
 .cwmi{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:23px 30px;border-radius:12px;font-size:30px;font-weight:600;margin-bottom:10px;background:rgba(255,255,255,.05);transition:background .12s ease}
 .cwmi svg{width:34px;height:34px;margin-right:22px;-webkit-flex:none;flex:none;fill:currentColor;opacity:.92}
-.cwmi.f{background:#0F766E}
+.cwmi.f{background:#fff;color:#0c0b11}
 
 /* ---------- similar ---------- */
 #simWrap{position:absolute;top:58px;left:176px;right:0;bottom:0}
@@ -254,12 +253,12 @@ body.series-episode #dSeasons{margin-top:24px}
 .skey.wide{width:164px;font-size:22px}
 .skey.f{background:#fff;color:#0c0b11}
 #sSide{position:absolute;top:0;left:576px;right:0}
-#sHint{margin-top:22px;font-size:25px;color:rgba(255,255,255,.58)}
+#sHint{margin-top:22px;font-size:25px;color:rgba(255,255,255,.72)}
 #sRecent{margin-top:24px}
 #sRecent .schip{margin-bottom:14px}
 #sRecent .schip.clear{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);color:rgba(255,255,255,.7)}
 #sRecent .schip.clear.f{background:#fff;color:#0c0b11;box-shadow:none}
-.sreclbl{margin:0 0 14px 2px;font-size:21px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.sreclbl{margin:0 0 14px 2px;font-size:21px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.7)}
 #sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
 #spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#5EEAD4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -272,7 +271,7 @@ body.series-episode #dSeasons{margin-top:24px}
 #setInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 #setAcct{padding:20px 26px;border-radius:16px;background:rgba(255,255,255,.06);margin-bottom:26px;max-width:1100px}
 #setAcct .em{font-size:32px;font-weight:700}
-#setAcct .pl{margin-top:8px;font-size:24px;color:rgba(255,255,255,.6)}
+#setAcct .pl{margin-top:8px;font-size:24px;color:rgba(255,255,255,.72)}
 .set{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;max-width:1100px;padding:19px 26px;border-radius:14px;margin-bottom:8px;transition:background .12s ease}
 .set .lb{font-size:29px;font-weight:600;-webkit-flex:1;flex:1}
 .set .vl{font-size:26px;color:rgba(255,255,255,.88);font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(255,255,255,.08)}
@@ -282,7 +281,7 @@ body.series-episode #dSeasons{margin-top:24px}
 .set.act .vl{color:#ff9a9a}
 .set.act.info .vl{color:rgba(255,255,255,.88)}
 .setdiag{max-width:1100px;margin:0 0 12px;padding:14px 26px;border-radius:12px;background:rgba(255,255,255,.05);font-size:22px;line-height:1.6;color:rgba(255,255,255,.75)}
-.sethint{margin:18px 0 0 26px;font-size:22px;color:rgba(255,255,255,.45)}
+.sethint{margin:18px 0 0 26px;font-size:22px;color:rgba(255,255,255,.68)}
 .setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#5EEAD4;margin:30px 0 12px 26px}
 #setItems > .setgrp:first-child{margin-top:6px}
 
@@ -290,14 +289,14 @@ body.series-episode #dSeasons{margin-top:24px}
 #aWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
 #aHead{height:112px;border-bottom:1px solid rgba(255,255,255,.10);position:relative;padding-right:260px;box-sizing:border-box}
 #aTitle{font-size:50px;font-weight:800;margin-bottom:8px}
-#aHelp{font-size:24px;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#aHelp{font-size:24px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(20,184,166,.32)}
 #aSync.f{background:#fff;color:#0c0b11}
 #aClip{position:absolute;top:128px;left:0;right:0;bottom:0;overflow:hidden}
 #aInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
 .addon{max-width:1080px;padding:20px 25px;border-radius:13px;margin-bottom:9px;background:rgba(255,255,255,.045)}
 .addon .an{font-size:29px;font-weight:700}
-.addon .ai{font-size:21px;color:rgba(255,255,255,.5);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.addon .ai{font-size:21px;color:rgba(255,255,255,.7);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .addon.f{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 3px #fff}
 
 /* The 1280x720 package has fewer vertical pixels than the original 1080p layout.
@@ -314,10 +313,10 @@ body.series-episode #dSeasons{margin-top:24px}
   #heroLogo{width:280px;height:80px}
   #heroTitle{font-size:40px;height:80px}
   #heroTitle.long{font-size:30px}
-  #heroMeta{margin-top:10px;height:22px;line-height:22px;font-size:15px}
+  #heroMeta{margin-top:10px;height:24px;line-height:24px;font-size:16px}
   #heroMeta span{margin-right:16px}
-  #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:10px;line-height:14px;vertical-align:1px}
-  #heroDesc{margin-top:7px;font-size:16px;line-height:1.4;max-height:45px}
+  #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
+  #heroDesc{margin-top:7px;font-size:17px;line-height:1.4;max-height:48px}
   #rowsClip{top:250px;left:86px}
   #boardMsg{top:270px;left:112px;font-size:20px}
   .row{padding:9px 0 18px 26px;transform:translateY(10px)}
@@ -333,8 +332,8 @@ body.series-episode #dSeasons{margin-top:24px}
   .morelbl{margin-top:-13px;font-size:20px}
   .pbar{left:9px;right:9px;bottom:8px;height:4px;border-radius:2px}
   .cwlabel{bottom:0;padding:28px 10px 17px;font-size:17px}
-  .cwlabel .sub{margin-top:1px;font-size:13px}
-  .epbadge{left:7px;top:7px;padding:3px 7px;font-size:12px}
+  .cwlabel .sub{margin-top:1px;font-size:15px}
+  .epbadge{left:7px;top:7px;padding:3px 7px;font-size:14px}
   .wbadge{top:8px;right:8px;width:31px;height:31px}
   .wbadge svg{width:19px;height:19px}
   #streams{top:70px;width:620px;padding:20px}
@@ -347,18 +346,18 @@ body.series-episode #dSeasons{margin-top:24px}
   .st .a{font-size:22px}
   .st .rec{margin-bottom:5px;font-size:15px}
   .st .compat{margin-top:4px;font-size:16px}
-  .st .tags{margin-top:5px}.tg{padding:2px 7px;margin:0 5px 4px 0;border-radius:4px;font-size:14px}
+  .st .tags{margin-top:5px}.tg{padding:2px 7px;margin:0 5px 4px 0;border-radius:4px;font-size:15px}
   .st .b{margin-top:5px;font-size:19px;line-height:1.3;max-height:52px}
   #dWrap{top:36px;left:112px;right:40px}
   #dLogo{width:320px;height:100px}
   #dTitle{font-size:46px;max-height:100px}
-  #dMeta{margin-top:11px;font-size:16px}
+  #dMeta{margin-top:11px;font-size:17px}
   #dMeta span{margin-right:16px}
-  #dMeta .imdb{margin-left:5px;padding:0 4px;font-size:11px;line-height:15px;vertical-align:1px}
-  #dInfo{margin-top:8px;font-size:15px}#dInfo div{margin-bottom:3px}#dInfo .awards{font-size:14px}
-  #dDesc{margin-top:8px;font-size:17px;line-height:1.4;max-height:72px}
+  #dMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
+  #dInfo{margin-top:8px;font-size:16px}#dInfo div{margin-bottom:3px}#dInfo .awards{font-size:15px}
+  #dDesc{margin-top:8px;font-size:18px;line-height:1.4;max-height:76px}
   #dBtns{margin-top:16px}.btn{height:44px;margin-right:8px;border-radius:22px;font-size:18px}.btn svg{width:21px;height:21px}.btn .bl{margin-left:7px}.btn.main{padding:0 24px 0 18px}.btn.ico{width:44px}.btn.ico.f{padding:0 19px 0 13px}
-  #dSeasons{margin-top:15px}.schip{padding:7px 16px;margin-right:7px;font-size:15px}
+  #dSeasons{margin-top:15px}.schip{padding:7px 16px;margin-right:7px;font-size:16px}
   #simWrap,#discWrap,#sWrap,#setWrap,#aWrap{top:30px;left:112px;right:30px}
   #discTitle{font-size:34px;margin-bottom:12px}
   #discFilters{height:47px}
@@ -366,14 +365,14 @@ body.series-episode #dSeasons{margin-top:24px}
   .fmenu{top:42px;min-width:190px;max-height:300px;padding:6px;border-radius:9px}.fopt{padding:10px 31px 10px 13px;font-size:17px}.fopt.cur:after{right:13px;width:7px;height:7px;margin-top:-4px}
   #discGridClip{top:92px}
   #sBox{width:348px;padding:15px 21px;font-size:23px;border-radius:10px}
-  #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:15px}
+  #sKeys{top:72px;width:352px}.skey{width:50px;height:40px;line-height:40px;margin:0 8px 6px 0;font-size:19px;border-radius:7px}.skey.wide{width:108px;font-size:16px}
   #sSide{left:384px}
   #sHint{margin-top:9px;font-size:17px}
   .empty{padding:40px 26px 0}.emptyic,.emptyic svg{width:38px;height:38px}.emptyt{font-size:23px}.emptyh{font-size:17px}
-  .setdiag{padding:9px 17px;font-size:15px}
-  #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:15px}
+  .setdiag{padding:9px 17px;font-size:16px}
+  #sRecent{margin-top:18px}.sreclbl{margin-bottom:9px;font-size:16px}
   #sPreview{width:520px;height:100px;padding:3px 10px 3px 22px}
-  #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:15px}#spDesc{margin-top:5px;font-size:15px;line-height:1.25;max-height:38px}
+  #spTitle{font-size:24px}#spMeta{margin-top:4px;font-size:16px}#spDesc{margin-top:5px;font-size:16px;line-height:1.25;max-height:40px}
   #sRowsClip{top:110px;left:376px}
   #sRows{left:-20px}
   #dEps{height:224px;margin-top:12px;margin-right:-40px;padding:5px 5px 0}
@@ -383,7 +382,7 @@ body.series-episode #dSeasons{margin-top:24px}
   body.series-episode #dLogo{width:280px;height:76px}
   body.series-episode #dTitle{font-size:38px}
   body.series-episode #dMeta{margin-top:8px;font-size:18px}
-  body.series-episode #dDesc{margin-top:6px;height:46px;max-height:none;font-size:16px;line-height:1.4}
+  body.series-episode #dDesc{margin-top:6px;height:48px;max-height:none;font-size:17px;line-height:1.4}
   body.series-episode #dSeasons{margin-top:12px}
   #aHead{height:78px;padding-right:175px}
   #aTitle{font-size:36px;margin-bottom:6px}
@@ -400,16 +399,16 @@ body.series-episode #dSeasons{margin-top:24px}
 #lgLang.f{background:#fff;color:#0c0b11;font-weight:700}
 #lgAccount{position:fixed;left:0;right:0;bottom:60px;text-align:center;font-size:24px;color:rgba(255,255,255,.82)}
 body:not(.login) #lgAccount{display:none}
-#lgNote{position:fixed;left:0;right:0;bottom:26px;text-align:center;font-size:20px;color:rgba(255,255,255,.45)}
+#lgNote{position:fixed;left:0;right:0;bottom:26px;text-align:center;font-size:20px;color:rgba(255,255,255,.6)}
 body:not(.login) #lgNote{display:none}
 @media(max-height:800px){#lgAccount{bottom:44px;font-size:17px}#lgNote{bottom:18px;font-size:15px}}
 #lgBox{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
 #lgQr{text-align:center;padding-right:90px;border-right:1px solid rgba(255,255,255,.14)}
 #lgQr h2{font-size:40px;margin:0 0 10px}
-#lgQr .s{font-size:24px;color:rgba(255,255,255,.6);margin-bottom:26px}
+#lgQr .s{font-size:24px;color:rgba(255,255,255,.72);margin-bottom:26px}
 #lgQrImg{width:300px;height:300px;background:#fff;border-radius:18px;padding:12px;box-sizing:border-box}
 #lgCode{font-size:46px;letter-spacing:9px;font-weight:800;margin-top:20px}
-#lgStat{margin:18px auto 0;min-height:30px;line-height:30px;font-size:22px;text-align:center;color:rgba(255,255,255,.6)}
+#lgStat{margin:18px auto 0;min-height:30px;line-height:30px;font-size:22px;text-align:center;color:rgba(255,255,255,.72)}
 #lgStat.loading:after{content:"  ·  ·  ·";display:inline-block;margin-left:14px;color:#5EEAD4;letter-spacing:4px}
 #lgForm{padding-left:90px}
 #lgForm h2{font-size:40px;margin:0 0 22px}
@@ -437,13 +436,29 @@ body.bigtext .set .lb{font-size:32px}
 body.bigtext .set .vl{font-size:29px}
 body.bigtext .cwmi{font-size:33px}
 body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
+@media (max-height:800px){
+  body.bigtext .rowtitle{font-size:21px}
+  body.bigtext #heroMeta{font-size:18px}
+  body.bigtext #heroDesc{font-size:19px;max-height:54px}
+  body.bigtext .titlelabel,body.bigtext .card .nm{font-size:19px}
+  body.bigtext .cwlabel{font-size:19px}
+  body.bigtext .cwlabel .sub{font-size:16px}
+  body.bigtext #dMeta{font-size:20px}
+  body.bigtext #dDesc{font-size:19px;max-height:80px}
+  body.bigtext #dInfo{font-size:18px}
+  body.bigtext .ep .t{font-size:18px}
+  body.bigtext .st .a{font-size:24px}
+  body.bigtext .st .b{font-size:21px;max-height:56px}
+  body.bigtext #sHint,body.bigtext .emptyh{font-size:19px}
+}
 /* empty states */
 .empty{padding:70px 48px 0;max-width:900px}
 .emptyic{width:56px;height:56px;color:#5EEAD4;margin-bottom:18px}
 .emptyic svg{width:56px;height:56px;fill:currentColor}
 .emptyt{font-size:34px;font-weight:700;color:#fff}
-.emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.6)}
-#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
+.emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.72)}
+#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none;white-space:nowrap}
+@media (max-height:800px){#toast{top:5%;font-size:20px;padding:9px 22px}}
 #serverPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #srvBox{width:968px;margin:12vh auto 0;padding:32px 40px 26px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
 #srvTitle{font-size:32px;font-weight:700;color:#fff}
@@ -451,7 +466,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 #srvKeys{text-align:left}
 .srvkey{display:inline-block;vertical-align:top;width:80px;height:56px;margin:4px;text-align:center;line-height:56px;border-radius:10px;background:#27303a;color:#fff;font-size:26px;font-weight:600;box-sizing:border-box;cursor:pointer}
 .srvkey.srvact{width:212px;font-size:22px;margin-top:10px}
-.srvkey.f{background:#0F766E;color:#fff;outline:3px solid #fff}
+.srvkey.f{background:#fff;color:#0c0b11}
 #srvStatus{min-height:32px;margin-top:16px;font-size:24px;color:rgba(255,255,255,.75)}
 @media(max-height:800px){#srvBox{width:648px;margin-top:7vh;padding:20px 28px 16px}#srvTitle{font-size:24px}#srvValue{height:46px;margin:12px 0 10px;padding:0 14px;font-size:25px;line-height:46px}.srvkey{width:52px;height:38px;margin:3px;line-height:38px;font-size:18px;border-radius:7px}.srvkey.srvact{width:139px;font-size:15px;margin-top:7px}#srvStatus{min-height:22px;margin-top:10px;font-size:17px}}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
@@ -460,7 +475,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 #ejValue{height:72px;margin:22px 0 18px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:48px;line-height:72px;font-weight:700}
 #ejKeys{text-align:left}
 .ejkey{display:inline-block;width:132px;height:62px;margin:6px 6px;text-align:center;line-height:62px;border-radius:10px;background:#27303a;color:#fff;font-size:27px;font-weight:600;box-sizing:border-box;cursor:pointer}
-.ejkey.f{background:#0F766E;color:#fff;outline:3px solid #fff}
+.ejkey.f{background:#fff;color:#0c0b11}
 #ejHint{margin-top:18px;color:#a3adb8;font-size:19px}
 @media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
 #boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(20,184,166,.10),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}

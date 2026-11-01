@@ -16,13 +16,29 @@ body.bigtext .set .lb{font-size:32px}
 body.bigtext .set .vl{font-size:29px}
 body.bigtext .cwmi{font-size:33px}
 body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
+@media (max-height:800px){
+  body.bigtext .rowtitle{font-size:21px}
+  body.bigtext #heroMeta{font-size:18px}
+  body.bigtext #heroDesc{font-size:19px;max-height:54px}
+  body.bigtext .titlelabel,body.bigtext .card .nm{font-size:19px}
+  body.bigtext .cwlabel{font-size:19px}
+  body.bigtext .cwlabel .sub{font-size:16px}
+  body.bigtext #dMeta{font-size:20px}
+  body.bigtext #dDesc{font-size:19px;max-height:80px}
+  body.bigtext #dInfo{font-size:18px}
+  body.bigtext .ep .t{font-size:18px}
+  body.bigtext .st .a{font-size:24px}
+  body.bigtext .st .b{font-size:21px;max-height:56px}
+  body.bigtext #sHint,body.bigtext .emptyh{font-size:19px}
+}
 /* empty states */
 .empty{padding:70px 48px 0;max-width:900px}
 .emptyic{width:56px;height:56px;color:#5EEAD4;margin-bottom:18px}
 .emptyic svg{width:56px;height:56px;fill:currentColor}
 .emptyt{font-size:34px;font-weight:700;color:#fff}
-.emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.6)}
-#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none}
+.emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.72)}
+#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none;white-space:nowrap}
+@media (max-height:800px){#toast{top:5%;font-size:20px;padding:9px 22px}}
 #serverPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #srvBox{width:968px;margin:12vh auto 0;padding:32px 40px 26px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
 #srvTitle{font-size:32px;font-weight:700;color:#fff}
@@ -30,7 +46,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 #srvKeys{text-align:left}
 .srvkey{display:inline-block;vertical-align:top;width:80px;height:56px;margin:4px;text-align:center;line-height:56px;border-radius:10px;background:#27303a;color:#fff;font-size:26px;font-weight:600;box-sizing:border-box;cursor:pointer}
 .srvkey.srvact{width:212px;font-size:22px;margin-top:10px}
-.srvkey.f{background:#0F766E;color:#fff;outline:3px solid #fff}
+.srvkey.f{background:#fff;color:#0c0b11}
 #srvStatus{min-height:32px;margin-top:16px;font-size:24px;color:rgba(255,255,255,.75)}
 @media(max-height:800px){#srvBox{width:648px;margin-top:7vh;padding:20px 28px 16px}#srvTitle{font-size:24px}#srvValue{height:46px;margin:12px 0 10px;padding:0 14px;font-size:25px;line-height:46px}.srvkey{width:52px;height:38px;margin:3px;line-height:38px;font-size:18px;border-radius:7px}.srvkey.srvact{width:139px;font-size:15px;margin-top:7px}#srvStatus{min-height:22px;margin-top:10px;font-size:17px}}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
@@ -39,7 +55,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 #ejValue{height:72px;margin:22px 0 18px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:48px;line-height:72px;font-weight:700}
 #ejKeys{text-align:left}
 .ejkey{display:inline-block;width:132px;height:62px;margin:6px 6px;text-align:center;line-height:62px;border-radius:10px;background:#27303a;color:#fff;font-size:27px;font-weight:600;box-sizing:border-box;cursor:pointer}
-.ejkey.f{background:#0F766E;color:#fff;outline:3px solid #fff}
+.ejkey.f{background:#fff;color:#0c0b11}
 #ejHint{margin-top:18px;color:#a3adb8;font-size:19px}
 @media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
 #boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(20,184,166,.10),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
