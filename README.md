@@ -56,7 +56,7 @@ Captured from the real interface at 1920x1080, on a computer, with a demo librar
 
 ## Downloads
 
-One package for every supported LG TV: download `StremCompat-v3.0.0.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases). The app chooses its limits by itself when it opens, with lighter artwork and shorter lists on the weakest TVs.
+One package for every supported LG TV: download `StremCompat-v3.0.1.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases). The app chooses its limits by itself when it opens, with lighter artwork and shorter lists on the weakest TVs.
 
 ## Compatibility
 

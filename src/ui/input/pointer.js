@@ -60,6 +60,12 @@ function pointerUI(target, activate) {
     return true;
   }
   if (streamsUI.open) {
+    if (pointerIndex(target, [$('stBest')]) === 0) {
+      streamsUI.zone = 'best';
+      streamsUI.paint();
+      if (activate) streamsUI.startBest();
+      return true;
+    }
     if (target && target.id === 'stLang') {
       streamsUI.zone = 'lang';
       streamsUI.paint();

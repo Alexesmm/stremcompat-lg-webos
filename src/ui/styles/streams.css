@@ -1,7 +1,10 @@
 /* ---------- streams overlay ---------- */
 #streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(13,17,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 /* the poster would stick out above the panel */
-#streams h3{margin:0 0 8px;font-size:38px}
+#streams h3{display:inline-block;margin:0 0 8px;font-size:38px}
+#stBest{display:none;margin-left:20px;padding:7px 18px 7px 12px;border-radius:20px;font-size:20px;font-weight:600;vertical-align:6px;color:rgba(255,255,255,.9);background:rgba(255,255,255,.1);cursor:pointer}
+#stBest svg{width:20px;height:20px;margin-right:6px;vertical-align:-3px;fill:currentColor}
+#stBest.f{background:#fff;color:#0c0b11}
 #stSub{font-size:26px;color:rgba(255,255,255,.72);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stChips{position:relative;white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}

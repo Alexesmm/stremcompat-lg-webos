@@ -5452,6 +5452,8 @@ var streamsUI = {
     bodyAdd('streamsopen');
     $('stChips').innerHTML = '';
     $('stLang').style.display = 'none';
+    $('stBest').style.display = 'none';
+    $('stBest').innerHTML = ICON.bolt + esc(tx('playBest'));
     $('stSub').textContent =
       (title || '') +
       (vid && vid.indexOf(':') > 0 ? '  ·  T' + vid.split(':')[1] + ' E' + vid.split(':')[2] : '');
@@ -5608,6 +5610,7 @@ var streamsUI = {
       k = 0;
     }
     this.chipIdx = k;
+    $('stBest').style.display = 'inline-block';
     this.renderLangs(allItems);
     this.paintChips();
   },
@@ -5664,6 +5667,7 @@ var streamsUI = {
         'stchip' + (cur ? ' cur' : '') + (this.zone === 'chips' && i === this.chipIdx ? ' f' : '');
     }
     this.revealChip(this.zone === 'chips' ? this.chipIdx : this.chips.indexOf(this.filter));
+    $('stBest').className = this.zone === 'best' ? 'f' : '';
     var lang = $('stLang');
     lang.textContent = tx('langFilter', this.langName(this.langFilter));
     lang.className = (this.langFilter !== 'All' ? 'cur' : '') + (this.zone === 'lang' ? ' f' : '');
@@ -5806,6 +5810,17 @@ var streamsUI = {
     return true;
   },
   key: function (k) {
+    if (this.zone === 'best') {
+      if (k === 13) this.startBest();
+      else if (k === 39 && this.langs.length) {
+        this.zone = 'lang';
+        this.paint();
+      } else if (k === 40) {
+        this.zone = 'chips';
+        this.paint();
+      }
+      return true;
+    }
     if (this.zone === 'lang') {
       if (k === 13 || k === 39) this.nextLang(1);
       else if (k === 37) this.nextLang(-1);
@@ -5816,8 +5831,8 @@ var streamsUI = {
       return true;
     }
     if (this.zone === 'chips') {
-      if (k === 38 && this.langs.length) {
-        this.zone = 'lang';
+      if (k === 38) {
+        this.zone = 'best';
         this.paint();
         return true;
       }
@@ -7351,6 +7366,12 @@ function pointerUI(target, activate) {
     return true;
   }
   if (streamsUI.open) {
+    if (pointerIndex(target, [$('stBest')]) === 0) {
+      streamsUI.zone = 'best';
+      streamsUI.paint();
+      if (activate) streamsUI.startBest();
+      return true;
+    }
     if (target && target.id === 'stLang') {
       streamsUI.zone = 'lang';
       streamsUI.paint();

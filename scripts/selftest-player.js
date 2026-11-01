@@ -171,6 +171,17 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   noSources.key(40);
   assert.strictEqual(noSources.idx, 0, 'Down on an empty list lost the focus');
   assert.strictEqual(noSources.moved, false, 'Down on an empty list counted as moving');
+  var started = 0;
+  var top = Object.assign(Object.create(list), { open: true, zone: 'chips', langs: ['All', 'en'], startBest: function () { started++; } });
+  top.key(38);
+  assert.strictEqual(top.zone, 'best', 'Up from the filters did not reach Best source');
+  top.key(13);
+  assert.strictEqual(started, 1, 'OK on Best source did not start it');
+  top.key(39);
+  assert.strictEqual(top.zone, 'lang', 'Right from Best source did not reach the language selector');
+  top.zone = 'best';
+  top.key(40);
+  assert.strictEqual(top.zone, 'chips', 'Down from Best source did not return to the filters');
   list.moved = true;
   list.idx = 1;
   shown = [slow, fast, faster, { seeds: 7 }];
