@@ -27,7 +27,7 @@ This project is not affiliated with or endorsed by Stremio, LG Electronics or Sa
 
 ## Screenshots
 
-Captured at the 1920x1080 size the interface uses on the TV. Sources are shown with an example addon.
+Captured from the real interface at 1920x1080, on a computer, with a demo library and an example addon.
 
 <table>
   <tr>
