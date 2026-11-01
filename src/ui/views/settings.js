@@ -365,8 +365,8 @@ var settings = {
         window.performance && performance.memory
           ? Math.round(performance.memory.usedJSHeapSize / 1048576)
           : '—',
-      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—',
-      shown = window.__STREMIO_VISIBLE_MS__ ? (window.__STREMIO_VISIBLE_MS__ / 1000).toFixed(1) : '—';
+      home = window.__SC_HOME_LOAD_MS__ ? (window.__SC_HOME_LOAD_MS__ / 1000).toFixed(1) : '—',
+      shown = window.__SC_VISIBLE_MS__ ? (window.__SC_VISIBLE_MS__ / 1000).toFixed(1) : '—';
     xhrJson(
       '/diag',
       function (j) {

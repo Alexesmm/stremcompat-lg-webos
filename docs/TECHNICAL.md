@@ -29,7 +29,7 @@ Official references:
 The installed package contains two webOS components:
 
 1. A small packaged web application starts immediately and requests the Luna service.
-2. The Luna service `service/launch.js`, in ES5, starts `service/tvserver.js` on the same Node, as a process of its own that it can restart.
+2. The Luna service `service/launch.js`, in ES5, starts `service/local-server.js` on the same Node, as a process of its own that it can restart.
 3. That local server listens on `127.0.0.1:8082`. The TV interface, account bridge, addon requests, stream headers, HLS rewriting, subtitles and playback helpers are served from it.
 4. The browser uses the television's hardware-backed HTML5 media pipeline for playback.
 
@@ -52,7 +52,7 @@ Edit the sources below, not the generated files.
 |---|---|---|
 | Launcher | `app/index.html` | Starts the service, waits for `/health`, opens the interface, shows startup errors |
 | webOS service | `service/launch.js` | ES5 for Node.js 0.12; starts the local server on the same Node |
-| Local server | `service/tvserver.js`, `service/server/` | Prepared for Node.js 0.12 by the build; `routes.js` holds every HTTP route, `streaming-server.js` the torrents |
+| Local server | `service/local-server.js`, `service/server/` | Prepared for Node.js 0.12 by the build; `routes.js` holds every HTTP route, `streaming-server.js` the torrents |
 | Native programs | `native/` | Build scripts for FFmpeg and the torrent engine, run on Linux or WSL; they need no installed compiler |
 | Interface screens | `src/ui/views/` | Home, title page, source list, search, settings, login and others |
 | Interface data | `src/ui/data/` | Account and library sync, catalogs, metadata, sources |
@@ -69,13 +69,13 @@ Edit the sources below, not the generated files.
 
 | Generated file | Sources | Order |
 |---|---|---|
-| `service/beta-app.js` | `src/ui/` and `src/shared/` | `src/ui/modules.json` |
+| `service/interface.js` | `src/ui/` and `src/shared/` | `src/ui/modules.json` |
 | `service/player/player-client.js` | `src/player/` and `src/shared/` | `src/player/modules.json` |
-| `service/beta.html` | `src/ui/index.html` and `src/ui/styles/` | `src/ui/styles/styles.json` |
+| `service/interface.html` | `src/ui/index.html` and `src/ui/styles/` | `src/ui/styles/styles.json` |
 
 The scripts are plain fragments joined in the listed order, with no `import` or module loader. All modules of a bundle share one scope, so a function from one file can be called directly from another. A new file must be added to the matching `modules.json`, and order matters for code that runs at load time.
 
-Browser code must stay ES5 and run on Chromium 38, which rejects newer syntax and block-level function declarations in strict mode. `service/launch.js` must also stay ES5. Only `service/tvserver.js` and `service/server/` can use modern JavaScript.
+Browser code must stay ES5 and run on Chromium 38, which rejects newer syntax and block-level function declarations in strict mode. `service/launch.js` must also stay ES5. Only `service/local-server.js` and `service/server/` can use modern JavaScript.
 
 ### Build, test and package
 
@@ -100,7 +100,7 @@ The same package runs on Chromium 38 and low-memory 2017 hardware:
 
 - ES5-only interface syntax verified against Chromium 38 rules.
 - No block-level strict-mode function declarations, which Chromium 38 rejects.
-- Synchronous boot with preserved `UJ3_BOOT` diagnostics.
+- Synchronous boot with preserved `APP_BOOT` diagnostics.
 - Guarded event binding and remote-control focus handling.
 - Interface assets embedded inside the local server, with file loading only as the first option.
 - Stremio account requests, addons and metadata bridged through the local server, which avoids the old browser's TLS roots and CORS implementation.

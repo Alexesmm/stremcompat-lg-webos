@@ -114,4 +114,4 @@ var serverPanel = {
     this.paint();
   }
 };
-window.__STREMIO_SERVER_PANEL__ = serverPanel;
+window.__SC_SERVER_PANEL__ = serverPanel;

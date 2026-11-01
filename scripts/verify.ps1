@@ -9,7 +9,7 @@ if ($serviceInfo.name -ne 'io.github.alexesmm.legacytv.server' -or $serviceInfo.
 
 $required = @(
     'app\index.html', 'app\icon.png', 'app\splash.png', 'app\services.json',
-    'service\launch.js', 'service\profile.js', 'service\tvserver.js', 'service\beta.html', 'service\beta-app.js',
+    'service\launch.js', 'service\profile.js', 'service\local-server.js', 'service\interface.html', 'service\interface.js',
     'service\services.json', 'service\app-logo.png', 'service\licenses\README.txt',
     'service\player\player.css', 'service\player\player-body.html', 'service\player\player-client.js',
     'service\bin\sc-engine', 'service\bin\ffmpeg', 'service\bin\ffprobe'
@@ -40,13 +40,13 @@ foreach ($bootstrap in 'launch.js', 'profile.js') {
     if ($LASTEXITCODE -ne 0) { throw "$bootstrap nao e compativel com Node.js 0.12/ES5." }
 }
 
-foreach ($script in 'tvserver.js') {
+foreach ($script in 'local-server.js') {
     & node.exe --check (Join-Path $projectRoot "service\$script")
     if ($LASTEXITCODE -ne 0) { throw "$script contem erro de sintaxe." }
 }
 
 & node.exe (Join-Path $PSScriptRoot 'build-ui.js') --check
-if ($LASTEXITCODE -ne 0) { throw 'Arquivos gerados (beta-app.js, beta.html, player-client.js) estao desatualizados em relacao a src. Rode: npm run build:ui' }
+if ($LASTEXITCODE -ne 0) { throw 'Arquivos gerados (interface.js, interface.html, player-client.js) estao desatualizados em relacao a src. Rode: npm run build:ui' }
 
 & node.exe (Join-Path $PSScriptRoot 'verify-frontend.js') (Join-Path $projectRoot 'service') chrome38
 if ($LASTEXITCODE -ne 0) { throw 'O shell nao e compativel com a sintaxe ES5 exigida pelo Chromium 38.' }

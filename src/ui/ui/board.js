@@ -14,7 +14,7 @@ function heroMetaHtml(m) {
   if (m.imdbRating) html += '<span>' + esc(m.imdbRating) + '<b class="imdb">IMDb</b></span>';
   return html;
 }
-window.__STREMIO_HERO_META__ = heroMetaHtml;
+window.__SC_HERO_META__ = heroMetaHtml;
 /* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
 function makeBoard(loader) {
   return {

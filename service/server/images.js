@@ -1,4 +1,4 @@
-// /bgz: a title's background art at the width this TV can hold. A full 1920x1080 image takes
+// /artwork: a title's background art at the width this TV can hold. A full 1920x1080 image takes
 // about 8 MB once decoded; at 960 pixels it takes 2. The results are kept for the titles seen last.
 
 var crypto = require('crypto');

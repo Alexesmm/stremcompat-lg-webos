@@ -52,7 +52,7 @@ function discoverTypes() {
   for (var n = 0; n < values.length; n++) out.push({ value: values[n], label: typeLabel(values[n]) });
   return out;
 }
-window.__STREMIO_DISCOVER_TYPES__ = discoverTypes;
+window.__SC_DISCOVER_TYPES__ = discoverTypes;
 function stableHash(value) {
   var s = String(value || ''),
     h = 2166136261;

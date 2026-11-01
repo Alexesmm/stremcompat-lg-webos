@@ -1,7 +1,7 @@
 /* Designed for the 1920x1080 webview. Netflix-like, BIG and clear.
    RULES LEARNED ON THIS TV: no blurred shadows, no scale animations, transform-only
    motion, static focus ring, class-based focus (never :focus).
-   Inter is served by tvserver as WOFF 1: Chromium 38 implements an early WOFF2 draft
+   Inter is served by local server as WOFF 1: Chromium 38 implements an early WOFF2 draft
    and rejects current WOFF2 files. Only the 400 and 700 faces exist, so 600 and 800
    resolve to 700 without synthetic bold.
    MOTION: focus feedback .12s ease; lists and panels moving .18s and things appearing

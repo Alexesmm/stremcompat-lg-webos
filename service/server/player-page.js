@@ -24,7 +24,7 @@ function embeddedFiles() {
 }
 
 function readPlayerFile(name, embedded) {
-  if (process.env.TVSERVER_FORCE_EMBEDDED_UI !== '1') {
+  if (process.env.SC_SERVER_FORCE_EMBEDDED_UI !== '1') {
     try {
       return fs.readFileSync(path.join(DIR, 'player', name), 'utf8');
     } catch (e) {

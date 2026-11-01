@@ -7,7 +7,7 @@ var DIR = path.join(__dirname, '..');
 // the torrent engine (native/engine); the tests use scripts/lib/fake-engine.js
 var ENGINE = process.env.TV_ENGINE || path.join(DIR, 'bin', 'sc-engine');
 
-var LOG_FILE = process.env.TVSERVER_LOG || path.join(DIR, 'tvserver.log');
+var LOG_FILE = process.env.SC_SERVER_LOG || path.join(DIR, 'local server.log');
 
 // Port, identity and memory limits come from the build profile (see profile.js).
 var PROFILE_MODULE = require('../profile');

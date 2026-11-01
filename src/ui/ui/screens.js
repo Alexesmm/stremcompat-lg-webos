@@ -152,7 +152,7 @@ function goBackScr() {
 
 var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chipAddons'), $('chipSet')];
 var chipTarget = ['search', 'home', 'disc', 'lib', 'addons', 'set'];
-window.__STREMIO_PHASE__('M2');
+window.__SC_PHASE__('M2');
 function paintChips() {
   if (topNav.active) bodyAdd('navopen');
   else bodyRemove('navopen');

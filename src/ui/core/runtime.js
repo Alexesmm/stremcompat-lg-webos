@@ -79,7 +79,7 @@ function runtimeRecover() {
     });
   });
 }
-window.__STREMIO_RESUME_CHECK__ = runtimeRecover;
+window.__SC_RESUME_CHECK__ = runtimeRecover;
 function reloadUi() {
   var url = appUrl('/beta?recover=' + Date.now());
   try {
@@ -164,4 +164,4 @@ function manualRecover() {
     });
   });
 }
-window.__STREMIO_MANUAL_RECOVER__ = manualRecover;
+window.__SC_MANUAL_RECOVER__ = manualRecover;

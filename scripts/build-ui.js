@@ -2,9 +2,9 @@
 
 // Builds the browser files the service serves from their sources:
 //
-//   src/ui/*.js      -> service/beta-app.js            (order: src/ui/modules.json)
+//   src/ui/*.js      -> service/interface.js            (order: src/ui/modules.json)
 //   src/player/*.js  -> service/player/player-client.js (order: src/player/modules.json)
-//   src/ui/index.html + src/ui/styles/*.css -> service/beta.html (order: src/ui/styles/styles.json)
+//   src/ui/index.html + src/ui/styles/*.css -> service/interface.html (order: src/ui/styles/styles.json)
 //   the same scripts with src/platform/tizen -> platforms/tizen/generated/ (see build-tizen.js)
 //
 // Scripts are plain fragments concatenated in order. In the interface, _prelude.js
@@ -44,10 +44,10 @@ function page(dir) {
 }
 
 var targets = [
-  { out: 'service/beta-app.js', build: function () { return scripts(path.join(root, 'src', 'ui')); } },
+  { out: 'service/interface.js', build: function () { return scripts(path.join(root, 'src', 'ui')); } },
   { out: 'service/player/player-client.js', build: function () { return scripts(path.join(root, 'src', 'player')); } },
-  { out: 'service/beta.html', build: function () { return page(path.join(root, 'src', 'ui')); } },
-  { out: 'platforms/tizen/generated/beta-app.js', build: function () { return scripts(path.join(root, 'src', 'ui'), 'tizen'); } },
+  { out: 'service/interface.html', build: function () { return page(path.join(root, 'src', 'ui')); } },
+  { out: 'platforms/tizen/generated/interface.js', build: function () { return scripts(path.join(root, 'src', 'ui'), 'tizen'); } },
   { out: 'platforms/tizen/generated/player-client.js', build: function () { return scripts(path.join(root, 'src', 'player'), 'tizen'); } }
 ];
 

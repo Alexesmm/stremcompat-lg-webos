@@ -15,12 +15,12 @@
   }
   function start() {
     window.__STREMCOMPAT_APP__();
-    window.__STREMIO_SCRIPT_LOADED__();
+    window.__SC_SCRIPT_LOADED__();
   }
   function again() {
     tries++;
     if (tries >= 80) {
-      window.__STREMIO_BOOT_ERROR__('The app service did not start.', 'SERVICE');
+      window.__SC_BOOT_ERROR__('The app service did not start.', 'SERVICE');
       return;
     }
     setTimeout(ping, 500);
@@ -80,7 +80,7 @@
       count = RELOAD_LIMIT;
     }
     if (count >= RELOAD_LIMIT) {
-      window.__STREMIO_BOOT_ERROR__('The TV did not give the app access to its system functions.', 'TIZEN');
+      window.__SC_BOOT_ERROR__('The TV did not give the app access to its system functions.', 'TIZEN');
       return;
     }
     location.reload();

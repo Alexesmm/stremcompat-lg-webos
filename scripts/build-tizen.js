@@ -58,14 +58,14 @@ var baseTag = '<base href="http://127.0.0.1:' + profile.port + '/">';
 var viewportTag = '<meta name="viewport" content="width=1920">';
 
 function interfacePage() {
-  var html = read(path.join(root, 'service', 'beta.html'));
-  var app = read(path.join(root, 'platforms', 'tizen', 'generated', 'beta-app.js'));
+  var html = read(path.join(root, 'service', 'interface.html'));
+  var app = read(path.join(root, 'platforms', 'tizen', 'generated', 'interface.js'));
   var boot = tokens(read(path.join(root, 'platforms', 'tizen', 'boot.js')));
-  var profileScript = '<script>window.__STREMIO_PROFILE__=' + JSON.stringify(profileModule.interfaceProfile(profile)) + ';</script>';
-  var scriptTag = /<script src="\/beta-app\.js[^>]*><\/script>/;
-  if (!scriptTag.test(html)) throw new Error('service/beta.html no longer loads /beta-app.js');
-  if (html.indexOf('<!--@profile-->') < 0) throw new Error('service/beta.html has no profile marker');
-  if (html.indexOf('},25000);') < 0) throw new Error('service/beta.html has no startup timer');
+  var profileScript = '<script>window.__SC_PROFILE__=' + JSON.stringify(profileModule.interfaceProfile(profile)) + ';</script>';
+  var scriptTag = /<script src="\/interface\.js[^>]*><\/script>/;
+  if (!scriptTag.test(html)) throw new Error('service/interface.html no longer loads /interface.js');
+  if (html.indexOf('<!--@profile-->') < 0) throw new Error('service/interface.html has no profile marker');
+  if (html.indexOf('},25000);') < 0) throw new Error('service/interface.html has no startup timer');
   return tokens(html)
     .replace('<head>', function () { return '<head>\n' + baseTag + '\n' + viewportTag; })
     /* the first start also waits for the service: boot.js reports its own failure */

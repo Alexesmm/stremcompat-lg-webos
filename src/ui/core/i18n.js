@@ -53,9 +53,9 @@ function setUILanguage(value) {
   } catch (e) {}
   return next;
 }
-window.__STREMIO_UI_LANGUAGE__ = function () {
+window.__SC_UI_LANGUAGE__ = function () {
   return UI_LANG;
 };
-window.__STREMIO_SET_UI_LANGUAGE__ = setUILanguage;
+window.__SC_SET_UI_LANGUAGE__ = setUILanguage;
 applyStaticLanguage();
 if ($('lgStat')) $('lgStat').textContent = tx('generatingCode');

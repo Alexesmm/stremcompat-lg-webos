@@ -3,7 +3,7 @@
 // Stages one television profile into .build/<profile>/{app,service}.
 //
 // Profile values never patch source code. The service reads profile.json through
-// service/profile.js, tvserver.js injects the browser profile into beta.html, and
+// service/profile.js, local-server.js injects the browser profile into interface.html, and
 // only the packaged launcher (app/index.html, which runs before the service exists)
 // receives explicit __TOKEN__ substitutions.
 //
@@ -87,7 +87,7 @@ replaceTokens(path.join(stageApp, 'index.html'), {
 function prepareForOldNode(file) {
   fs.writeFileSync(file, legacyNode.prepare(fs.readFileSync(file, 'utf8'), path.relative(stageService, file)));
 }
-prepareForOldNode(path.join(stageService, 'tvserver.js'));
+prepareForOldNode(path.join(stageService, 'local-server.js'));
 prepareForOldNode(path.join(stageService, 'compat.js'));
 fs.readdirSync(path.join(stageService, 'server')).forEach(function (name) {
   if (/\.js$/.test(name)) prepareForOldNode(path.join(stageService, 'server', name));
@@ -98,18 +98,18 @@ fs.writeFileSync(path.join(stageService, 'roots.json'), JSON.stringify(tls.rootC
 // of service working-directory and package-file lookup quirks.
 var serverPath = path.join(stageService, 'server', 'embedded.js');
 var server = fs.readFileSync(serverPath, 'utf8');
-var embeddedHtml = fs.readFileSync(path.join(stageService, 'beta.html')).toString('base64');
-var embeddedApp = fs.readFileSync(path.join(stageService, 'beta-app.js')).toString('base64');
+var embeddedHtml = fs.readFileSync(path.join(stageService, 'interface.html')).toString('base64');
+var embeddedApp = fs.readFileSync(path.join(stageService, 'interface.js')).toString('base64');
 var playerAssets = {};
 ['player.css', 'player-body.html', 'player-client.js'].forEach(function (name) {
   playerAssets[name] = fs.readFileSync(path.join(stageService, 'player', name), 'utf8');
 });
 var embeddedPlayer = Buffer.from(JSON.stringify(playerAssets), 'utf8').toString('base64');
-['__EMBEDDED_BETA_HTML_B64__', '__EMBEDDED_BETA_APP_B64__', '__EMBEDDED_PLAYER_B64__'].forEach(function (token) {
+['__EMBEDDED_INTERFACE_HTML_B64__', '__EMBEDDED_INTERFACE_SCRIPT_B64__', '__EMBEDDED_PLAYER_B64__'].forEach(function (token) {
   if (server.split(token).length !== 2) throw new Error(token + ' must appear exactly once in server/embedded.js');
 });
-server = server.replace('__EMBEDDED_BETA_HTML_B64__', function () { return embeddedHtml; });
-server = server.replace('__EMBEDDED_BETA_APP_B64__', function () { return embeddedApp; });
+server = server.replace('__EMBEDDED_INTERFACE_HTML_B64__', function () { return embeddedHtml; });
+server = server.replace('__EMBEDDED_INTERFACE_SCRIPT_B64__', function () { return embeddedApp; });
 server = server.replace('__EMBEDDED_PLAYER_B64__', function () { return embeddedPlayer; });
 fs.writeFileSync(serverPath, server);
 

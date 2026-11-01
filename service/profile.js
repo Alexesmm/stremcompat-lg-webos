@@ -1,6 +1,6 @@
 /*
  * Television profile shared by launch.js (system Node.js 0.12, so ES5 only) and
- * tvserver.js. scripts/build-stage.js writes the selected profiles/<name>.json
+ * local-server.js. scripts/build-stage.js writes the selected profiles/<name>.json
  * next to this file as profile.json. A source checkout without that file runs as
  * the development profile below. One package serves every TV: useSmallTvLimits()
  * applies the profile's smallTv values on the weakest ones.
@@ -62,7 +62,7 @@ function useSmallTvLimits(profile, userAgent) {
   }
 }
 
-/* The subset the browser interface needs; injected into beta.html by tvserver.js. */
+/* The subset the browser interface needs; injected into interface.html by local-server.js. */
 function interfaceProfile(profile) {
   return {
     id: profile.profile,

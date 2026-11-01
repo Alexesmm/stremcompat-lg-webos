@@ -127,7 +127,7 @@ function watchedFromBits(res, videos) {
   }
   return out;
 }
-window.__STREMIO_WATCHED_FROM_BITS__ = watchedFromBits;
+window.__SC_WATCHED_FROM_BITS__ = watchedFromBits;
 function episodeImage(v, meta) {
   var u = (v && (v.thumbnail || v.still || v.stillPath || v.still_path)) || '';
   if (u && String(u).charAt(0) === '/') u = 'https://image.tmdb.org/t/p/w500' + u;
@@ -137,7 +137,7 @@ function episodeIndexByNumber(items, n) {
   for (var i = 0; i < (items || []).length; i++) if (items[i]._stremAbsolute === n) return i;
   return -1;
 }
-window.__STREMIO_EPISODE_INDEX__ = episodeIndexByNumber;
+window.__SC_EPISODE_INDEX__ = episodeIndexByNumber;
 function episodeFallback(meta, small) {
   if (!meta) return '';
   return small ? bgSmall(meta) || posterOf(meta) : meta.background || bgOf(meta) || meta.poster || '';
@@ -221,5 +221,5 @@ function enrichEpisodeMetadata(type, id, meta, cb) {
   }
   next();
 }
-window.__STREMIO_EPISODE_MODEL__ = buildEpisodeModel;
-window.__STREMIO_MERGE_EPISODES__ = mergeEpisodeDetails;
+window.__SC_EPISODE_MODEL__ = buildEpisodeModel;
+window.__SC_MERGE_EPISODES__ = mergeEpisodeDetails;

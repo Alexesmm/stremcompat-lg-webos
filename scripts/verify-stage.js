@@ -25,7 +25,7 @@ function must(rel) {
 [
   'app/appinfo.json', 'app/index.html', 'app/services.json', 'app/logo.png', 'app/fonts/inter-latin-400.woff',
   'service/package.json', 'service/services.json', 'service/launch.js', 'service/profile.js', 'service/profile.json',
-  'service/tvserver.js', 'service/server/embedded.js', 'service/server/routes.js', 'service/beta.html', 'service/beta-app.js',
+  'service/local-server.js', 'service/server/embedded.js', 'service/server/routes.js', 'service/interface.html', 'service/interface.js',
   'service/player/player.css', 'service/player/player-body.html', 'service/player/player-client.js',
   'service/bin/ffmpeg', 'service/bin/ffprobe', 'service/bin/sc-engine', 'service/compat.js', 'service/roots.json'
 ].forEach(must);
@@ -55,15 +55,15 @@ if (launcher.indexOf('/beta?v=' + profile.version) < 0) throw new Error('Launche
 if (launcher.indexOf('luna://' + profile.serviceId + '/start') < 0) throw new Error('Launcher service ID mismatch.');
 
 var server = read('service/server/embedded.js');
-var shell = read('service/beta.html');
-var application = read('service/beta-app.js');
-if (server.indexOf('__EMBEDDED_BETA_HTML_B64__') >= 0 || server.indexOf('__EMBEDDED_BETA_APP_B64__') >= 0) throw new Error('Embedded UI placeholders were not replaced.');
+var shell = read('service/interface.html');
+var application = read('service/interface.js');
+if (server.indexOf('__EMBEDDED_INTERFACE_HTML_B64__') >= 0 || server.indexOf('__EMBEDDED_INTERFACE_SCRIPT_B64__') >= 0) throw new Error('Embedded UI placeholders were not replaced.');
 function embedded(name) {
   var match = server.match(new RegExp("var " + name + " = '([^']+)'"));
   if (!match) throw new Error('Missing embedded asset: ' + name);
   return Buffer.from(match[1], 'base64').toString('utf8');
 }
-if (embedded('EMBEDDED_BETA_HTML_B64') !== shell || embedded('EMBEDDED_BETA_APP_B64') !== application) throw new Error('Embedded UI does not match staged files.');
+if (embedded('EMBEDDED_INTERFACE_HTML_B64') !== shell || embedded('EMBEDDED_INTERFACE_SCRIPT_B64') !== application) throw new Error('Embedded UI does not match staged files.');
 if (server.indexOf('__EMBEDDED_PLAYER_B64__') >= 0) throw new Error('Embedded player placeholder was not replaced.');
 var embeddedPlayer = JSON.parse(embedded('EMBEDDED_PLAYER_B64'));
 ['player.css', 'player-body.html', 'player-client.js'].forEach(function (name) {

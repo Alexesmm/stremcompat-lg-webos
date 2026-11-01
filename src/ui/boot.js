@@ -2,15 +2,15 @@
 /* ================= boot ================= */
 function boot() {
   try {
-    window.__STREMIO_PHASE__('B0');
+    window.__SC_PHASE__('B0');
     if (TV_PROFILE.lowMemory) bodyAdd('lowmem');
     applyTextSize();
     if (!user()) {
-      window.__STREMIO_PHASE__('L0');
+      window.__SC_PHASE__('L0');
       showScr('login');
       login.enter();
-      window.__STREMIO_BOOT_DONE__ = true;
-      window.__STREMIO_PHASE__('READY');
+      window.__SC_BOOT_DONE__ = true;
+      window.__SC_PHASE__('READY');
       $('boot').style.display = 'none';
       return;
     }
@@ -39,12 +39,12 @@ function boot() {
       history.replaceState(history.state, '', appUrl('/beta'));
     } catch (e) {}
     setTimeout(function () {
-      window.__STREMIO_BOOT_DONE__ = true;
-      window.__STREMIO_PHASE__('READY');
+      window.__SC_BOOT_DONE__ = true;
+      window.__SC_PHASE__('READY');
       $('boot').style.display = 'none';
       /* shown by Settings > Diagnostics: from opening this page to Home on screen */
       try {
-        window.__STREMIO_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
+        window.__SC_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
       } catch (e) {}
     }, 120);
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
@@ -75,11 +75,11 @@ function boot() {
       toast(tx('holdOkHint'), 6000);
     }, 4000);
   } catch (error) {
-    window.__STREMIO_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
+    window.__SC_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
   }
 }
 /* This script is the last parser-blocking element in body, so every UI node already
    exists. Boot synchronously: old webOS WebAppManager builds can miss a late
    DOMContentLoaded listener after navigating from the packaged bootstrap to localhost. */
-window.__STREMIO_PHASE__('B_CALL');
+window.__SC_PHASE__('B_CALL');
 boot();

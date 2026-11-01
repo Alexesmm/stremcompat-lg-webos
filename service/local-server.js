@@ -3,7 +3,7 @@
 //
 // Responsibilities:
 //   1. Start the torrent engine on :11470 if not running.
-//   2. Serve the television interface (/beta, /beta-app.js) and the bare player (/play).
+//   2. Serve the television interface (/beta, /interface.js) and the bare player (/play).
 //   3. Bridge account, addon, artwork, subtitle and stream requests that the old
 //      TV browsers cannot perform themselves (TLS roots, CORS, headers, HLS).
 
@@ -22,7 +22,7 @@ var { startStreamingServer } = require('./server/streaming-server');
 var routes = require('./server/routes');
 var { claimPort, leaveWhenReplaced, listenTakingOver } = require('./server/takeover');
 
-dbg('tvserver starting, uid=' + (process.getuid ? process.getuid() : '?'));
+dbg('local server starting, uid=' + (process.getuid ? process.getuid() : '?'));
 
 process.on('uncaughtException', function (e) {
   dbg('UNCAUGHT: ' + ((e && e.stack) || e));
@@ -33,7 +33,7 @@ startStreamingServer();
 /* the port may still be held by the server of the version installed before (takeover.js) */
 listenTakingOver(http.createServer(routes.handleRequest), function () {
   dbg('listening on :' + PORT);
-  console.log('tvserver on :' + PORT);
+  console.log('local server on :' + PORT);
   /* from now on, an update makes this server leave by itself */
   claimPort();
   leaveWhenReplaced();

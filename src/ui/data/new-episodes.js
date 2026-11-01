@@ -32,7 +32,7 @@ function firstNewEpisode(meta, state) {
   }
   return best ? { id: best.id, count: count } : null;
 }
-window.__STREMIO_FIRST_NEW_EPISODE__ = firstNewEpisode;
+window.__SC_FIRST_NEW_EPISODE__ = firstNewEpisode;
 function checkNewEpisodes(done) {
   var cached = lsJson(NEW_EPISODES_KEY);
   if (cached && cached.at && Date.now() - cached.at < NEW_EPISODES_EVERY) {

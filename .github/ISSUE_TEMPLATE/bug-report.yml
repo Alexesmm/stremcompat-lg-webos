@@ -94,7 +94,7 @@ body:
     id: actual
     attributes:
       label: Actual result
-      description: Include the complete UJ3_BOOT, UJ3_ASSET or other visible error code.
+      description: Include the complete APP_BOOT, APP_ASSET or other visible error code.
     validations:
       required: true
   - type: textarea

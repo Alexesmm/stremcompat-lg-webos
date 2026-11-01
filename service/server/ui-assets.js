@@ -1,4 +1,4 @@
-// Serving the television interface (beta.html template, beta-app.js), the logo and the font.
+// Serving the television interface (interface.html template, interface.js), the logo and the font.
 
 var fs = require('fs');
 var path = require('path');
@@ -15,11 +15,11 @@ try {
   dbg('logo read failed: ' + e.message);
 }
 
-// beta.html is a template: it carries the version in its script URL and receives
+// interface.html is a template: it carries the version in its script URL and receives
 // the browser-side profile where the <!--@profile--> marker stands.
 function renderInterfaceHtml(buf) {
   var profileScript =
-    '<script>window.__STREMIO_PROFILE__=' +
+    '<script>window.__SC_PROFILE__=' +
     safeScriptJson(PROFILE_MODULE.interfaceProfile(PROFILE)) +
     ';</script>';
   return buf
@@ -36,7 +36,7 @@ function readUiAsset(name, embedded, cb) {
   if (process.argv[1]) candidates.push(path.join(path.dirname(process.argv[1]), name));
   candidates.push(path.join(process.cwd(), name));
   var seen = {},
-    index = process.env.TVSERVER_FORCE_EMBEDDED_UI === '1' ? candidates.length : 0,
+    index = process.env.SC_SERVER_FORCE_EMBEDDED_UI === '1' ? candidates.length : 0,
     lastError = null;
   function next() {
     if (index >= candidates.length) {

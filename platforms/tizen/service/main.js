@@ -1,4 +1,4 @@
-// The local server as a Tizen service: what tvserver.js does on webOS, on the TV's own Node.
+// The local server as a Tizen service: what local-server.js does on webOS, on the TV's own Node.
 // ES5. Sets up the environment before the server modules read it, then only adds what is
 // specific to this platform in front of the same routes.
 require('./compat');
@@ -35,10 +35,10 @@ function dataFolder() {
 
 function prepareEnvironment() {
   var data = dataFolder(),
-    log = path.join(data, 'tvserver.log');
+    log = path.join(data, 'local server.log');
   /* server-address.js and streaming-file.js keep their files under $HOME */
   process.env.HOME = data;
-  process.env.TVSERVER_LOG = log;
+  process.env.SC_SERVER_LOG = log;
   try {
     if (fs.statSync(log).size > MAX_LOG_BYTES) fs.unlinkSync(log);
   } catch (e) {}

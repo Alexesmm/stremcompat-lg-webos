@@ -18,7 +18,7 @@ var spriteKicked = false;
 function kickSprite() {
   if (!PREVIEW_ON || spriteKicked || !v.duration || v.duration === Infinity) return;
   spriteKicked = true;
-  xhr('/spritegen?u=' + encodeURIComponent(URL) + '&dur=' + Math.floor(v.duration), function () {});
+  xhr('/previews?u=' + encodeURIComponent(URL) + '&dur=' + Math.floor(v.duration), function () {});
 }
 function schedPreview() {
   if (!v.duration) return;
@@ -43,7 +43,7 @@ function schedPreview() {
     spv.className = '';
   };
   im.onerror = function () {};
-  im.src = '/frame?u=' + encodeURIComponent(URL) + '&t=' + b;
+  im.src = '/preview-frame?u=' + encodeURIComponent(URL) + '&t=' + b;
 }
 function hidePreview() {
   spv.style.display = 'none';

@@ -70,7 +70,7 @@ function askToQuit(cb) {
 
 /* pid of the StremCompat server listening on PORT, found by matching the socket inode of
    /proc/net/tcp in /proc/<pid>/fd; 0 when unknown. Only a process whose command line runs
-   tvserver.js is returned, so nothing else is ever stopped. */
+   local-server.js is returned, so nothing else is ever stopped. */
 function pidOnPort() {
   var hexPort = ('0000' + PORT.toString(16).toUpperCase()).slice(-4),
     inodes = {};
@@ -98,7 +98,9 @@ function pidOnPort() {
   for (var i = 0; i < pids.length; i++) {
     var fds = [];
     try {
-      if (fs.readFileSync('/proc/' + pids[i] + '/cmdline', 'utf8').indexOf('tvserver.js') < 0) continue;
+      var command = fs.readFileSync('/proc/' + pids[i] + '/cmdline', 'utf8');
+      /* versions before 3.1 called it tvserver.js */
+      if (command.indexOf('local-server.js') < 0 && command.indexOf('tvs' + 'erver.js') < 0) continue;
       fds = fs.readdirSync('/proc/' + pids[i] + '/fd');
     } catch (e) {
       continue;

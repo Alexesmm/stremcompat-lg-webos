@@ -23,7 +23,7 @@ function libPrefix() {
   return 'lib_local_';
 }
 var PRE = libPrefix();
-window.__STREMIO_PHASE__('M1');
+window.__SC_PHASE__('M1');
 function allLib() {
   var out = [],
     keys = storageKeys();
@@ -69,7 +69,7 @@ function cwCard(it) {
     cw: true
   };
 }
-window.__STREMIO_CW_CARD__ = cwCard;
+window.__SC_CW_CARD__ = cwCard;
 /* As in Stremio, an item removed from the library stays only while it is temporary */
 function cwItems(limit) {
   var out = [],
@@ -92,7 +92,7 @@ function cwItems(limit) {
   });
   return out.slice(0, limit || 12);
 }
-window.__STREMIO_CW_ITEMS__ = cwItems;
+window.__SC_CW_ITEMS__ = cwItems;
 function libGridItems() {
   var out = [],
     lib = allLib();
@@ -114,7 +114,7 @@ function mtimeMs(v) {
   var t = Date.parse(v || '');
   return isNaN(t) ? 0 : t;
 }
-window.__STREMIO_MTIME_MS__ = mtimeMs;
+window.__SC_MTIME_MS__ = mtimeMs;
 function pullLib(cb) {
   var ak = authKey();
   if (!ak) {

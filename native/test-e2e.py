@@ -69,8 +69,8 @@ for name, extra in (('ffmpeg', ''), ('ffprobe', ''), ('sc-engine', ' %d %d' % (L
 home = BASE + '/e2e-home'
 shutil.rmtree(home, ignore_errors=True)
 os.makedirs(home)
-env = dict(os.environ, HOME=home, TV_ENGINE=wrappers + '/sc-engine', TV_FFMPEG=wrappers + '/ffmpeg', TV_FFPROBE=wrappers + '/ffprobe', TVSERVER_LOG=home + '/server.log')
-server = subprocess.Popen([node, '--max_semi_space_size=2', STAGE + '/service/tvserver.js'], cwd=STAGE + '/service', env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+env = dict(os.environ, HOME=home, TV_ENGINE=wrappers + '/sc-engine', TV_FFMPEG=wrappers + '/ffmpeg', TV_FFPROBE=wrappers + '/ffprobe', SC_SERVER_LOG=home + '/server.log')
+server = subprocess.Popen([node, '--max_semi_space_size=2', STAGE + '/service/local-server.js'], cwd=STAGE + '/service', env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 address = 'http://127.0.0.1:11470/%s/1' % HASH
 local = 'http://127.0.0.1:%d' % PORT
 
@@ -95,10 +95,10 @@ try:
     status, _, body = get('http://127.0.0.1:11470/opensubHash?videoUrl=' + urllib.parse.quote(address), 200)
     check('OpenSubtitles hash', status == 200 and len(json.loads(body)['result']['hash']) == 16, body[:90])
     check('interface told the engine is ready', json.loads(get(local + '/streamfile', 10)[2]).get('state') == 'ready')
-    status, _, body = get(local + '/embtracks?u=' + urllib.parse.quote(address, safe=''), 150)
+    status, _, body = get(local + '/subtitle-tracks?u=' + urllib.parse.quote(address, safe=''), 150)
     check('ARM ffprobe through the server', status == 200 and json.loads(body).get('err') == '', body[:100])
     art = urllib.parse.quote('https://images.metahub.space/background/medium/tt0468569/img', safe='')
-    status, _, body = get(local + '/bgz?u=' + art, 60)
+    status, _, body = get(local + '/artwork?u=' + art, 60)
     check('ARM ffmpeg reduces artwork', status == 200 and body[:2] == b'\xff\xd8', (status, len(body)))
 
     # the storage limit, while the film plays from start to end at several times its speed
@@ -124,7 +124,7 @@ try:
     status, _, body = get(address, 200, headers={'Range': 'bytes=1048576-1114111'})
     check('the new link works', status == 206 and len(body) == 65536, (status, len(body)))
 
-    status, _, body = get(local + '/spritegen?dur=600&u=' + urllib.parse.quote(address, safe=''), 30)
+    status, _, body = get(local + '/previews?dur=600&u=' + urllib.parse.quote(address, safe=''), 30)
     check('seek previews start', json.loads(body).get('ok') is True, body[:80])
     log('engine stats', get('http://127.0.0.1:11470/stats.json', 10)[2][:200])
     log('server memory after streaming', json.loads(get(local + '/health', 5)[2]).get('memory'))

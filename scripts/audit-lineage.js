@@ -13,7 +13,7 @@ var zlib = require('zlib');
 
 var root = path.resolve(__dirname, '..');
 var CODE = /\.(js|css|html|sh|cpp)$/;
-var LEFT_OUT = /(^|\/)(generated|licenses)\/|^service\/(beta-app\.js|beta\.html)$|^service\/player\/player-client\.js$/;
+var LEFT_OUT = /(^|\/)(generated|licenses)\/|^service\/(interface\.js|interface\.html)$|^service\/player\/player-client\.js$/;
 
 function lines(text) {
   var out = [];

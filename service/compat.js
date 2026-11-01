@@ -56,7 +56,7 @@ if (!Object.assign)
     return target;
   };
 
-/* IPv4 first, as tvserver.js asks of newer Node: on a network that hands out IPv6 without a
+/* IPv4 first, as local-server.js asks of newer Node: on a network that hands out IPv6 without a
    working route, requests hang. Falls back to whatever the system offers. */
 if (old) {
   var lookup = dns.lookup;

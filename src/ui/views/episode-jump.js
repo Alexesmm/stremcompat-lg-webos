@@ -79,4 +79,4 @@ var episodeJump = {
     this.paint();
   }
 };
-window.__STREMIO_EPISODE_JUMP__ = episodeJump;
+window.__SC_EPISODE_JUMP__ = episodeJump;

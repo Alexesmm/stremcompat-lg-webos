@@ -6,7 +6,7 @@ var path = require('path');
 var vm = require('vm');
 var sourceHas = require('./lib/source-check').sourceHas;
 
-var source = fs.readFileSync(path.join(__dirname, '..', 'service', 'beta-app.js'), 'utf8');
+var source = fs.readFileSync(path.join(__dirname, '..', 'service', 'interface.js'), 'utf8');
 
 function element(id) {
   var el = {
@@ -64,13 +64,13 @@ function run(storage, expectedScreen, missingIds, expectedLanguage) {
   };
   context.window = context;
   context.window.addEventListener = function () {};
-  context.window.__STREMIO_PHASE__ = function (phase) { context.phase = phase; };
-  context.window.__STREMIO_BOOT_ERROR__ = function (message, line) { failure = String(line) + ': ' + String(message); };
-  vm.runInNewContext(source, context, { filename: 'beta-app.js', timeout: 2000 });
+  context.window.__SC_PHASE__ = function (phase) { context.phase = phase; };
+  context.window.__SC_BOOT_ERROR__ = function (message, line) { failure = String(line) + ': ' + String(message); };
+  vm.runInNewContext(source, context, { filename: 'interface.js', timeout: 2000 });
   assert.strictEqual(failure, null, failure || 'unexpected startup failure');
-  assert.strictEqual(context.window.__STREMIO_BOOT_DONE__, true);
+  assert.strictEqual(context.window.__SC_BOOT_DONE__, true);
   expectedLanguage = expectedLanguage || 'en-US';
-  assert.strictEqual(context.window.__STREMIO_UI_LANGUAGE__(), expectedLanguage, 'unexpected interface language');
+  assert.strictEqual(context.window.__SC_UI_LANGUAGE__(), expectedLanguage, 'unexpected interface language');
   assert.strictEqual(get('chipSearch').querySelector('.navlabel').textContent, expectedLanguage === 'pt-BR' ? 'Buscar' : 'Search');
   assert.strictEqual(get('chipAddons').querySelector('.navlabel').textContent, 'Addons');
   assert.strictEqual(get('lgQrTitle').textContent, expectedLanguage === 'pt-BR' ? 'Entrar pelo celular' : 'Sign in with your phone');
@@ -118,16 +118,16 @@ function accountStorage() {
 }
 
 var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
-assert.strictEqual(typeof firstRun.context.__STREMIO_RESUME_CHECK__, 'function', 'runtime resume recovery hook is missing');
-assert.strictEqual(typeof firstRun.context.__STREMIO_MANUAL_RECOVER__, 'function', 'manual recovery hook is missing');
-assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__STREMIO_STREAM_COMPAT__({ title: 'AV1 2160p' }))), { labels: ['AV1'], rank: 3 });
-assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__STREMIO_STREAM_COMPAT__({ title: 'Dolby Vision HDR10 HEVC Main10 DTS' }))), { labels: ['Dolby Vision', 'HEVC 10-bit', 'DTS'], rank: 0 });
+assert.strictEqual(typeof firstRun.context.__SC_RESUME_CHECK__, 'function', 'runtime resume recovery hook is missing');
+assert.strictEqual(typeof firstRun.context.__SC_MANUAL_RECOVER__, 'function', 'manual recovery hook is missing');
+assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__SC_STREAM_COMPAT__({ title: 'AV1 2160p' }))), { labels: ['AV1'], rank: 3 });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__SC_STREAM_COMPAT__({ title: 'Dolby Vision HDR10 HEVC Main10 DTS' }))), { labels: ['Dolby Vision', 'HEVC 10-bit', 'DTS'], rank: 0 });
 var manySources = [], qualities = ['4K', '1080p', '720p', 'SD', 'Other'];
 for (var si = 0; si < 80; si++) manySources.push({
   url: 'https://media.example/' + si, quality: qualities[si % qualities.length],
   seeders: 80 - si, compatRank: si % 13 === 0 ? 2 : 0, _seq: si
 });
-var compacted = firstRun.context.__STREMIO_COMPACT_SOURCES__(manySources, 12);
+var compacted = firstRun.context.__SC_COMPACT_SOURCES__(manySources, 12);
 assert.ok(compacted.items.length <= 12, 'global source budget was exceeded');
 qualities.forEach(function (quality) {
   assert.ok(compacted.items.some(function (item) { return item.quality === quality; }), 'source sampling lost ' + quality);
@@ -139,7 +139,7 @@ assert.ok(sourceHas(source, 'detail.meta===m&&detail.id===mediaId'), 'late detai
 assert.ok(sourceHas(source, 'function queuePointerHover(target)'), 'Magic Remote hover navigation is not debounced');
 assert.ok(sourceHas(source, "def.k==='__reload'"), 'Settings recovery action is not wired');
 assert.ok(sourceHas(source, "$('bg2').style.backgroundImage='none'"), 'inactive backdrop texture is not released');
-var episodeModel = firstRun.context.__STREMIO_EPISODE_MODEL__([
+var episodeModel = firstRun.context.__SC_EPISODE_MODEL__([
   { id:'show:2:2',season:2,episode:2,title:'Later' },
   { id:'show:0:1',season:0,episode:1,title:'Special' },
   { id:'show:1:2',season:1,episode:2,title:'Second' },
@@ -151,30 +151,30 @@ assert.strictEqual(episodeModel.seasons[episodeModel.seasons.length-1].n, 0, 'sp
 assert.strictEqual(episodeModel.linear.length, 4, 'specials leaked into continuous episode order');
 assert.strictEqual(episodeModel.linear[0]._stremAbsolute, 1, 'continuous numbering did not start at one');
 assert.strictEqual(episodeModel.linear[2]._stremAbsolute, 101, 'provider absolute episode number was not preserved');
-assert.strictEqual(firstRun.context.__STREMIO_EPISODE_INDEX__(episodeModel.linear,101),2,'overall episode lookup did not find the requested episode');
-assert.strictEqual(firstRun.context.__STREMIO_EPISODE_INDEX__(episodeModel.linear,999),-1,'overall episode lookup accepted a missing episode');
+assert.strictEqual(firstRun.context.__SC_EPISODE_INDEX__(episodeModel.linear,101),2,'overall episode lookup did not find the requested episode');
+assert.strictEqual(firstRun.context.__SC_EPISODE_INDEX__(episodeModel.linear,999),-1,'overall episode lookup accepted a missing episode');
 var longSeason = [];
 for (var le = 0; le < 30; le++) longSeason.push({ id:'long:1:x' + le, season:1, title:'Untitled ' + le });
 longSeason.push({ id:'long:1:x3', season:1, title:'Duplicate of 3' });
 longSeason.unshift({ id:'long:1:2', season:1, episode:2 }, { id:'long:1:1', season:1, episode:1 });
-var longModel = firstRun.context.__STREMIO_EPISODE_MODEL__(longSeason);
+var longModel = firstRun.context.__SC_EPISODE_MODEL__(longSeason);
 assert.strictEqual(longModel.linear.length, 32, 'a video listed twice was counted twice');
 assert.strictEqual(longModel.linear[0].id, 'long:1:1', 'numbered episodes did not come first');
 assert.strictEqual(longModel.linear[2].id, 'long:1:x0', 'unnumbered episodes lost the order the addon sent');
 assert.strictEqual(longModel.linear[31].id, 'long:1:x29', 'unnumbered episodes were reordered');
 assert.strictEqual(longModel.linear[2]._stremSeasonEpisode, 3, 'an unnumbered episode reused an existing number');
 assert.strictEqual(longModel.linear[31]._stremAbsolute, 32, 'overall numbering skipped or repeated an episode');
-var flatModel = firstRun.context.__STREMIO_EPISODE_MODEL__([{ id:'ch:a', title:'A' }, { id:'ch:b', title:'B' }]);
+var flatModel = firstRun.context.__SC_EPISODE_MODEL__([{ id:'ch:a', title:'A' }, { id:'ch:b', title:'B' }]);
 assert.strictEqual(flatModel.linear.length, 2, 'a series without seasons had no overall numbering');
 assert.strictEqual(flatModel.seasons[0].n, 1, 'a series without seasons was shown as specials');
 assert.ok(!sourceHas(source, 'window.prompt('),'episode jump still depends on an unsupported browser prompt');
-assert.strictEqual(typeof firstRun.context.__STREMIO_EPISODE_JUMP__,'object','in-app episode keypad is missing');
-firstRun.context.__STREMIO_EPISODE_JUMP__.show(12);
-firstRun.context.__STREMIO_EPISODE_JUMP__.press(6);
-firstRun.context.__STREMIO_EPISODE_JUMP__.press(10);
-assert.strictEqual(firstRun.context.__STREMIO_EPISODE_JUMP__.value,'70','episode keypad did not replace the suggested number and append digits');
-firstRun.context.__STREMIO_EPISODE_JUMP__.close();
-var cwCard = firstRun.context.__STREMIO_CW_CARD__;
+assert.strictEqual(typeof firstRun.context.__SC_EPISODE_JUMP__,'object','in-app episode keypad is missing');
+firstRun.context.__SC_EPISODE_JUMP__.show(12);
+firstRun.context.__SC_EPISODE_JUMP__.press(6);
+firstRun.context.__SC_EPISODE_JUMP__.press(10);
+assert.strictEqual(firstRun.context.__SC_EPISODE_JUMP__.value,'70','episode keypad did not replace the suggested number and append digits');
+firstRun.context.__SC_EPISODE_JUMP__.close();
+var cwCard = firstRun.context.__SC_CW_CARD__;
 var ep22 = 22 * 60000, movie = 120 * 60000;
 var watching = cwCard({ _id:'tt5', type:'series', name:'Show', state:{ video_id:'tt5:2:5', timeOffset:10 * 60000, duration:ep22 } });
 assert.strictEqual(watching.minutesLeft, 12, 'Continue Watching minutes left are wrong');
@@ -187,9 +187,9 @@ assert.strictEqual(cwCard({ _id:'c', type:'movie', state:{ video_id:'c', timeOff
 var pointer = cwCard({ _id:'tt8', type:'series', name:'Other', state:{ video_id:'tt8:1:4', timeOffset:1, duration:0 } });
 assert.strictEqual(pointer.upNext && pointer.videoId, 'tt8:1:4', 'the next episode set by another Stremio app was not offered');
 assert.strictEqual(cwCard({ _id:'m2', type:'movie', state:{ video_id:'m2', timeOffset:1, duration:0 } }).upNext, false, 'a film at the start became an up next card');
-var tagText = firstRun.context.__STREMIO_SOURCE_TAGS__({ name:'Torrentio 4k', title:'Show.2160p.WEB-DL.DDP5.1.DV.HDR10.HEVC 24.5 GB', quality:'4K', seeders:532 }).map(function (x) { return x.t; }).join(',');
+var tagText = firstRun.context.__SC_SOURCE_TAGS__({ name:'Torrentio 4k', title:'Show.2160p.WEB-DL.DDP5.1.DV.HDR10.HEVC 24.5 GB', quality:'4K', seeders:532 }).map(function (x) { return x.t; }).join(',');
 assert.strictEqual(tagText, '4K,HDR,DV,HEVC,DD+,24.5 GB,532 seeds', 'source tags were not read from the stream text');
-var langsOf = function (title, name) { return firstRun.context.__STREMIO_STREAM_LANGUAGES__({ name: name || 'Torrentio', title: title }).join(','); };
+var langsOf = function (title, name) { return firstRun.context.__SC_STREAM_LANGUAGES__({ name: name || 'Torrentio', title: title }).join(','); };
 assert.strictEqual(langsOf('Show.S01E01.1080p\n👤 12 💾 1.2 GB\nMulti Audio / 🇬🇧 / 🇮🇹'), 'en,it,multi', 'flags and multi audio were not read');
 assert.strictEqual(langsOf('Filme.2023.1080p.WEB-DL.DUAL.5.1 Dublado'), 'pt-BR,multi', 'a Brazilian dubbed release was not detected');
 assert.strictEqual(langsOf('Pelicula 1080p 🇲🇽 Latino', 'Latam'), 'es-419', 'Latin American Spanish was not detected');
@@ -207,27 +207,27 @@ var langSamples = [
 ];
 langSamples.forEach(function (sample) {
   var src = { name: sample[0], title: sample[1] };
-  assert.strictEqual(firstRun.context.__STREMIO_STREAM_LANGUAGES__(src).join(','), sample[2], 'language detection changed for: ' + sample[1]);
-  assert.strictEqual(firstRun.context.__STREMIO_SUBTITLE_LANGUAGES_ONLY__(src), sample[3], 'subtitle-only flags misread for: ' + sample[1]);
+  assert.strictEqual(firstRun.context.__SC_STREAM_LANGUAGES__(src).join(','), sample[2], 'language detection changed for: ' + sample[1]);
+  assert.strictEqual(firstRun.context.__SC_SUBTITLE_LANGUAGES_ONLY__(src), sample[3], 'subtitle-only flags misread for: ' + sample[1]);
 });
-var subTags = firstRun.context.__STREMIO_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: ['en', 'pt-BR', 'es', 'multi'], subLangsOnly: true });
+var subTags = firstRun.context.__SC_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: ['en', 'pt-BR', 'es', 'multi'], subLangsOnly: true });
 assert.strictEqual(subTags[1].c + ':' + subTags[1].t, 'sublang:SUBS EN · PT-BR +1', 'Multi Subs flags were not tagged as subtitles');
-var heroHtml = firstRun.context.__STREMIO_HERO_META__({ runtime: '109 min', year: '2026', imdbRating: '7.8' });
+var heroHtml = firstRun.context.__SC_HERO_META__({ runtime: '109 min', year: '2026', imdbRating: '7.8' });
 assert.ok(/109 min.*2026.*7\.8.*IMDb/.test(heroHtml), 'the hero info line is out of order: ' + heroHtml);
-assert.strictEqual(firstRun.context.__STREMIO_HERO_META__({ runtime: '<b>' }).indexOf('<b>'), -1, 'hero metadata was not escaped');
-var compatOf = firstRun.context.__STREMIO_STREAM_COMPAT__;
+assert.strictEqual(firstRun.context.__SC_HERO_META__({ runtime: '<b>' }).indexOf('<b>'), -1, 'hero metadata was not escaped');
+var compatOf = firstRun.context.__SC_STREAM_COMPAT__;
 var rarSource = compatOf({ name: 'Torrentio', title: 'Movie.2020.1080p.WEB', filename: 'Movie.2020.1080p.WEB.rar', url: 'http://127.0.0.1:11470/abc/0' });
 assert.ok(rarSource.rank === 4 && rarSource.labels.indexOf('RAR') >= 0, 'a .rar source was not moved to the end with a warning');
 assert.strictEqual(compatOf({ name: 'Debrid', title: 'Show pack', url: 'https://cdn.example/files/show.part1.zip?token=1' }).rank, 4, 'a .zip link was not recognised');
 var rarbg = compatOf({ name: 'Torrentio', title: 'Movie.2020.1080p.WEBRip.x264-RARBG', filename: 'Movie.2020.1080p.WEBRip.x264-RARBG.mp4' });
 assert.ok(rarbg.rank === 0 && rarbg.labels.indexOf('RAR') < 0, 'a RARBG release was mistaken for an archive');
-var afterFail = firstRun.context.__STREMIO_NEXT_AFTER_FAILURE__([
+var afterFail = firstRun.context.__SC_NEXT_AFTER_FAILURE__([
   { stored:'q', addon:'Last' },
   { addon:'Torrentio', name:'A', title:'broken' },
   { addon:'Torrentio', name:'B', title:'good' }
 ], { addon:'Torrentio', text:'A broken' });
 assert.strictEqual(afterFail && afterFail.name, 'B', 'the failed source was offered again');
-var newEp = firstRun.context.__STREMIO_FIRST_NEW_EPISODE__({ videos: [
+var newEp = firstRun.context.__SC_FIRST_NEW_EPISODE__({ videos: [
   { id:'s:1:1', season:1, episode:1, released:'2020-01-01T00:00:00Z' },
   { id:'s:2:1', season:2, episode:1, released:'2021-03-01T00:00:00Z' },
   { id:'s:2:2', season:2, episode:2, released:'2021-03-08T00:00:00Z' },
@@ -236,30 +236,30 @@ var newEp = firstRun.context.__STREMIO_FIRST_NEW_EPISODE__({ videos: [
 ] }, { lastWatched:'2021-02-01T00:00:00Z', watchedEpisodes:['s:2:1'] });
 assert.strictEqual(newEp && newEp.id, 's:2:2', 'new episodes ignored watched, special or unaired rules');
 assert.strictEqual(newEp.count, 1, 'new episode count is wrong');
-var mtimeMs = firstRun.context.__STREMIO_MTIME_MS__;
+var mtimeMs = firstRun.context.__SC_MTIME_MS__;
 assert.strictEqual(mtimeMs('2026-10-28T12:00:00.000Z'), Date.parse('2026-10-28T12:00:00.000Z'), 'an ISO library time was not read as a time');
 assert.strictEqual(mtimeMs(1793000000000), 1793000000000, 'a millisecond library time from datastoreMeta was changed');
 assert.ok(mtimeMs('2026-10-28T12:00:00.000Z') > mtimeMs(1700000000000), 'library times are still compared as text');
-var fromBits = firstRun.context.__STREMIO_WATCHED_FROM_BITS__;
+var fromBits = firstRun.context.__SC_WATCHED_FROM_BITS__;
 var bitVideos = [{ id:'s:1:1', season:1, episode:1 }, { id:'s:1:2', season:1, episode:2 }, { id:'s:1:3', season:1, episode:3 }, { id:'s:0:1', season:0, episode:1 }];
 assert.strictEqual(Object.keys(fromBits({ anchor:'s:1:2', alen:3, bits:[0,1,1,0] }, bitVideos)).sort().join(), 's:1:1,s:1:2', 'watched episodes from other Stremio apps were not read');
 bitVideos.push({ id:'s:0:2', season:0, episode:2 });
 assert.strictEqual(Object.keys(fromBits({ anchor:'s:1:2', alen:3, bits:[0,1,1,0] }, bitVideos)).sort().join(), 's:1:1,s:1:2', 'the watched field was not shifted to its anchor episode');
 assert.strictEqual(Object.keys(fromBits({ anchor:'gone', alen:3, bits:[1,1,1] }, bitVideos)).length, 0, 'an unknown anchor marked episodes as watched');
 var baseEpisodes={videos:[{id:'show:1:1',season:1,episode:1}]};
-assert.strictEqual(firstRun.context.__STREMIO_MERGE_EPISODES__(baseEpisodes,{videos:[{id:'show:1:1',season:1,episode:1,thumbnail:'/still.jpg',overview:'Overview'}]}),true,'metadata enrichment did not report a change');
+assert.strictEqual(firstRun.context.__SC_MERGE_EPISODES__(baseEpisodes,{videos:[{id:'show:1:1',season:1,episode:1,thumbnail:'/still.jpg',overview:'Overview'}]}),true,'metadata enrichment did not report a change');
 assert.strictEqual(baseEpisodes.videos[0].thumbnail,'/still.jpg','metadata enrichment did not fill a missing thumbnail');
-var nextMatch = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__([
+var nextMatch = firstRun.context.__SC_MATCH_NEXT_SOURCE__([
   { addon:'Other',quality:'1080p',title:'H264 AAC',seeders:900,compatRank:0 },
   { addon:'Torrentio',quality:'4K',title:'HEVC 10bit DDP WEB-DL',seeders:20,compatRank:0 },
   { addon:'Torrentio',quality:'4K',title:'H264 AAC',seeders:200,compatRank:0 }
 ],{addon:'Torrentio',quality:'4K',text:'HEVC 10bit DDP WEB-DL',compat:'HEVC 10-bit'});
 assert.strictEqual(nextMatch.title,'HEVC 10bit DDP WEB-DL','next episode did not prefer the closest safe source traits');
 firstRun.context.localStorage.setItem('noHistory', 'true');
-firstRun.context.__STREMIO_REMEMBER_SEARCH__('private title');
+firstRun.context.__SC_REMEMBER_SEARCH__('private title');
 assert.ok(String(firstRun.context.localStorage.getItem('recentSearches') || '').indexOf('private title') < 0, 'a search was remembered with Do not save history on');
 firstRun.context.localStorage.removeItem('noHistory');
-var srvPanel = firstRun.context.__STREMIO_SERVER_PANEL__;
+var srvPanel = firstRun.context.__SC_SERVER_PANEL__;
 srvPanel.show('http://192.168.0.5:11470', function () {});
 assert.strictEqual(srvPanel.text, '192.168.0.5:11470', 'the current address was not offered for editing');
 srvPanel.key(40);
@@ -282,7 +282,7 @@ assert.strictEqual(srvPanel.text, '192.168.0.5:11470', 'Delete did not remove th
 srvPanel.press(41);
 assert.strictEqual(srvPanel.text, '', 'Clear did not empty the address');
 srvPanel.close();
-var matchNext = firstRun.context.__STREMIO_MATCH_NEXT_SOURCE__;
+var matchNext = firstRun.context.__SC_MATCH_NEXT_SOURCE__;
 var pack = { addon:'Torrentio',quality:'720p',title:'Other',seeders:1,compatRank:0,bingeGroup:'torrentio|pack' };
 var strongEn = { addon:'Torrentio',quality:'1080p',title:'English',seeders:900,compatRank:0,langs:['en'] };
 var weakBr = { addon:'Torrentio',quality:'1080p',title:'Dublado',seeders:2,compatRank:0,langs:['pt-BR'] };
@@ -313,8 +313,8 @@ assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',
     compare(english, JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'service', 'lang', code + '.json'), 'utf8')), code);
   });
 })();
-firstRun.context.__STREMIO_SET_UI_LANGUAGE__('pt-BR');
-assert.strictEqual(firstRun.context.__STREMIO_UI_LANGUAGE__(), 'pt-BR');
+firstRun.context.__SC_SET_UI_LANGUAGE__('pt-BR');
+assert.strictEqual(firstRun.context.__SC_UI_LANGUAGE__(), 'pt-BR');
 assert.strictEqual(firstRun.context.localStorage.getItem('uiLanguage'), 'pt-BR', 'language preference was not persisted');
 assert.strictEqual(firstRun.get('chipSearch').querySelector('.navlabel').textContent, 'Buscar', 'language change was not applied immediately');
 run(unavailableStorage(), 'scrLogin');
@@ -324,7 +324,7 @@ var animeRun = run(memoryStorage({
   authKey: JSON.stringify('anime-auth-key'),
   addons: JSON.stringify([{ transportUrl: 'https://anime.example/manifest.json', manifest: { id: 'anime.test', name: 'Anime Test', catalogs: [{ type: 'anime', id: 'popular', name: 'Popular Anime' }] } }])
 }), 'scrBoard');
-var discoverTypes = JSON.parse(JSON.stringify(animeRun.context.__STREMIO_DISCOVER_TYPES__()));
+var discoverTypes = JSON.parse(JSON.stringify(animeRun.context.__SC_DISCOVER_TYPES__()));
 assert.ok(discoverTypes.some(function (type) { return type.value === 'anime' && type.label === 'Anime'; }), 'Discover did not expose an installed anime catalog type');
 run(memoryStorage({ uiLanguage: 'pt-BR' }), 'scrLogin', null, 'pt-BR');
 run(memoryStorage({ uiLanguage: 'unsupported-locale' }), 'scrLogin', null, 'en-US');

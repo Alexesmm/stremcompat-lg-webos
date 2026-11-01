@@ -3,9 +3,9 @@
 /* Replaced with the profile-specific, verified assets during packaging. Keeping
    an embedded copy makes the low-storage webOS 3 build independent of service
    working-directory and package-file lookup quirks. */
-var EMBEDDED_BETA_HTML_B64 = '__EMBEDDED_BETA_HTML_B64__';
+var EMBEDDED_INTERFACE_HTML_B64 = '__EMBEDDED_INTERFACE_HTML_B64__';
 
-var EMBEDDED_BETA_APP_B64 = '__EMBEDDED_BETA_APP_B64__';
+var EMBEDDED_INTERFACE_SCRIPT_B64 = '__EMBEDDED_INTERFACE_SCRIPT_B64__';
 
 // ---------- bare-page player ----------
 // The player page is assembled from service/player/: player.css and player-body.html
@@ -16,7 +16,7 @@ var EMBEDDED_BETA_APP_B64 = '__EMBEDDED_BETA_APP_B64__';
 var EMBEDDED_PLAYER_B64 = '__EMBEDDED_PLAYER_B64__';
 
 module.exports = {
-  EMBEDDED_BETA_APP_B64: EMBEDDED_BETA_APP_B64,
-  EMBEDDED_BETA_HTML_B64: EMBEDDED_BETA_HTML_B64,
+  EMBEDDED_INTERFACE_SCRIPT_B64: EMBEDDED_INTERFACE_SCRIPT_B64,
+  EMBEDDED_INTERFACE_HTML_B64: EMBEDDED_INTERFACE_HTML_B64,
   EMBEDDED_PLAYER_B64: EMBEDDED_PLAYER_B64
 };

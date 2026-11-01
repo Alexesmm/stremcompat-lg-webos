@@ -91,7 +91,7 @@ function nextSourceAfterFailure(items, pref) {
   }
   return null;
 }
-window.__STREMIO_NEXT_AFTER_FAILURE__ = nextSourceAfterFailure;
+window.__SC_NEXT_AFTER_FAILURE__ = nextSourceAfterFailure;
 function hasNextSourcePreference(id, vid) {
   try {
     return !!localStorage.getItem('tvnextpref_' + id + '_' + vid);
@@ -116,4 +116,4 @@ function takeNextSourcePreference(id, vid) {
   if (!pref || !pref.at || Date.now() - pref.at > 10 * 60 * 1000) return null;
   return pref;
 }
-window.__STREMIO_MATCH_NEXT_SOURCE__ = matchingNextSource;
+window.__SC_MATCH_NEXT_SOURCE__ = matchingNextSource;

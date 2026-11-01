@@ -1,64 +1,89 @@
 try{
 (function(){
 'use strict';
-window.__STREMIO_MAIN_PARSED__=true;
-window.__STREMIO_PHASE__('M0');
-// What differs between TV platforms, LG webOS here. src/platform/tizen has the same functions;
-// the build picks one folder per platform, in both the interface and the player.
-/* FFmpeg and FFprobe run on this platform: reduced artwork, technical badges, seek previews
-   and subtitle extraction are available */
-var HAS_MEDIA_TOOLS = true;
-/* where a path of the app really is; on webOS the pages come from the local server */
+window.__SC_MAIN_PARSED__=true;
+window.__SC_PHASE__('M0');
+// What differs between TV platforms, Samsung Tizen here. src/platform/lg has the same functions.
+/* programs other than the TV's own service runtime cannot run on Tizen, so no FFmpeg or FFprobe */
+var HAS_MEDIA_TOOLS = false;
+/* The pages are files inside the package, with <base> pointing every request at the local
+   server: a path that leaves for another page has to name its file. */
+var APP_ROOT = String(location.href)
+  .replace(/[?#].*$/, '')
+  .replace(/[^\/]*$/, '');
 function appUrl(path) {
+  var p = String(path)
+    .replace(/^https?:\/\/[^\/]+/, '')
+    .replace(/^\/+/, '');
+  if (p.indexOf('play') === 0) return APP_ROOT + 'player.html' + p.slice(4);
+  if (p.indexOf('beta') === 0) return APP_ROOT + 'index.html' + p.slice(4);
   return path;
 }
-/* Back on the remote, for text boxes too (where 8 is the Delete key of the keyboard) */
 function isRemoteBack(k) {
-  return k === 461 || k === 27;
+  return k === 10009 || k === 27;
 }
 function isBackKey(k) {
   return isRemoteBack(k) || k === 8;
 }
-/* cb(true) when the system answered, cb(false) if it did not; the service may need a moment
-   more before it listens */
 function startService(serviceId, cb) {
-  var done = false,
-    bridge = null;
-  function finish(ok) {
-    if (done) return;
-    done = true;
-    bridge = null;
-    cb(ok);
-  }
   try {
-    if (typeof PalmServiceBridge === 'undefined') {
-      finish(false);
-      return;
-    }
-    bridge = new PalmServiceBridge();
-    bridge.onservicecallback = function () {
-      finish(true);
-    };
-    bridge.call('luna://' + serviceId + '/start', '{}');
-    setTimeout(function () {
-      finish(false);
-    }, 2600);
+    tizen.application.launchAppControl(
+      new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/service'),
+      serviceId,
+      function () {
+        cb(true);
+      },
+      function () {
+        cb(false);
+      }
+    );
   } catch (e) {
-    finish(false);
+    cb(false);
   }
 }
-// Interface side of the LG platform.
-function exitApp() {
+/* Only Back, the arrows and OK reach a page by default. */
+(function () {
   try {
-    window.close();
+    var keys = tizen.tvinputdevice.getSupportedKeys();
+    for (var i = 0; i < keys.length; i++)
+      if (/^(ColorF|Media|\d$)/.test(keys[i].name)) tizen.tvinputdevice.registerKey(keys[i].name);
   } catch (e) {}
+})();
+/* The service leaves by itself when nothing has asked it anything for a while, so the app
+   leaves nothing running after it closes. A video playing from a link asks nothing. */
+setInterval(function () {
+  try {
+    var x = new XMLHttpRequest();
+    x.open('GET', '/health?alive=' + Date.now(), true);
+    x.send();
+  } catch (e) {}
+}, 30000);
+// Interface side of the Tizen platform.
+function exitApp() {
+  var left = false;
+  function leave() {
+    if (left) return;
+    left = true;
+    try {
+      tizen.application.getCurrentApplication().exit();
+    } catch (e) {}
+  }
+  try {
+    var x = new XMLHttpRequest();
+    x.open('GET', '/quit', true);
+    x.onreadystatechange = function () {
+      if (x.readyState === 4) leave();
+    };
+    x.send();
+  } catch (e) {}
+  setTimeout(leave, 500);
 }
 // Service endpoints, the build profile, viewport metrics and DOM/event helpers.
 /* ================= utils ================= */
 var CIN = 'https://v3-cinemeta.strem.io';
 var API = 'https://api.strem.io';
-/* Injected by tvserver.js from the build profile; the fallback is the webOS 4 1920x1080 profile. */
-var TV_PROFILE = window.__STREMIO_PROFILE__ || {
+/* Injected by local-server.js from the build profile; the fallback is the webOS 4 1920x1080 profile. */
+var TV_PROFILE = window.__SC_PROFILE__ || {
   id: 'um4-armv7',
   serviceId: 'io.github.alexesmm.legacytv.server',
   lowMemory: false,
@@ -115,7 +140,7 @@ function bodyRemove(name) {
     .replace(new RegExp(' ' + name + ' ', 'g'), ' ')
     .replace(/^\s+|\s+$/g, '');
 }
-// XHR helpers. Addon GETs and Stremio API POSTs go through the local bridges in tvserver.js.
+// XHR helpers. Addon GETs and Stremio API POSTs go through the local bridges in local-server.js.
 function xhrGetUrl(u) {
   return /^https?:\/\//i.test(String(u || '')) ? '/addon?u=' + encodeURIComponent(u) : u;
 }
@@ -1360,10 +1385,10 @@ function setUILanguage(value) {
   } catch (e) {}
   return next;
 }
-window.__STREMIO_UI_LANGUAGE__ = function () {
+window.__SC_UI_LANGUAGE__ = function () {
   return UI_LANG;
 };
-window.__STREMIO_SET_UI_LANGUAGE__ = setUILanguage;
+window.__SC_SET_UI_LANGUAGE__ = setUILanguage;
 applyStaticLanguage();
 if ($('lgStat')) $('lgStat').textContent = tx('generatingCode');
 // HTML escaping, time formatting and the toast notification.
@@ -1465,7 +1490,7 @@ function runtimeRecover() {
     });
   });
 }
-window.__STREMIO_RESUME_CHECK__ = runtimeRecover;
+window.__SC_RESUME_CHECK__ = runtimeRecover;
 function reloadUi() {
   var url = appUrl('/beta?recover=' + Date.now());
   try {
@@ -1550,7 +1575,7 @@ function manualRecover() {
     });
   });
 }
-window.__STREMIO_MANUAL_RECOVER__ = manualRecover;
+window.__SC_MANUAL_RECOVER__ = manualRecover;
 // Poster, backdrop and icon URLs.
 function isImdb(id) {
   return String(id || '').indexOf('tt') === 0;
@@ -1587,7 +1612,7 @@ function bgMid(it) {
   /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
   if (!HAS_MEDIA_TOOLS) return bgSmall(it);
   return (
-    '/bgz?u=' + encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
+    '/artwork?u=' + encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
   );
 }
 // Stremio account session and library synchronization.
@@ -1615,7 +1640,7 @@ function libPrefix() {
   return 'lib_local_';
 }
 var PRE = libPrefix();
-window.__STREMIO_PHASE__('M1');
+window.__SC_PHASE__('M1');
 function allLib() {
   var out = [],
     keys = storageKeys();
@@ -1661,7 +1686,7 @@ function cwCard(it) {
     cw: true
   };
 }
-window.__STREMIO_CW_CARD__ = cwCard;
+window.__SC_CW_CARD__ = cwCard;
 /* As in Stremio, an item removed from the library stays only while it is temporary */
 function cwItems(limit) {
   var out = [],
@@ -1684,7 +1709,7 @@ function cwItems(limit) {
   });
   return out.slice(0, limit || 12);
 }
-window.__STREMIO_CW_ITEMS__ = cwItems;
+window.__SC_CW_ITEMS__ = cwItems;
 function libGridItems() {
   var out = [],
     lib = allLib();
@@ -1706,7 +1731,7 @@ function mtimeMs(v) {
   var t = Date.parse(v || '');
   return isNaN(t) ? 0 : t;
 }
-window.__STREMIO_MTIME_MS__ = mtimeMs;
+window.__SC_MTIME_MS__ = mtimeMs;
 function pullLib(cb) {
   var ak = authKey();
   if (!ak) {
@@ -1871,7 +1896,7 @@ function discoverTypes() {
   for (var n = 0; n < values.length; n++) out.push({ value: values[n], label: typeLabel(values[n]) });
   return out;
 }
-window.__STREMIO_DISCOVER_TYPES__ = discoverTypes;
+window.__SC_DISCOVER_TYPES__ = discoverTypes;
 function stableHash(value) {
   var s = String(value || ''),
     h = 2166136261;
@@ -2019,7 +2044,7 @@ function qualityLabel(value) {
         ? tx('recent')
         : value;
 }
-window.__STREMIO_STREAM_COMPAT__ = streamCompatibility;
+window.__SC_STREAM_COMPAT__ = streamCompatibility;
 /* Short tags for the source list, read from the same advisory text: quality, HDR,
    codec, audio, size and seeders, so a source can be judged without reading its name. */
 function sourceTags(s) {
@@ -2049,9 +2074,9 @@ function sourceTags(s) {
     );
   return out;
 }
-window.__STREMIO_SOURCE_TAGS__ = sourceTags;
-window.__STREMIO_STREAM_LANGUAGES__ = streamLanguages;
-window.__STREMIO_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
+window.__SC_SOURCE_TAGS__ = sourceTags;
+window.__SC_STREAM_LANGUAGES__ = streamLanguages;
+window.__SC_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
 /* 'PT-BR', 'ES-LA · EN', 'MULTI', or the first two and '+2' when there are more */
 function langTagText(langs) {
   var names = [];
@@ -2170,7 +2195,7 @@ function compactSourcePool(input, cap) {
       trimmed[k] = true;
   return { items: selected, trimmed: trimmed };
 }
-window.__STREMIO_COMPACT_SOURCES__ = compactSourcePool;
+window.__SC_COMPACT_SOURCES__ = compactSourcePool;
 /* onDone(total, failed): failed lists the addons that did not answer, so the picker can
    tell "nothing found" apart from "the addon is down". */
 function fetchStreams(type, vid, onPart, onDone) {
@@ -2296,7 +2321,7 @@ function nextSourceAfterFailure(items, pref) {
   }
   return null;
 }
-window.__STREMIO_NEXT_AFTER_FAILURE__ = nextSourceAfterFailure;
+window.__SC_NEXT_AFTER_FAILURE__ = nextSourceAfterFailure;
 function hasNextSourcePreference(id, vid) {
   try {
     return !!localStorage.getItem('tvnextpref_' + id + '_' + vid);
@@ -2321,7 +2346,7 @@ function takeNextSourcePreference(id, vid) {
   if (!pref || !pref.at || Date.now() - pref.at > 10 * 60 * 1000) return null;
   return pref;
 }
-window.__STREMIO_MATCH_NEXT_SOURCE__ = matchingNextSource;
+window.__SC_MATCH_NEXT_SOURCE__ = matchingNextSource;
 // Remote focus class helpers and key-repeat acceleration.
 /* ================= focus/visual helpers ================= */
 function setF(list, idx) {
@@ -2428,7 +2453,7 @@ function setBg(u) {
     };
     img.onerror = function () {
       if (bgCur !== u) return;
-      var m = u.match(/^\/bgz\?u=(.*)$/);
+      var m = u.match(/^\/artwork\?u=(.*)$/);
       if (m) {
         var raw = decodeURIComponent(m[1]).replace(
           /(images\.metahub\.space\/background\/)[a-z]+\//,
@@ -2723,7 +2748,7 @@ function goBackScr() {
 
 var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chipAddons'), $('chipSet')];
 var chipTarget = ['search', 'home', 'disc', 'lib', 'addons', 'set'];
-window.__STREMIO_PHASE__('M2');
+window.__SC_PHASE__('M2');
 function paintChips() {
   if (topNav.active) bodyAdd('navopen');
   else bodyRemove('navopen');
@@ -2856,7 +2881,7 @@ function heroMetaHtml(m) {
   if (m.imdbRating) html += '<span>' + esc(m.imdbRating) + '<b class="imdb">IMDb</b></span>';
   return html;
 }
-window.__STREMIO_HERO_META__ = heroMetaHtml;
+window.__SC_HERO_META__ = heroMetaHtml;
 /* ================= board engine (Home / Discover / Library share one hero+rows) ================= */
 function makeBoard(loader) {
   return {
@@ -3730,7 +3755,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           row.answered = true;
           waiting--;
           /* shown by Settings > Diagnostics */
-          if (!waiting && board === home) window.__STREMIO_HOME_LOAD_MS__ = Date.now() - started;
+          if (!waiting && board === home) window.__SC_HOME_LOAD_MS__ = Date.now() - started;
         }
         row.items = items.slice(0);
         row.cardsEl.innerHTML = '';
@@ -4361,7 +4386,7 @@ function watchedFromBits(res, videos) {
   }
   return out;
 }
-window.__STREMIO_WATCHED_FROM_BITS__ = watchedFromBits;
+window.__SC_WATCHED_FROM_BITS__ = watchedFromBits;
 function episodeImage(v, meta) {
   var u = (v && (v.thumbnail || v.still || v.stillPath || v.still_path)) || '';
   if (u && String(u).charAt(0) === '/') u = 'https://image.tmdb.org/t/p/w500' + u;
@@ -4371,7 +4396,7 @@ function episodeIndexByNumber(items, n) {
   for (var i = 0; i < (items || []).length; i++) if (items[i]._stremAbsolute === n) return i;
   return -1;
 }
-window.__STREMIO_EPISODE_INDEX__ = episodeIndexByNumber;
+window.__SC_EPISODE_INDEX__ = episodeIndexByNumber;
 function episodeFallback(meta, small) {
   if (!meta) return '';
   return small ? bgSmall(meta) || posterOf(meta) : meta.background || bgOf(meta) || meta.poster || '';
@@ -4455,8 +4480,8 @@ function enrichEpisodeMetadata(type, id, meta, cb) {
   }
   next();
 }
-window.__STREMIO_EPISODE_MODEL__ = buildEpisodeModel;
-window.__STREMIO_MERGE_EPISODES__ = mergeEpisodeDetails;
+window.__SC_EPISODE_MODEL__ = buildEpisodeModel;
+window.__SC_MERGE_EPISODES__ = mergeEpisodeDetails;
 // Series that gained episodes since they were last watched, for the Home row.
 /* Checked at most once a day, for the few series watched most recently, one metadata
    request at a time in the background after Home is up. The result is stored and shown
@@ -4491,7 +4516,7 @@ function firstNewEpisode(meta, state) {
   }
   return best ? { id: best.id, count: count } : null;
 }
-window.__STREMIO_FIRST_NEW_EPISODE__ = firstNewEpisode;
+window.__SC_FIRST_NEW_EPISODE__ = firstNewEpisode;
 function checkNewEpisodes(done) {
   var cached = lsJson(NEW_EPISODES_KEY);
   if (cached && cached.at && Date.now() - cached.at < NEW_EPISODES_EVERY) {
@@ -5339,7 +5364,7 @@ var episodeJump = {
     this.paint();
   }
 };
-window.__STREMIO_EPISODE_JUMP__ = episodeJump;
+window.__SC_EPISODE_JUMP__ = episodeJump;
 // Source picker overlay.
 /* ================= STREAMS OVERLAY ================= */
 var streamsUI = {
@@ -5790,7 +5815,7 @@ function rememberSearch(q) {
     if (typeof list[i] === 'string' && list[i].toLowerCase() !== q.toLowerCase()) out.push(list[i]);
   lsSet(RECENT_SEARCH_KEY, out);
 }
-window.__STREMIO_REMEMBER_SEARCH__ = rememberSearch;
+window.__SC_REMEMBER_SEARCH__ = rememberSearch;
 /* The on-screen keyboard replaces the system one (slow, covers the screen and closed
    after every key on some webOS builds): 6 x 6 letters and digits, then space, delete
    and clear across two columns each. The system keyboard stays one key up, on the box. */
@@ -6686,8 +6711,8 @@ var settings = {
         window.performance && performance.memory
           ? Math.round(performance.memory.usedJSHeapSize / 1048576)
           : '—',
-      home = window.__STREMIO_HOME_LOAD_MS__ ? (window.__STREMIO_HOME_LOAD_MS__ / 1000).toFixed(1) : '—',
-      shown = window.__STREMIO_VISIBLE_MS__ ? (window.__STREMIO_VISIBLE_MS__ / 1000).toFixed(1) : '—';
+      home = window.__SC_HOME_LOAD_MS__ ? (window.__SC_HOME_LOAD_MS__ / 1000).toFixed(1) : '—',
+      shown = window.__SC_VISIBLE_MS__ ? (window.__SC_VISIBLE_MS__ / 1000).toFixed(1) : '—';
     xhrJson(
       '/diag',
       function (j) {
@@ -6964,7 +6989,7 @@ var serverPanel = {
     this.paint();
   }
 };
-window.__STREMIO_SERVER_PANEL__ = serverPanel;
+window.__SC_SERVER_PANEL__ = serverPanel;
 // Login screen: QR pairing and email sign-in.
 /* ================= LOGIN (standalone: QR + email) ================= */
 var login = {
@@ -7600,7 +7625,7 @@ function currentFocusedItem() {
    webOS repeats keydown while held, so we act on keyup (short) or after 2 repeats (menu). */
 var okHold = { down: false, rep: 0, menu: false, item: null },
   menuGuard = false;
-window.__STREMIO_PHASE__('M3');
+window.__SC_PHASE__('M3');
 on(
   document,
   'keydown',
@@ -7705,7 +7730,7 @@ on(window, 'popstate', function () {
   goBackScr();
 });
 
-window.__STREMIO_PHASE__('M4');
+window.__SC_PHASE__('M4');
 // App visibility changes (Quick Start+ resume).
 /* QuickStart+ can leave the webview alive while webOS stops its local service.
    Verify and recover the service only when the app becomes visible again. */
@@ -7746,15 +7771,15 @@ window.__STREMIO_PHASE__('M4');
 /* ================= boot ================= */
 function boot() {
   try {
-    window.__STREMIO_PHASE__('B0');
+    window.__SC_PHASE__('B0');
     if (TV_PROFILE.lowMemory) bodyAdd('lowmem');
     applyTextSize();
     if (!user()) {
-      window.__STREMIO_PHASE__('L0');
+      window.__SC_PHASE__('L0');
       showScr('login');
       login.enter();
-      window.__STREMIO_BOOT_DONE__ = true;
-      window.__STREMIO_PHASE__('READY');
+      window.__SC_BOOT_DONE__ = true;
+      window.__SC_PHASE__('READY');
       $('boot').style.display = 'none';
       return;
     }
@@ -7783,12 +7808,12 @@ function boot() {
       history.replaceState(history.state, '', appUrl('/beta'));
     } catch (e) {}
     setTimeout(function () {
-      window.__STREMIO_BOOT_DONE__ = true;
-      window.__STREMIO_PHASE__('READY');
+      window.__SC_BOOT_DONE__ = true;
+      window.__SC_PHASE__('READY');
       $('boot').style.display = 'none';
       /* shown by Settings > Diagnostics: from opening this page to Home on screen */
       try {
-        window.__STREMIO_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
+        window.__SC_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
       } catch (e) {}
     }, 120);
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
@@ -7819,13 +7844,13 @@ function boot() {
       toast(tx('holdOkHint'), 6000);
     }, 4000);
   } catch (error) {
-    window.__STREMIO_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
+    window.__SC_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
   }
 }
 /* This script is the last parser-blocking element in body, so every UI node already
    exists. Boot synchronously: old webOS WebAppManager builds can miss a late
    DOMContentLoaded listener after navigating from the packaged bootstrap to localhost. */
-window.__STREMIO_PHASE__('B_CALL');
+window.__SC_PHASE__('B_CALL');
 boot();
 })();
-}catch(error){window.__STREMIO_BOOT_ERROR__(error&&error.message||String(error),'TOP');}
+}catch(error){window.__SC_BOOT_ERROR__(error&&error.message||String(error),'TOP');}

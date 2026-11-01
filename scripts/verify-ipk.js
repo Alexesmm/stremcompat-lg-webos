@@ -64,7 +64,7 @@ if (JSON.parse(serviceInfo.data.toString('utf8')).version !== profile.version) t
 if (find(entries, /\/services\/[^\/]+\/server\.js$/)) throw new Error('O servidor de streaming do Stremio nao pode estar no IPK.');
 if (find(entries, /stremio-logo\.png$/)) throw new Error('O logo antigo nao pode estar no IPK.');
 var REQUIRED = [
-  'launch.js', 'profile.js', 'profile.json', 'tvserver.js', 'beta.html', 'beta-app.js',
+  'launch.js', 'profile.js', 'profile.json', 'local-server.js', 'interface.html', 'interface.js',
   'server/routes.js', 'server/embedded.js', 'server/proxy.js', 'server/config.js',
   'player/player.css', 'player/player-body.html', 'player/player-client.js'
 ];
@@ -80,8 +80,8 @@ if (packedProfile.port !== profile.port || packedProfile.version !== profile.ver
 var packedServer = entries.filter(function (e) { return /\/server\/[^\/]+\.js$/.test(e.name); })
   .map(function (e) { return e.data.toString('utf8'); }).join('\n');
 var packedEmbedded = serviceFile('server/embedded.js');
-var packedShell = serviceFile('beta.html');
-var packedApplication = serviceFile('beta-app.js');
+var packedShell = serviceFile('interface.html');
+var packedApplication = serviceFile('interface.js');
 [
   [packedServer, "p === '/streamref'", 'Proxy seguro ausente no IPK.'],
   [packedServer, 'rewriteHls', 'Reescrita HLS ausente no IPK.'],
@@ -99,7 +99,7 @@ function embedded(name) {
   if (!match) throw new Error('Asset incorporado ausente: ' + name);
   return Buffer.from(match[1], 'base64').toString('utf8');
 }
-if (embedded('EMBEDDED_BETA_HTML_B64') !== packedShell || embedded('EMBEDDED_BETA_APP_B64') !== packedApplication) throw new Error('Assets incorporados diferem dos arquivos empacotados.');
+if (embedded('EMBEDDED_INTERFACE_HTML_B64') !== packedShell || embedded('EMBEDDED_INTERFACE_SCRIPT_B64') !== packedApplication) throw new Error('Assets incorporados diferem dos arquivos empacotados.');
 var packedPlayer = JSON.parse(embedded('EMBEDDED_PLAYER_B64'));
 ['player.css', 'player-body.html', 'player-client.js'].forEach(function (name) {
   if (packedPlayer[name] !== serviceFile('player/' + name)) throw new Error('Player incorporado difere do empacotado: ' + name);

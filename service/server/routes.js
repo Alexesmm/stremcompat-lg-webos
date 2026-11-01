@@ -5,7 +5,7 @@ var path = require('path');
 var urlmod = require('url');
 var { APP_VERSION, DIR, PORT, PROFILE, PROFILE_MODULE } = require('./config');
 var { dbg } = require('./log');
-var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
+var { EMBEDDED_INTERFACE_SCRIPT_B64, EMBEDDED_INTERFACE_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
 var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
@@ -120,7 +120,7 @@ function sendInterfaceFile(res, name, embedded, type, transform) {
     if (err) {
       dbg('[ui] ' + name + ' failed: ' + err.message);
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('UJ3_ASSET ' + name + ' ' + err.message);
+      return res.end('APP_ASSET ' + name + ' ' + err.message);
     }
     res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store, max-age=0' });
     res.end(transform ? transform(buf) : buf);
@@ -131,15 +131,20 @@ function interfacePage(req, res) {
   PROFILE_MODULE.useSmallTvLimits(PROFILE, req.headers['user-agent']);
   sendInterfaceFile(
     res,
-    'beta.html',
-    EMBEDDED_BETA_HTML_B64,
+    'interface.html',
+    EMBEDDED_INTERFACE_HTML_B64,
     'text/html; charset=utf-8',
     renderInterfaceHtml
   );
 }
 
 function interfaceScript(req, res) {
-  sendInterfaceFile(res, 'beta-app.js', EMBEDDED_BETA_APP_B64, 'application/javascript; charset=utf-8');
+  sendInterfaceFile(
+    res,
+    'interface.js',
+    EMBEDDED_INTERFACE_SCRIPT_B64,
+    'application/javascript; charset=utf-8'
+  );
 }
 
 function toInterface(req, res) {
@@ -240,7 +245,7 @@ var ROUTES = {
   '/': toInterface,
   '/index.html': toInterface,
   '/beta': interfacePage,
-  '/beta-app.js': interfaceScript,
+  '/interface.js': interfaceScript,
   '/play': play,
   '/playinfo': playInfo,
   '/meta': titleArt,
@@ -280,22 +285,22 @@ var ROUTES = {
   '/probe': function (req, res, q) {
     probeInfo(q.u || '', res);
   },
-  '/frame': function (req, res, q) {
+  '/preview-frame': function (req, res, q) {
     grabFrame(q, res);
   },
-  '/spritegen': function (req, res, q) {
+  '/previews': function (req, res, q) {
     spriteGen(q, res);
   },
-  '/bgz': function (req, res, q) {
+  '/artwork': function (req, res, q) {
     bgResize(q, res);
   },
-  '/embtracks': function (req, res, q) {
+  '/subtitle-tracks': function (req, res, q) {
     embTracks(q.u || '', res);
   },
-  '/embstart': function (req, res, q) {
+  '/subtitle-start': function (req, res, q) {
     embStart(q, res);
   },
-  '/embcues': function (req, res, q) {
+  '/subtitle-cues': function (req, res, q) {
     embCues(q, res);
   }
 };

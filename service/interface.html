@@ -7,7 +7,7 @@
 /* Designed for the 1920x1080 webview. Netflix-like, BIG and clear.
    RULES LEARNED ON THIS TV: no blurred shadows, no scale animations, transform-only
    motion, static focus ring, class-based focus (never :focus).
-   Inter is served by tvserver as WOFF 1: Chromium 38 implements an early WOFF2 draft
+   Inter is served by local server as WOFF 1: Chromium 38 implements an early WOFF2 draft
    and rejects current WOFF2 files. Only the 400 and 700 faces exist, so 600 and 800
    resolve to 700 without synthetic bold.
    MOTION: focus feedback .12s ease; lists and panels moving .18s and things appearing
@@ -567,34 +567,34 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 /* Kept separate from the application script: syntax/runtime failures in the main
    bundle must still produce a readable error on old TV engines. */
 (function(){
-  window.__STREMIO_BOOT_DONE__=false;
-  window.__STREMIO_BOOT_FAILED__=false;
-  window.__STREMIO_BOOT_PHASE__='G0';
-  window.__STREMIO_PHASE__=function(code){
-    if(window.__STREMIO_BOOT_FAILED__)return;
-    window.__STREMIO_BOOT_PHASE__=String(code||'UNKNOWN');
+  window.__SC_BOOT_DONE__=false;
+  window.__SC_BOOT_FAILED__=false;
+  window.__SC_BOOT_PHASE__='G0';
+  window.__SC_PHASE__=function(code){
+    if(window.__SC_BOOT_FAILED__)return;
+    window.__SC_BOOT_PHASE__=String(code||'UNKNOWN');
   };
-  window.__STREMIO_SCRIPT_LOADED__=function(){
-    if(window.__STREMIO_BOOT_PHASE__==='G0')window.__STREMIO_PHASE__('SCRIPT_LOADED_NO_ENTRY');
+  window.__SC_SCRIPT_LOADED__=function(){
+    if(window.__SC_BOOT_PHASE__==='G0')window.__SC_PHASE__('SCRIPT_LOADED_NO_ENTRY');
   };
-  window.__STREMIO_BOOT_ERROR__=function(message,line){
-    window.__STREMIO_BOOT_FAILED__=true;
-    window.__STREMIO_BOOT_MESSAGE__=String(message||'Unknown startup error');
-    window.__STREMIO_BOOT_LINE__=String(line||'');
+  window.__SC_BOOT_ERROR__=function(message,line){
+    window.__SC_BOOT_FAILED__=true;
+    window.__SC_BOOT_MESSAGE__=String(message||'Unknown startup error');
+    window.__SC_BOOT_LINE__=String(line||'');
     var b=document.getElementById('boot');if(!b)return;
     b.style.background='#090b12';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
     b.style.textAlign='center';b.style.paddingTop='28vh';b.style.boxSizing='border-box';
     b.innerHTML='<div style="font-size:42px;font-weight:bold;margin-bottom:20px">StremCompat could not finish loading</div>'+
       '<div style="font-size:23px;color:#c3cad2;margin:0 auto 26px;max-width:1100px">'+String(message||'Unknown startup error').replace(/</g,'&lt;')+'</div>'+
-      '<div style="font-size:17px;color:#8b95a0">UJ3_BOOT '+(line||'')+' / '+window.__STREMIO_BOOT_PHASE__+' · press BACK, then open the app again</div>';
+      '<div style="font-size:17px;color:#8b95a0">APP_BOOT '+(line||'')+' / '+window.__SC_BOOT_PHASE__+' · press BACK, then open the app again</div>';
   };
-  window.onerror=function(message,source,line){window.__STREMIO_BOOT_ERROR__(message,line);return false;};
+  window.onerror=function(message,source,line){window.__SC_BOOT_ERROR__(message,line);return false;};
   setTimeout(function(){
-    if(!window.__STREMIO_BOOT_DONE__&&!window.__STREMIO_BOOT_FAILED__)window.__STREMIO_BOOT_ERROR__('Startup timed out before the home or login screen was ready.','T25');
+    if(!window.__SC_BOOT_DONE__&&!window.__SC_BOOT_FAILED__)window.__SC_BOOT_ERROR__('Startup timed out before the home or login screen was ready.','T25');
   },25000);
 })();
 </script>
 <!--@profile-->
-<script src="/beta-app.js?v=__APP_VERSION__" onload="window.__STREMIO_SCRIPT_LOADED__()" onerror="window.__STREMIO_BOOT_ERROR__('Application script could not be loaded or parsed.','SCRIPT_LOAD')"></script>
+<script src="/interface.js?v=__APP_VERSION__" onload="window.__SC_SCRIPT_LOADED__()" onerror="window.__SC_BOOT_ERROR__('Application script could not be loaded or parsed.','SCRIPT_LOAD')"></script>
 </body>
 </html>

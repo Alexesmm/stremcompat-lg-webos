@@ -15,7 +15,7 @@ function rememberSearch(q) {
     if (typeof list[i] === 'string' && list[i].toLowerCase() !== q.toLowerCase()) out.push(list[i]);
   lsSet(RECENT_SEARCH_KEY, out);
 }
-window.__STREMIO_REMEMBER_SEARCH__ = rememberSearch;
+window.__SC_REMEMBER_SEARCH__ = rememberSearch;
 /* The on-screen keyboard replaces the system one (slow, covers the screen and closed
    after every key on some webOS builds): 6 x 6 letters and digits, then space, delete
    and clear across two columns each. The system keyboard stays one key up, on the box. */

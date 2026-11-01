@@ -33,11 +33,11 @@ assert.ok(player.indexOf('webapis.js') < player.indexOf(baseTag), 'webapis.js mu
 assert.ok(player.indexOf('application/avplayer') > 0 && player.indexOf('<video id="v"') < 0, 'the player page must use AVPlay');
 assert.ok(index.indexOf('PalmServiceBridge') < 0, 'LG code reached the Samsung interface');
 assert.ok(player.indexOf('PalmServiceBridge') < 0, 'LG code reached the Samsung player');
-assert.ok(index.indexOf('__STREMCOMPAT_APP__') > 0 && index.indexOf('/beta-app.js') < 0, 'the interface script was not inlined');
+assert.ok(index.indexOf('__STREMCOMPAT_APP__') > 0 && index.indexOf('/interface.js') < 0, 'the interface script was not inlined');
 [index, player].forEach(function (page) {
   assert.ok(page.indexOf('/fonts/inter') < 0 && page.indexOf('/logo.png') < 0, 'the first paint must not need the service');
 });
-['server.js', 'bin', 'tvserver.js'].forEach(function (name) {
+['server.js', 'bin', 'local-server.js'].forEach(function (name) {
   assert.ok(!fs.existsSync(path.join(stage, 'service', name)), name + ' must not be in the Samsung package');
 });
 assert.ok(JSON.parse(staged('service/roots.json')).length > 50, 'the current certificates are missing');
@@ -55,7 +55,7 @@ function bootRun(hasTizen, reloads) {
   var stored = {}, timers = [], reloaded = 0, launched = 0, errors = [];
   if (reloads) stored.tizenBootReloads = String(reloads);
   var ctx = {
-    window: { __STREMCOMPAT_APP__: function () {}, __STREMIO_SCRIPT_LOADED__: function () {}, __STREMIO_BOOT_ERROR__: function (m) { errors.push(m); } },
+    window: { __STREMCOMPAT_APP__: function () {}, __SC_SCRIPT_LOADED__: function () {}, __SC_BOOT_ERROR__: function (m) { errors.push(m); } },
     location: { reload: function () { reloaded++; } },
     sessionStorage: { getItem: function (k) { return k in stored ? stored[k] : null; }, setItem: function (k, v) { stored[k] = v; }, removeItem: function (k) { delete stored[k]; } },
     setTimeout: function (f) { timers.push(f); },

@@ -12,7 +12,7 @@ function qualityLabel(value) {
         ? tx('recent')
         : value;
 }
-window.__STREMIO_STREAM_COMPAT__ = streamCompatibility;
+window.__SC_STREAM_COMPAT__ = streamCompatibility;
 /* Short tags for the source list, read from the same advisory text: quality, HDR,
    codec, audio, size and seeders, so a source can be judged without reading its name. */
 function sourceTags(s) {
@@ -42,9 +42,9 @@ function sourceTags(s) {
     );
   return out;
 }
-window.__STREMIO_SOURCE_TAGS__ = sourceTags;
-window.__STREMIO_STREAM_LANGUAGES__ = streamLanguages;
-window.__STREMIO_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
+window.__SC_SOURCE_TAGS__ = sourceTags;
+window.__SC_STREAM_LANGUAGES__ = streamLanguages;
+window.__SC_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
 /* 'PT-BR', 'ES-LA · EN', 'MULTI', or the first two and '+2' when there are more */
 function langTagText(langs) {
   var names = [];
@@ -163,7 +163,7 @@ function compactSourcePool(input, cap) {
       trimmed[k] = true;
   return { items: selected, trimmed: trimmed };
 }
-window.__STREMIO_COMPACT_SOURCES__ = compactSourcePool;
+window.__SC_COMPACT_SOURCES__ = compactSourcePool;
 /* onDone(total, failed): failed lists the addons that did not answer, so the picker can
    tell "nothing found" apart from "the addon is down". */
 function fetchStreams(type, vid, onPart, onDone) {

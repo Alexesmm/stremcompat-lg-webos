@@ -21,7 +21,7 @@ module.exports = [
   },
   {
     // local server and its modules.
-    files: ['service/tvserver.js', 'service/server/**/*.js'],
+    files: ['service/local-server.js', 'service/server/**/*.js'],
     languageOptions: { ecmaVersion: 2022, sourceType: 'commonjs', globals: globals.node },
     rules: correctness
   },
@@ -33,7 +33,7 @@ module.exports = [
   },
   {
     // The generated interface bundle (src/ui modules share one scope, so lint the bundle).
-    files: ['service/beta-app.js', 'platforms/tizen/generated/beta-app.js'],
+    files: ['service/interface.js', 'platforms/tizen/generated/interface.js'],
     languageOptions: {
       ecmaVersion: 5,
       sourceType: 'script',
@@ -42,7 +42,7 @@ module.exports = [
     rules: browserCorrectness
   },
   {
-    // Player client: wrapped by tvserver.js in an IIFE after the per-stream constants.
+    // Player client: wrapped by local-server.js in an IIFE after the per-stream constants.
     files: ['service/player/player-client.js', 'platforms/tizen/generated/player-client.js'],
     languageOptions: {
       ecmaVersion: 5,

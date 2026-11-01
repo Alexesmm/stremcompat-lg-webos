@@ -87,7 +87,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           row.answered = true;
           waiting--;
           /* shown by Settings > Diagnostics */
-          if (!waiting && board === home) window.__STREMIO_HOME_LOAD_MS__ = Date.now() - started;
+          if (!waiting && board === home) window.__SC_HOME_LOAD_MS__ = Date.now() - started;
         }
         row.items = items.slice(0);
         row.cardsEl.innerHTML = '';

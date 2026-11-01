@@ -2,8 +2,8 @@
 /* ================= utils ================= */
 var CIN = 'https://v3-cinemeta.strem.io';
 var API = 'https://api.strem.io';
-/* Injected by tvserver.js from the build profile; the fallback is the webOS 4 1920x1080 profile. */
-var TV_PROFILE = window.__STREMIO_PROFILE__ || {
+/* Injected by local-server.js from the build profile; the fallback is the webOS 4 1920x1080 profile. */
+var TV_PROFILE = window.__SC_PROFILE__ || {
   id: 'um4-armv7',
   serviceId: 'io.github.alexesmm.legacytv.server',
   lowMemory: false,

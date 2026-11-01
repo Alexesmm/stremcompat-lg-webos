@@ -1,4 +1,4 @@
-// XHR helpers. Addon GETs and Stremio API POSTs go through the local bridges in tvserver.js.
+// XHR helpers. Addon GETs and Stremio API POSTs go through the local bridges in local-server.js.
 function xhrGetUrl(u) {
   return /^https?:\/\//i.test(String(u || '')) ? '/addon?u=' + encodeURIComponent(u) : u;
 }

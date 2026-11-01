@@ -1,4 +1,4 @@
-// Append-only diagnostic log (tvserver.log).
+// Append-only diagnostic log (local server.log).
 
 var fs = require('fs');
 var { LOG_FILE } = require('./config');

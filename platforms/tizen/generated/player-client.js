@@ -2049,7 +2049,7 @@ function ensureEmbTracks() {
   }
   if (embTracksLoaded || embTracksLoading) return;
   embTracksLoading = true;
-  xhr('/embtracks?u=' + encodeURIComponent(URL), function (j) {
+  xhr('/subtitle-tracks?u=' + encodeURIComponent(URL), function (j) {
     embTracksLoading = false;
     embTracksLoaded = true;
     embTracks = (j && j.tracks) || [];
@@ -2098,7 +2098,7 @@ function pollEmbCues() {
   var want = embN;
   embPolling = true;
   xhr(
-    '/embcues?' + embQS() + '&since=' + (cues ? cues.length : 0) + '&t=' + (v.currentTime | 0),
+    '/subtitle-cues?' + embQS() + '&since=' + (cues ? cues.length : 0) + '&t=' + (v.currentTime | 0),
     function (j) {
       embPolling = false;
       if (want !== embN || !j) return;
@@ -2169,7 +2169,7 @@ function setEmbSub(n, ti) {
     }
     showToast(P.noNative);
   }
-  xhr('/embstart?' + embQS() + '&t=' + (v.currentTime | 0), function (j) {
+  xhr('/subtitle-start?' + embQS() + '&t=' + (v.currentTime | 0), function (j) {
     if (embN !== n || !j) return;
     if (j.cues && j.cues.length) {
       cues = j.cues;
@@ -3473,7 +3473,7 @@ var spriteKicked = false;
 function kickSprite() {
   if (!PREVIEW_ON || spriteKicked || !v.duration || v.duration === Infinity) return;
   spriteKicked = true;
-  xhr('/spritegen?u=' + encodeURIComponent(URL) + '&dur=' + Math.floor(v.duration), function () {});
+  xhr('/previews?u=' + encodeURIComponent(URL) + '&dur=' + Math.floor(v.duration), function () {});
 }
 function schedPreview() {
   if (!v.duration) return;
@@ -3498,7 +3498,7 @@ function schedPreview() {
     spv.className = '';
   };
   im.onerror = function () {};
-  im.src = '/frame?u=' + encodeURIComponent(URL) + '&t=' + b;
+  im.src = '/preview-frame?u=' + encodeURIComponent(URL) + '&t=' + b;
 }
 function hidePreview() {
   spv.style.display = 'none';

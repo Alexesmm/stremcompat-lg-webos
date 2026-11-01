@@ -175,7 +175,7 @@ Download the package from the [test release](https://github.com/Alexesmm/stremco
 - **App stuck after an update:** power cycle the television as described in [Installation](#installation).
 - **Interface only in the upper-left part of the screen:** install the `graphics-1280x720` package.
 - **Torrents do not start, but debrid and direct links work:** **Settings > Diagnostics** shows the state of the engine. Few seeders or little free storage can also keep a torrent from starting.
-- **Error screen at startup:** note the full `UJ3_BOOT` or `UJ3_ASSET` message before reinstalling.
+- **Error screen at startup:** note the full `APP_BOOT` or `APP_ASSET` message before reinstalling.
 - **A source appears but does not play:** usually a codec, bitrate or addon issue. Try a moderate H.264/AAC source first; very large 4K remuxes and some audio formats can exceed what older firmware supports.
 - Make sure Developer Mode is still active, and remove old test versions if storage is low.
 

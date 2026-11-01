@@ -14,10 +14,10 @@ function read(rel) { return fs.readFileSync(path.join(root, rel), 'utf8'); }
 
 var files = {
   launcher: read('app/index.html'),
-  shell: read('service/beta.html'),
-  application: read('service/beta-app.js'),
+  shell: read('service/interface.html'),
+  application: read('service/interface.js'),
   // The server is the bootstrap plus its modules under service/server.
-  server: [read('service/tvserver.js')].concat(fs.readdirSync(path.join(root, 'service', 'server')).sort().map(function (name) {
+  server: [read('service/local-server.js')].concat(fs.readdirSync(path.join(root, 'service', 'server')).sort().map(function (name) {
     return read('service/server/' + name);
   })).join('\n'),
   player: read('service/player/player-client.js')
@@ -29,8 +29,8 @@ var required = [
   ['launcher', '/beta?v=__APP_VERSION__', 'versioned interface URL token'],
   ['launcher', 'luna://__SERVICE_ID__/start', 'launcher service token'],
   ['shell', '<!--@profile-->', 'interface profile marker'],
-  ['shell', '/beta-app.js?v=__APP_VERSION__', 'versioned application script'],
-  ['shell', 'UJ3_BOOT', 'boot diagnostics'],
+  ['shell', '/interface.js?v=__APP_VERSION__', 'versioned application script'],
+  ['shell', 'APP_BOOT', 'boot diagnostics'],
   ['shell', '@media (max-height:800px)', 'compact 720p layout'],
   ['server', "p === '/streamref'", 'stream reference bridge'],
   ['server', "p === '/addon'", 'addon bridge'],
@@ -55,7 +55,7 @@ var required = [
   ['application', "on(document,'click'", 'Magic Remote clicks'],
   ['application', 'function viewportWidth()', 'resolution-aware layout'],
   ['application', 'Math.floor(contentWidth()/w)', 'resolution-aware row layout'],
-  ['application', "window.__STREMIO_PHASE__('B_CALL');boot();", 'synchronous legacy boot']
+  ['application', "window.__SC_PHASE__('B_CALL');boot();", 'synchronous legacy boot']
 ];
 var forbidden = [
   ['server', 'io.strem.tv.beta', 'old beta service identity'],

@@ -15,7 +15,7 @@ function currentFocusedItem() {
    webOS repeats keydown while held, so we act on keyup (short) or after 2 repeats (menu). */
 var okHold = { down: false, rep: 0, menu: false, item: null },
   menuGuard = false;
-window.__STREMIO_PHASE__('M3');
+window.__SC_PHASE__('M3');
 on(
   document,
   'keydown',
@@ -120,4 +120,4 @@ on(window, 'popstate', function () {
   goBackScr();
 });
 
-window.__STREMIO_PHASE__('M4');
+window.__SC_PHASE__('M4');

@@ -42,7 +42,7 @@ function validateLegacyFunctionPlacement(name, ast) {
     walk(ast, null, null);
 }
 
-['beta.html', path.join('..', 'app', 'index.html')].forEach(function (relative) {
+['interface.html', path.join('..', 'app', 'index.html')].forEach(function (relative) {
     var file = path.resolve(root, relative);
     var html = fs.readFileSync(file, 'utf8');
     var match;
@@ -58,8 +58,8 @@ function validateLegacyFunctionPlacement(name, ast) {
     }
 });
 
-validate('beta-app.js', fs.readFileSync(path.resolve(root, 'beta-app.js'), 'utf8'));
-// The player client runs inside the IIFE that tvserver.js wraps around it.
+validate('interface.js', fs.readFileSync(path.resolve(root, 'interface.js'), 'utf8'));
+// The player client runs inside the IIFE that local-server.js wraps around it.
 validate('player/player-client.js', '(function(){var URL;' + fs.readFileSync(path.resolve(root, 'player', 'player-client.js'), 'utf8') + '\n})();');
 
 if (failed) process.exit(1);

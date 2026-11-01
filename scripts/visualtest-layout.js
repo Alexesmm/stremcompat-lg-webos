@@ -79,8 +79,8 @@ async function main() {
   mockAddon = [{ transportUrl: 'http://127.0.0.1:' + mockPort + '/manifest.json', manifest: {
     id: 'org.stremcompat.visualtest', name: 'Visual Test', types: ['movie'], resources: ['catalog'], catalogs: mockCatalogs
   } }];
-  var server = childProcess.spawn(process.execPath, [path.join(stage, 'service', 'tvserver.js')], {
-    cwd: stage, windowsHide: true, stdio: 'ignore', env: Object.assign({}, process.env, { TVSERVER_LOG: path.join(stage, 'visualtest-tvserver.log') })
+  var server = childProcess.spawn(process.execPath, [path.join(stage, 'service', 'local-server.js')], {
+    cwd: stage, windowsHide: true, stdio: 'ignore', env: Object.assign({}, process.env, { SC_SERVER_LOG: path.join(stage, 'visualtest-local server.log') })
   });
   var browser, protocol;
   try {
@@ -100,7 +100,7 @@ async function main() {
     await protocol.call('Emulation.setDeviceMetricsOverride', { width: width, height: height, deviceScaleFactor: 1, mobile: false });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=' + width });
     await delay(2200);
-    var expression = "(function(){function r(id){var e=document.getElementById(id),b=e&&e.getBoundingClientRect();return b?{left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height}:null;}function d(id){var e=document.getElementById(id);return e?getComputedStyle(e).display:'';}function s(id){var e=document.getElementById(id);return e?e.textContent:'';}return JSON.stringify({width:innerWidth,height:innerHeight,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,login:document.getElementById('scrLogin').className,bodyClass:document.body.className,boot:document.getElementById('boot').style.display,loginBox:r('lgBox'),languageBox:r('lgLang'),language:window.__STREMIO_UI_LANGUAGE__&&window.__STREMIO_UI_LANGUAGE__(),languageText:s('lgLang'),loginTitle:s('lgQrTitle'),topnavDisplay:d('topnav'),logoDisplay:d('logobg'),bodyWidth:document.body.scrollWidth,bodyHeight:document.body.scrollHeight});})()";
+    var expression = "(function(){function r(id){var e=document.getElementById(id),b=e&&e.getBoundingClientRect();return b?{left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height}:null;}function d(id){var e=document.getElementById(id);return e?getComputedStyle(e).display:'';}function s(id){var e=document.getElementById(id);return e?e.textContent:'';}return JSON.stringify({width:innerWidth,height:innerHeight,done:!!window.__SC_BOOT_DONE__,failed:!!window.__SC_BOOT_FAILED__,login:document.getElementById('scrLogin').className,bodyClass:document.body.className,boot:document.getElementById('boot').style.display,loginBox:r('lgBox'),languageBox:r('lgLang'),language:window.__SC_UI_LANGUAGE__&&window.__SC_UI_LANGUAGE__(),languageText:s('lgLang'),loginTitle:s('lgQrTitle'),topnavDisplay:d('topnav'),logoDisplay:d('logobg'),bodyWidth:document.body.scrollWidth,bodyHeight:document.body.scrollHeight});})()";
     var evaluated = await protocol.call('Runtime.evaluate', { expression: expression, returnByValue: true });
     var state = JSON.parse(evaluated.result.value);
     assert.strictEqual(state.width, width, 'Unexpected viewport width.');
@@ -123,13 +123,13 @@ async function main() {
     var shot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, Buffer.from(shot.data, 'base64'));
-    var localized = await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('pt-BR');JSON.stringify({language:window.__STREMIO_UI_LANGUAGE__(),languageText:document.getElementById('lgLang').textContent,loginTitle:document.getElementById('lgQrTitle').textContent,password:document.getElementById('lgPass').getAttribute('placeholder')})", returnByValue: true });
+    var localized = await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('pt-BR');JSON.stringify({language:window.__SC_UI_LANGUAGE__(),languageText:document.getElementById('lgLang').textContent,loginTitle:document.getElementById('lgQrTitle').textContent,password:document.getElementById('lgPass').getAttribute('placeholder')})", returnByValue: true });
     var localizedState = JSON.parse(localized.result.value);
     assert.strictEqual(localizedState.language, 'pt-BR', 'Brazilian Portuguese selection was not persisted.');
     assert.ok(localizedState.languageText.indexOf('Português (Brasil)') >= 0, 'Portuguese language selector was not rendered.');
     assert.strictEqual(localizedState.loginTitle, 'Entrar pelo celular', 'Login text was not translated.');
     assert.strictEqual(localizedState.password, 'Senha', 'Login placeholder was not translated.');
-    await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('en-US')" });
+    await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('en-US')" });
     await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
     await delay(1800);
@@ -138,7 +138,7 @@ async function main() {
       if (readyRows.result.value >= 12) break;
       await delay(160);
     }
-    var authenticated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({bodyClass:document.body.className,topnavDisplay:getComputedStyle(document.getElementById('topnav')).display,home:document.getElementById('scrBoard').className,done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,message:window.__STREMIO_BOOT_MESSAGE__||'',line:window.__STREMIO_BOOT_LINE__||'',phase:window.__STREMIO_BOOT_PHASE__||''})", returnByValue: true });
+    var authenticated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({bodyClass:document.body.className,topnavDisplay:getComputedStyle(document.getElementById('topnav')).display,home:document.getElementById('scrBoard').className,done:!!window.__SC_BOOT_DONE__,failed:!!window.__SC_BOOT_FAILED__,message:window.__SC_BOOT_MESSAGE__||'',line:window.__SC_BOOT_LINE__||'',phase:window.__SC_BOOT_PHASE__||''})", returnByValue: true });
     var authenticatedState = JSON.parse(authenticated.result.value);
     assert.strictEqual(authenticatedState.failed, false, 'Authenticated frontend reported a boot failure: ' + JSON.stringify(authenticatedState));
     assert.strictEqual(authenticatedState.done, true, 'Authenticated frontend did not complete boot.');

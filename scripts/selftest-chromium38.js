@@ -68,7 +68,7 @@ async function main() {
   mockAddon = [{ transportUrl: 'http://127.0.0.1:' + mockPort + '/manifest.json', manifest: {
     id: 'org.stremcompat.chrome38test', name: 'Chromium 38 Test', types: ['movie'], resources: ['catalog'], catalogs: mockCatalogs
   } }];
-  var server = childProcess.spawn(process.execPath, [path.join(serviceRoot, 'service', 'tvserver.js')], { cwd: serviceRoot, windowsHide: true, stdio: 'ignore' });
+  var server = childProcess.spawn(process.execPath, [path.join(serviceRoot, 'service', 'local-server.js')], { cwd: serviceRoot, windowsHide: true, stdio: 'ignore' });
   var browser;
   try {
     await waitHealth(100);
@@ -83,7 +83,7 @@ async function main() {
     var protocol = await devtools(page.webSocketDebuggerUrl);
     await protocol.call('Runtime.enable');
     await delay(1500);
-    var evaluated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,phase:window.__STREMIO_BOOT_PHASE__,message:window.__STREMIO_BOOT_MESSAGE__||'',line:window.__STREMIO_BOOT_LINE__||'',login:document.getElementById('scrLogin').className,boot:document.getElementById('boot').style.display,language:window.__STREMIO_UI_LANGUAGE__(),languagePicker:document.getElementById('lgLang').textContent})", returnByValue: true });
+    var evaluated = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({done:!!window.__SC_BOOT_DONE__,failed:!!window.__SC_BOOT_FAILED__,phase:window.__SC_BOOT_PHASE__,message:window.__SC_BOOT_MESSAGE__||'',line:window.__SC_BOOT_LINE__||'',login:document.getElementById('scrLogin').className,boot:document.getElementById('boot').style.display,language:window.__SC_UI_LANGUAGE__(),languagePicker:document.getElementById('lgLang').textContent})", returnByValue: true });
     var state = JSON.parse(evaluated.result.value);
     if (state.failed || !state.done || protocol.exceptions.length) console.log(JSON.stringify({ state: state, exceptions: protocol.exceptions }, null, 2));
     assert.strictEqual(state.failed, false, 'browser startup reported failure at ' + state.phase);
@@ -94,13 +94,13 @@ async function main() {
     assert.ok(/^Language: English/.test(state.languagePicker), 'login language selector is not in English');
     assert.strictEqual(protocol.exceptions.length, 0, 'Chromium 38 reported an exception.');
 
-    var languageEval = await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('pt-BR');JSON.stringify({language:window.__STREMIO_UI_LANGUAGE__(),stored:localStorage.getItem('uiLanguage'),languagePicker:document.getElementById('lgLang').textContent,emailTitle:document.getElementById('lgEmailTitle').textContent})", returnByValue: true });
+    var languageEval = await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('pt-BR');JSON.stringify({language:window.__SC_UI_LANGUAGE__(),stored:localStorage.getItem('uiLanguage'),languagePicker:document.getElementById('lgLang').textContent,emailTitle:document.getElementById('lgEmailTitle').textContent})", returnByValue: true });
     var language = JSON.parse(languageEval.result.value);
     assert.strictEqual(language.language, 'pt-BR', 'Portuguese interface selection was not applied');
     assert.strictEqual(language.stored, 'pt-BR', 'interface language was not persisted locally');
     assert.ok(/^Idioma: Português/.test(language.languagePicker), 'login language selector was not translated');
     assert.strictEqual(language.emailTitle, 'Ou use seu e-mail', 'login copy was not translated');
-    await protocol.call('Runtime.evaluate', { expression: "window.__STREMIO_SET_UI_LANGUAGE__('en-US')" });
+    await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('en-US')" });
 
     await protocol.call('Runtime.evaluate', { expression: "document.getElementById('lgEmail').focus()" });
     await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
@@ -110,7 +110,7 @@ async function main() {
 
     await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'test-user',email:'test@example.com'}));localStorage.setItem('authKey',JSON.stringify('test-auth'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");location.reload()" });
     await delay(1800);
-    var homeEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var rows=document.querySelectorAll('#rows>.row'),visible=0,focused=-1;for(var i=0;i<rows.length;i++){if(getComputedStyle(rows[i]).display!=='none')visible++;if(rows[i].querySelector('.card.f'))focused=i;}return JSON.stringify({done:!!window.__STREMIO_BOOT_DONE__,failed:!!window.__STREMIO_BOOT_FAILED__,phase:window.__STREMIO_BOOT_PHASE__,board:document.getElementById('scrBoard').className,boot:document.getElementById('boot').style.display,total:rows.length,visible:visible,focused:focused});})()", returnByValue: true });
+    var homeEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var rows=document.querySelectorAll('#rows>.row'),visible=0,focused=-1;for(var i=0;i<rows.length;i++){if(getComputedStyle(rows[i]).display!=='none')visible++;if(rows[i].querySelector('.card.f'))focused=i;}return JSON.stringify({done:!!window.__SC_BOOT_DONE__,failed:!!window.__SC_BOOT_FAILED__,phase:window.__SC_BOOT_PHASE__,board:document.getElementById('scrBoard').className,boot:document.getElementById('boot').style.display,total:rows.length,visible:visible,focused:focused});})()", returnByValue: true });
     var home = JSON.parse(homeEval.result.value);
     assert.strictEqual(home.failed, false, 'stored-account startup reported failure at ' + home.phase);
     assert.strictEqual(home.done, true, 'stored-account startup did not finish; phase ' + home.phase);
@@ -119,7 +119,7 @@ async function main() {
     assert.strictEqual(home.total, 14, 'Chromium 38 discarded addon catalogs before the profile limit');
     assert.strictEqual(home.visible, 12, 'Chromium 38 did not isolate failed catalog rows');
     assert.strictEqual(home.focused, 1, 'Chromium 38 focus did not settle on the first successful catalog');
-    var orderEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var v=[];for(var i=0;i<40;i++)v.push({id:'o:1:x'+i,season:1});var m=window.__STREMIO_EPISODE_MODEL__(v),bad=0;for(var j=0;j<m.linear.length;j++)if(m.linear[j].id!=='o:1:x'+j)bad++;return bad;})()", returnByValue: true });
+    var orderEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var v=[];for(var i=0;i<40;i++)v.push({id:'o:1:x'+i,season:1});var m=window.__SC_EPISODE_MODEL__(v),bad=0;for(var j=0;j<m.linear.length;j++)if(m.linear[j].id!=='o:1:x'+j)bad++;return bad;})()", returnByValue: true });
     assert.strictEqual(orderEval.result.value, 0, 'Chromium 38 reordered unnumbered episodes (unstable sort)');
     var fontEval = await protocol.call('Runtime.evaluate', { expression: "(function(){var faces=[];document.fonts.forEach(function(f){faces.push(f.weight+':'+f.status);});return faces.join(',');})()", returnByValue: true });
     assert.strictEqual(fontEval.result.value, '400:loaded,700:loaded', 'Chromium 38 could not load the Inter font faces');

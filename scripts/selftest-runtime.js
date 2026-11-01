@@ -15,7 +15,7 @@ var appVersion = process.argv[4] || profile.version;
 var forceEmbedded = process.argv[5] === 'embedded';
 var childLogGlobal = '';
 /* service modules loaded by this test must not leave a log in the staged package */
-process.env.TVSERVER_LOG = path.join(os.tmpdir(), 'stremcompat-selftest-modules-' + process.pid + '.log');
+process.env.SC_SERVER_LOG = path.join(os.tmpdir(), 'stremcompat-selftest-modules-' + process.pid + '.log');
 
 var nextEpisodeId = require(path.join(root, 'service', 'server', 'episodes.js')).nextEpisodeId;
 // subtitle decoding without the streaming server's converter (what the TV does when it is not ready)
@@ -61,7 +61,7 @@ function request(options, body) {
 
 function waitForHealth(attempt) {
   return request({ hostname: '127.0.0.1', port: appPort, path: '/health' }).catch(function () {
-    if (attempt > 120) throw new Error('tvserver did not become ready');
+    if (attempt > 120) throw new Error('local server did not become ready');
     return new Promise(function (resolve) { setTimeout(resolve, 100); }).then(function () { return waitForHealth(attempt + 1); });
   });
 }
@@ -310,8 +310,8 @@ async function main() {
 
   var testLog = path.join(os.tmpdir(), 'stremio-lg-selftest-' + process.pid + '.log');
   /* STREMCOMPAT_SERVER_NODE runs the staged server on another Node, such as the TV's 0.12 */
-  var child = childProcess.spawn(process.env.STREMCOMPAT_SERVER_NODE || process.execPath, [path.join(root, 'service', 'tvserver.js')], {
-    cwd: root, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TV_ENGINE: path.join(__dirname, 'lib', 'fake-engine.js'), TVSERVER_LOG: testLog, TVSERVER_FORCE_EMBEDDED_UI: forceEmbedded ? '1' : '0' })
+  var child = childProcess.spawn(process.env.STREMCOMPAT_SERVER_NODE || process.execPath, [path.join(root, 'service', 'local-server.js')], {
+    cwd: root, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TV_ENGINE: path.join(__dirname, 'lib', 'fake-engine.js'), SC_SERVER_LOG: testLog, SC_SERVER_FORCE_EMBEDDED_UI: forceEmbedded ? '1' : '0' })
   });
   var childLog = '';
   child.stdout.on('data', function (d) { childLog += d.toString(); childLogGlobal = childLog; });
@@ -343,13 +343,13 @@ async function main() {
 
     var shell = await request({ hostname: '127.0.0.1', port: appPort, path: '/beta?v=' + appVersion });
     assert.strictEqual(shell.status, 200);
-    assert.ok(shell.text.indexOf('/beta-app.js?v=' + appVersion) >= 0);
+    assert.ok(shell.text.indexOf('/interface.js?v=' + appVersion) >= 0);
     assert.ok(shell.text.indexOf('__APP_VERSION__') < 0 && shell.text.indexOf('<!--@profile-->') < 0, 'interface template markers were not rendered');
-    assert.ok(shell.text.indexOf('window.__STREMIO_PROFILE__=') >= 0 && shell.text.indexOf('"id":"' + profile.profile + '"') >= 0, 'interface profile was not injected');
-    var application = await request({ hostname: '127.0.0.1', port: appPort, path: '/beta-app.js?v=' + appVersion });
+    assert.ok(shell.text.indexOf('window.__SC_PROFILE__=') >= 0 && shell.text.indexOf('"id":"' + profile.profile + '"') >= 0, 'interface profile was not injected');
+    var application = await request({ hostname: '127.0.0.1', port: appPort, path: '/interface.js?v=' + appVersion });
     assert.strictEqual(application.status, 200);
     assert.ok(/^application\/javascript/.test(application.headers['content-type'] || ''));
-    assert.ok(sourceHas(application.text, "window.__STREMIO_PHASE__('M0')"));
+    assert.ok(sourceHas(application.text, "window.__SC_PHASE__('M0')"));
     assert.ok(sourceHas(application.text, "'/stremioapi?path='"));
 
     var blockedApiPayload = JSON.stringify({ test: true });
@@ -433,7 +433,7 @@ async function main() {
     assert.strictEqual(JSON.parse(subsAgain.text).subtitles.length, 3);
     var latin = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/sub?u=' + encodeURIComponent('http://127.0.0.1:9191/latin.srt') })).text).cues;
     assert.strictEqual(latin.length && latin[0].t, 'Coração', 'a Windows-1252 subtitle lost its accents');
-    var tracks = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/embtracks?u=' + encodeURIComponent('http://127.0.0.1:9191/nothing.mkv') })).text);
+    var tracks = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/subtitle-tracks?u=' + encodeURIComponent('http://127.0.0.1:9191/nothing.mkv') })).text);
     assert.ok(Array.isArray(tracks.tracks) && tracks.err, 'a failed track read did not report an error');
 
     console.log('OK: health, ' + (forceEmbedded ? 'embedded' : 'file') + ' UI, addon bridge, stream references, proxy headers, relative HLS, subtitle addons, subtitle decoding, protected takeover.');
@@ -446,6 +446,6 @@ async function main() {
 
 main().catch(function (error) {
   console.error(error && error.stack || error);
-  if (childLogGlobal) console.error('tvserver output:\n' + childLogGlobal);
+  if (childLogGlobal) console.error('local server output:\n' + childLogGlobal);
   process.exitCode = 1;
 });
