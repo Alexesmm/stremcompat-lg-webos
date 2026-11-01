@@ -79,6 +79,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 .mi{padding:16px 22px;font-size:25px;border-radius:8px}
 .mi.f{background:#0F766E}
 .mi.on{color:#5EEAD4;font-weight:600}
+.mi.on.f{color:#fff}
 .mh{padding:12px 22px;font-size:17px;opacity:.6;text-transform:uppercase}
 #fail{position:fixed;top:0;left:0;right:0;bottom:0;z-index:12;display:none;background:#0a0910;text-align:center;padding-top:30vh;box-sizing:border-box}
 #fail.show{display:block}

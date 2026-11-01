@@ -2281,7 +2281,7 @@ function subtitleName() {
   return P.off;
 }
 function selectedLabel(label, on) {
-  return label + (on ? '  [' + P.selected + ']' : '');
+  return label + (on ? ' — ' + P.selected : '');
 }
 function eh(s) {
   return String(s == null ? '' : s)
@@ -2927,9 +2927,14 @@ function openMenu(view) {
     var f0 = curSub === 'off';
     html += '<div class="mi' + (f0 ? ' on' : '') + '">' + eh(selectedLabel(P.off, f0)) + '</div>';
     menuItems.push({ k: 'off' });
-    html += '<div class=mi>' + P.embedded + ' \u203a</div>';
+    /* the row that leads to the current subtitle says so, before opening it */
+    var inEmb = curSub.indexOf('emb:') === 0,
+      inExt = curSub.indexOf('ext:') === 0;
+    html +=
+      '<div class="mi' + (inEmb ? ' on' : '') + '">' + eh(selectedLabel(P.embedded, inEmb)) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'embedded' });
-    html += '<div class=mi>' + P.external + ' \u203a</div>';
+    html +=
+      '<div class="mi' + (inExt ? ' on' : '') + '">' + eh(selectedLabel(P.external, inExt)) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'external' });
     html += '<div class=mi>' + P.style + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'style' });
@@ -2971,12 +2976,19 @@ function openMenu(view) {
   } else if (view === 'external') {
     html += '<div class=mh>' + P.external + ' \u2014 ' + P.language + '</div>';
     if (!extSubs.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
-    var seen = {};
+    var seen = {},
+      curLang = null;
+    for (var i = 0; i < extSubs.length; i++) if (curSub === 'ext:' + extSubs[i].u) curLang = extSubs[i].lang;
     for (var i = 0; i < extSubs.length; i++) {
       var L = extSubs[i].lang;
       if (!seen[L]) {
         seen[L] = 1;
-        html += '<div class=mi>' + eh(extSubs[i].name) + ' \u203a</div>';
+        html +=
+          '<div class="mi' +
+          (L === curLang ? ' on' : '') +
+          '">' +
+          eh(selectedLabel(extSubs[i].name, L === curLang)) +
+          ' \u203a</div>';
         menuItems.push({ k: 'lang', lang: L });
       }
     }
@@ -3031,12 +3043,21 @@ function openMenu(view) {
   menu.innerHTML = html;
   menu.className = 'show';
   mode = 'menu';
+  /* the list opens on what is in use, not on its first row */
   mIdx = 0;
+  var rows = menu.querySelectorAll('.mi');
+  for (var r = 0; r < rows.length && r < menuItems.length; r++) {
+    if (/\bon\b/.test(rows[r].className)) {
+      mIdx = r;
+      break;
+    }
+  }
   paintMenu();
 }
 function paintMenu() {
   var els = menu.querySelectorAll('.mi');
-  for (var i = 0; i < els.length; i++) els[i].className = 'mi' + (i === mIdx ? ' f' : '');
+  for (var i = 0; i < els.length; i++)
+    els[i].className = 'mi' + (/\bon\b/.test(els[i].className) ? ' on' : '') + (i === mIdx ? ' f' : '');
   if (els[mIdx]) els[mIdx].scrollIntoView(false);
 }
 function reopen() {

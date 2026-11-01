@@ -373,7 +373,7 @@ function subtitleName() {
   return P.off;
 }
 function selectedLabel(label, on) {
-  return label + (on ? '  [' + P.selected + ']' : '');
+  return label + (on ? ' — ' + P.selected : '');
 }
 function eh(s) {
   return String(s == null ? '' : s)

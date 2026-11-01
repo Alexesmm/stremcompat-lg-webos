@@ -376,6 +376,65 @@ vm.runInNewContext('pushLib(true, function () { doneCalled = true; })', Object.a
 pushed = off.doneCalled;
 assert.strictEqual(pushed, true, 'leaving the player would wait for a push that never happens');
 
+// ---- the settings menu shows what is in use (menus.js) ----
+(function () {
+  var subtitleCode = src('player/subtitles.js');
+  var label = subtitleCode.slice(subtitleCode.indexOf('function selectedLabel'), subtitleCode.indexOf('function eh('));
+  function player(curSub, tracks, extSubs) {
+    var rows = [];
+    var menu = {
+      className: '',
+      querySelectorAll: function () { return rows; },
+      set innerHTML(html) {
+        rows = (html.match(/<div class=("mi[^"]*"|mi)[^>]*>[^<]*/g) || []).map(function (row) {
+          return {
+            className: /class="mi on"/.test(row) ? 'mi on' : 'mi',
+            text: row.replace(/^[^>]*>/, ''),
+            scrollIntoView: function () {}
+          };
+        });
+      }
+    };
+    var names = ['settings', 'audio', 'subtitles', 'none', 'off', 'embedded', 'external', 'style', 'delay', 'language', 'selected'];
+    var P = {};
+    names.forEach(function (name) { P[name] = name; });
+    var context = {
+      history: { pushState: function () {} }, window: { addEventListener: function () {} },
+      menu: menu, P: P, curSub: curSub, extSubs: extSubs || [], embTracks: [], embTracksLoading: false,
+      v: { audioTracks: tracks || [] }, subColor: '#ffffff', subBgOp: 0,
+      eh: function (s) { return s; }, audioName: function () { return ''; }, subtitleName: function () { return ''; },
+      ensureEmbTracks: function () {}, goBack: function () {}, paintBtns: function () {}
+    };
+    vm.runInNewContext(label + src('player/menus.js') + ';var menuItems,mIdx,subView,mode;this.menuRows=function(){return menu.querySelectorAll()};this.focus=function(){return mIdx};this.setFocus=function(i){mIdx=i;paintMenu()};', context);
+    return context;
+  }
+  var audio = player('off', [{ language: 'en', enabled: false }, { language: 'pt', enabled: true }]);
+  audio.openMenu('audio');
+  assert.strictEqual(audio.focus(), 1, 'the audio list did not open on the track in use');
+  assert.strictEqual(audio.menuRows()[1].className, 'mi on f');
+  assert.ok(audio.menuRows()[1].text.indexOf('selected') >= 0, 'the track in use does not say so in words');
+  audio.setFocus(0);
+  assert.strictEqual(audio.menuRows()[1].className, 'mi on', 'moving the focus erased the mark of the track in use');
+  assert.strictEqual(audio.menuRows()[0].className, 'mi f');
+
+  var external = player('ext:b', [], [{ lang: 'eng', name: 'English', u: 'a' }, { lang: 'por', name: 'Portuguese', u: 'b' }]);
+  external.openMenu('subsroot');
+  assert.strictEqual(external.focus(), 2, 'the subtitle menu did not open on the kind in use');
+  external.openMenu('external');
+  assert.strictEqual(external.focus(), 1, 'the language list did not open on the language in use');
+  assert.ok(external.menuRows()[1].text.indexOf('selected') >= 0);
+  assert.ok(external.menuRows()[0].text.indexOf('selected') < 0);
+
+  var embedded = player('emb:3');
+  embedded.openMenu('subsroot');
+  assert.strictEqual(embedded.focus(), 1, 'the subtitle menu did not open on the embedded row');
+  var off = player('off');
+  off.openMenu('subsroot');
+  assert.strictEqual(off.focus(), 0, 'Off in use is the first row');
+  off.openMenu('style');
+  assert.strictEqual(off.focus(), 0, 'lists without a selection open on the first row');
+})();
+
 // ---- a torrent's link ending during a long pause (controls.js) ----
 (function () {
   var code = src('player/controls.js');
@@ -413,5 +472,6 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   assert.strictEqual(player(torrent, false).context.reopenTorrent(), false, 'a torrent that never played is a startup failure, not a pause');
 })();
 
+console.log('OK: settings menu shows what is in use.');
 console.log('OK: torrent opened again after a long pause.');
 console.log('OK: watched state like the official apps, next-episode countdown, next episode opened directly, waiting for a chosen subtitle, do not save history, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');
