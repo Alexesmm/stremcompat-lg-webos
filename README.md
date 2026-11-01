@@ -58,6 +58,8 @@ Captured at the 1920x1080 size the interface uses on the TV. Sources are shown w
 
 One package for every supported LG TV: download `StremCompat-3.0.0.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases). The app chooses its limits by itself when it opens, with lighter artwork and shorter lists on the weakest TVs.
 
+> Version 3.0.0 is in final testing. Until it is released, the Releases page offers 2.1.0 and the Homebrew repository below is not online.
+
 ## Compatibility
 
 The package targets LG televisions with an ARM processor running **webOS 3.x and 4.x**, roughly the 2016-2019 models, the ones that cannot install the official app. Newer versions should work and reports are welcome.
@@ -130,6 +132,7 @@ StremCompat has no accounts or sources of its own. It uses your Stremio account 
 - Addon-driven Home, Discover, Search and Library, with a See all card at the end of each catalog row.
 - On-screen search keyboard with results that update while typing, plus recent searches.
 - One-press Continue / Play buttons on title pages, episode details and continuous numbering for long series.
+- Audio and subtitle choices are remembered for each title, with a backup language when the first is not available.
 - **Best source** starts the source that suits this TV and the speed of its connection, without opening the list.
 - Remote and LG Magic Remote navigation built for the television, with an optional larger interface text.
 
