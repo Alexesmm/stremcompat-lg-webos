@@ -83,9 +83,9 @@ var packedEmbedded = serviceFile('server/embedded.js');
 var packedShell = serviceFile('interface.html');
 var packedApplication = serviceFile('interface.js');
 [
-  [packedServer, "p === '/streamref'", 'Proxy seguro ausente no IPK.'],
-  [packedServer, 'rewriteHls', 'Reescrita HLS ausente no IPK.'],
-  [packedServer, "p === '/stremioapi'", 'Bridge de conta Stremio ausente no IPK.'],
+  [packedServer, "'/streamref': storeStream", 'Proxy seguro ausente no IPK.'],
+  [packedServer, 'function rewritePlaylist', 'Reescrita HLS ausente no IPK.'],
+  [packedServer, "'/stremioapi': function", 'Bridge de conta Stremio ausente no IPK.'],
   [packedServer, "'/api/login': true", 'Bridge de conta Stremio ausente no IPK.'],
   [packedApplication, "postJson('/streamref'", 'Shell otimizado ausente no IPK.'],
   [packedApplication, 'compact:function()', 'Shell otimizado ausente no IPK.'],

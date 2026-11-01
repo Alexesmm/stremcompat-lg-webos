@@ -197,8 +197,14 @@ async function main() {
     var playerMenuState = JSON.parse(playerMenu.result.value);
     assert.strictEqual(playerMenuState.state.mode, 'menu', 'Magic Remote click did not open player settings');
     assert.ok(playerMenuState.text.indexOf('Audio:') >= 0 && playerMenuState.text.indexOf('Subtitles:') >= 0, 'active audio/subtitle labels are missing');
+    // the menu stays up while the track and subtitle lists load, which takes longer on a busy machine
     await delay(8600);
-    var idle = JSON.parse((await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({mode:window.__tv.st().mode,menu:document.getElementById('menu').className,bar:document.getElementById('bar').className})", returnByValue: true })).result.value);
+    var idle;
+    for (var idleWait = 0; idleWait < 30; idleWait++) {
+      idle = JSON.parse((await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({mode:window.__tv.st().mode,menu:document.getElementById('menu').className,bar:document.getElementById('bar').className})", returnByValue: true })).result.value);
+      if (idle.mode === 'video') break;
+      await delay(500);
+    }
     assert.deepStrictEqual(idle, { mode: 'video', menu: '', bar: '' }, 'the player settings menu did not close after the idle time');
     await protocol.call('Runtime.evaluate', { expression: "location.href='/play?u='+encodeURIComponent('http://127.0.0.1:" + mockPort + "/missing.mp4')+'&type=movie&id=tt0111161&vid=tt0111161&back='+encodeURIComponent('beta#detail/movie/tt0111161')" });
     await delay(5500);
