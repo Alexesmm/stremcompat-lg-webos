@@ -21,7 +21,22 @@ if [ ! -d "$SRC/.git" ]; then
   git clone -q https://github.com/NuvioMedia/nuvio-engine "$SRC"
 fi
 git -C "$SRC" fetch -q origin
+git -C "$SRC" checkout -q -- .
 git -C "$SRC" checkout -q "$ENGINE_COMMIT"
+
+# The engine's storage window is sized for phones and computers, with a floor of about 144 MiB and
+# 512 MiB always left free. A TV has much less to spare, and this is flash: floor of 64 MiB.
+BRIDGE="$SRC/src/torrent/libtorrent_stream_bridge.cpp"
+shrink() { # constant, value in MiB
+  grep -q "constexpr std::uint64_t $1 = " "$BRIDGE" || { echo "the engine no longer has $1"; exit 1; }
+  sed -i "s/constexpr std::uint64_t $1 = .*/constexpr std::uint64_t $1 = $2ULL * 1024 * 1024;/" "$BRIDGE"
+}
+shrink playback_window_bytes 16
+shrink minimum_readahead_bytes 32
+shrink maximum_readahead_bytes 128
+shrink retained_behind_bytes 16
+shrink retention_hysteresis_bytes 8
+shrink free_space_reserve_bytes 150
 
 TC="$WORK/tc-$TARGET"
 mkdir -p "$TC"

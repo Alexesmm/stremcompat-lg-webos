@@ -42,7 +42,7 @@ The interface and the player know a torrent by an address on `127.0.0.1:11470`, 
 3. The request gets a redirect to the engine's own link on the loopback interface, so video bytes never pass through JavaScript.
 4. After two quiet minutes with nothing playing, the engine is stopped, and it clears what it kept on storage. It also leaves when its stdin closes, so it cannot outlive the server.
 
-The engine keeps a window of the film on storage: at most 2 GiB and 70 % of what is free above a 150 MB reserve.
+The engine keeps a window of the film on storage: between 64 and 768 MiB, up to 70 % of what is free above a 150 MB reserve. `native/build-engine.sh` lowers the engine's own floor to get there, and `native/test-e2e.py` checks that it holds.
 
 ## Code map
 

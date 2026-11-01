@@ -12,6 +12,7 @@ STAGE = os.path.abspath(sys.argv[1])
 PORT = 8082
 HASH = 'dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c'
 LINK_LIFETIME_MS = 20000
+DISK_LIMIT_MIB = 64
 start = time.time()
 failed = []
 
@@ -60,7 +61,7 @@ emulator = get_emulator()
 node = get_old_node()
 wrappers = BASE + '/wrap'
 os.makedirs(wrappers, exist_ok=True)
-for name, extra in (('ffmpeg', ''), ('ffprobe', ''), ('sc-engine', ' %d' % LINK_LIFETIME_MS)):
+for name, extra in (('ffmpeg', ''), ('ffprobe', ''), ('sc-engine', ' %d %d' % (LINK_LIFETIME_MS, DISK_LIMIT_MIB))):
     with open(wrappers + '/' + name, 'w') as f:
         f.write('#!/bin/sh\nexec "%s" "%s/%s" "$@"%s\n' % (emulator, OUT, name, extra))
     os.chmod(wrappers + '/' + name, 0o755)
@@ -99,19 +100,32 @@ try:
     art = urllib.parse.quote('https://images.metahub.space/background/medium/tt0468569/img', safe='')
     status, _, body = get(local + '/bgz?u=' + art, 60)
     check('ARM ffmpeg reduces artwork', status == 200 and body[:2] == b'\xff\xd8', (status, len(body)))
-    status, _, body = get(local + '/spritegen?dur=600&u=' + urllib.parse.quote(address, safe=''), 30)
-    check('seek previews start', json.loads(body).get('ok') is True, body[:80])
+
+    # the storage limit, while the film plays from start to end at several times its speed
+    def on_storage():
+        return int(subprocess.run(['du', '-sk', home], capture_output=True, text=True).stdout.split()[0]) // 1024
+    biggest = on_storage()
+    for second in range(0, 276, 12):
+        at = second * 1000000
+        status, _, _ = get(address, 120, headers={'Range': 'bytes=%d-%d' % (at, at + 1048575)})
+        biggest = max(biggest, on_storage())
+    log('most on storage while playing: %d MiB, with a limit of %d MiB' % (biggest, DISK_LIMIT_MIB))
+    check('storage stays near its limit', biggest <= DISK_LIMIT_MIB * 2, '%d MiB' % biggest)
 
     log('leaving the stream unused until its link expires…')
-    time.sleep((LINK_LIFETIME_MS / 1000) + 12)
-    status, _, _ = get(link, 15, headers={'Range': 'bytes=0-1023'}) if True else (0, 0, 0)
+    time.sleep((LINK_LIFETIME_MS / 1000) + 15)
+    status, _, _ = get(link, 15, headers={'Range': 'bytes=0-1023'})
     log('the old link now answers', status)
+    check('an unused link does expire', status >= 400, status)
     status, headers, _ = get(address, 200, follow=False)
     fresh = headers.get('Location')
     log('the address now leads to', fresh)
+    check('the address gives a new link', fresh and fresh != link, fresh)
     status, _, body = get(address, 200, headers={'Range': 'bytes=1048576-1114111'})
-    check('after expiry the address gives a working link', status == 206 and len(body) == 65536, (status, len(body)))
+    check('the new link works', status == 206 and len(body) == 65536, (status, len(body)))
 
+    status, _, body = get(local + '/spritegen?dur=600&u=' + urllib.parse.quote(address, safe=''), 30)
+    check('seek previews start', json.loads(body).get('ok') is True, body[:80])
     log('engine stats', get('http://127.0.0.1:11470/stats.json', 10)[2][:200])
     log('server memory after streaming', json.loads(get(local + '/health', 5)[2]).get('memory'))
     uncaught = [l for l in open(home + '/server.log', errors='replace') if 'UNCAUGHT' in l]

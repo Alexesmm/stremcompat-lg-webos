@@ -9,7 +9,7 @@
 //         stop <TAB> stream                  remove <TAB> torrent          stats
 //   out:  one JSON object per line
 //
-// Usage: sc-engine <folder> [milliseconds a stream stays open without requests]
+// Usage: sc-engine <folder> [milliseconds a stream stays open without requests] [MiB on storage]
 #include <sys/statvfs.h>
 
 #include <algorithm>
@@ -83,7 +83,7 @@ std::vector<std::string> split(const std::string& line) {
   }
 }
 
-/* what a TV can spare: at most 2 GiB, and never the last of its storage */
+/* what a TV can spare, on flash that wears out: at most 768 MiB, and never the last of its storage */
 std::uint64_t disk_budget(const std::string& directory) {
   struct statvfs info {};
   if (statvfs(directory.c_str(), &info) != 0) {
@@ -92,7 +92,7 @@ std::uint64_t disk_budget(const std::string& directory) {
   const std::uint64_t available = static_cast<std::uint64_t>(info.f_bavail) * info.f_frsize;
   const std::uint64_t reserve = 150 * MiB;
   const std::uint64_t spare = available > reserve ? available - reserve : 0;
-  return std::clamp<std::uint64_t>(spare * 7 / 10, 64 * MiB, 2048 * MiB);
+  return std::clamp<std::uint64_t>(spare * 7 / 10, 64 * MiB, 768 * MiB);
 }
 
 std::uint64_t memory_budget() {
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
   config.data_directory = data.c_str();
   config.cache_directory = cache.c_str();
   config.memory_cache_capacity_bytes = memory_budget();
-  config.disk_cache_capacity_bytes = disk_budget(cache);
+  config.disk_cache_capacity_bytes = argc > 3 ? std::strtoull(argv[3], nullptr, 10) * MiB : disk_budget(cache);
   config.upload_mode = NUVIO_ENGINE_UPLOAD_LIMITED;
   config.upload_limit_bytes_per_second = 256 * 1024;
   /* a paused film keeps its link for a while: the player does not ask for a new one */
