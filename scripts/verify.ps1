@@ -12,9 +12,7 @@ $required = @(
     'service\launch.js', 'service\profile.js', 'service\tvserver.js', 'service\beta.html', 'service\beta-app.js',
     'service\services.json', 'service\app-logo.png', 'service\licenses\README.txt',
     'service\player\player.css', 'service\player\player-body.html', 'service\player\player-client.js',
-    'service\bin\node18', 'service\bin\ffmpeg', 'service\bin\ffprobe',
-    'service\bin\lib\libcrypto.so.3', 'service\bin\lib\libssl.so.3',
-    'service\bin\lib\libstdc++.so.6', 'service\bin\lib\libuv.so.1'
+    'service\bin\sc-engine', 'service\bin\ffmpeg', 'service\bin\ffprobe'
 )
 foreach ($relative in $required) {
     $file = Join-Path $projectRoot $relative
@@ -22,7 +20,7 @@ foreach ($relative in $required) {
     if ((Get-Item -LiteralPath $file).Length -eq 0) { throw "Arquivo vazio: $relative" }
 }
 
-foreach ($binary in 'node18', 'ffmpeg', 'ffprobe') {
+foreach ($binary in 'sc-engine', 'ffmpeg', 'ffprobe') {
     $file = Join-Path $projectRoot "service\bin\$binary"
     $header = New-Object byte[] 52
     $stream = [System.IO.File]::OpenRead($file)
@@ -59,4 +57,4 @@ if ($LASTEXITCODE -ne 0) { throw 'ESLint encontrou nomes indefinidos, nao usados
 & node.exe (Join-Path $PSScriptRoot 'verify-source.js') $projectRoot
 if ($LASTEXITCODE -ne 0) { throw 'Recursos obrigatorios ausentes nas fontes.' }
 
-Write-Host 'OK: shell, manifests, bootstrap ES5, runtime Node 18 e binarios ARMv7 validados.'
+Write-Host 'OK: shell, manifests, bootstrap ES5 e binarios ARMv7 validados.'

@@ -95,7 +95,7 @@ function subtitleText(buf) {
     } catch (e) {}
   }
   var text = buf.toString('utf8');
-  return text.indexOf('�') >= 0 ? buf.toString('latin1') : text;
+  return text.indexOf('�') >= 0 ? buf.toString('binary') : text;
 }
 
 /* Cues of an external subtitle. The bundled streaming server converts any format (SRT, VTT,

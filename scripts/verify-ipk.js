@@ -56,7 +56,7 @@ if (packedAppInfo.version !== profile.version) throw new Error('Versao do app em
 if (packedAppInfo.resolution !== profile.graphicsResolution) throw new Error('Resolucao grafica do app empacotado incorreta.');
 if (JSON.parse(serviceInfo.data.toString('utf8')).version !== profile.version) throw new Error('Versao do servico empacotado incorreta.');
 
-['node18', 'ffmpeg', 'ffprobe'].forEach(function (name) {
+['sc-engine', 'ffmpeg', 'ffprobe'].forEach(function (name) {
   var entry = find(entries, new RegExp('/bin/' + name + '$'));
   if (!entry) throw new Error(name + ' ausente no IPK.');
   if ((entry.mode & 73) !== 73) throw new Error(name + ' nao esta executavel: ' + entry.mode.toString(8));

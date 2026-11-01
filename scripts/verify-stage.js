@@ -27,7 +27,7 @@ function must(rel) {
   'service/package.json', 'service/services.json', 'service/launch.js', 'service/profile.js', 'service/profile.json',
   'service/tvserver.js', 'service/server/embedded.js', 'service/server/routes.js', 'service/beta.html', 'service/beta-app.js', 'service/bin/node18',
   'service/player/player.css', 'service/player/player-body.html', 'service/player/player-client.js',
-  'service/bin/ffmpeg', 'service/bin/ffprobe'
+  'service/bin/ffmpeg', 'service/bin/ffprobe', 'service/bin/sc-engine', 'service/compat.js', 'service/roots.json'
 ].forEach(must);
 
 if (fs.existsSync(path.join(stage, 'service', 'server.js'))) throw new Error('The Stremio streaming server must not be staged: the TV downloads it.');

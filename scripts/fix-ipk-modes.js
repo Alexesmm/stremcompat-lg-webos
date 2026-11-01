@@ -65,14 +65,14 @@ function fixTarModes(gzipData) {
         var prefix = readAscii(tar, offset + 345, 155);
         var fullName = prefix ? prefix + '/' + name : name;
         var size = parseOctal(tar, offset + 124, 12);
-        if (/\/bin\/(node18|ffmpeg|ffprobe)$/.test(fullName)) {
+        if (/\/bin\/(sc-engine|ffmpeg|ffprobe)$/.test(fullName)) {
             tar.write('0000755\0', offset + 100, 8, 'ascii');
             writeTarChecksum(tar, offset);
             changed += 1;
         }
         offset += 512 + (Math.ceil(size / 512) * 512);
     }
-    if (changed !== 3) throw new Error('Esperava corrigir node18, ffmpeg e ffprobe; encontrados: ' + changed);
+    if (changed !== 3) throw new Error('Esperava corrigir sc-engine, ffmpeg e ffprobe; encontrados: ' + changed);
     return zlib.gzipSync(tar, { level: 9 });
 }
 
@@ -82,4 +82,4 @@ var dataMember = members.filter(function (member) { return member.name === 'data
 if (!dataMember) throw new Error('data.tar.gz nao encontrado no IPK.');
 dataMember.data = fixTarModes(dataMember.data);
 fs.writeFileSync(ipkPath, buildAr(members));
-console.log('Permissoes 0755 aplicadas a node18, ffmpeg e ffprobe dentro do IPK.');
+console.log('Permissoes 0755 aplicadas a sc-engine, ffmpeg e ffprobe dentro do IPK.');

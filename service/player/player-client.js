@@ -215,11 +215,10 @@ var UI_TEXT = {
     diagTv: 'Television: {0} MB free of {1} MB · CPU load {2}',
     diagDisk: 'Storage: {0} MB free of {1} MB',
     diagStreaming: 'Streaming server: {0}',
-    diagDownloading: 'downloading from Stremio',
     diagStreamFailed: 'download failed ({0})',
-    preparingTorrents: 'Downloading the streaming server from Stremio. This only happens once…',
     torrentsUnavailable:
       'The streaming server could not be downloaded. Torrents may not play. Check the connection.',
+    diagEngineReady: 'Ready, starts with the first torrent',
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
@@ -546,11 +545,10 @@ var UI_TEXT = {
     diagTv: 'TV: {0} MB livres de {1} MB · carga da CPU {2}',
     diagDisk: 'Armazenamento: {0} MB livres de {1} MB',
     diagStreaming: 'Servidor de streaming: {0}',
-    diagDownloading: 'baixando do Stremio',
     diagStreamFailed: 'falha no download ({0})',
-    preparingTorrents: 'Baixando o servidor de streaming do Stremio. Isso só acontece uma vez…',
     torrentsUnavailable:
       'Não foi possível baixar o servidor de streaming. Torrents podem não tocar. Verifique a conexão.',
+    diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
@@ -959,11 +957,20 @@ function subtitleLanguagesOnly(s) {
 function langBase(code) {
   return String(code).split('-')[0];
 }
+/* the trackers an addon names go along with the address, for the engine to find peers */
+function torrentTrackers(s) {
+  var out = [];
+  for (var i = 0; s.sources && i < s.sources.length && out.length < 12; i++) {
+    var m = /^tracker:(.+)$/.exec(s.sources[i]);
+    if (m) out.push('tr=' + encodeURIComponent(m[1]));
+  }
+  return out.length ? '?' + out.join('&') : '';
+}
 /* the addon's stream as the interface and the player use it; null when it cannot be played */
 function sourceItem(s, addonName) {
   var url = s.url,
     h = s.behaviorHints || {};
-  if (!url && s.infoHash) url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0);
+  if (!url && s.infoHash) url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0) + torrentTrackers(s);
   if (!url) return null;
   var item = {
     addon: addonName,

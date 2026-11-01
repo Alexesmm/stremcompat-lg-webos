@@ -7,8 +7,7 @@ var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
 var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
-var { waitForServer } = require('./streaming-server');
-var { serverFileStatus } = require('./streaming-file');
+var { engineStatus, waitForServer } = require('./streaming-server');
 var { remoteAddress, setServerAddress, streamingUrl } = require('./server-address');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
 var { proxySignature, proxyStream, redirectedHeaders, resolvedFor } = require('./proxy');
@@ -120,9 +119,7 @@ function handleRequest(req, res) {
   } else if (p === '/takeover') {
     handleTakeover(req, res);
   } else if (p === '/streamfile') {
-    if (remoteAddress()) sendJson(res, { state: 'ready', remote: true });
-    else if (PROFILE.localTorrents === false) sendJson(res, { state: 'needs-server' });
-    else sendJson(res, serverFileStatus());
+    sendJson(res, engineStatus());
   } else if (p === '/serverconfig') {
     if (req.method !== 'POST') return sendJson(res, { address: remoteAddress() });
     /* A page on the web can only send this content type after a preflight, which this server

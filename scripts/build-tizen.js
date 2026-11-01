@@ -3,13 +3,12 @@
 // Stages the Samsung package into .build/tizen-armv7, ready for scripts/package-tizen.ps1.
 //
 // The pages are built from the same generated files as the LG packages, with the Tizen
-// platform modules. The local server is service/server/*.js with one rewrite: Node 4.4.3
-// does not know `var { A } = require()`. Anything else Node 4 cannot run stops the build.
+// platform modules. The local server is service/server/*.js, prepared for old Node as on LG.
 //
 // Usage: node scripts/build-tizen.js
 
-var acorn = require('acorn');
 var fs = require('fs');
+var legacyNode = require('./lib/legacy-node');
 var path = require('path');
 var tls = require('tls');
 
@@ -27,62 +26,6 @@ var PLAYER_CONSTANTS = [
 ];
 
 function read(file) { return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'); }
-function walk(node, visit) {
-  if (!node || typeof node.type !== 'string') return;
-  visit(node);
-  Object.keys(node).forEach(function (key) {
-    var value = node[key];
-    if (Array.isArray(value)) value.forEach(function (item) { walk(item, visit); });
-    else if (value && typeof value === 'object') walk(value, visit);
-  });
-}
-
-/* var { A, B: C } = x;  ->  var _m1 = x, A = _m1.A, C = _m1.B; */
-function rewriteDestructuring(source, file) {
-  var ast = acorn.parse(source, { ecmaVersion: 2022, sourceType: 'script', allowReturnOutsideFunction: true });
-  var edits = [], count = 0;
-  walk(ast, function (node) {
-    if (node.type !== 'VariableDeclaration') return;
-    var pattern = node.declarations.filter(function (d) { return d.id.type === 'ObjectPattern'; });
-    if (!pattern.length) return;
-    if (node.declarations.length !== 1) throw new Error(file + ': destructuring next to other declarations');
-    var decl = node.declarations[0], name = '_m' + (++count);
-    var names = decl.id.properties.map(function (prop) {
-      if (prop.type !== 'Property' || prop.computed || prop.key.type !== 'Identifier' || prop.value.type !== 'Identifier')
-        throw new Error(file + ': destructuring that cannot be rewritten');
-      return prop.value.name + ' = ' + name + '.' + prop.key.name;
-    });
-    edits.push({
-      start: node.start,
-      end: node.end,
-      text: 'var ' + name + ' = ' + source.slice(decl.init.start, decl.init.end) + ', ' + names.join(', ') + ';'
-    });
-  });
-  edits.sort(function (a, b) { return b.start - a.start; }).forEach(function (edit) {
-    source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
-  });
-  return source;
-}
-
-var FORBIDDEN_NODES = {
-  ObjectPattern: 'destructuring', ArrayPattern: 'destructuring', AssignmentPattern: 'default parameters',
-  RestElement: 'rest parameters', SpreadElement: 'spread', ClassDeclaration: 'classes outside strict mode',
-  ClassExpression: 'classes outside strict mode'
-};
-var FORBIDDEN_CALLS = /\.(includes|padStart|padEnd|flat|flatMap|finally)\(|Object\.(values|entries|fromEntries)\(/;
-/* Throws when a file uses something Node 4.4.3 does not have. */
-function assertNode4(source, file) {
-  var ast = acorn.parse(source, { ecmaVersion: 6, sourceType: 'script', allowReturnOutsideFunction: true });
-  walk(ast, function (node) {
-    if (FORBIDDEN_NODES[node.type]) throw new Error(file + ': ' + FORBIDDEN_NODES[node.type] + ' at ' + node.start);
-    if (node.type === 'VariableDeclaration' && node.kind !== 'var') throw new Error(file + ': ' + node.kind + ' outside strict mode');
-  });
-  var code = source.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
-  var found = code.match(FORBIDDEN_CALLS);
-  if (found) throw new Error(file + ': ' + found[0] + ' is missing from Node 4');
-  return source;
-}
-
 function write(relative, text) {
   var file = path.join(stage, relative);
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -170,9 +113,9 @@ copy('app/icon.png', 'icon.png');
 write('index.html', inlineAssets(interfacePage()));
 write('player.html', inlineAssets(playerPage()));
 
-write('service/main.js', assertNode4(read(path.join(root, 'platforms', 'tizen', 'service', 'main.js')), 'main.js'));
-write('service/node4.js', assertNode4(read(path.join(root, 'platforms', 'tizen', 'service', 'node4.js')), 'node4.js'));
-write('service/profile.js', assertNode4(read(path.join(root, 'service', 'profile.js')), 'profile.js'));
+write('service/main.js', legacyNode.assertRunsOnOldNode(read(path.join(root, 'platforms', 'tizen', 'service', 'main.js')), 'main.js'));
+write('service/compat.js', legacyNode.assertRunsOnOldNode(read(path.join(root, 'service', 'compat.js')), 'compat.js'));
+write('service/profile.js', legacyNode.assertRunsOnOldNode(read(path.join(root, 'service', 'profile.js')), 'profile.js'));
 write('service/profile.json', JSON.stringify(profile));
 write('service/roots.json', JSON.stringify(tls.rootCertificates));
 copy('service/app-logo.png', 'service/app-logo.png');
@@ -185,7 +128,7 @@ fs.readdirSync(path.join(root, 'service', 'licenses')).forEach(function (name) {
 fs.readdirSync(path.join(root, 'service', 'server')).forEach(function (name) {
   if (!/\.js$/.test(name)) return;
   var source = read(path.join(root, 'service', 'server', name));
-  write('service/server/' + name, assertNode4(rewriteDestructuring(source, name), name));
+  write('service/server/' + name, legacyNode.prepare(source, name));
 });
 
 console.log('Staged ' + path.relative(root, stage) + ' (' + PROFILE_NAME + ' ' + profile.version + ')');

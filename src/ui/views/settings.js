@@ -37,15 +37,13 @@ function diagEventLine(e) {
     }[e.kind];
   return hh + ':' + mm + '  ·  ' + tx(key || e.kind) + (e.detail ? ' (' + e.detail + ')' : '');
 }
-/* running or stopped, or why it is not there yet (it is downloaded from Stremio) */
+/* running or stopped; the engine itself only runs while a torrent plays */
 function diagStreamingState(j) {
-  var f = j.streamingFile || {};
+  var f = j.torrentEngine || {};
   if (j.serverAddress)
     return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
-  if (j.streamingServer) return tx('diagRunning');
-  if (f.state === 'downloading') return tx('diagDownloading');
-  if (f.state === 'failed') return tx('diagStreamFailed', f.err);
-  return tx('diagStopped');
+  if (f.state === 'failed') return tx('diagStreamFailed', 'sc-engine');
+  return tx(f.running ? 'diagRunning' : 'diagEngineReady');
 }
 var settings = {
   idx: 0,

@@ -1,7 +1,7 @@
 // The local server as a Tizen service: what tvserver.js does on webOS, on the TV's own Node.
 // ES5. Sets up the environment before the server modules read it, then only adds what is
 // specific to this platform in front of the same routes.
-require('./node4');
+require('./compat');
 
 var fs = require('fs');
 var http = require('http');

@@ -142,11 +142,20 @@ function subtitleLanguagesOnly(s) {
 function langBase(code) {
   return String(code).split('-')[0];
 }
+/* the trackers an addon names go along with the address, for the engine to find peers */
+function torrentTrackers(s) {
+  var out = [];
+  for (var i = 0; s.sources && i < s.sources.length && out.length < 12; i++) {
+    var m = /^tracker:(.+)$/.exec(s.sources[i]);
+    if (m) out.push('tr=' + encodeURIComponent(m[1]));
+  }
+  return out.length ? '?' + out.join('&') : '';
+}
 /* the addon's stream as the interface and the player use it; null when it cannot be played */
 function sourceItem(s, addonName) {
   var url = s.url,
     h = s.behaviorHints || {};
-  if (!url && s.infoHash) url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0);
+  if (!url && s.infoHash) url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0) + torrentTrackers(s);
   if (!url) return null;
   var item = {
     addon: addonName,

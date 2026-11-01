@@ -6,9 +6,8 @@ var https = require('https');
 var os = require('os');
 var { APP_VERSION, PROFILE } = require('./config');
 var { sendJson } = require('./http-util');
-var { streamingServerUp } = require('./streaming-server');
+var { engineStatus, streamingServerUp } = require('./streaming-server');
 var { remoteAddress } = require('./server-address');
-var { serverFileStatus } = require('./streaming-file');
 
 function mb(bytes) {
   return Math.round((bytes || 0) / 1048576);
@@ -88,7 +87,7 @@ function diagnostics(res) {
         load: Math.round(os.loadavg()[0] * 100) / 100,
         streamingServer: !!up,
         serverAddress: remoteAddress(),
-        streamingFile: serverFileStatus(),
+        torrentEngine: engineStatus(),
         peakRssMb: peakRss,
         minAvailableMb: minAvailable,
         events: events.slice().reverse()

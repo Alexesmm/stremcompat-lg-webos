@@ -4,11 +4,8 @@ var path = require('path');
 
 var DIR = path.join(__dirname, '..');
 
-var LOADER = '/lib/ld-linux.so.3';
-
-var NODE = path.join(DIR, 'bin', 'node18');
-
-var LIB = path.join(DIR, 'bin', 'lib');
+// the torrent engine (native/engine); the tests use scripts/lib/fake-engine.js
+var ENGINE = process.env.TV_ENGINE || path.join(DIR, 'bin', 'sc-engine');
 
 var LOG_FILE = process.env.TVSERVER_LOG || path.join(DIR, 'tvserver.log');
 
@@ -36,12 +33,10 @@ var FFPROBE = process.env.TV_FFPROBE || path.join(DIR, 'bin', 'ffprobe');
 module.exports = {
   APP_VERSION: APP_VERSION,
   DIR: DIR,
+  ENGINE: ENGINE,
   FFMPEG: FFMPEG,
   FFPROBE: FFPROBE,
-  LIB: LIB,
-  LOADER: LOADER,
   LOG_FILE: LOG_FILE,
-  NODE: NODE,
   PORT: PORT,
   PROFILE: PROFILE,
   PROFILE_MODULE: PROFILE_MODULE,

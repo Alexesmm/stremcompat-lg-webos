@@ -235,7 +235,7 @@ function node4Certificates() {
   }
   assert.ok(/^v4\./.test(run('console.log(process.version)')), 'NODE4 is not a Node 4');
   assert.strictEqual(run(probe), 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'this Node already knows the chain, so the check proves nothing');
-  var shim = "require(" + JSON.stringify(path.join(stage, 'service', 'node4.js')) + ");";
+  var shim = "require(" + JSON.stringify(path.join(stage, 'service', 'compat.js')) + ");";
   assert.strictEqual(run(shim + probe), 'ok', 'the current certificates did not reach Node 4');
   var folder = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-node4-'));
   var made = path.join(folder, 'a', 'b');

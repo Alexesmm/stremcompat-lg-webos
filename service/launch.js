@@ -1,7 +1,7 @@
 /*
- * Bootstrap deliberately limited to ES5 because webOS 4.x runs JavaScript
- * services with Node.js 0.12.2. The actual Stremio server runs in the bundled
- * ARMv7 Node 18 runtime, isolated from the TV's old system Node.
+ * Bootstrap deliberately limited to ES5 because webOS 3 and 4 run JavaScript services
+ * with Node.js 0.12.2. The local server runs on that same Node, as a process of its own,
+ * so a crash there does not take this service down and it can start it again.
  */
 process.env.NODE_PATH = (process.env.NODE_PATH || '') + ':/usr/lib/node_modules:/usr/lib/nodejs';
 require('module').Module._initPaths();
@@ -14,21 +14,17 @@ var spawn = require('child_process').spawn;
 var PROFILE = require('./profile').current;
 
 var DIR = __dirname;
-var LOADER = '/lib/ld-linux.so.3';
-var NODE = path.join(DIR, 'bin', 'node18');
-var LIB = path.join(DIR, 'bin', 'lib');
 var SUPERVISOR = path.join(DIR, 'tvserver.js');
 var APP_PORT = PROFILE.port;
 var APP_VERSION = PROFILE.version;
 var service = new Service(PROFILE.serviceId);
 var spawned = false;
 
-/* A smaller V8 young generation for the local server. Node 18 defaults to 8 MiB
-   semi-spaces on 32-bit (24 MiB of young generation); the server mostly moves
-   Buffers, which live outside the V8 heap, so the TV gets that memory back. */
+/* A smaller V8 young generation for the local server, which mostly moves Buffers: those
+   live outside the V8 heap, so the TV gets that memory back. */
 function runtimeFlags() {
     var semi = parseInt(PROFILE.serverSemiSpaceMB, 10);
-    return semi > 0 ? ['--max-semi-space-size=' + semi] : [];
+    return semi > 0 ? ['--max_semi_space_size=' + semi] : [];
 }
 
 function log(message) {
@@ -167,12 +163,10 @@ function startRuntime() {
     }
     env.HOME = env.HOME || '/home/root';
     env.USER = env.USER || 'root';
-    env.FFMPEG_BIN = path.join(DIR, 'bin', 'ffmpeg');
-    env.FFPROBE_BIN = path.join(DIR, 'bin', 'ffprobe');
 
-    log('Starting bundled ARMv7 Node runtime');
+    log('Starting the local server on Node ' + process.version);
     try {
-        child = spawn(LOADER, ['--library-path', LIB, NODE].concat(runtimeFlags(), [SUPERVISOR]), {
+        child = spawn(process.execPath, runtimeFlags().concat([SUPERVISOR]), {
             cwd: DIR,
             env: env,
             detached: true,
@@ -232,7 +226,7 @@ service.register('start', function (message) {
                 returnValue: ready,
                 ready: ready,
                 version: APP_VERSION,
-                runtime: 'bundled-node18-armv7',
+                runtime: 'system-node-' + process.version,
                 target: PROFILE.targetLabel
             };
             if (!ready && staleVersion) {

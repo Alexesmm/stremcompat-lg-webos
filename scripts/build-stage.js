@@ -11,6 +11,8 @@
 
 var fs = require('fs');
 var path = require('path');
+var tls = require('tls');
+var legacyNode = require('./lib/legacy-node');
 
 var root = path.resolve(__dirname, '..');
 var profileName = process.argv[2];
@@ -80,6 +82,17 @@ replaceTokens(path.join(stageApp, 'index.html'), {
   __APP_VERSION__: profile.version,
   __SERVICE_ID__: profile.serviceId
 });
+
+// The server runs on the television's own Node: see scripts/lib/legacy-node.js.
+function prepareForOldNode(file) {
+  fs.writeFileSync(file, legacyNode.prepare(fs.readFileSync(file, 'utf8'), path.relative(stageService, file)));
+}
+prepareForOldNode(path.join(stageService, 'tvserver.js'));
+prepareForOldNode(path.join(stageService, 'compat.js'));
+fs.readdirSync(path.join(stageService, 'server')).forEach(function (name) {
+  if (/\.js$/.test(name)) prepareForOldNode(path.join(stageService, 'server', name));
+});
+fs.writeFileSync(path.join(stageService, 'roots.json'), JSON.stringify(tls.rootCertificates));
 
 // An embedded copy of the interface makes the low-storage webOS 3 build independent
 // of service working-directory and package-file lookup quirks.

@@ -65,7 +65,6 @@ function waitForHealth(attempt) {
 }
 
 
-// ---- the streaming server is downloaded, verified and reused (server/streaming-file.js) ----
 /* Another streaming server: only one that answers is kept, and torrents go there. */
 async function serverAddressTests() {
   var address = require(path.join(root, 'service', 'server', 'server-address.js'));
@@ -127,49 +126,75 @@ async function serverAddressTests() {
   }
 }
 
-async function streamingFileTests() {
-  var streamingFile = require(path.join(root, 'service', 'server', 'streaming-file.js'));
-  var crypto = require('crypto');
-  var body = Buffer.from('console.log("server");'),
-    goodSha = crypto.createHash('sha256').update(body).digest('hex'),
-    hits = 0,
-    failNext = false;
-  var mock = http.createServer(function (req, res) {
-    hits++;
-    if (failNext) { res.writeHead(503); res.end(); return; }
-    if (req.url === '/moved') { res.writeHead(302, { Location: '/server.js' }); res.end(); return; }
-    res.end(body);
-  });
-  await new Promise(function (resolve) { mock.listen(0, '127.0.0.1', resolve); });
-  var base = 'http://127.0.0.1:' + mock.address().port;
-  var dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-streamfile-'));
-  function ensure(options) {
-    return new Promise(function (resolve) {
-      streamingFile.ensureServerFile(function (err, file) { resolve({ err: err, file: file }); }, Object.assign({ dirs: [dir] }, options));
-    });
+function engineLogicTests() {
+  var torrents = require(path.join(root, 'service', 'server', 'streaming-server.js'));
+  var files = [
+    { index: 0, size: 300, path: 'readme.txt' },
+    { index: 1, size: 900, path: 'Show/ep1.mkv' },
+    { index: 2, size: 40, path: 'Show/sample.mkv' }
+  ];
+  assert.strictEqual(torrents.chooseFile(files, 1).index, 1, 'the file the addon names was not used');
+  assert.strictEqual(torrents.chooseFile(files, 2).index, 2, 'a smaller file the addon names was replaced');
+  assert.strictEqual(torrents.chooseFile(files, 0).index, 1, 'file 0, a text file, was played instead of the video');
+  assert.strictEqual(torrents.chooseFile([{ index: 0, size: 40, path: 'sample.mkv' }, { index: 1, size: 900, path: 'movie.mkv' }], 0).index, 1, 'a small file 0 won over the film');
+  assert.strictEqual(torrents.chooseFile([{ index: 0, size: 900, path: 'movie.mkv' }, { index: 1, size: 800, path: 'other.mkv' }], 0).index, 0, 'file 0, a video of the right size, was skipped');
+  assert.strictEqual(torrents.chooseFile([{ index: 0, size: 5, path: 'a.txt' }], 3).index, 0, 'a torrent without videos was refused');
+  /* the published example: breakdance.avi, 12909756 bytes, hash 8e245d9679d31e12 */
+  var zero = Buffer.alloc(65536);
+  assert.strictEqual(torrents.opensubHash(4294967298, zero, zero), '0000000100000002', 'the OpenSubtitles hash lost the high part of the size');
+  var one = Buffer.alloc(16);
+  one.writeUInt32LE(0xffffffff, 0);
+  one.writeUInt32LE(5, 4);
+  one.writeUInt32LE(0xffffffff, 8);
+  assert.strictEqual(torrents.opensubHash(2, one, Buffer.alloc(0)), '0000000700000000', 'the OpenSubtitles hash lost a carry');
+}
+
+/* The real server, with the stand-in engine: address, redirect, hash, statistics, a torrent the
+   engine refuses, and the engine dying in the middle. */
+async function engineRoutesTests() {
+  var hash = 'a'.repeat(40);
+  async function ask(p, method) {
+    return await request({ hostname: '127.0.0.1', port: 11470, path: p, method: method || 'GET' });
   }
-  var bad = await ensure({ url: base + '/server.js', sha256: 'f'.repeat(64) });
-  assert.strictEqual(bad.err, 'checksum', 'a file with the wrong checksum was accepted');
-  assert.strictEqual(fs.readdirSync(dir).length, 0, 'a file with the wrong checksum was kept');
-  assert.strictEqual(streamingFile.serverFileStatus().state, 'failed', 'the failed download was not reported');
-  failNext = true;
-  assert.strictEqual((await ensure({ url: base + '/server.js', sha256: goodSha })).err, 'network', 'a failed download was not reported as a network problem');
-  failNext = false;
-  var good = await ensure({ url: base + '/moved', sha256: goodSha });
-  assert.ok(!good.err && fs.readFileSync(good.file).equals(body), 'the download (through a redirect) was not stored');
-  assert.strictEqual(streamingFile.serverFileStatus().state, 'ready', 'the finished download was not reported');
-  var before = hits;
-  assert.strictEqual((await ensure({ url: base + '/server.js', sha256: goodSha })).file, good.file, 'the stored file was not reused');
-  assert.strictEqual(hits, before, 'a stored file was downloaded again');
-  fs.writeFileSync(good.file, 'tampered');
-  var repaired = await ensure({ url: base + '/server.js', sha256: goodSha });
-  assert.ok(!repaired.err && fs.readFileSync(repaired.file).equals(body), 'a damaged stored file was not replaced');
-  await new Promise(function (resolve) { mock.close(resolve); });
-  fs.rmSync(dir, { recursive: true, force: true });
+  var redirect = await ask('/' + hash + '/1?tr=' + encodeURIComponent('udp://addon.example:80/announce'));
+  assert.strictEqual(redirect.status, 302, 'a torrent address did not lead to the engine: ' + redirect.text);
+  var link = redirect.headers.location;
+  assert.ok(/^http:\/\/127\.0\.0\.1:\d+\/stream\/a+\/1$/.test(link), 'unexpected engine link: ' + link);
+  var again = await ask('/' + hash + '/1', 'HEAD');
+  assert.strictEqual(again.headers.location, link, 'the same file got a second stream');
+  var zero = await ask('/' + hash + '/0');
+  assert.strictEqual(zero.headers.location, link, 'file 0, a text file, was not replaced by the film');
+  var sample = await ask('/' + hash + '/2');
+  assert.ok(/\/2$/.test(sample.headers.location), 'the file an addon names was replaced');
+  var sub = await ask('/opensubHash?videoUrl=' + encodeURIComponent('http://127.0.0.1:11470/' + hash + '/1'));
+  var subJson = JSON.parse(sub.text);
+  assert.strictEqual(subJson.result.size, 200000, 'the hash answer has no size');
+  var low = 200000, high = 0;
+  function add(start) {
+    for (var i = start; i + 8 <= start + 65536; i += 8) {
+      function word(at) { var b = []; for (var k = 0; k < 4; k++) b.push((at + k) * 7 + 13); return b.reduce(function (s, n, x) { return s + (n % 251) * Math.pow(256, x); }, 0); }
+      low += word(i);
+      high += word(i + 4) + Math.floor(low / 4294967296);
+      low %= 4294967296;
+      high %= 4294967296;
+    }
+  }
+  add(0);
+  add(200000 - 65536);
+  assert.strictEqual(subJson.result.hash, high.toString(16).padStart(8, '0') + low.toString(16).padStart(8, '0'), 'wrong OpenSubtitles hash');
+  var settings = JSON.parse((await ask('/settings')).text);
+  assert.strictEqual(settings.running, true, 'the engine is not reported as running');
+  assert.strictEqual((await ask('/not-a-torrent')).status, 404, 'an unknown address was answered');
+  assert.strictEqual((await ask('/' + 'b'.repeat(39) + '/1')).status, 404, 'a malformed hash was accepted');
+  var refused = await ask('/' + 'deadbeef'.repeat(5) + '/0');
+  assert.strictEqual(refused.status, 503, 'a torrent the engine refuses was not reported');
+  var file = await ask('/streamfile');
+  assert.strictEqual(file.status, 404, 'the torrent address answers the interface routes');
+  console.log('OK: torrent address, redirect to the engine, file choice, OpenSubtitles hash, refused torrent.');
 }
 
 async function main() {
-  await streamingFileTests();
+  engineLogicTests();
   await serverAddressTests();
   var subtitleRequests = [];
   var upstream = http.createServer(function (req, res) {
@@ -202,8 +227,9 @@ async function main() {
   await new Promise(function (resolve, reject) { upstream.once('error', reject);upstream.listen(9191, '127.0.0.1', resolve); });
 
   var testLog = path.join(os.tmpdir(), 'stremio-lg-selftest-' + process.pid + '.log');
-  var child = childProcess.spawn(process.execPath, [path.join(root, 'service', 'tvserver.js')], {
-    cwd: root, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TVSERVER_LOG: testLog, TVSERVER_FORCE_EMBEDDED_UI: forceEmbedded ? '1' : '0' })
+  /* STREMCOMPAT_SERVER_NODE runs the staged server on another Node, such as the TV's 0.12 */
+  var child = childProcess.spawn(process.env.STREMCOMPAT_SERVER_NODE || process.execPath, [path.join(root, 'service', 'tvserver.js')], {
+    cwd: root, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { TV_ENGINE: path.join(__dirname, 'lib', 'fake-engine.js'), TVSERVER_LOG: testLog, TVSERVER_FORCE_EMBEDDED_UI: forceEmbedded ? '1' : '0' })
   });
   var childLog = '';
   child.stdout.on('data', function (d) { childLog += d.toString(); childLogGlobal = childLog; });
@@ -214,6 +240,7 @@ async function main() {
     var healthJson = JSON.parse(health.text);
     assert.strictEqual(healthJson.version, appVersion);
     assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
+    await engineRoutesTests();
 
     var logged = await request({ hostname: '127.0.0.1', port: appPort, path: '/log?ev=selftest&compat=AV1&ignored=secret' });
     assert.strictEqual(logged.status, 200);

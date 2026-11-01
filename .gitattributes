@@ -1,0 +1,2 @@
+native/*.sh text eol=lf
+native/engine/* text eol=lf

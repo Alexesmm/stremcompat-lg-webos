@@ -44,13 +44,15 @@ function runningVersion(cb) {
 }
 
 function askToQuit(cb) {
+  var headers = {};
+  headers[TAKEOVER_HEADER] = APP_VERSION;
   var req = http.request(
     {
       host: '127.0.0.1',
       port: PORT,
       path: '/takeover',
       method: 'POST',
-      headers: { [TAKEOVER_HEADER]: APP_VERSION }
+      headers: headers
     },
     function (res) {
       res.resume();

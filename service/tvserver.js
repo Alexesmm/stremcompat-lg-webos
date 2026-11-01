@@ -1,25 +1,24 @@
-// Local compatibility server. Runs under the bundled Node 18 runtime (spawned by
-// the webOS service launch.js), so modern Node APIs are available here.
+// Local compatibility server. Runs on the television's own Node, started by launch.js. The
+// build writes out what that old Node cannot parse (scripts/lib/legacy-node.js).
 //
 // Responsibilities:
-//   1. Start the Stremio streaming server (server.js) on :11470 if not running.
+//   1. Start the torrent engine on :11470 if not running.
 //   2. Serve the television interface (/beta, /beta-app.js) and the bare player (/play).
 //   3. Bridge account, addon, artwork, subtitle and stream requests that the old
 //      TV browsers cannot perform themselves (TLS roots, CORS, headers, HLS).
 
+require('./compat');
+
 var dns = require('dns');
 var http = require('http');
 
-/* Try IPv4 addresses first. Since Node 17 addresses come in the resolver's order, and
-   Node 18 has no automatic fallback to the next address (autoSelectFamily is off before
-   Node 20). On a network that hands out IPv6 without a working IPv6 route, every request
-   to Stremio, Cinemeta and the addons hung while browsers fell back to IPv4. */
-try {
-  dns.setDefaultResultOrder('ipv4first');
-} catch (e) {}
-var { PORT, SERVER_PORT } = require('./server/config');
+/* Try IPv4 addresses first. On a network that hands out IPv6 without a working IPv6 route, every
+   request to Stremio, Cinemeta and the addons hung while browsers fell back to IPv4. Old Node
+   gets the same from compat.js, which also needs no such setting on the versions in between. */
+if (dns.setDefaultResultOrder) dns.setDefaultResultOrder('ipv4first');
+var { PORT } = require('./server/config');
 var { dbg } = require('./server/log');
-var { portUp, startStreamingServer } = require('./server/streaming-server');
+var { startStreamingServer } = require('./server/streaming-server');
 var routes = require('./server/routes');
 var { claimPort, leaveWhenReplaced, listenTakingOver } = require('./server/takeover');
 
@@ -29,9 +28,7 @@ process.on('uncaughtException', function (e) {
   dbg('UNCAUGHT: ' + ((e && e.stack) || e));
 });
 
-portUp(SERVER_PORT, function (up) {
-  if (!up) startStreamingServer();
-});
+startStreamingServer();
 
 /* the port may still be held by the server of the version installed before (takeover.js) */
 listenTakingOver(http.createServer(routes.handleRequest), function () {

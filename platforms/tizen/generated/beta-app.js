@@ -437,11 +437,10 @@ var UI_TEXT = {
     diagTv: 'Television: {0} MB free of {1} MB · CPU load {2}',
     diagDisk: 'Storage: {0} MB free of {1} MB',
     diagStreaming: 'Streaming server: {0}',
-    diagDownloading: 'downloading from Stremio',
     diagStreamFailed: 'download failed ({0})',
-    preparingTorrents: 'Downloading the streaming server from Stremio. This only happens once…',
     torrentsUnavailable:
       'The streaming server could not be downloaded. Torrents may not play. Check the connection.',
+    diagEngineReady: 'Ready, starts with the first torrent',
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
@@ -768,11 +767,10 @@ var UI_TEXT = {
     diagTv: 'TV: {0} MB livres de {1} MB · carga da CPU {2}',
     diagDisk: 'Armazenamento: {0} MB livres de {1} MB',
     diagStreaming: 'Servidor de streaming: {0}',
-    diagDownloading: 'baixando do Stremio',
     diagStreamFailed: 'falha no download ({0})',
-    preparingTorrents: 'Baixando o servidor de streaming do Stremio. Isso só acontece uma vez…',
     torrentsUnavailable:
       'Não foi possível baixar o servidor de streaming. Torrents podem não tocar. Verifique a conexão.',
+    diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
@@ -1181,11 +1179,20 @@ function subtitleLanguagesOnly(s) {
 function langBase(code) {
   return String(code).split('-')[0];
 }
+/* the trackers an addon names go along with the address, for the engine to find peers */
+function torrentTrackers(s) {
+  var out = [];
+  for (var i = 0; s.sources && i < s.sources.length && out.length < 12; i++) {
+    var m = /^tracker:(.+)$/.exec(s.sources[i]);
+    if (m) out.push('tr=' + encodeURIComponent(m[1]));
+  }
+  return out.length ? '?' + out.join('&') : '';
+}
 /* the addon's stream as the interface and the player use it; null when it cannot be played */
 function sourceItem(s, addonName) {
   var url = s.url,
     h = s.behaviorHints || {};
-  if (!url && s.infoHash) url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0);
+  if (!url && s.infoHash) url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0) + torrentTrackers(s);
   if (!url) return null;
   var item = {
     addon: addonName,
@@ -2243,13 +2250,12 @@ function playUrl(source, type, id, vid, backHash) {
       attempt === 1 ? 2500 : 4500
     );
   }
-  /* a torrent needs the streaming server, which is downloaded from Stremio on first use */
+  /* a torrent needs the engine on this TV, or a streaming server on another computer */
   if (/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(s.url))
     xhrJson(
       '/streamfile',
       function (j) {
         if (j && j.state === 'needs-server') toast(tx('torrentsNeedServer'), 6000);
-        else if (j && j.state === 'downloading') toast(tx('preparingTorrents'));
         else if (j && j.state === 'failed') toast(tx('torrentsUnavailable'));
         if (!HAS_MEDIA_TOOLS && !(j && j.state === 'needs-server')) prepare(1);
       },
@@ -6356,15 +6362,13 @@ function diagEventLine(e) {
     }[e.kind];
   return hh + ':' + mm + '  ·  ' + tx(key || e.kind) + (e.detail ? ' (' + e.detail + ')' : '');
 }
-/* running or stopped, or why it is not there yet (it is downloaded from Stremio) */
+/* running or stopped; the engine itself only runs while a torrent plays */
 function diagStreamingState(j) {
-  var f = j.streamingFile || {};
+  var f = j.torrentEngine || {};
   if (j.serverAddress)
     return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
-  if (j.streamingServer) return tx('diagRunning');
-  if (f.state === 'downloading') return tx('diagDownloading');
-  if (f.state === 'failed') return tx('diagStreamFailed', f.err);
-  return tx('diagStopped');
+  if (f.state === 'failed') return tx('diagStreamFailed', 'sc-engine');
+  return tx(f.running ? 'diagRunning' : 'diagEngineReady');
 }
 var settings = {
   idx: 0,
