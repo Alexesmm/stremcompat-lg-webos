@@ -3,10 +3,8 @@ $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $outputDir = Join-Path $projectRoot '.build\visual-tests'
 
 $cases = @(
-    @{ Profile = 'um4-armv7'; Port = 8082; Width = 1920; Height = 1080 },
-    @{ Profile = 'um4-armv7-hd'; Port = 8084; Width = 1280; Height = 720 },
-    @{ Profile = 'uj3-native-armv7'; Port = 8093; Width = 1920; Height = 1080 },
-    @{ Profile = 'uj3-native-armv7-hd'; Port = 8094; Width = 1280; Height = 720 }
+    @{ Profile = 'lg-armv7'; Port = 8082; Width = 1280; Height = 720 },
+    @{ Profile = 'lg-armv7-1080'; Port = 8082; Width = 1920; Height = 1080 }
 )
 
 foreach ($case in $cases) {

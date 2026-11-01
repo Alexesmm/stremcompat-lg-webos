@@ -1,5 +1,5 @@
 param(
-    [string]$Profile = 'um4-armv7',
+    [string]$Profile = 'lg-armv7',
     [switch]$SkipPackage
 )
 

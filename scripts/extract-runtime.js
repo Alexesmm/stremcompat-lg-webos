@@ -41,18 +41,8 @@ function entries(tar) {
   return result;
 }
 
-/* What the packages need. Stremio's streaming server is deliberately not here: the TV
-   downloads it from Stremio (service/server/streaming-file.js). */
-var WANTED = [
-  'bin/node18', 'bin/ffmpeg', 'bin/ffprobe',
-  'bin/lib/libatomic.so.1', 'bin/lib/libatomic.so.1.2.0',
-  'bin/lib/libcares.so.2', 'bin/lib/libcares.so.2.6.1',
-  'bin/lib/libcrypto.so.3',
-  'bin/lib/libnghttp2.so.14', 'bin/lib/libnghttp2.so.14.24.1',
-  'bin/lib/libssl.so.3',
-  'bin/lib/libstdc++.so.6', 'bin/lib/libstdc++.so.6.0.25',
-  'bin/lib/libuv.so', 'bin/lib/libuv.so.1', 'bin/lib/libuv.so.1.0.0'
-];
+/* What the packages need, built from source by native/build-ffmpeg.sh and native/build-engine.sh */
+var WANTED = ['bin/ffmpeg', 'bin/ffprobe', 'bin/sc-engine', 'bin/ffmpeg-build-info.txt'];
 
 /* the runtime .tar.gz, or the original IPK (make-runtime-archive.js) */
 function readEntries(file) {

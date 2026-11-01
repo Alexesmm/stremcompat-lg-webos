@@ -1,22 +1,22 @@
 'use strict';
 
-// Builds the runtime archive the packages are made from: Node.js, its libraries, FFmpeg
-// and FFprobe taken from the pinned StremioBrew 1.0.0 IPK, WITHOUT Stremio's closed-source
-// streaming server (the TV downloads that from Stremio, see service/server/streaming-file.js).
-// A maintainer tool: the result is published as the runtime-v2.0.0 prerelease.
+// Builds the runtime archive the packages are made from: the programs native/build-ffmpeg.sh and
+// native/build-engine.sh produce, as gathered by native/collect.sh. A maintainer tool: the result
+// is published as the runtime-v3.0.0 prerelease, so a build does not need the cross compiler.
 //
-// Usage: node scripts/make-runtime-archive.js <stremiobrew-1.0.0.ipk> <output.tar.gz>
+// Usage: node scripts/make-runtime-archive.js <folder with the programs> <output.tar.gz>
 
 var fs = require('fs');
+var path = require('path');
 var zlib = require('zlib');
 var runtime = require('./extract-runtime');
 
-var input = process.argv[2],
+var folder = process.argv[2],
   output = process.argv[3];
-if (!input || !output) throw new Error('Usage: node make-runtime-archive.js <source.ipk> <output.tar.gz>');
+if (!folder || !output) throw new Error('Usage: node make-runtime-archive.js <folder> <output.tar.gz>');
 
 function octal(value, size) {
-  return (value.toString(8).padStart(size - 1, '0') + '\0');
+  return value.toString(8).padStart(size - 1, '0') + '\0';
 }
 
 function tarEntry(name, data) {
@@ -37,9 +37,8 @@ function tarEntry(name, data) {
   return Buffer.concat([header, data, padding]);
 }
 
-var all = runtime.readEntries(input);
 var parts = runtime.WANTED.map(function (relative) {
-  return tarEntry(relative, runtime.findEntry(all, relative).data);
+  return tarEntry(relative, fs.readFileSync(path.join(folder, path.basename(relative))));
 });
 parts.push(Buffer.alloc(1024));
 fs.writeFileSync(output, zlib.gzipSync(Buffer.concat(parts), { level: 9 }));

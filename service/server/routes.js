@@ -1,7 +1,7 @@
 // HTTP routing for the local compatibility server.
 
 var urlmod = require('url');
-var { APP_VERSION, PORT, PROFILE } = require('./config');
+var { APP_VERSION, PORT, PROFILE, PROFILE_MODULE } = require('./config');
 var { dbg } = require('./log');
 var { EMBEDDED_BETA_APP_B64, EMBEDDED_BETA_HTML_B64 } = require('./embedded');
 var { safeText } = require('./text');
@@ -193,6 +193,7 @@ function handleRequest(req, res) {
     res.writeHead(302, { Location: '/beta?v=' + APP_VERSION });
     res.end();
   } else if (p === '/beta') {
+    PROFILE_MODULE.useSmallTvLimits(PROFILE, req.headers['user-agent']);
     // The television interface — a real file on disk, with an embedded fallback copy.
     // Read per-request: tiny file, always fresh after an scp, no restart needed.
     // NO waitForServer here: the interface doesn't need :11470 at boot

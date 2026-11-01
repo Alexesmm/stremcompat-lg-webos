@@ -4,11 +4,11 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $serviceDir = Join-Path $projectRoot 'service'
 $cacheDir = Join-Path $projectRoot '.cache'
-$sourceIpk = Join-Path $cacheDir 'stremcompat-runtime-2.0.0.tar.gz'
-$sourceUrl = 'https://github.com/Alexesmm/stremcompat-lg-webos/releases/download/runtime-v2.0.0/stremcompat-runtime-2.0.0.tar.gz'
-$expectedSha256 = '3A63BA8CE3C3A6CAFC3FD1EB6D0187231C8261150B06868A0B67835224AD246B'
+$sourceIpk = Join-Path $cacheDir 'stremcompat-runtime-3.0.0.tar.gz'
+$sourceUrl = 'https://github.com/Alexesmm/stremcompat-lg-webos/releases/download/runtime-v3.0.0/stremcompat-runtime-3.0.0.tar.gz'
+$expectedSha256 = 'E3D98ECD80EB44A50B97B5A19B327578F1745117CDA923AC1A6C2E48D1C64F7D'
 $required = @(
-    (Join-Path $serviceDir 'bin\node18'),
+    (Join-Path $serviceDir 'bin\sc-engine'),
     (Join-Path $serviceDir 'bin\ffmpeg'),
     (Join-Path $serviceDir 'bin\ffprobe')
 )
@@ -27,7 +27,7 @@ if (-not (Test-Path -LiteralPath $sourceIpk -PathType Leaf) -or $Force) {
         $gh = Get-Command gh -ErrorAction SilentlyContinue
         if (-not $gh) { throw }
         Write-Host 'Direct download unavailable; using authenticated GitHub CLI fallback...'
-        & gh release download runtime-v2.0.0 --repo Alexesmm/stremcompat-lg-webos --pattern 'stremcompat-runtime-2.0.0.tar.gz' --dir $cacheDir --clobber
+        & gh release download runtime-v3.0.0 --repo Alexesmm/stremcompat-lg-webos --pattern 'stremcompat-runtime-3.0.0.tar.gz' --dir $cacheDir --clobber
         if ($LASTEXITCODE -ne 0) { throw 'GitHub CLI runtime download failed.' }
     }
 }

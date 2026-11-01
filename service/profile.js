@@ -2,8 +2,10 @@
  * Television profile shared by launch.js (system Node.js 0.12, so ES5 only) and
  * tvserver.js. scripts/build-stage.js writes the selected profiles/<name>.json
  * next to this file as profile.json. A source checkout without that file runs as
- * the 1920x1080 webOS 4 development profile below.
+ * the development profile below. One package serves every TV: useSmallTvLimits()
+ * applies the profile's smallTv values on the weakest ones.
  */
+var os = require('os');
 var path = require('path');
 
 var DEVELOPMENT_PROFILE = {
@@ -22,7 +24,7 @@ var DEVELOPMENT_PROFILE = {
   backdropWidth: 960,
   backdropCache: 24,
   backdropWorkers: 2,
-  serverSemiSpaceMB: 4
+  serverSemiSpaceMB: 2
 };
 
 function loadProfile() {
@@ -43,6 +45,23 @@ function loadProfile() {
   return out;
 }
 
+/* webOS 3 shows the interface with Chromium 38, on the hardware that needs the lower limits */
+function isSmallTv(userAgent) {
+  if (process.env.TV_TIER) return process.env.TV_TIER === 'small';
+  var chrome = /Chrome\/(\d+)/.exec(String(userAgent || ''));
+  if (chrome && parseInt(chrome[1], 10) <= 38) return true;
+  return os.totalmem() < 900 * 1048576;
+}
+
+/* Called when the interface first asks for its page, the moment the browser is known. */
+function useSmallTvLimits(profile, userAgent) {
+  var key;
+  if (!profile.smallTv || profile.lowMemory || !isSmallTv(userAgent)) return;
+  for (key in profile.smallTv) {
+    if (Object.prototype.hasOwnProperty.call(profile.smallTv, key)) profile[key] = profile.smallTv[key];
+  }
+}
+
 /* The subset the browser interface needs; injected into beta.html by tvserver.js. */
 function interfaceProfile(profile) {
   return {
@@ -60,5 +79,6 @@ function interfaceProfile(profile) {
 module.exports = {
   current: loadProfile(),
   DEVELOPMENT_PROFILE: DEVELOPMENT_PROFILE,
-  interfaceProfile: interfaceProfile
+  interfaceProfile: interfaceProfile,
+  useSmallTvLimits: useSmallTvLimits
 };

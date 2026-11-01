@@ -1,6 +1,6 @@
 {
   "name": "stremcompat-lg-webos",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "private": true,
   "license": "GPL-3.0-only",
   "description": "Stremio community compatibility ports for legacy LG webOS 3.x and 4.x televisions",
@@ -12,20 +12,14 @@
     "format": "prettier --write \"src/ui/**/*.js\" \"src/player/*.js\" \"src/platform/**/*.js\" \"platforms/tizen/*.js\" \"platforms/tizen/service/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
     "format:check": "prettier --check \"src/ui/**/*.js\" \"src/player/*.js\" \"src/platform/**/*.js\" \"platforms/tizen/*.js\" \"platforms/tizen/service/*.js\" \"service/tvserver.js\" \"service/server/*.js\"",
     "runtime": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-runtime.ps1",
-    "build": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7 -SkipPackage",
-    "build:uj3-native": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7 -SkipPackage",
-    "build:um4-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7-hd -SkipPackage",
-    "build:uj3-native-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7-hd -SkipPackage",
-    "package": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7",
-    "package:um4": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7",
-    "package:uj3-native": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7",
-    "package:um4-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile um4-armv7-hd",
-    "package:uj3-native-hd": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile uj3-native-armv7-hd",
-    "package:all": "npm run package:um4 && npm run package:um4-hd && npm run package:uj3-native && npm run package:uj3-native-hd",
+    "build": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7 -SkipPackage",
+    "package": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7",
+    "package:all": "npm run package && npm run package:1080",
     "test": "node ./scripts/selftest-frontend.js && node ./scripts/selftest-player.js && node ./scripts/selftest-runtime.js && node ./scripts/selftest-tizen.js",
     "test:chrome38": "node ./scripts/selftest-chromium38.js",
     "test:visual:layouts": "powershell -ExecutionPolicy Bypass -File ./scripts/visualtest-layouts.ps1",
-    "verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
+    "verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify.ps1",
+    "package:1080": "powershell -ExecutionPolicy Bypass -File ./scripts/build.ps1 -Profile lg-armv7-1080"
   },
   "devDependencies": {
     "@webos-tools/cli": "3.2.6",

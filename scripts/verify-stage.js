@@ -25,7 +25,7 @@ function must(rel) {
 [
   'app/appinfo.json', 'app/index.html', 'app/services.json', 'app/logo.png', 'app/fonts/inter-latin-400.woff',
   'service/package.json', 'service/services.json', 'service/launch.js', 'service/profile.js', 'service/profile.json',
-  'service/tvserver.js', 'service/server/embedded.js', 'service/server/routes.js', 'service/beta.html', 'service/beta-app.js', 'service/bin/node18',
+  'service/tvserver.js', 'service/server/embedded.js', 'service/server/routes.js', 'service/beta.html', 'service/beta-app.js',
   'service/player/player.css', 'service/player/player-body.html', 'service/player/player-client.js',
   'service/bin/ffmpeg', 'service/bin/ffprobe', 'service/bin/sc-engine', 'service/compat.js', 'service/roots.json'
 ].forEach(must);

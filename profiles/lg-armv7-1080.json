@@ -1,0 +1,33 @@
+{
+  "profile": "lg-armv7-1080",
+  "channel": "stable",
+  "appId": "io.github.alexesmm.legacytv",
+  "serviceId": "io.github.alexesmm.legacytv.server",
+  "title": "StremCompat",
+  "version": "3.0.0",
+  "port": 8082,
+  "graphicsResolution": "1920x1080",
+  "ecmaTarget": "chrome38",
+  "targetLabel": "LG webOS 3 and newer, ARM, 1920x1080 interface",
+  "lowMemory": false,
+  "sourceCap": 60,
+  "libraryCap": 60,
+  "catalogCap": 16,
+  "catalogRowsCap": 24,
+  "discoverCap": 80,
+  "backdropWidth": 960,
+  "backdropCache": 24,
+  "backdropWorkers": 2,
+  "serverSemiSpaceMB": 2,
+  "smallTv": {
+    "lowMemory": true,
+    "sourceCap": 30,
+    "libraryCap": 30,
+    "catalogCap": 10,
+    "catalogRowsCap": 16,
+    "discoverCap": 40,
+    "backdropWidth": 640,
+    "backdropCache": 6,
+    "backdropWorkers": 1
+  }
+}
