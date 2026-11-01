@@ -87,6 +87,14 @@ Most reports come from versions before 3.0, whose packages were different, so a 
 
 Root access is not required.
 
+**With the Homebrew Channel**, which also makes updates easy:
+
+1. Install the [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) on the TV.
+2. In its settings, add this repository: `https://alexesmm.github.io/stremcompat-lg-webos/apps.json`
+3. Install StremCompat from the channel. The app tells you when a new version is out.
+
+**With Developer Mode:**
+
 1. Install LG's **Developer Mode** app on the television, sign in, and enable Developer Mode and Key Server.
 2. Add the television in **webOS Dev Manager**.
 3. Download the IPK from Releases and install it.
@@ -110,7 +118,7 @@ StremCompat has no accounts or sources of its own. It uses your Stremio account 
 
 **Account and library**
 
-- Login by email or phone pairing code; English or Brazilian Portuguese interface.
+- Login by email or phone pairing code. Interface in English, Brazilian Portuguese, Spanish, French, German, Italian and Russian; corrections to the translations are welcome.
 - Library, watched state, progress and addon synchronization with the Stremio account, in both directions: episodes and films watched on the TV show as watched in the other Stremio apps, and the other way round.
 - Continue Watching with the episode and minutes left; a finished episode becomes the next one, also when it was finished on another device.
 - Home rows for New episodes of followed series and My list.
@@ -122,6 +130,7 @@ StremCompat has no accounts or sources of its own. It uses your Stremio account 
 - Addon-driven Home, Discover, Search and Library, with a See all card at the end of each catalog row.
 - On-screen search keyboard with results that update while typing, plus recent searches.
 - One-press Continue / Play buttons on title pages, episode details and continuous numbering for long series.
+- **Best source** starts the source that suits this TV and the speed of its connection, without opening the list.
 - Remote and LG Magic Remote navigation built for the television, with an optional larger interface text.
 
 **Sources and playback**
@@ -197,7 +206,7 @@ StremCompat is free to use, and donations are never required.
 
 ## Credits and licensing
 
-- **[StremioBrew](https://github.com/simussu9-wq/stremiobrew)**: StremCompat started from its 1.0.0 package, and part of the local server still derives from its code. See [NOTICE.md](NOTICE.md).
+- **[StremioBrew](https://github.com/simussu9-wq/stremiobrew)**: StremCompat started from its 1.0.0 package and has since been rewritten. See [NOTICE.md](NOTICE.md).
 - **[kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos)**: StremCompat started as a fork of this project, whose earlier interface came from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The launcher and interface have since been rewritten.
 - [Nuvio Engine](https://github.com/NuvioMedia/nuvio-engine) and libtorrent power the torrent engine. FFmpeg, the Inter typeface and LG webOS tooling are also used. Stremio is a trademark of its owner.
 

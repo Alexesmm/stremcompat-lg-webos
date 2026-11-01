@@ -120,7 +120,7 @@ function staleServerPids() {
     } catch (ignore) {
       continue;
     }
-    /* versions before 3.1 called the server tvserver.js */
+    /* versions before 3.0 called the server tvserver.js */
     if (cmd.indexOf(SUPERVISOR) >= 0 || cmd.indexOf(path.join(DIR, 'tvs' + 'erver.js')) >= 0)
       pids.push(Number(names[i]));
   }

@@ -6,7 +6,7 @@ $serviceDir = Join-Path $projectRoot 'service'
 $cacheDir = Join-Path $projectRoot '.cache'
 $sourceIpk = Join-Path $cacheDir 'stremcompat-runtime-3.0.0.tar.gz'
 $sourceUrl = 'https://github.com/Alexesmm/stremcompat-lg-webos/releases/download/runtime-v3.0.0/stremcompat-runtime-3.0.0.tar.gz'
-$expectedSha256 = 'E3D98ECD80EB44A50B97B5A19B327578F1745117CDA923AC1A6C2E48D1C64F7D'
+$expectedSha256 = 'C9FB1702D0952A030E99DF3BEB3706598E8E7F83EDFB8BBC689C1CF2362351C5'
 $required = @(
     (Join-Path $serviceDir 'bin\sc-engine'),
     (Join-Path $serviceDir 'bin\ffmpeg'),

@@ -99,7 +99,7 @@ function pidOnPort() {
     var fds = [];
     try {
       var command = fs.readFileSync('/proc/' + pids[i] + '/cmdline', 'utf8');
-      /* versions before 3.1 called it tvserver.js */
+      /* versions before 3.0 called it tvserver.js */
       if (command.indexOf('local-server.js') < 0 && command.indexOf('tvs' + 'erver.js') < 0) continue;
       fds = fs.readdirSync('/proc/' + pids[i] + '/fd');
     } catch (e) {
