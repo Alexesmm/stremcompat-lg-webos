@@ -2,7 +2,7 @@
 
 Background for contributors and curious users: why the project ships separate builds, how the package is put together, where the code lives, the memory profile of each television generation, how to adapt it to another TV and how releases are verified and published. Installation and everyday use are covered in the [README](../README.md).
 
-## One package for every TV
+## One build for every TV
 
 LG changed the browser engine and the service runtime across webOS generations:
 
@@ -12,9 +12,9 @@ LG changed the browser engine and the service runtime across webOS generations:
 | webOS 4.x, 2018-2019 | Chromium 53 | Node.js 0.12.2 |
 | webOS 5 and newer | Newer Chromium versions | Node.js 8.12 to 20 |
 
-One package serves all of them. Its interface is ES5, which every generation runs. Its server is prepared for the oldest Node by `scripts/lib/legacy-node.js`, which writes out destructuring and shorthand properties and refuses anything else Node 0.12 lacks, while `service/compat.js` fills in the few library functions missing. Its programs are static, so they do not depend on the libraries of any webOS version. `useSmallTvLimits()` in `service/profile.js` applies the `smallTv` values of the profile when the interface first asks for its page: on Chromium 38, or when the TV has under 900 MB of memory.
+The same build serves all of them, in two graphics resolutions. Its interface is ES5, which every generation runs. Its server is prepared for the oldest Node by `scripts/lib/legacy-node.js`, which writes out destructuring and shorthand properties and refuses anything else Node 0.12 lacks, while `service/compat.js` fills in the few library functions missing. Its programs are static, so they do not depend on the libraries of any webOS version. `useSmallTvLimits()` in `service/profile.js` applies the `smallTv` values of the profile when the interface first asks for its page: on Chromium 38, or when the TV has under 900 MB of memory.
 
-Graphics resolution is declared in the package manifest before the application starts, so responsive CSS alone cannot change it. The profile `lg-armv7` declares `1280x720`, which LG scales to the whole screen on every panel and which takes less than half the memory of a `1920x1080` surface; `lg-armv7-1080` builds the same package with `1920x1080`.
+Graphics resolution is declared in the package manifest before the application starts, so responsive CSS alone cannot change it. The profile `lg-armv7` declares `1280x720`, which LG scales to the whole screen on every panel and which takes less than half the memory of a `1920x1080` surface; `lg-armv7-1080` builds the same package with `1920x1080`, which is sharper on Full HD and 4K panels but is cut off on smaller ones. Both are released, each with its own Homebrew repository, because a repository offers one package for each app.
 
 Official references:
 

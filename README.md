@@ -27,7 +27,7 @@ This project is not affiliated with or endorsed by Stremio, LG Electronics or Sa
 
 - **Your Stremio account:** sign in with a QR code or email. Library, progress, watched state and addons stay in sync with your other Stremio apps.
 - **Browsing:** Home, Discover, Search and Library from your addons, with Continue Watching and the minutes left.
-- **Best source:** one press goes straight to the film. It asks which quality you want, or uses the one set in Settings.
+- **Best source:** one press goes straight to the video. It asks which quality you want, or uses the one set in Settings.
 - **Source list:** quality and language filters, compatibility warnings, and addons that fail are named.
 - **Playback:** direct, debrid, torrent and HLS, using the TV's hardware decoder. Torrents play on the TV itself, or through a streaming server on another computer if you prefer.
 - **Subtitles and audio:** from addons or inside the file, remembered for each title, with a backup language and a subtitle delay.
@@ -88,7 +88,7 @@ StremCompat has no accounts or sources of its own.
 
 ## Compatibility
 
-The package targets LG televisions with an ARM processor running **webOS 3.x and 4.x**, roughly the 2016-2019 models, the ones that cannot install the official app. Newer versions should work and reports are welcome.
+StremCompat targets LG televisions with an ARM processor running **webOS 3.x and 4.x**, roughly the 2016-2019 models, the ones that cannot install the official app. Newer versions should work and reports are welcome.
 
 | webOS | Typical years | Example families |
 |---|---|---|
@@ -139,7 +139,7 @@ Download the package from the [test release](https://github.com/Alexesmm/stremco
 
 ## Troubleshooting
 
-- **Interface cut off or only in part of the screen:** use the 720p package.
+- **Interface cut off or only in part of the screen:** use the 720p package. On the Homebrew Channel, remove the repository you added and add the 720p address from [Installation](#installation). If it still shows the old version, uninstall the app first.
 - **"Can't reach Stremio", or nothing loads while other apps work:** your network probably hands out IPv6 without a working connection. Turn IPv6 off on the TV (Settings > Network > Wi-Fi or Wired connection > Advanced settings > IPv6) or on the router.
 - **App stuck on the loading screen after an update (`RUNTIME_START_TIMEOUT`):** unplug the TV for at least 30 seconds and open it again. The remote is not enough when Quick Start+ is on. This does not erase your account or settings.
 - **Torrents do not start, but debrid and direct links work:** **Settings > Diagnostics** shows the state of the engine. Few seeders or little free storage can also keep a torrent from starting.
