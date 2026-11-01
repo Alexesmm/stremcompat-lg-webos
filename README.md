@@ -80,7 +80,7 @@ Root access is not required.
 
 > **Coming from 2.x?** If you used `StremCompat`, this updates it. If you used `StremCompat HD`, `StremCompat UJ3` or `StremCompat UJ3 HD`, remove that app: this package replaces all of them. Your library and addons are on your Stremio account, and you may need to sign in again.
 
-The IPK is about 6 MB and uses about 15 MB once installed, plus up to 2 GB of free storage while a torrent plays, which is cleared when it stops. Developer Mode installations expire with the Developer Mode timer, so renew it before it reaches zero.
+The IPK is about 6 MB and uses about 13 MB once installed, plus up to 2 GB of free storage while a torrent plays, which is cleared when it stops. Developer Mode installations expire with the Developer Mode timer, so renew it before it reaches zero.
 
 > **After updating over an existing installation**, the app's local service from the previous version can keep running in the background. From 1.3.3 on, the new version replaces it by itself. If the app ever stays on the loading screen (`RUNTIME_START_TIMEOUT`), unplug the television for at least 30 seconds and open it again; turning it off with the remote is not enough when Quick Start+ is on. This does not erase your account or settings.
 

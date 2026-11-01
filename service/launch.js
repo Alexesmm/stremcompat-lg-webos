@@ -151,6 +151,21 @@ function scheduleRestart() {
     }, 1500);
 }
 
+/* Where a TV does not let this service start the Node it runs on, the server runs in this
+   process instead. It then cannot be restarted, but the app opens. */
+var insideService = false;
+function runInsideService(reason) {
+    if (insideService) return;
+    insideService = true;
+    spawned = true;
+    log('Running the local server inside the service: ' + reason);
+    try {
+        require(SUPERVISOR);
+    } catch (error) {
+        log('Local server failed: ' + error.message);
+    }
+}
+
 function startRuntime() {
     var env;
     var child;
@@ -173,15 +188,16 @@ function startRuntime() {
             stdio: 'ignore'
         });
     } catch (error) {
-        spawned = false;
         log('Spawn failed: ' + error.message);
+        runInsideService(error.message);
         return;
     }
     child.on('error', function (error) {
-        spawned = false;
         log('Runtime error: ' + error.message);
+        runInsideService(error.message);
     });
     child.on('exit', function (code, signal) {
+        if (insideService) return;
         spawned = false;
         log('Runtime exit code=' + code + ' signal=' + signal);
         scheduleRestart();
