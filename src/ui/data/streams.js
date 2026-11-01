@@ -79,6 +79,9 @@ function langRank(s, pref) {
    first, so the first that plays on this TV and that the connection can carry. With a measured
    speed, a source of a quality too heavy for it gives way to a lighter one. */
 var MBPS_NEEDED = { '4K': 25, '1080p': 8, '720p': 3 };
+function dependsOnSpeed(s) {
+  return !!MBPS_NEEDED[s.quality];
+}
 function hasNoWarning(s) {
   return !(s.compatRank > 0) && !(s.compatLabels || []).length;
 }

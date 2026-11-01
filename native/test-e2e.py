@@ -4,7 +4,7 @@ ARM engine, ffprobe and ffmpeg under an emulator. A Creative Commons torrent (Bi
 the app's own routes, including a stream link that expires.
 
 Usage: native/test-e2e.py <stage, such as .build/lg-armv7>"""
-import glob, json, os, re, shutil, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+import glob, http.server, json, os, re, shutil, subprocess, sys, threading, time, urllib.error, urllib.parse, urllib.request
 
 BASE = os.environ.get('SC_BUILD', os.path.expanduser('~/stremcompat-build'))
 OUT = BASE + '/out'
@@ -69,6 +69,7 @@ for name, extra in (('ffmpeg', ''), ('ffprobe', ''), ('sc-engine', ' %d %d' % (L
 home = BASE + '/e2e-home'
 shutil.rmtree(home, ignore_errors=True)
 os.makedirs(home)
+shutil.rmtree(STAGE + '/service/subcache', ignore_errors=True)
 env = dict(os.environ, HOME=home, TV_ENGINE=wrappers + '/sc-engine', TV_FFMPEG=wrappers + '/ffmpeg', TV_FFPROBE=wrappers + '/ffprobe', SC_SERVER_LOG=home + '/server.log')
 server = subprocess.Popen([node, '--max_semi_space_size=2', STAGE + '/service/local-server.js'], cwd=STAGE + '/service', env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 address = 'http://127.0.0.1:11470/%s/1' % HASH
@@ -100,6 +101,66 @@ try:
     art = urllib.parse.quote('https://images.metahub.space/background/medium/tt0468569/img', safe='')
     status, _, body = get(local + '/artwork?u=' + art, 60)
     check('ARM ffmpeg reduces artwork', status == 200 and body[:2] == b'\xff\xd8', (status, len(body)))
+
+    # subtitles inside a file: 60 lines, one every 10 s of a 10-minute film
+    fixture = open(os.path.dirname(os.path.abspath(__file__)) + '/test-subtitles.mkv', 'rb').read()
+    class RangeFile(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            if not self.path.startswith('/film'):
+                self.send_error(404)
+                return
+            asked = re.match(r'bytes=(\d+)-(\d*)', self.headers.get('Range', ''))
+            first = int(asked.group(1)) if asked else 0
+            last = int(asked.group(2)) if asked and asked.group(2) else len(fixture) - 1
+            self.send_response(206 if asked else 200)
+            self.send_header('Content-Type', 'video/x-matroska')
+            self.send_header('Accept-Ranges', 'bytes')
+            self.send_header('Content-Length', str(last - first + 1))
+            if asked:
+                self.send_header('Content-Range', 'bytes %d-%d/%d' % (first, last, len(fixture)))
+            self.end_headers()
+            self.wfile.write(fixture[first:last + 1])
+        def log_message(self, *a):
+            pass
+    film_server = http.server.ThreadingHTTPServer(('127.0.0.1', 9193), RangeFile)
+    threading.Thread(target=film_server.serve_forever, daemon=True).start()
+    film = urllib.parse.quote('http://127.0.0.1:9193/film.mkv', safe='')
+    def subtitle_call(route, query):
+        return json.loads(get('%s/%s?u=%s&id=tt1&vid=tt1&%s' % (local, route, film, query), 60)[2])
+    tracks = json.loads(get(local + '/subtitle-tracks?u=' + film, 150)[2]).get('tracks', [])
+    check('the track list names the language', tracks and tracks[0].get('lang') == 'eng', tracks)
+    broken = json.loads(get(local + '/subtitle-tracks?u=' + urllib.parse.quote('http://127.0.0.1:9193/none.mkv', safe=''), 150)[2])
+    check('a file that cannot be read says so', broken.get('err'), broken)
+    subtitle_call('subtitle-start', 'n=0&t=300')
+    lines = []
+    def read_until_done(at):
+        for attempt in range(120):
+            answer = subtitle_call('subtitle-cues', 'n=0&t=%d&since=%d' % (at, len(lines)))
+            lines.extend(answer.get('cues', []))
+            if answer.get('done'):
+                return answer
+            time.sleep(1)
+        return {}
+    answer = read_until_done(300)
+    # FFmpeg seeks to a point somewhat before the one asked for, which only adds earlier lines
+    check('reading starts near the playhead', lines and 100 <= lines[0]['s'] <= 285 and lines[-1]['s'] > 300, (lines[:1], lines[-1:]))
+    check('a read from the middle still watches for going back', answer.get('done') and not answer.get('final'), answer.get('final'))
+    subtitle_call('subtitle-cues', 'n=0&t=100&since=%d' % len(lines))
+    time.sleep(1)
+    answer = read_until_done(100)
+    starts = sorted(line['s'] for line in lines)
+    check('going back reads what was missing', answer.get('final') and starts and starts[0] < 10, (answer.get('final'), starts[:1]))
+    check('no line twice', len(starts) == len(set(starts)) and len(starts) == 60, len(starts))
+    stored = subtitle_call('subtitle-start', 'n=0&t=0')
+    check('the whole track is kept and final', stored.get('cached') and stored.get('final') and len(stored.get('cues', [])) == 60, len(stored.get('cues', [])))
+    subtitle_call('subtitle-start', 'n=7&t=0')
+    for attempt in range(40):
+        answer = subtitle_call('subtitle-cues', 'n=7&t=0&since=0')
+        if answer.get('done'):
+            break
+        time.sleep(1)
+    check('a track that cannot be read fails once', answer.get('err') and answer.get('final'), answer)
+    film_server.shutdown()
 
     # the storage limit, while the film plays from start to end at several times its speed
     def on_storage():

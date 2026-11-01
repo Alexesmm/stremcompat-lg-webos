@@ -2100,6 +2100,9 @@ function langRank(s, pref) {
    first, so the first that plays on this TV and that the connection can carry. With a measured
    speed, a source of a quality too heavy for it gives way to a lighter one. */
 var MBPS_NEEDED = { '4K': 25, '1080p': 8, '720p': 3 };
+function dependsOnSpeed(s) {
+  return !!MBPS_NEEDED[s.quality];
+}
 function hasNoWarning(s) {
   return !(s.compatRank > 0) && !(s.compatLabels || []).length;
 }
@@ -5518,15 +5521,19 @@ var streamsUI = {
   startBest: function () {
     var self = this,
       request = this.requestSeq;
+    function start(best) {
+      if (!best) return;
+      toast(tx('playingBest', best.quality || best.addon || ''));
+      playUrl(best, self.type, self.id, self.vid, self.backHash());
+    }
+    /* in the order of the list on screen, which follows the preferred language and quality */
+    var first = bestSource(this.items, 0);
+    if (!first || !dependsOnSpeed(first)) return start(first);
     xhrJson(
       '/speed',
       function (answer) {
         if (!self.open || self.requestSeq !== request) return;
-        /* in the order of the list on screen, which follows the preferred language and quality */
-        var best = bestSource(self.items, (answer && answer.mbps) || 0);
-        if (!best) return;
-        toast(tx('playingBest', best.quality || best.addon || ''));
-        playUrl(best, self.type, self.id, self.vid, self.backHash());
+        start(bestSource(self.items, (answer && answer.mbps) || 0));
       },
       5000
     );

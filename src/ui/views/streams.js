@@ -123,15 +123,19 @@ var streamsUI = {
   startBest: function () {
     var self = this,
       request = this.requestSeq;
+    function start(best) {
+      if (!best) return;
+      toast(tx('playingBest', best.quality || best.addon || ''));
+      playUrl(best, self.type, self.id, self.vid, self.backHash());
+    }
+    /* in the order of the list on screen, which follows the preferred language and quality */
+    var first = bestSource(this.items, 0);
+    if (!first || !dependsOnSpeed(first)) return start(first);
     xhrJson(
       '/speed',
       function (answer) {
         if (!self.open || self.requestSeq !== request) return;
-        /* in the order of the list on screen, which follows the preferred language and quality */
-        var best = bestSource(self.items, (answer && answer.mbps) || 0);
-        if (!best) return;
-        toast(tx('playingBest', best.quality || best.addon || ''));
-        playUrl(best, self.type, self.id, self.vid, self.backHash());
+        start(bestSource(self.items, (answer && answer.mbps) || 0));
       },
       5000
     );

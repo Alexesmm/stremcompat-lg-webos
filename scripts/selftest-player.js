@@ -252,6 +252,7 @@ assert.strictEqual(sameOne.chosen.ext, 'comm1', 'the subtitle chosen lost to ano
 var nextEp = languagePlayer({ tvtitle_tt9: JSON.stringify({ sub: 'pob', subUrl: 'old', subSrc: 'Community' }) });
 nextEp.withSubs(twoPt);
 assert.strictEqual(nextEp.chosen.ext, 'comm1', 'another episode did not keep the addon chosen');
+assert.strictEqual(audioChoice({ defaultAudioTrack: 'rum' }, [{ language: 'en', enabled: true }, { language: 'ron' }])[1], true, 'ron was not Romanian');
 var noBackup = languagePlayer({ subsLang: 'jpn' });
 noBackup.withSubs(subs);
 assert.strictEqual(noBackup.chosen.ext, '', 'a subtitle in another language came on');

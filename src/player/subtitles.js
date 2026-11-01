@@ -59,7 +59,27 @@ var LANG_CODES = {
   ja: 'jpn',
   ko: 'kor',
   zh: 'chi',
-  zho: 'chi'
+  zho: 'chi',
+  spl: 'spa',
+  ro: 'rum',
+  ron: 'rum',
+  el: 'gre',
+  ell: 'gre',
+  cs: 'cze',
+  ces: 'cze',
+  da: 'dan',
+  fi: 'fin',
+  no: 'nor',
+  nb: 'nor',
+  nob: 'nor',
+  hu: 'hun',
+  bg: 'bul',
+  uk: 'ukr',
+  sr: 'srp',
+  hr: 'hrv',
+  sk: 'slo',
+  slk: 'slo',
+  sl: 'slv'
 };
 function languageCode(lang) {
   var base = (lang || '').toLowerCase().split(/[-_]/)[0];
