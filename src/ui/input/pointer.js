@@ -74,6 +74,7 @@ function pointerUI(target, activate) {
       if (activate) {
         streamsUI.filter = streamsUI.chips[i];
         streamsUI.idx = 0;
+        streamsUI.moved = false;
         streamsUI.rebuild();
       }
       return true;
@@ -82,6 +83,7 @@ function pointerUI(target, activate) {
     if (i < 0) return false;
     streamsUI.zone = 'list';
     streamsUI.idx = i;
+    streamsUI.moved = true;
     streamsUI.paint();
     if (activate) streamsUI.choose();
     return true;

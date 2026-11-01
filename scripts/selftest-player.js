@@ -149,6 +149,32 @@ function subtitlePrefs(stored) {
 assert.strictEqual(subtitlePrefs({}).sub, 'por', 'never configured, the subtitle language did not follow the interface');
 assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por', 'the audio language shown in Settings was not used');
 
+// ---- the source list keeps its focus while addons answer (ui/views/streams.js) ----
+(function () {
+  function node() { return { style: {}, appendChild: function () {}, innerHTML: '', offsetTop: 0 }; }
+  var ctx = {
+    document: { createElement: node }, $: node, tx: function () { return ''; }, lsRaw: function (k, d) { return d; },
+    langRank: function () { return 0; }, langGroups: function () { return []; }, sourceTags: function () { return []; },
+    setF: function () {}, sourceOrder: function (a, b) { return b.seeds - a.seeds; }, window: {}
+  };
+  vm.runInNewContext(src('ui/views/streams.js') + ';this.list=streamsUI;', ctx);
+  var list = ctx.list, slow = { seeds: 1 }, fast = { seeds: 5 }, faster = { seeds: 9 };
+  var shown = [slow];
+  list.all = function () { return shown.slice(); };
+  list.paint = function () {};
+  Object.assign(list, { items: [], idx: 0, moved: false, filter: 'All', langFilter: 'All', failed: [], els: [] });
+  list.rebuild();
+  shown = [slow, fast, faster];
+  list.rebuild();
+  assert.strictEqual(list.items[list.idx], faster, 'a late addon pulled the focus down the list');
+  list.moved = true;
+  list.idx = 1;
+  shown = [slow, fast, faster, { seeds: 7 }];
+  var on = list.items[1];
+  list.rebuild();
+  assert.strictEqual(list.items[list.idx], on, 'after the viewer moved, the focus left the source it was on');
+})();
+
 // ---- a subtitle kept on storage loads once (subtitles.js) ----
 (function () {
   var requests = [], toasts = 0;

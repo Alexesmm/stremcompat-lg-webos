@@ -5422,6 +5422,7 @@ var streamsUI = {
     this.cancelFlush();
     this.items = [];
     this.idx = 0;
+    this.moved = false;
     this.els = [];
     this.groups = [];
     this.pool = [];
@@ -5649,6 +5650,7 @@ var streamsUI = {
     if (!n) return;
     this.langFilter = this.langs[(this.langs.indexOf(this.langFilter) + (step || 1) + n) % n];
     this.idx = 0;
+    this.moved = false;
     this.rebuild();
   },
   paintChips: function () {
@@ -5767,7 +5769,10 @@ var streamsUI = {
       note.textContent = tx('addonsNoAnswer', this.failed.join(', '));
       host.appendChild(note);
     }
-    if (sel) {
+    /* addons answer at different times: the focus stays on top until the viewer moves it, and
+       only then follows the source it is on, so OK never starts another one */
+    if (!this.moved) this.idx = 0;
+    else if (sel) {
       var at = this.items.indexOf(sel);
       this.idx = at >= 0 ? at : Math.min(this.idx, Math.max(0, this.items.length - 1));
     } else this.idx = Math.min(this.idx, Math.max(0, this.items.length - 1));
@@ -5827,15 +5832,18 @@ var streamsUI = {
       } else return true;
       this.filter = this.chips[this.chipIdx];
       this.idx = 0;
+      this.moved = false;
       this.rebuild();
       return true;
     }
     if (k === 40) {
       this.idx = Math.min(this.els.length - 1, this.idx + 1);
+      this.moved = true;
       this.paint();
     } else if (k === 38) {
       if (this.idx > 0) {
         this.idx--;
+        this.moved = true;
         this.paint();
       } else {
         this.zone = 'chips';
@@ -7358,6 +7366,7 @@ function pointerUI(target, activate) {
       if (activate) {
         streamsUI.filter = streamsUI.chips[i];
         streamsUI.idx = 0;
+        streamsUI.moved = false;
         streamsUI.rebuild();
       }
       return true;
@@ -7366,6 +7375,7 @@ function pointerUI(target, activate) {
     if (i < 0) return false;
     streamsUI.zone = 'list';
     streamsUI.idx = i;
+    streamsUI.moved = true;
     streamsUI.paint();
     if (activate) streamsUI.choose();
     return true;
