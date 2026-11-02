@@ -2731,7 +2731,7 @@ function openMenu(view) {
       for (var j = 0; j < embTracks.length; j++) {
         var et = embTracks[j];
         var fb = curSub === 'emb:' + et.n;
-        html += choiceRow(et.name, fb);
+        html += choiceRow(et.name || P.embedded + ' ' + (j + 1), fb);
         menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang, on: fb });
       }
     }

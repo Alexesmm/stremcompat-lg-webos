@@ -96,6 +96,16 @@ function createVideo() {
       A.close();
     } catch (e) {}
   }
+  /* the player hands over each line with the markup of the file */
+  function plainLine(text) {
+    return String(text || '')
+      .replace(/<br\s*\/?>|\\[nN]/gi, '\n')
+      .replace(/<[^>]+>|\{\\[^}]*\}/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+  }
   function trackInfo(type) {
     var out = [],
       all = [];
@@ -224,7 +234,7 @@ function createVideo() {
     },
     onevent: function () {},
     onsubtitlechange: function (duration, text) {
-      if (onText) onText(parseInt(duration, 10) || 3000, String(text || ''));
+      if (onText) onText(parseInt(duration, 10) || 3000, plainLine(text));
     }
   };
   function open() {
@@ -314,7 +324,7 @@ function createVideo() {
         out.push({
           n: infos[i].index,
           ti: infos[i].index,
-          name: infos[i].language || 'Track ' + (i + 1)
+          name: infos[i].language
         });
       return out;
     },
@@ -3099,7 +3109,7 @@ function openMenu(view) {
       for (var j = 0; j < embTracks.length; j++) {
         var et = embTracks[j];
         var fb = curSub === 'emb:' + et.n;
-        html += choiceRow(et.name, fb);
+        html += choiceRow(et.name || P.embedded + ' ' + (j + 1), fb);
         menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang, on: fb });
       }
     }
