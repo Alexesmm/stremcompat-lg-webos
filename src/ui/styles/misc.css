@@ -32,6 +32,9 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
   body.bigtext .st .b{font-size:21px}
   body.bigtext .st.f .b{max-height:56px}
   body.bigtext #sHint,body.bigtext .emptyh{font-size:19px}
+  body.bigtext .set .lb{font-size:22px}
+  body.bigtext .set .vl{font-size:19px}
+  body.bigtext .cwmi{font-size:22px}
 }
 /* empty states */
 .empty{padding:70px 48px 0;max-width:900px}
