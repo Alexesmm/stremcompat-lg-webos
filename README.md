@@ -70,7 +70,7 @@ There are two packages, and the video looks the same in both:
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v3.0.4-1080p.ipk` or `StremCompat-v3.0.4-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v3.0.5-1080p.ipk` or `StremCompat-v3.0.5-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 
