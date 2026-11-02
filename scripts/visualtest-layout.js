@@ -221,6 +221,8 @@ async function main() {
     assert.ok(/\bon\b/.test(settingsState.screen), 'Remote navigation did not open Settings.');
     assert.ok(settingsState.languageRow >= 0, 'Interface language setting is missing.');
     assert.ok(settingsState.languageValue.indexOf('English') >= 0, 'Saved interface language is not shown in Settings.');
+    var settingsCut = await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}var wrap=document.getElementById('setWrap'),bottom=wrap.getBoundingClientRect().bottom,rows=document.querySelectorAll('#setItems .set').length,cut=[],inner=document.getElementById('setInner');inner.style.transition='none';for(var i=0;i<rows-1;i++){key(40);var f=document.querySelector('#setItems .set.f');if(f.getBoundingClientRect().bottom>bottom)cut.push(f.textContent);}for(var j=0;j<rows-1;j++)key(38);inner.style.transition='';return JSON.stringify(cut);})()", returnByValue: true });
+    assert.deepStrictEqual(JSON.parse(settingsCut.result.value), [], 'A focused Settings row is cut off at the bottom of the screen.');
     await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(13);})()" });
     var editingView = await protocol.call('Runtime.evaluate', { expression: "JSON.stringify({editing:/\\bediting\\b/.test(document.querySelector('#setItems .set').className),hint:document.getElementById('setHint').textContent})", returnByValue: true });
     var editingState = JSON.parse(editingView.result.value);

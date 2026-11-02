@@ -496,8 +496,10 @@ var settings = {
         (this.editing && c === this.idx ? ' editing' : '');
     if ($('setHint')) $('setHint').textContent = tx(this.editing ? 'settingsEditing' : 'settingsHint');
     var el = this.els[this.idx],
-      y = 0;
-    if (el && el.offsetTop > 620) y = el.offsetTop - 620;
+      y = 0,
+      /* the focus stops at this height of the screen, whatever its resolution */
+      stop = Math.round($('setWrap').clientHeight * 0.63);
+    if (el && el.offsetTop > stop) y = el.offsetTop - stop;
     $('setInner').style.transform = 'translateY(-' + y + 'px)';
     $('setInner').style.webkitTransform = 'translateY(-' + y + 'px)';
   },
