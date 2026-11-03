@@ -96,6 +96,24 @@ var settings = {
         ],
         d: 'Auto'
       },
+      {
+        k: 'sourceSort',
+        lb: tx('sortSources'),
+        opts: [
+          ['Best', tx('sortBest')],
+          ['Provider', tx('sortProvider')]
+        ],
+        d: 'Best'
+      },
+      {
+        k: 'sourcePrefer',
+        lb: tx('preferSources'),
+        opts: [
+          ['Auto', tx('automatic')],
+          ['Debrid', tx('preferDebrid')]
+        ],
+        d: 'Auto'
+      },
       { head: tx('playbackGroup') },
       {
         k: 'bingeWatch',

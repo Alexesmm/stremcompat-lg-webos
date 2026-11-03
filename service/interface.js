@@ -438,6 +438,11 @@ var UI_TEXT = {
     whichQuality: 'Which quality?',
     preferredLanguage: 'Preferred source language',
     anyLanguage: 'Any',
+    sortSources: 'Sort sources',
+    sortBest: 'Best match',
+    sortProvider: 'By provider',
+    preferSources: 'Prefer sources',
+    preferDebrid: 'Debrid links first',
     langFilter: 'Language: {0}',
     langAll: 'All',
     langOther: 'Other',
@@ -774,6 +779,11 @@ var UI_TEXT = {
     whichQuality: 'Qual qualidade?',
     preferredLanguage: 'Idioma preferido das fontes',
     anyLanguage: 'Qualquer',
+    sortSources: 'Ordenar fontes',
+    sortBest: 'Melhor opção',
+    sortProvider: 'Por provedor',
+    preferSources: 'Preferir fontes',
+    preferDebrid: 'Links debrid primeiro',
     langFilter: 'Idioma: {0}',
     langAll: 'Todos',
     langOther: 'Outros',
@@ -2047,6 +2057,32 @@ function qualityLabel(value) {
         : value;
 }
 window.__SC_STREAM_COMPAT__ = streamCompatibility;
+/* How a source reaches the TV, for the tag at the start of its row. A torrent is exact: its address
+   is the TV's own engine. A debrid source is read from what its addon writes in the name (the
+   [RD+] of Torrentio, or the service spelled out); any other link is direct. */
+var DEBRID_SERVICES = [
+  ['RD', /real[ -]?debrid/],
+  ['AD', /all[ -]?debrid/],
+  ['PM', /premiumize/],
+  ['TB', /torbox/],
+  ['DL', /debrid[ -]?link/],
+  ['OC', /offcloud/],
+  ['ED', /easy[ -]?debrid/],
+  ['PP', /pikpak/]
+];
+function sourceKind(s) {
+  if (/^https?:\/\/127\.0\.0\.1:11470\//.test(String(s.url || ''))) return { kind: 'torrent', svc: '' };
+  var name = String(s.name || ''),
+    code = /\[([A-Za-z]{2})[^\]\s]*[+\u26a1\]\s]/.exec(name),
+    low = (name + ' ' + String(s.title || '')).toLowerCase(),
+    i;
+  for (i = 0; i < DEBRID_SERVICES.length; i++)
+    if (DEBRID_SERVICES[i][1].test(low)) return { kind: 'debrid', svc: DEBRID_SERVICES[i][0] };
+  if (code && /^(rd|ad|pm|tb|dl|oc|ed|pp)$/i.test(code[1]))
+    return { kind: 'debrid', svc: code[1].toUpperCase() };
+  return { kind: 'direct', svc: '' };
+}
+window.__SC_SOURCE_KIND__ = sourceKind;
 /* Short tags for the source list, read from the same advisory text: quality, language, HDR,
    size and seeders. A codec or audio format only shows when it is a compatibility warning. */
 function sourceTags(s) {
@@ -2068,6 +2104,17 @@ function sourceTags(s) {
       0,
       s.subLangsOnly ? subTag(s.langs) : { t: langTagText(s.langs), c: 'lang' }
     );
+  /* how it reaches the TV goes first, so a torrent and a debrid link are told apart at a glance */
+  var kind = sourceKind(s);
+  out.unshift({
+    t:
+      kind.kind === 'torrent'
+        ? 'TORRENT'
+        : kind.kind === 'debrid'
+          ? 'DEBRID' + (kind.svc ? ' \u00b7 ' + kind.svc : '')
+          : 'DIRECT',
+    c: 'kind ' + kind.kind
+  });
   return out;
 }
 window.__SC_SOURCE_TAGS__ = sourceTags;
@@ -2131,12 +2178,23 @@ function streamSourceKey(s) {
     ? 'torrent:' + m[1].toLowerCase() + ':' + m[2]
     : 'url:' + u + '|' + JSON.stringify(s.headers || {}) + '|' + (s.notWebReady ? '1' : '0');
 }
+/* 0 for debrid, 1 for a plain link and 2 for a torrent when the setting puts debrid links first,
+   and 0 for all otherwise. Debrid links carry no seeder count, so by seeders alone every torrent
+   outranks them and the source cap drops them. */
+function kindRank(s) {
+  if (lsRaw('sourcePrefer', 'Auto') !== 'Debrid') return 0;
+  var k = s._kind || (s._kind = sourceKind(s).kind);
+  return k === 'debrid' ? 0 : k === 'direct' ? 1 : 2;
+}
 function sourceOrder(a, b) {
   if (a.stored && !b.stored) return -1;
   if (b.stored && !a.stored) return 1;
   var ar = a.compatRank || 0,
     br = b.compatRank || 0;
   if (ar !== br) return ar - br;
+  var ak = kindRank(a),
+    bk = kindRank(b);
+  if (ak !== bk) return ak - bk;
   var as = a.seeders == null ? -1 : a.seeders,
     bs = b.seeders == null ? -1 : b.seeders;
   if (as !== bs) return bs - as;
@@ -2200,6 +2258,32 @@ function compactSourcePool(input, cap) {
     for (var r = kept[k] || 0; r < buckets[k].length; r++) rest.push(buckets[k][r]);
   }
   rest.sort(sourceOrder);
+  /* Each addon that answered keeps a floor of the budget (half of it, shared out evenly), so one
+     addon with many well-ranked sources cannot push the others off the list. */
+  var byAddon = {},
+    addonNames = [],
+    have = {},
+    left = [];
+  for (i = 0; i < selected.length; i++)
+    have[selected[i].addon || ''] = (have[selected[i].addon || ''] || 0) + 1;
+  for (i = 0; i < rest.length; i++) {
+    k = rest[i].addon || '';
+    if (byAddon[k] === undefined) {
+      byAddon[k] = 0;
+      addonNames.push(k);
+    }
+  }
+  var floor = Math.floor(cap / (2 * Math.max(1, addonNames.length)));
+  for (i = 0; i < rest.length; i++) {
+    s = rest[i];
+    k = s.addon || '';
+    if (selected.length < cap && (have[k] || 0) + byAddon[k] < floor) {
+      byAddon[k]++;
+      selected.push(s);
+      kept[s.quality || 'Other'] = (kept[s.quality || 'Other'] || 0) + 1;
+    } else left.push(s);
+  }
+  rest = left;
   for (i = 0; i < rest.length && selected.length < cap; i++) {
     s = rest[i];
     selected.push(s);
@@ -2225,23 +2309,32 @@ function fetchStreams(type, vid, onPart, onDone) {
   }
   for (var i = 0; i < list.length; i++)
     (function (ad, idx) {
-      xhrJson(
-        streamUrl(ad, type, vid),
-        function (j, failure) {
-          if (failure) failed.push(ad.name);
-          var st = (j && j.streams) || [];
-          var out = [];
-          for (var k = 0; k < st.length; k++) {
-            var item = sourceItem(st[k], ad.name);
-            if (item) out.push(item);
-          }
-          total += out.length;
-          if (out.length) onPart(out, idx, ad.name);
-          pending--;
-          if (pending <= 0) onDone(total, failed);
-        },
-        45000
-      ); /* slow debrid addons can take 20-30s; phone/PC wait too — 15s was dropping them */
+      /* An addon that fails at once (a 404 or 502 from a busy host, or no answer) is asked once
+         more; a timeout is not, as that would double the wait for an addon that is down. */
+      function ask(attempt) {
+        xhrJson(
+          streamUrl(ad, type, vid),
+          function (j, failure) {
+            if (failure && failure !== 'timeout' && failure !== 'invalid' && attempt < 1)
+              return setTimeout(function () {
+                ask(attempt + 1);
+              }, 1200);
+            if (failure) failed.push(ad.name);
+            var st = (j && j.streams) || [];
+            var out = [];
+            for (var k = 0; k < st.length; k++) {
+              var item = sourceItem(st[k], ad.name);
+              if (item) out.push(item);
+            }
+            total += out.length;
+            if (out.length) onPart(out, idx, ad.name);
+            pending--;
+            if (pending <= 0) onDone(total, failed);
+          },
+          45000
+        ); /* slow debrid addons can take 20-30s; phone/PC wait too — 15s was dropping them */
+      }
+      ask(0);
     })(list[i], i);
 }
 // Opening the player and remembering source preferences for the next episode.
@@ -5565,7 +5658,7 @@ var streamsUI = {
   },
   /* the source list stays open underneath when nothing can be picked */
   startBest: function (quality) {
-    var best = bestSource(this.items, quality);
+    var best = bestSource(this.ranked || this.items, quality);
     if (!best) return false;
     toast(tx('playingBest', best.quality || best.addon || ''));
     playUrl(best, this.type, this.id, this.vid, this.backHash());
@@ -5744,6 +5837,19 @@ var streamsUI = {
       }
       return sourceOrder(a, b);
     });
+    /* The best-match order is what the recommendation and the Best source button follow. By
+       provider only regroups the list, each provider keeping that order. */
+    this.ranked = flat.slice();
+    if (lsRaw('sourceSort', 'Best') === 'Provider') {
+      for (var ri = 0; ri < flat.length; ri++) flat[ri]._rk = ri;
+      flat.sort(function (a, b) {
+        if (!a.stored !== !b.stored) return a.stored ? -1 : 1;
+        var an = String(a.addon || '').toLowerCase(),
+          bn = String(b.addon || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return a._rk - b._rk;
+      });
+    }
     var host = $('stInner');
     host.innerHTML = '';
     this.items = [];
@@ -5752,7 +5858,7 @@ var streamsUI = {
     var choices = flat.filter(function (s) {
       return !s.stored;
     }).length;
-    var rec = choices < 2 ? -1 : flat.indexOf(bestSource(flat, pref));
+    var rec = choices < 2 ? -1 : flat.indexOf(bestSource(this.ranked, pref));
     for (var i = 0; i < flat.length; i++) {
       var s = flat[i],
         d = document.createElement('div');
@@ -6534,6 +6640,24 @@ var settings = {
           ['fr', 'Français'],
           ['it', 'Italiano'],
           ['de', 'Deutsch']
+        ],
+        d: 'Auto'
+      },
+      {
+        k: 'sourceSort',
+        lb: tx('sortSources'),
+        opts: [
+          ['Best', tx('sortBest')],
+          ['Provider', tx('sortProvider')]
+        ],
+        d: 'Best'
+      },
+      {
+        k: 'sourcePrefer',
+        lb: tx('preferSources'),
+        opts: [
+          ['Auto', tx('automatic')],
+          ['Debrid', tx('preferDebrid')]
         ],
         d: 'Auto'
       },

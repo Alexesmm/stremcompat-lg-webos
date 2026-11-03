@@ -44,6 +44,8 @@ The interface and the player know a torrent by an address on `127.0.0.1:11470`, 
 
 The engine keeps a window of the film on storage: between 64 and 768 MiB, up to 70 % of what is free above a 150 MB reserve. `native/build-engine.sh` lowers the engine's own floor to get there, and `native/test-e2e.py` checks that it holds.
 
+The source list is capped per profile (`sourceCap`). Within the cap every addon that answered keeps a share, so one addon with many well-ranked sources cannot push the others off the list. A debrid link has no seeder count, so with the default ranking by seeders torrents come first; the `sourcePrefer` setting (Debrid links first) ranks debrid, then plain links, then torrents. Each row's first tag says how the source reaches the TV: TORRENT (the TV's own engine), DEBRID (read from the addon's own marker, such as `[RD+]`) or DIRECT.
+
 ## Code map
 
 Edit the sources below, not the generated files.

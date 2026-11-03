@@ -28,7 +28,7 @@ This project is not affiliated with or endorsed by Stremio, LG Electronics or Sa
 - **Your Stremio account:** sign in with a QR code or email. Library, progress, watched state and addons stay in sync with your other Stremio apps.
 - **Browsing:** Home, Discover, Search and Library from your addons, with Continue Watching and the minutes left.
 - **Best source:** one press goes straight to the video. It asks which quality you want, or uses the one set in Settings.
-- **Source list:** quality and language filters, compatibility warnings, and addons that fail are named.
+- **Source list:** quality and language filters, compatibility warnings, and addons that fail are named. Each source is tagged TORRENT, DEBRID (with its service, such as RD or TB) or DIRECT. Settings can sort the list by provider, or put debrid links first.
 - **Playback:** direct, debrid, torrent and HLS, using the TV's hardware decoder. Torrents play on the TV itself, or through a streaming server on another computer if you prefer.
 - **Subtitles and audio:** from addons or inside the file, remembered for each title, with a backup language and a subtitle delay.
 - **Series:** the next episode starts with the same release or a matching source, with an "are you still watching?" check.

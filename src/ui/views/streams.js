@@ -141,7 +141,7 @@ var streamsUI = {
   },
   /* the source list stays open underneath when nothing can be picked */
   startBest: function (quality) {
-    var best = bestSource(this.items, quality);
+    var best = bestSource(this.ranked || this.items, quality);
     if (!best) return false;
     toast(tx('playingBest', best.quality || best.addon || ''));
     playUrl(best, this.type, this.id, this.vid, this.backHash());
@@ -320,6 +320,19 @@ var streamsUI = {
       }
       return sourceOrder(a, b);
     });
+    /* The best-match order is what the recommendation and the Best source button follow. By
+       provider only regroups the list, each provider keeping that order. */
+    this.ranked = flat.slice();
+    if (lsRaw('sourceSort', 'Best') === 'Provider') {
+      for (var ri = 0; ri < flat.length; ri++) flat[ri]._rk = ri;
+      flat.sort(function (a, b) {
+        if (!a.stored !== !b.stored) return a.stored ? -1 : 1;
+        var an = String(a.addon || '').toLowerCase(),
+          bn = String(b.addon || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return a._rk - b._rk;
+      });
+    }
     var host = $('stInner');
     host.innerHTML = '';
     this.items = [];
@@ -328,7 +341,7 @@ var streamsUI = {
     var choices = flat.filter(function (s) {
       return !s.stored;
     }).length;
-    var rec = choices < 2 ? -1 : flat.indexOf(bestSource(flat, pref));
+    var rec = choices < 2 ? -1 : flat.indexOf(bestSource(this.ranked, pref));
     for (var i = 0; i < flat.length; i++) {
       var s = flat[i],
         d = document.createElement('div');
