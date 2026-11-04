@@ -68,21 +68,23 @@ function diagnostics(res) {
   streamingServerUp(function (up) {
     /* free space where this app keeps its files, or null where df is not available */
     diskSpace(process.env.HOME || __dirname, function (disk) {
-      sendJson(res, {
-        version: APP_VERSION,
-        profile: PROFILE.profile,
-        server: { rssMb: mb(mem.rss), heapMb: mb(mem.heapUsed), externalMb: mb(mem.external) },
-        uptimeMin: Math.round(process.uptime() / 60),
-        system: systemMemory(),
-        disk: disk,
-        load: Math.round(os.loadavg()[0] * 100) / 100,
-        streamingServer: !!up,
-        serverAddress: remoteAddress(),
-        torrentEngine: engineStatus(),
-        nativeProbe: process.env.SC_NATIVE_PROBE || '',
-        peakRssMb: peakRss,
-        minAvailableMb: minAvailable,
-        events: events.slice().reverse()
+      engineStatus(function (engineState) {
+        sendJson(res, {
+          version: APP_VERSION,
+          profile: PROFILE.profile,
+          server: { rssMb: mb(mem.rss), heapMb: mb(mem.heapUsed), externalMb: mb(mem.external) },
+          uptimeMin: Math.round(process.uptime() / 60),
+          system: systemMemory(),
+          disk: disk,
+          load: Math.round(os.loadavg()[0] * 100) / 100,
+          streamingServer: !!up,
+          serverAddress: remoteAddress(),
+          torrentEngine: engineState,
+          nativeProbe: process.env.SC_NATIVE_PROBE || '',
+          peakRssMb: peakRss,
+          minAvailableMb: minAvailable,
+          events: events.slice().reverse()
+        });
       });
     });
   });

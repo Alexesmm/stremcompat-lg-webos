@@ -20,17 +20,7 @@ function diskSpace(dir, cb) {
   });
 }
 
-/* for the moment the engine starts, which cannot wait */
-function diskSpaceNow(dir) {
-  try {
-    return parse(childProcess.execSync(command(dir), { timeout: 3000 }));
-  } catch (e) {
-    return null;
-  }
-}
-
 module.exports = {
   diskSpace: diskSpace,
-  diskSpaceNow: diskSpaceNow,
   parse: parse
 };

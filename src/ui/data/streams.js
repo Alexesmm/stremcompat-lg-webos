@@ -166,18 +166,20 @@ function compactSourcePool(input, cap) {
     for (var r = kept[k] || 0; r < buckets[k].length; r++) rest.push(buckets[k][r]);
   }
   rest.sort(sourceOrder);
-  /* Each addon that answered keeps a share of the list (half of it, split evenly), so one addon
-     with many well-ranked sources cannot push the others off it. Debrid links carry no seeder
-     count, and without this a torrent addon filled the whole list ahead of them. */
+  /* Debrid and direct links carry no seeder count, so by seeders a torrent addon filled the whole
+     list ahead of them. Each addon whose sources have none keeps a share (half of the list, split
+     evenly among all addons); addons with seeders compete by rank as before. */
   var share = {},
+    seeded = {},
     addons = 0,
     left = [];
-  for (i = 0; i < rest.length; i++) {
-    k = rest[i].addon || '';
+  for (i = 0; i < unique.length; i++) {
+    k = unique[i].addon || '';
     if (share[k] === undefined) {
       share[k] = 0;
       addons++;
     }
+    if (unique[i].seeders != null) seeded[k] = true;
   }
   for (i = 0; i < selected.length; i++)
     share[selected[i].addon || ''] = (share[selected[i].addon || ''] || 0) + 1;
@@ -185,7 +187,7 @@ function compactSourcePool(input, cap) {
   for (i = 0; i < rest.length; i++) {
     s = rest[i];
     k = s.addon || '';
-    if (selected.length < cap && share[k] < floor) {
+    if (selected.length < cap && !seeded[k] && share[k] < floor) {
       share[k]++;
       selected.push(s);
       kept[s.quality || 'Other'] = (kept[s.quality || 'Other'] || 0) + 1;
@@ -217,13 +219,13 @@ function fetchStreams(type, vid, onPart, onDone) {
   }
   for (var i = 0; i < list.length; i++)
     (function (ad, idx) {
-      /* an addon that fails at once (an error from a busy host, or no answer) is asked once more;
-         one that timed out is not, as that would double the wait for an addon that is down */
+      /* an addon that fails at once (a server error from a busy host, or no answer) is asked once
+         more; not one that has no such title, nor one that timed out, which would double the wait */
       function ask(again) {
         xhrJson(
           streamUrl(ad, type, vid),
-          function (j, failure) {
-            if ((failure === 'offline' || failure === 'unavailable') && !again)
+          function (j, failure, status) {
+            if ((failure === 'offline' || status >= 500) && !again)
               return setTimeout(function () {
                 ask(true);
               }, 1200);

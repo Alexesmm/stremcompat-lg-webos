@@ -2,9 +2,9 @@
 function xhrGetUrl(u) {
   return /^https?:\/\//i.test(String(u || '')) ? '/addon?u=' + encodeURIComponent(u) : u;
 }
-/* cb(json, failure): failure is null on success, otherwise 'timeout', 'offline'
+/* cb(json, failure, status): failure is null on success, otherwise 'timeout', 'offline'
    (the local service did not answer), 'unavailable' (HTTP error, e.g. the addon
-   bridge's 502) or 'invalid' (the body was not JSON). */
+   bridge's 502) or 'invalid' (the body was not JSON); status is the HTTP status. */
 function xhrJson(u, cb, tmo) {
   var done = false;
   try {
@@ -22,7 +22,7 @@ function xhrJson(u, cb, tmo) {
         } catch (e) {
           failure = failure || 'invalid';
         }
-        cb(failure ? null : j, failure);
+        cb(failure ? null : j, failure, x.status);
       }
     };
     x.send();

@@ -80,9 +80,9 @@ function mediaAndDiskTests() {
   var table = 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/mmcblk0p20 1024000 863232 160768 85% /media/developer\n';
   assert.deepStrictEqual(disk.parse(table), { totalMb: 1000, freeMb: 157 }, 'free space was not read from df');
   assert.strictEqual(disk.parse('df: unknown option -- P'), null, 'an error from df was taken for a size');
-  /* the torrent cache: small when little is free, the engine's own size when there is room */
+  /* the torrent cache: the engine's own size (null) where it fits, smaller only where it would not */
   var limit = require(path.join(root, 'service', 'server', 'streaming-server.js')).cacheLimitMiB;
-  assert.deepStrictEqual([157, 400, 1000, 3000].map(limit), [16, 150, 595, 768], 'the torrent cache limit is off');
+  assert.deepStrictEqual([157, 200, 250, 1000].map(limit), [16, 50, null, null], 'the torrent cache limit is off');
 }
 
 /* Another streaming server: only one that answers is kept, and torrents go there. */

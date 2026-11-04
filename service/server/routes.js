@@ -97,7 +97,9 @@ function addon(req, res, q) {
     if (answer) return sendJson(res, answer);
     var host = String(q.u || '').replace(/^https?:\/\/([^/]+).*$/, '$1');
     recordEvent('addon_unavailable', why ? host + ' · ' + why : host);
-    res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    /* the addon's own "not found" stays a 404, so the interface does not ask again */
+    var status = /^HTTP 4\d\d/.test(why || '') ? 404 : 502;
+    res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     res.end('{"error":"addon_unavailable"}');
   });
 }
@@ -255,7 +257,9 @@ var ROUTES = {
   '/logo.png': logo,
   '/update': checkUpdate,
   '/streamfile': function (req, res) {
-    sendJson(res, engineStatus());
+    engineStatus(function (status) {
+      sendJson(res, status);
+    });
   },
   '/diag': function (req, res) {
     diagnostics(res);

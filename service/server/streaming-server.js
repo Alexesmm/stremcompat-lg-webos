@@ -11,7 +11,7 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 var urlmod = require('url');
 var { DIR, ENGINE, PROFILE, SERVER_PORT } = require('./config');
-var { diskSpaceNow } = require('./disk');
+var { diskSpace } = require('./disk');
 var { dbg } = require('./log');
 var { probeAddress, remoteAddress } = require('./server-address');
 
@@ -99,11 +99,12 @@ function send(line) {
 
 /* The engine sizes its disk cache as 70% of what is free above 150 MB, never below 64 MiB, and keeps
    about 100 MB more while pieces are on their way: with 157 MB free, a 4K torrent left 161 MB and the
-   storage full. So the limit is passed in: the engine's own rule, but leaving 250 MB of the storage
-   free, from 16 MiB to 768. Below NO_ROOM_MB torrents do not start at all. */
+   storage full. Where its own size leaves 150 MB free it is kept (null: no limit passed); where it
+   would not, the limit leaves those 150 MB, down to 16 MiB. Below NO_ROOM_MB torrents do not start. */
 var NO_ROOM_MB = 150;
 function cacheLimitMiB(freeMb) {
-  return Math.max(16, Math.min(768, Math.floor((freeMb - 150) * 0.7), freeMb - 250));
+  var own = Math.max(64, Math.min(768, Math.floor((freeMb - 150) * 0.7)));
+  return freeMb - own >= 150 ? null : Math.max(16, freeMb - 150);
 }
 
 /* What the engine kept on storage, when it ended without clearing it (it was killed, or crashed) */
@@ -131,21 +132,21 @@ function clearCache(folder) {
   remove(path.join(folder, 'cache'));
 }
 
-function startEngine() {
+/* disk: the free space where the engine keeps its files, or null where df cannot be read */
+function startEngine(folder, disk) {
   if (engine) return true;
   var isScript = /\.js$/.test(ENGINE);
   if (!isScript && !fs.existsSync(ENGINE)) return false;
-  var folder = engineFolder();
-  var disk = diskSpaceNow(folder);
   if (disk && disk.freeMb < NO_ROOM_MB) {
     dbg('engine not started: ' + disk.freeMb + ' MB free');
     return false;
   }
   var child;
   /* the engine's own default for how long a paused film keeps its link, and the cache limit;
-     where df cannot be read, the engine sizes the cache by itself */
-  var limits = [String(15 * 60 * 1000)];
-  if (disk) limits.push(String(cacheLimitMiB(disk.freeMb)));
+     without one, the engine sizes the cache by itself */
+  var limits = [String(15 * 60 * 1000)],
+    limit = disk && cacheLimitMiB(disk.freeMb);
+  if (limit) limits.push(String(limit));
   try {
     child = spawn(
       isScript ? process.execPath : ENGINE,
@@ -335,8 +336,16 @@ function onceWithin(ms, waiters, cb) {
 }
 
 function torrentFor(hash, trackers, cb) {
+  if (engine) return addTorrent(hash, trackers, cb);
+  var folder = engineFolder();
+  diskSpace(folder, function (disk) {
+    if (!startEngine(folder, disk)) return cb('engine missing');
+    addTorrent(hash, trackers, cb);
+  });
+}
+
+function addTorrent(hash, trackers, cb) {
   var t = torrents[hash];
-  if (!startEngine()) return cb('engine missing');
   if (!t) {
     t = torrents[hash] = { hash: hash, id: '', files: null, waiting: [], streams: {} };
     send('add\t' + hash + '\t' + magnetFor(hash, trackers));
@@ -486,13 +495,14 @@ function waitForServer(cb) {
   cb(true);
 }
 
-function engineStatus() {
-  if (remoteAddress()) return { state: 'ready', remote: true };
-  if (PROFILE.localTorrents === false) return { state: 'needs-server' };
-  if (!/\.js$/.test(ENGINE) && !fs.existsSync(ENGINE)) return { state: 'failed' };
-  if (engine) return { state: 'ready', running: true };
-  var disk = diskSpaceNow(engineFolder());
-  return { state: disk && disk.freeMb < NO_ROOM_MB ? 'no-room' : 'ready', running: false };
+function engineStatus(cb) {
+  if (remoteAddress()) return cb({ state: 'ready', remote: true });
+  if (PROFILE.localTorrents === false) return cb({ state: 'needs-server' });
+  if (!/\.js$/.test(ENGINE) && !fs.existsSync(ENGINE)) return cb({ state: 'failed' });
+  if (engine) return cb({ state: 'ready', running: true });
+  diskSpace(engineFolder(), function (disk) {
+    cb({ state: disk && disk.freeMb < NO_ROOM_MB ? 'no-room' : 'ready', running: false });
+  });
 }
 
 module.exports = {
