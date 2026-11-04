@@ -96,17 +96,61 @@ function send(line) {
   else engine.child.stdin.write(line + '\n');
 }
 
+/* The engine sizes its own disk cache from the free space but never below 64 MiB, and a film can
+   overshoot that: a 4K torrent filled a TV's app storage (161 MB kept, 0 free). So the limit is
+   passed in, small when little is free: 30% of what is free above 100 MB, from 16 MiB to 768. */
+function cacheLimitMiB(folder) {
+  try {
+    var out = require('child_process').execSync('df -k "' + folder + '"', { timeout: 3000 });
+    var row = String(out).trim().split('\n').pop().trim().split(/\s+/);
+    var freeMiB = parseInt(row[3], 10) / 1024;
+    if (freeMiB > 0) return Math.max(16, Math.min(768, Math.floor((freeMiB - 100) * 0.3)));
+  } catch (e) {}
+  return 32;
+}
+
+/* What the engine kept on storage, when it ended without clearing it (it was killed, or crashed) */
+function clearCache(folder) {
+  function remove(p) {
+    var stat;
+    try {
+      stat = fs.lstatSync(p);
+    } catch (e) {
+      return;
+    }
+    if (stat.isDirectory()) {
+      fs.readdirSync(p).forEach(function (name) {
+        remove(path.join(p, name));
+      });
+      try {
+        fs.rmdirSync(p);
+      } catch (e) {}
+    } else {
+      try {
+        fs.unlinkSync(p);
+      } catch (e) {}
+    }
+  }
+  remove(path.join(folder, 'cache'));
+}
+
 function startEngine() {
   if (engine) return true;
   var isScript = /\.js$/.test(ENGINE);
   if (!isScript && !fs.existsSync(ENGINE)) return false;
   var folder = engineFolder();
   var child;
+  /* the engine's own default for how long a paused film keeps its link, and the cache limit */
+  var limits = [String(15 * 60 * 1000), String(cacheLimitMiB(folder))];
   try {
-    child = spawn(isScript ? process.execPath : ENGINE, isScript ? [ENGINE, folder] : [folder], {
-      cwd: DIR,
-      stdio: ['pipe', 'pipe', 'ignore']
-    });
+    child = spawn(
+      isScript ? process.execPath : ENGINE,
+      isScript ? [ENGINE, folder].concat(limits) : [folder].concat(limits),
+      {
+        cwd: DIR,
+        stdio: ['pipe', 'pipe', 'ignore']
+      }
+    );
   } catch (e) {
     dbg('engine did not start: ' + e.message);
     return false;
@@ -141,6 +185,7 @@ function startEngine() {
   });
   child.on('exit', function (code, signal) {
     gone('code=' + code + ' signal=' + signal);
+    if (!engine) clearCache(folder);
   });
   return true;
 }
