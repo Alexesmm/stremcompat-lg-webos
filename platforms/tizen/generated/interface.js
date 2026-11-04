@@ -2228,6 +2228,32 @@ function compactSourcePool(input, cap) {
     for (var r = kept[k] || 0; r < buckets[k].length; r++) rest.push(buckets[k][r]);
   }
   rest.sort(sourceOrder);
+  /* Each addon that answered keeps a share of the list (half of it, split evenly), so one addon
+     with many well-ranked sources cannot push the others off it. Debrid links carry no seeder
+     count, and without this a torrent addon filled the whole list ahead of them. */
+  var share = {},
+    addons = 0,
+    left = [];
+  for (i = 0; i < rest.length; i++) {
+    k = rest[i].addon || '';
+    if (share[k] === undefined) {
+      share[k] = 0;
+      addons++;
+    }
+  }
+  for (i = 0; i < selected.length; i++)
+    share[selected[i].addon || ''] = (share[selected[i].addon || ''] || 0) + 1;
+  var floor = Math.floor(cap / (2 * Math.max(1, addons)));
+  for (i = 0; i < rest.length; i++) {
+    s = rest[i];
+    k = s.addon || '';
+    if (selected.length < cap && share[k] < floor) {
+      share[k]++;
+      selected.push(s);
+      kept[s.quality || 'Other'] = (kept[s.quality || 'Other'] || 0) + 1;
+    } else left.push(s);
+  }
+  rest = left;
   for (i = 0; i < rest.length && selected.length < cap; i++) {
     s = rest[i];
     selected.push(s);
@@ -2253,23 +2279,32 @@ function fetchStreams(type, vid, onPart, onDone) {
   }
   for (var i = 0; i < list.length; i++)
     (function (ad, idx) {
-      xhrJson(
-        streamUrl(ad, type, vid),
-        function (j, failure) {
-          if (failure) failed.push(ad.name);
-          var st = (j && j.streams) || [];
-          var out = [];
-          for (var k = 0; k < st.length; k++) {
-            var item = sourceItem(st[k], ad.name);
-            if (item) out.push(item);
-          }
-          total += out.length;
-          if (out.length) onPart(out, idx, ad.name);
-          pending--;
-          if (pending <= 0) onDone(total, failed);
-        },
-        45000
-      ); /* slow debrid addons can take 20-30s; phone/PC wait too — 15s was dropping them */
+      /* an addon that fails at once (an error from a busy host, or no answer) is asked once more;
+         one that timed out is not, as that would double the wait for an addon that is down */
+      function ask(again) {
+        xhrJson(
+          streamUrl(ad, type, vid),
+          function (j, failure) {
+            if ((failure === 'offline' || failure === 'unavailable') && !again)
+              return setTimeout(function () {
+                ask(true);
+              }, 1200);
+            if (failure) failed.push(ad.name);
+            var st = (j && j.streams) || [];
+            var out = [];
+            for (var k = 0; k < st.length; k++) {
+              var item = sourceItem(st[k], ad.name);
+              if (item) out.push(item);
+            }
+            total += out.length;
+            if (out.length) onPart(out, idx, ad.name);
+            pending--;
+            if (pending <= 0) onDone(total, failed);
+          },
+          45000
+        ); /* slow debrid addons can take 20-30s; phone/PC wait too — 15s was dropping them */
+      }
+      ask(false);
     })(list[i], i);
 }
 // Opening the player and remembering source preferences for the next episode.

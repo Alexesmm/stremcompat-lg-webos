@@ -132,6 +132,13 @@ assert.ok(compacted.items.length <= 12, 'global source budget was exceeded');
 qualities.forEach(function (quality) {
   assert.ok(compacted.items.some(function (item) { return item.quality === quality; }), 'source sampling lost ' + quality);
 });
+/* a torrent addon with many seeded sources leaves room for a debrid addon, whose links have no seeders */
+var mixedSources = [];
+for (var mi = 0; mi < 90; mi++) mixedSources.push({ url: 'https://t.example/' + mi, quality: '1080p', seeders: 500 - mi, addon: 'Torrents', _seq: mi });
+for (mi = 0; mi < 12; mi++) mixedSources.push({ url: 'https://d.example/' + mi, quality: '1080p', addon: 'Debrid', _seq: 100 + mi });
+var mixed = firstRun.context.__SC_COMPACT_SOURCES__(mixedSources, 60).items;
+assert.strictEqual(mixed.length, 60, 'the source budget was not used');
+assert.ok(mixed.filter(function (item) { return item.addon === 'Debrid'; }).length >= 12, 'a debrid addon was pushed off the source list');
 assert.ok(!sourceHas(source, "location.assign('/play?u='"), 'beta player fallback leaked a source URL into browser history');
 assert.ok(!sourceHas(source, 'self.poll=setInterval'), 'QR polling still allows overlapping interval requests');
 assert.ok(sourceHas(source, "if(this.type!=='series')this.addBtn(tx('watch')"), 'movie details do not expose an explicit Watch action');
