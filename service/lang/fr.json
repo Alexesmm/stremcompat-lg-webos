@@ -161,6 +161,7 @@
   "diagStreamFailed": "indisponible ({0})",
   "torrentsUnavailable": "Le moteur de torrents n'est pas disponible sur ce téléviseur. Les sources debrid et directes fonctionnent toujours.",
   "diagEngineReady": "Prêt, démarre avec le premier torrent",
+  "torrentsNoRoom": "Pas assez d'espace libre sur le téléviseur pour les torrents. Les sources debrid et directes fonctionnent toujours.",
   "diagRunning": "actif",
   "diagStopped": "arrêté",
   "diagInterface": "Interface : {0} Mo de JS · Accueil affiché en {1} s · catalogues en {2} s",

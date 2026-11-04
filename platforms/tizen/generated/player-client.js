@@ -601,6 +601,7 @@ var UI_TEXT = {
     torrentsUnavailable:
       'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
+    torrentsNoRoom: 'Not enough free space on the TV for torrents. Debrid and direct sources still work.',
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
@@ -937,6 +938,8 @@ var UI_TEXT = {
     torrentsUnavailable:
       'O motor de torrents não está disponível nesta TV. Fontes debrid e diretas continuam funcionando.',
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
+    torrentsNoRoom:
+      'Não há espaço livre suficiente na TV para torrents. Fontes debrid e diretas continuam funcionando.',
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',

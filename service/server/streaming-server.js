@@ -11,6 +11,7 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 var urlmod = require('url');
 var { DIR, ENGINE, PROFILE, SERVER_PORT } = require('./config');
+var { diskSpaceNow } = require('./disk');
 var { dbg } = require('./log');
 var { probeAddress, remoteAddress } = require('./server-address');
 
@@ -98,15 +99,11 @@ function send(line) {
 
 /* The engine sizes its own disk cache from the free space but never below 64 MiB, and a film can
    overshoot that: a 4K torrent filled a TV's app storage (161 MB kept, 0 free). So the limit is
-   passed in, small when little is free: 30% of what is free above 100 MB, from 16 MiB to 768. */
-function cacheLimitMiB(folder) {
-  try {
-    var out = require('child_process').execSync('df -k "' + folder + '"', { timeout: 3000 });
-    var row = String(out).trim().split('\n').pop().trim().split(/\s+/);
-    var freeMiB = parseInt(row[3], 10) / 1024;
-    if (freeMiB > 0) return Math.max(16, Math.min(768, Math.floor((freeMiB - 100) * 0.3)));
-  } catch (e) {}
-  return 32;
+   passed in, small when little is free: 30% of what is free above 100 MB, from 16 MiB to 768.
+   Below NO_ROOM_MB even 16 MiB, overshot, would fill the storage, so torrents do not start. */
+var NO_ROOM_MB = 150;
+function cacheLimitMiB(freeMb) {
+  return freeMb == null ? 32 : Math.max(16, Math.min(768, Math.floor((freeMb - 100) * 0.3)));
 }
 
 /* What the engine kept on storage, when it ended without clearing it (it was killed, or crashed) */
@@ -139,9 +136,14 @@ function startEngine() {
   var isScript = /\.js$/.test(ENGINE);
   if (!isScript && !fs.existsSync(ENGINE)) return false;
   var folder = engineFolder();
+  var disk = diskSpaceNow(folder);
+  if (disk && disk.freeMb < NO_ROOM_MB) {
+    dbg('engine not started: ' + disk.freeMb + ' MB free');
+    return false;
+  }
   var child;
   /* the engine's own default for how long a paused film keeps its link, and the cache limit */
-  var limits = [String(15 * 60 * 1000), String(cacheLimitMiB(folder))];
+  var limits = [String(15 * 60 * 1000), String(cacheLimitMiB(disk && disk.freeMb))];
   try {
     child = spawn(
       isScript ? process.execPath : ENGINE,
@@ -485,7 +487,10 @@ function waitForServer(cb) {
 function engineStatus() {
   if (remoteAddress()) return { state: 'ready', remote: true };
   if (PROFILE.localTorrents === false) return { state: 'needs-server' };
-  return { state: /\.js$/.test(ENGINE) || fs.existsSync(ENGINE) ? 'ready' : 'failed', running: !!engine };
+  if (!/\.js$/.test(ENGINE) && !fs.existsSync(ENGINE)) return { state: 'failed' };
+  if (engine) return { state: 'ready', running: true };
+  var disk = diskSpaceNow(engineFolder());
+  return { state: disk && disk.freeMb < NO_ROOM_MB ? 'no-room' : 'ready', running: false };
 }
 
 module.exports = {

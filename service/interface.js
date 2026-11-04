@@ -420,6 +420,7 @@ var UI_TEXT = {
     torrentsUnavailable:
       'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
+    torrentsNoRoom: 'Not enough free space on the TV for torrents. Debrid and direct sources still work.',
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
@@ -756,6 +757,8 @@ var UI_TEXT = {
     torrentsUnavailable:
       'O motor de torrents não está disponível nesta TV. Fontes debrid e diretas continuam funcionando.',
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
+    torrentsNoRoom:
+      'Não há espaço livre suficiente na TV para torrents. Fontes debrid e diretas continuam funcionando.',
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
@@ -2294,6 +2297,7 @@ function playUrl(source, type, id, vid, backHash) {
       function (j) {
         if (j && j.state === 'needs-server') toast(tx('torrentsNeedServer'), 6000);
         else if (j && j.state === 'failed') toast(tx('torrentsUnavailable'));
+        else if (j && j.state === 'no-room') toast(tx('torrentsNoRoom'), 6000);
         if (!HAS_MEDIA_TOOLS && !(j && j.state === 'needs-server')) prepare(1);
       },
       2000
@@ -6484,6 +6488,7 @@ function diagStreamingState(j) {
   if (j.serverAddress)
     return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
   if (f.state === 'failed') return tx('diagStreamFailed', 'sc-engine');
+  if (f.state === 'no-room') return tx('torrentsNoRoom');
   return tx(f.running ? 'diagRunning' : 'diagEngineReady');
 }
 var settings = {

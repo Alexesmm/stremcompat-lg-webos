@@ -67,6 +67,21 @@ function waitForHealth(attempt) {
 }
 
 
+/* The paused screen's resolution, and free space read from df even when a long name wraps. */
+function mediaAndDiskTests() {
+  var media = require(path.join(root, 'service', 'server', 'media.js'));
+  var disk = require(path.join(root, 'service', 'server', 'disk.js'));
+  function res(width, height) {
+    return media.describe([{ codec_type: 'video', codec_name: 'hevc', width: width, height: height }], {}).res;
+  }
+  assert.strictEqual(res(3840, 1600), '4K', 'a 4K film in a cinema format was not called 4K');
+  assert.strictEqual(res(1920, 800), '1080p', 'a 1080p film in a cinema format was not called 1080p');
+  assert.strictEqual(res(1280, 534), '720p', 'a 720p film in a cinema format was not called 720p');
+  var table = 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/mmcblk0p20 1024000 863232 160768 85% /media/developer\n';
+  assert.deepStrictEqual(disk.parse(table), { totalMb: 1000, freeMb: 157 }, 'free space was not read from df');
+  assert.strictEqual(disk.parse('df: unknown option -- P'), null, 'an error from df was taken for a size');
+}
+
 /* Another streaming server: only one that answers is kept, and torrents go there. */
 async function serverAddressTests() {
   var address = require(path.join(root, 'service', 'server', 'server-address.js'));
@@ -322,6 +337,7 @@ async function main() {
     var healthJson = JSON.parse(health.text);
     assert.strictEqual(healthJson.version, appVersion);
     assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
+    mediaAndDiskTests();
     await engineRoutesTests();
     await proxyTests();
     var noUpdate = await request({ hostname: '127.0.0.1', port: appPort, path: '/update' });

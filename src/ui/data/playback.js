@@ -48,6 +48,7 @@ function playUrl(source, type, id, vid, backHash) {
       function (j) {
         if (j && j.state === 'needs-server') toast(tx('torrentsNeedServer'), 6000);
         else if (j && j.state === 'failed') toast(tx('torrentsUnavailable'));
+        else if (j && j.state === 'no-room') toast(tx('torrentsNoRoom'), 6000);
         if (!HAS_MEDIA_TOOLS && !(j && j.state === 'needs-server')) prepare(1);
       },
       2000

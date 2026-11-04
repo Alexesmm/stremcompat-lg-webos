@@ -43,6 +43,7 @@ function diagStreamingState(j) {
   if (j.serverAddress)
     return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
   if (f.state === 'failed') return tx('diagStreamFailed', 'sc-engine');
+  if (f.state === 'no-room') return tx('torrentsNoRoom');
   return tx(f.running ? 'diagRunning' : 'diagEngineReady');
 }
 var settings = {

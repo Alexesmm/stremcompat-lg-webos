@@ -20,10 +20,11 @@ function firstStream(streams, test) {
   return streams.filter(test)[0] || null;
 }
 
-function resolutionName(height) {
-  if (height >= 2000) return '4K';
-  if (height >= 1000) return '1080p';
-  if (height >= 690) return '720p';
+/* by the width too: a film in a cinema format is wider than tall, 4K at 3840x1600 */
+function resolutionName(width, height) {
+  if (width >= 3000 || height >= 2000) return '4K';
+  if (width >= 1800 || height >= 1000) return '1080p';
+  if (width >= 1200 || height >= 690) return '720p';
   return height ? height + 'p' : '';
 }
 
@@ -63,7 +64,7 @@ function describe(streams, format) {
   });
   if (video) {
     var codec = String(video.codec_name || '').toLowerCase();
-    info.res = resolutionName(video.height || 0);
+    info.res = resolutionName(video.width || 0, video.height || 0);
     info.vcodec = VIDEO_NAMES[codec] || codec.toUpperCase();
     var hdr = hdrName(video);
     if (hdr) info.hdr = hdr;
@@ -244,6 +245,7 @@ function grabFrame(q, res) {
 }
 
 module.exports = {
+  describe: describe,
   grabFrame: grabFrame,
   probeInfo: probeInfo,
   spriteGen: spriteGen
