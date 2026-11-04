@@ -97,13 +97,13 @@ function send(line) {
   else engine.child.stdin.write(line + '\n');
 }
 
-/* The engine sizes its own disk cache from the free space but never below 64 MiB, and a film can
-   overshoot that: a 4K torrent filled a TV's app storage (161 MB kept, 0 free). So the limit is
-   passed in, small when little is free: 30% of what is free above 100 MB, from 16 MiB to 768.
-   Below NO_ROOM_MB even 16 MiB, overshot, would fill the storage, so torrents do not start. */
+/* The engine sizes its disk cache as 70% of what is free above 150 MB, never below 64 MiB, and keeps
+   about 100 MB more while pieces are on their way: with 157 MB free, a 4K torrent left 161 MB and the
+   storage full. So the limit is passed in: the engine's own rule, but leaving 250 MB of the storage
+   free, from 16 MiB to 768. Below NO_ROOM_MB torrents do not start at all. */
 var NO_ROOM_MB = 150;
 function cacheLimitMiB(freeMb) {
-  return freeMb == null ? 32 : Math.max(16, Math.min(768, Math.floor((freeMb - 100) * 0.3)));
+  return Math.max(16, Math.min(768, Math.floor((freeMb - 150) * 0.7), freeMb - 250));
 }
 
 /* What the engine kept on storage, when it ended without clearing it (it was killed, or crashed) */
@@ -142,8 +142,10 @@ function startEngine() {
     return false;
   }
   var child;
-  /* the engine's own default for how long a paused film keeps its link, and the cache limit */
-  var limits = [String(15 * 60 * 1000), String(cacheLimitMiB(disk && disk.freeMb))];
+  /* the engine's own default for how long a paused film keeps its link, and the cache limit;
+     where df cannot be read, the engine sizes the cache by itself */
+  var limits = [String(15 * 60 * 1000)];
+  if (disk) limits.push(String(cacheLimitMiB(disk.freeMb)));
   try {
     child = spawn(
       isScript ? process.execPath : ENGINE,
@@ -494,6 +496,7 @@ function engineStatus() {
 }
 
 module.exports = {
+  cacheLimitMiB: cacheLimitMiB,
   chooseFile: chooseFile,
   engineStatus: engineStatus,
   opensubHash: opensubHash,
