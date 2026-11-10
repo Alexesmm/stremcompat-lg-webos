@@ -2,6 +2,7 @@
 
 var { APP_VERSION } = require('./config');
 var { postJsonUpstream, readJsonBody, sendJson } = require('./http-util');
+var { isNuvioKey, nuvioApi } = require('./nuvio-account');
 
 function postStremioApi(apiPath, req, res) {
   var allowed = {
@@ -24,6 +25,11 @@ function postStremioApi(apiPath, req, res) {
       res.end('{"error":"invalid_json"}');
       return;
     }
+    /* a Nuvio account answers the same calls (nuvio-account.js) */
+    if (body.provider === 'nuvio' || isNuvioKey(body.authKey))
+      return nuvioApi(apiPath, body, function (json) {
+        sendJson(res, json);
+      });
     var raw = JSON.stringify(body);
     postJsonUpstream(
       'api.strem.io',

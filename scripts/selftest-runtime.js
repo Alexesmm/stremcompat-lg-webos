@@ -98,6 +98,86 @@ function speedTests() {
   });
 }
 
+/* A Nuvio account answers the calls the interface makes to Stremio's account API, against a
+   stand-in Nuvio server: sign-in, profiles, library, progress, addons, a renewed token, and a
+   sign-out that ends only this TV's session. */
+function nuvioTests() {
+  var seen = [], expireOnce = true, base = '';
+  var server = http.createServer(function (req, res) {
+    var body = '';
+    req.on('data', function (d) { body += d; });
+    req.on('end', function () {
+      var json = body ? JSON.parse(body) : null, u = req.url, auth = req.headers.authorization || '';
+      seen.push({ url: u, body: json, auth: auth, key: req.headers.apikey });
+      function send(status, value) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); }
+      if (u === '/addon/manifest.json') return send(200, { id: 'org.demo', version: '1.0.0', name: 'Demo', resources: ['stream'], types: ['movie'] });
+      if (u === '/auth/v1/token?grant_type=password')
+        return json.password === 'right' ? send(200, { access_token: 'A1', refresh_token: 'R1', user: { id: 'user42', email: json.email } }) : send(400, { error: 'invalid_grant' });
+      if (u === '/auth/v1/token?grant_type=refresh_token') return send(200, { access_token: 'A2', refresh_token: 'R2' });
+      if (u.indexOf('/auth/v1/logout') === 0) return send(204, {});
+      if (expireOnce && auth === 'Bearer A1' && u.indexOf('/rest/') === 0) { expireOnce = false; return send(401, {}); }
+      if (u === '/rest/v1/rpc/sync_pull_profiles') return send(200, [{ profile_index: 1, name: 'Ana', uses_primary_addons: true }, { profile_index: 2, name: 'Kids', uses_primary_addons: false }, { profile_index: 3, name: 'Private', pin_enabled: true }]);
+      if (u === '/rest/v1/rpc/sync_pull_library') return send(200, json.p_profile_id === 2 ? [{ content_id: 'tt0000001', content_type: 'movie', name: 'Film', poster: 'p.jpg', added_at: '2026-01-01T00:00:00Z' }] : []);
+      if (u === '/rest/v1/rpc/sync_pull_watch_progress') return send(200, json.p_profile_id === 2 ? [{ content_id: 'tt0000001', content_type: 'movie', video_id: 'tt0000001', position: 600, duration: 6000, last_watched: Date.parse('2026-02-01T00:00:00Z') }, { content_id: 'kitsu:9', content_type: 'series', video_id: 'kitsu:9:1:4', position: 30000, duration: 1400000, season: 1, episode: 4, last_watched: Date.parse('2026-03-01T00:00:00Z') }] : []);
+      if (u === '/rest/v1/rpc/sync_pull_watched_items') return send(200, []);
+      if (u.indexOf('/rest/v1/addons?') === 0) return send(200, [{ url: base + '/addon', enabled: true, sort_order: 0 }, { url: base + '/off', enabled: false, sort_order: 1 }]);
+      if (u.indexOf('/rest/v1/rpc/sync_push_') === 0) return send(200, null);
+      send(404, {});
+    });
+  });
+  return new Promise(function (resolve) {
+    server.listen(0, '127.0.0.1', function () {
+      base = 'http://127.0.0.1:' + server.address().port;
+      var home = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-nuvio-')), realHome = process.env.HOME;
+      process.env.HOME = home;
+      process.env.SC_NUVIO_URL = base;
+      var modulePath = path.join(root, 'service', 'server', 'nuvio-account.js');
+      delete require.cache[require.resolve(modulePath)];
+      var nuvio = require(modulePath);
+      function api(p, body) { return new Promise(function (ok) { nuvio.nuvioApi(p, body, ok); }); }
+      (async function () {
+        var wrong = await api('/api/login', { email: 'a@b.c', password: 'wrong', provider: 'nuvio' });
+        assert.ok(wrong.error && !wrong.result, 'a wrong password signed in');
+        var signed = await api('/api/login', { email: 'a@b.c', password: 'right', provider: 'nuvio' });
+        var key = signed.result.authKey;
+        assert.ok(nuvio.isNuvioKey(key), 'the session key does not say it is Nuvio');
+        assert.strictEqual(signed.result.user._id, 'nv01user42', 'the first profile does not name its own library');
+        var list = await new Promise(function (ok) { nuvio.profiles(key, ok); });
+        assert.deepStrictEqual(list.map(function (p) { return p.name + (p.locked ? '!' : ''); }), ['Ana', 'Kids', 'Private!'], 'the profiles were not read');
+        assert.ok(seen.some(function (r) { return r.url === '/auth/v1/token?grant_type=refresh_token'; }), 'an ended token was not renewed');
+        assert.strictEqual(await new Promise(function (ok) { nuvio.chooseProfile(key, 3, ok); }), false, 'a PIN-protected profile was opened without its PIN');
+        assert.strictEqual(await new Promise(function (ok) { nuvio.chooseProfile(key, 2, ok); }), true, 'a profile could not be chosen');
+        assert.strictEqual((await api('/api/getUser', { authKey: key })).result._id, 'nv02user42', 'the second profile shares the first one\'s library');
+        var meta = (await api('/api/datastoreMeta', { authKey: key, collection: 'libraryItem' })).result;
+        assert.deepStrictEqual(meta.map(function (m) { return m[0]; }).sort(), ['kitsu:9', 'tt0000001'], 'the profile\'s titles were not listed');
+        var items = (await api('/api/datastoreGet', { authKey: key, collection: 'libraryItem', ids: ['tt0000001', 'kitsu:9'] })).result;
+        var film = items.filter(function (i) { return i._id === 'tt0000001'; })[0], show = items.filter(function (i) { return i._id === 'kitsu:9'; })[0];
+        assert.strictEqual(film.removed, false, 'a title of the library was shown as removed');
+        assert.strictEqual(film.state.timeOffset, 600000, 'progress kept in seconds was not turned into milliseconds');
+        assert.strictEqual(show.temp, true, 'a series only in progress was put in the library');
+        assert.strictEqual(show.state.video_id, 'kitsu:9:1:4', 'the episode in progress was lost');
+        seen.length = 0;
+        await api('/api/datastorePut', { authKey: key, collection: 'libraryItem', changes: [Object.assign({}, show, { state: Object.assign({}, show.state, { timeOffset: 90000, lastWatched: '2026-04-01T00:00:00Z' }) })] });
+        var pushed = seen.filter(function (r) { return r.url === '/rest/v1/rpc/sync_push_watch_progress'; })[0];
+        assert.ok(pushed && pushed.body.p_profile_id === 2 && pushed.body.p_entries[0].position === 90000 && pushed.body.p_entries[0].episode === 4, 'progress did not reach the chosen profile');
+        assert.ok(!seen.some(function (r) { return r.url === '/rest/v1/rpc/sync_push_library_items'; }), 'a title only in progress was added to the library');
+        var addons = (await api('/api/addonCollectionGet', { authKey: key })).result.addons;
+        assert.deepStrictEqual(addons.map(function (a) { return a.manifest.name; }), ['Demo'], 'the profile\'s enabled addons did not come with their manifests');
+        assert.ok(seen.some(function (r) { return /profile_id=eq\.2/.test(r.url); }), 'a profile with its own addons got the first profile\'s');
+        seen.length = 0;
+        await api('/api/logout', { authKey: key });
+        assert.ok(seen.some(function (r) { return r.url === '/auth/v1/logout?scope=local'; }), 'signing out did not end only this TV\'s session');
+        assert.ok((await api('/api/getUser', { authKey: key })).error, 'the session stayed after signing out');
+        server.close();
+        process.env.HOME = realHome;
+        delete process.env.SC_NUVIO_URL;
+        delete require.cache[require.resolve(modulePath)];
+        resolve();
+      })();
+    });
+  });
+}
+
 /* Cinemeta answering too late must not leave the player without a next episode. */
 function lateMetaTests() {
   var util = require(path.join(root, 'service', 'server', 'http-util.js'));
@@ -441,6 +521,7 @@ async function main() {
     mediaAndDiskTests();
     await lateMetaTests();
     await speedTests();
+    await nuvioTests();
     await engineRoutesTests();
     await proxyTests();
     var noUpdate = await request({ hostname: '127.0.0.1', port: appPort, path: '/update' });
