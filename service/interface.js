@@ -387,8 +387,10 @@ var UI_TEXT = {
     playBest: 'Best source',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
-    whatsNew: 'Updated to StremCompat {0}. New in the player\'s settings: episodes, chapters, picture size and speed.',
-    lastStartStopped: 'The last time, StremCompat stopped while starting (step {0}). If it happens again, mention this step in your report.',
+    whatsNew:
+      "Updated to StremCompat {0}. New in the player's settings: episodes, chapters, picture size and speed.",
+    lastStartStopped:
+      'The last time, StremCompat stopped while starting (step {0}). If it happens again, mention this step in your report.',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -750,8 +752,10 @@ var UI_TEXT = {
     playBest: 'Melhor fonte',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
-    whatsNew: 'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
-    lastStartStopped: 'Da última vez, o StremCompat parou enquanto abria (etapa {0}). Se acontecer de novo, cite essa etapa no seu relato.',
+    whatsNew:
+      'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
+    lastStartStopped:
+      'Da última vez, o StremCompat parou enquanto abria (etapa {0}). Se acontecer de novo, cite essa etapa no seu relato.',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -983,7 +987,8 @@ var UI_TEXT = {
 var UI_LANGUAGES = {
   'en-US': 'English',
   'pt-BR': 'Português (Brasil)',
-  es: 'Español',
+  es: 'Español (España)',
+  'es-419': 'Español (Latinoamérica)',
   fr: 'Français',
   de: 'Deutsch',
   it: 'Italiano',
@@ -994,10 +999,12 @@ function normalizeUILanguage(value) {
 }
 /* the TV's language, when the app has it */
 function tvLanguage() {
-  var base = String((typeof navigator !== 'undefined' && navigator.language) || '')
-    .toLowerCase()
-    .split('-')[0];
-  return base === 'pt' ? 'pt-BR' : base;
+  var full = String((typeof navigator !== 'undefined' && navigator.language) || '').toLowerCase(),
+    base = full.split('-')[0];
+  if (base === 'pt') return 'pt-BR';
+  /* Spanish outside Spain is the Latin American one */
+  if (base === 'es') return full === 'es' || full === 'es-es' ? 'es' : 'es-419';
+  return base;
 }
 /* what the file does not have, or a file that cannot be read, falls back to English */
 function loadUILanguage(code) {
@@ -1021,7 +1028,10 @@ var UI_LANG = normalizeUILanguage(
 loadUILanguage(UI_LANG);
 /* the language of audio and subtitles until the viewer picks one */
 function defaultMediaLanguage() {
-  return { 'pt-BR': 'por', es: 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus' }[UI_LANG] || 'eng';
+  return (
+    { 'pt-BR': 'por', es: 'spa', 'es-419': 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus' }[UI_LANG] ||
+    'eng'
+  );
 }
 function tx(key) {
   var args = arguments,

@@ -371,6 +371,8 @@ assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',
   }
   assert.strictEqual(languageOf('pt-PT'), 'pt-BR', 'a TV in Portuguese did not open in Portuguese');
   assert.strictEqual(languageOf('fr-FR'), 'fr', 'a TV in French did not open in French');
+  assert.strictEqual(languageOf('es-MX'), 'es-419', 'a TV in Mexican Spanish did not open in Latin American Spanish');
+  assert.strictEqual(languageOf('es-ES'), 'es', 'a TV in Spain did not open in Spanish from Spain');
   assert.strictEqual(languageOf('ja-JP'), 'en-US', 'a language the app does not have did not fall back to English');
   assert.strictEqual(languageOf('pt-BR', 'de'), 'de', 'the language of the TV won over the viewer\'s choice');
   var stringsContext = { localStorage: { getItem: function () { return null; } } };

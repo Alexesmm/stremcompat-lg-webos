@@ -27,7 +27,7 @@ var { cachedAddonJson } = require('./addon-cache');
 var { handleTakeover } = require('./takeover');
 var { decodeField, seriesVideos, setWatched } = require('./watched');
 
-var LANGUAGE_FILE = /^\/lang\/[a-zA-Z-]{2,5}\.json$/;
+var LANGUAGE_FILE = /^\/lang\/[a-zA-Z0-9-]{2,6}\.json$/;
 /* what the player may report; nothing else reaches the log */
 var LOGGED_FIELDS = [
   'ev',
