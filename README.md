@@ -28,6 +28,8 @@ This project is not affiliated with or endorsed by Stremio, LG Electronics or Sa
 ## Features
 
 - **Your Stremio account:** sign in with a QR code or email. Library, progress, watched state and addons stay in sync with your other Stremio apps.
+- **Or your Nuvio account (experimental):** sign in by email and choose the profile; its addons, library and progress come along.
+- **Your way:** on the first start choose **Simple** or **Complete**, and a **Standard**, **Modern** (full-screen, sharper backgrounds; for faster TVs) or **Light** look (for webOS 3 and TVs with little memory). Both can be changed in Settings.
 - **Browsing:** Home, Discover, Search and Library from your addons, with Continue Watching and the minutes left.
 - **Best source:** one press goes straight to the video. It asks which quality you want, or uses the one set in Settings.
 - **Source list:** quality and language filters, compatibility warnings, and addons that fail are named.
@@ -74,7 +76,7 @@ There are two packages, and the video looks the same in both:
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v3.1.0-1080p.ipk` or `StremCompat-v3.1.0-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v4.0.0-1080p.ipk` or `StremCompat-v4.0.0-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 
@@ -149,6 +151,10 @@ Download the package from the [test release](https://github.com/Alexesmm/stremco
 - **Torrents do not start, but debrid and direct links work:** **Settings > Diagnostics** shows the state of the engine. Few seeders or little free storage can also keep a torrent from starting.
 - **A source appears but does not play:** usually a codec, bitrate or addon issue. Try a moderate H.264/AAC source first.
 - **Error screen at startup:** note the full `APP_BOOT` or `APP_ASSET` message before reinstalling.
+
+## Moving between Stremio and Nuvio
+
+To copy addons, library and progress between a Stremio and a Nuvio account, see the companion tool [nuvio-to-stremio](https://github.com/Alexesmm/nuvio-to-stremio), online at [addons-sync.vercel.app](https://addons-sync.vercel.app/).
 
 ## Feedback and support
 
