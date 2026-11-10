@@ -398,13 +398,15 @@ var UI_TEXT = {
     modeFullHint: 'Every option, as before.',
     setupLookQuestion: 'Which look?',
     lookModern: 'Modern',
-    lookModernHint: 'Animations and effects.',
+    lookModernHint: 'Full-screen, sharper backgrounds, more animation. Not recommended for webOS 3 or slower TVs.',
     lookLight: 'Light',
-    lookLightHint: 'No effects, faster on older TVs.',
+    lookLightHint: 'No effects and smaller images. Best for webOS 3 and TVs with little memory.',
     setupSkip: 'Skip',
     setupHint: 'You can change this later in Settings.',
     uiModeLabel: 'How the app is used',
     uiLookLabel: 'Look',
+    lookStandard: 'Standard',
+    lookStandardHint: 'Recommended for most TVs. The look of earlier versions.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Who is watching?',
     profileNumber: 'Profile {0}',
@@ -784,13 +786,15 @@ var UI_TEXT = {
     modeFullHint: 'Todas as opções, como até agora.',
     setupLookQuestion: 'Qual visual?',
     lookModern: 'Moderno',
-    lookModernHint: 'Animações e efeitos.',
+    lookModernHint: 'Fundos em tela cheia e mais nítidos, mais animação. Não recomendado para webOS 3 ou TVs mais lentas.',
     lookLight: 'Leve',
-    lookLightHint: 'Sem efeitos, mais rápido em TVs antigas.',
+    lookLightHint: 'Sem efeitos e com imagens menores. Melhor para webOS 3 e TVs com pouca memória.',
     setupSkip: 'Pular',
     setupHint: 'Dá para mudar depois em Configurações.',
     uiModeLabel: 'Modo de uso',
     uiLookLabel: 'Visual',
+    lookStandard: 'Padrão',
+    lookStandardHint: 'Recomendado para a maioria das TVs. O visual das versões anteriores.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Quem está assistindo?',
     profileNumber: 'Perfil {0}',
@@ -1769,14 +1773,25 @@ function bgSmall(it) {
   var u = String(bgOf(it) || '');
   return u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1small/');
 }
+/* The width the local server reduces a background to: smaller in the light look, the size
+   of the screen in the modern one, and the package's own otherwise. */
+function bgWidth() {
+  var look = uiLook();
+  if (look === 'light') return 640;
+  if (look === 'modern') return viewportWidth() >= 1600 ? 1920 : 1280;
+  return 0;
+}
 function bgMid(it) {
   var u = String(bgOf(it) || '');
   if (!u) return u;
   /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
   if (!HAS_MEDIA_TOOLS) return bgSmall(it);
+  var width = bgWidth(),
+    size = width >= 1280 ? 'large' : 'medium';
   return (
     '/artwork?u=' +
-    encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
+    encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1' + size + '/')) +
+    (width ? '&w=' + width : '')
   );
 }
 // Stremio account session and library synchronization.
@@ -2676,7 +2691,7 @@ function setBg(u) {
     };
     img.onerror = function () {
       if (bgCur !== u) return;
-      var m = u.match(/^\/artwork\?u=(.*)$/);
+      var m = u.match(/^\/artwork\?u=([^&]*)/);
       if (m) {
         var raw = decodeURIComponent(m[1]).replace(
           /(images\.metahub\.space\/background\/)[a-z]+\//,
@@ -5740,19 +5755,23 @@ window.__SC_EPISODE_JUMP__ = episodeJump;
 /* the look this TV had before anyone chose: light on the TVs the profile already treats as small */
 var PROFILE_LOW_MEMORY = !!TV_PROFILE.lowMemory;
 function uiLook() {
-  return lsRaw('uiLook', PROFILE_LOW_MEMORY ? 'light' : 'modern');
+  return lsRaw('uiLook', PROFILE_LOW_MEMORY ? 'light' : 'standard');
 }
 function simpleMode() {
   return lsRaw('uiMode', 'full') === 'simple';
 }
-/* Light: no animations or effects, and the smaller caches of the small-TV profile */
+/* Light: no animations or effects, smaller backgrounds and the small-TV caches.
+   Modern: full-screen, sharper backgrounds that move slowly, and larger focus effects. */
 function applyLook() {
-  var light = uiLook() === 'light';
+  var look = uiLook(),
+    light = look === 'light';
   TV_PROFILE.lowMemory = light || PROFILE_LOW_MEMORY;
   if (light) bodyAdd('lowmem');
   else if (!PROFILE_LOW_MEMORY) bodyRemove('lowmem');
   if (light) bodyAdd('lite');
   else bodyRemove('lite');
+  if (look === 'modern') bodyAdd('modern');
+  else bodyRemove('modern');
 }
 /* Draws the panel shared by the first-start questions, the Nuvio profiles and the interface
    languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
@@ -5840,6 +5859,7 @@ var setupPanel = {
         key: 'uiLook',
         title: tx('setupLookQuestion'),
         options: [
+          ['standard', tx('lookStandard'), tx('lookStandardHint')],
           ['modern', tx('lookModern'), tx('lookModernHint')],
           ['light', tx('lookLight'), tx('lookLightHint')]
         ],
@@ -7215,6 +7235,7 @@ var settings = {
         k: 'uiLook',
         lb: tx('uiLookLabel'),
         opts: [
+          ['standard', tx('lookStandard')],
           ['modern', tx('lookModern')],
           ['light', tx('lookLight')]
         ],

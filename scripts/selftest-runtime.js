@@ -251,6 +251,8 @@ function mediaAndDiskTests() {
     assert.ok(fs.existsSync(path.join(usb, 'sda', 'sda1', 'StremCompat')), 'the app folder was not made on the USB drive');
     assert.ok(folders.every(function (f) { return f.indexOf(path.join(usb, 'sda', 'sda1')) === 0; }), 'something that is not a partition was taken for a drive');
   });
+  var images = fs.readFileSync(path.join(root, 'service', 'server', 'images.js'), 'utf8');
+  assert.ok(/WIDTHS = \[640, 960, 1280, 1920\]/.test(images), 'the background widths the looks ask for are not the ones the server accepts');
   var table = 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/mmcblk0p20 1024000 863232 160768 85% /media/developer\n';
   assert.deepStrictEqual(disk.parse(table), { totalMb: 1000, freeMb: 157 }, 'free space was not read from df');
   assert.strictEqual(disk.parse('df: unknown option -- P'), null, 'an error from df was taken for a size');

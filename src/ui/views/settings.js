@@ -228,6 +228,7 @@ var settings = {
         k: 'uiLook',
         lb: tx('uiLookLabel'),
         opts: [
+          ['standard', tx('lookStandard')],
           ['modern', tx('lookModern')],
           ['light', tx('lookLight')]
         ],

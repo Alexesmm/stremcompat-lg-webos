@@ -68,7 +68,7 @@ function setBg(u) {
     };
     img.onerror = function () {
       if (bgCur !== u) return;
-      var m = u.match(/^\/artwork\?u=(.*)$/);
+      var m = u.match(/^\/artwork\?u=([^&]*)/);
       if (m) {
         var raw = decodeURIComponent(m[1]).replace(
           /(images\.metahub\.space\/background\/)[a-z]+\//,

@@ -29,13 +29,24 @@ function bgSmall(it) {
   var u = String(bgOf(it) || '');
   return u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1small/');
 }
+/* The width the local server reduces a background to: smaller in the light look, the size
+   of the screen in the modern one, and the package's own otherwise. */
+function bgWidth() {
+  var look = uiLook();
+  if (look === 'light') return 640;
+  if (look === 'modern') return viewportWidth() >= 1600 ? 1920 : 1280;
+  return 0;
+}
 function bgMid(it) {
   var u = String(bgOf(it) || '');
   if (!u) return u;
   /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
   if (!HAS_MEDIA_TOOLS) return bgSmall(it);
+  var width = bgWidth(),
+    size = width >= 1280 ? 'large' : 'medium';
   return (
     '/artwork?u=' +
-    encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1medium/'))
+    encodeURIComponent(u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1' + size + '/')) +
+    (width ? '&w=' + width : '')
   );
 }

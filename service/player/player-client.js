@@ -201,13 +201,15 @@ var UI_TEXT = {
     modeFullHint: 'Every option, as before.',
     setupLookQuestion: 'Which look?',
     lookModern: 'Modern',
-    lookModernHint: 'Animations and effects.',
+    lookModernHint: 'Full-screen, sharper backgrounds, more animation. Not recommended for webOS 3 or slower TVs.',
     lookLight: 'Light',
-    lookLightHint: 'No effects, faster on older TVs.',
+    lookLightHint: 'No effects and smaller images. Best for webOS 3 and TVs with little memory.',
     setupSkip: 'Skip',
     setupHint: 'You can change this later in Settings.',
     uiModeLabel: 'How the app is used',
     uiLookLabel: 'Look',
+    lookStandard: 'Standard',
+    lookStandardHint: 'Recommended for most TVs. The look of earlier versions.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Who is watching?',
     profileNumber: 'Profile {0}',
@@ -587,13 +589,15 @@ var UI_TEXT = {
     modeFullHint: 'Todas as opções, como até agora.',
     setupLookQuestion: 'Qual visual?',
     lookModern: 'Moderno',
-    lookModernHint: 'Animações e efeitos.',
+    lookModernHint: 'Fundos em tela cheia e mais nítidos, mais animação. Não recomendado para webOS 3 ou TVs mais lentas.',
     lookLight: 'Leve',
-    lookLightHint: 'Sem efeitos, mais rápido em TVs antigas.',
+    lookLightHint: 'Sem efeitos e com imagens menores. Melhor para webOS 3 e TVs com pouca memória.',
     setupSkip: 'Pular',
     setupHint: 'Dá para mudar depois em Configurações.',
     uiModeLabel: 'Modo de uso',
     uiLookLabel: 'Visual',
+    lookStandard: 'Padrão',
+    lookStandardHint: 'Recomendado para a maioria das TVs. O visual das versões anteriores.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Quem está assistindo?',
     profileNumber: 'Perfil {0}',
@@ -2856,6 +2860,8 @@ function wantedSubtitleLanguage(lang) {
    the screen crops the sides (or the top and bottom) of a film wider or narrower than it. */
 /* Simple (Settings) leaves the technical rows out of the player's menu */
 var SIMPLE = lsGet('uiMode', 'full') === 'simple';
+/* the modern look (Settings) also gives the player a fuller pause screen and next-episode card */
+if (lsGet('uiLook', '') === 'modern') document.body.className += ' modern';
 var IS_VIDEO_ELEMENT = v.tagName === 'VIDEO',
   pictureMode = IS_VIDEO_ELEMENT ? lsGet('pictureMode', 'fit') : 'fit';
 function applyPicture() {

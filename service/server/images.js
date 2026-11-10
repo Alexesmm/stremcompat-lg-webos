@@ -34,7 +34,9 @@ function remember(key, data) {
   while (finishedOrder.length > PROFILE.backdropCache) delete finished[finishedOrder.shift()];
 }
 
-function resizeArguments(address) {
+/* the widths the interface may ask for (artwork.js bgWidth); anything else gets the profile's */
+var WIDTHS = [640, 960, 1280, 1920];
+function resizeArguments(address, width) {
   var quality = PROFILE.lowMemory ? '5' : '4';
   return [
     '-nostdin',
@@ -43,7 +45,7 @@ function resizeArguments(address) {
     '-frames:v',
     '1',
     '-vf',
-    'scale=' + PROFILE.backdropWidth + ':-2',
+    'scale=' + width + ':-2',
     '-q:v',
     quality,
     '-f',
@@ -58,7 +60,13 @@ function bgResize(q, res) {
     res.writeHead(404);
     return res.end();
   }
-  var key = crypto.createHash('sha1').update(address).digest('hex').slice(0, 16);
+  var asked = parseInt(q.w, 10),
+    width = WIDTHS.indexOf(asked) >= 0 ? asked : PROFILE.backdropWidth;
+  var key = crypto
+    .createHash('sha1')
+    .update(address + '|' + width)
+    .digest('hex')
+    .slice(0, 16);
   if (finished[key]) return sendImage(res, finished[key]);
   if (running >= PROFILE.backdropWorkers) return sendNothing(res);
 
@@ -82,7 +90,7 @@ function bgResize(q, res) {
     end(null);
   }, RESIZE_TIMEOUT_MS);
   try {
-    worker = spawn(FFMPEG, resizeArguments(address));
+    worker = spawn(FFMPEG, resizeArguments(address, width));
     lowerPriority(worker, NICE.INTERACTIVE);
   } catch (e) {
     return end(null);

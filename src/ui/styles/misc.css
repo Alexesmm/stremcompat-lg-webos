@@ -64,6 +64,19 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .suopt.locked{opacity:.55}
 .suskip{text-align:center;font-size:24px;padding:14px 26px;background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
 #suHint{margin-top:18px;font-size:20px;color:#8b95a0}
+/* the modern look: the background fills the screen, darkened where the text sits, and drifts slowly */
+body.modern #bg,body.modern #bg2{left:0;height:100%;-webkit-transition:opacity .7s ease;transition:opacity .7s ease}
+body.modern #bg:after,body.modern #bg2:after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,#090b12 0%,rgba(9,11,18,.88) 28%,rgba(9,11,18,.35) 62%,rgba(9,11,18,.1) 100%),linear-gradient(0deg,#090b12 0%,rgba(9,11,18,.6) 38%,rgba(9,11,18,0) 62%)}
+body.modern #bg.on{opacity:1;-webkit-animation:drift 26s ease-out forwards;animation:drift 26s ease-out forwards}
+@-webkit-keyframes drift{from{-webkit-transform:scale(1)}to{-webkit-transform:scale(1.07)}}
+@keyframes drift{from{transform:scale(1)}to{transform:scale(1.07)}}
+body.modern .card{-webkit-transition:-webkit-transform .22s ease,box-shadow .22s ease;transition:transform .22s ease,box-shadow .22s ease}
+body.modern .card.f{-webkit-transform:scale(1.06);transform:scale(1.06);-webkit-transform-origin:50% 25%;transform-origin:50% 25%;box-shadow:0 0 0 3px #090b12,0 0 0 7px #fff,0 18px 40px rgba(0,0,0,.6) !important}
+body.modern .card.ph{background:linear-gradient(100deg,rgba(255,255,255,.05) 30%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 70%);background-size:300% 100%;-webkit-animation:shimmer 1.4s linear infinite;animation:shimmer 1.4s linear infinite}
+@-webkit-keyframes shimmer{from{background-position:100% 0}to{background-position:0 0}}
+@keyframes shimmer{from{background-position:100% 0}to{background-position:0 0}}
+body.modern #setupPanel,body.modern #episodeJump{background:rgba(5,4,10,.72)}
+body.modern #suBox,body.modern #ejBox{background:rgba(19,25,34,.86);box-shadow:0 24px 60px rgba(0,0,0,.6)}
 /* the light look: no transitions, animations or shadows */
 body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-animation:none!important;animation:none!important;box-shadow:none!important;text-shadow:none!important}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}

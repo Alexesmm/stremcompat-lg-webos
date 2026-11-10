@@ -3,19 +3,23 @@
 /* the look this TV had before anyone chose: light on the TVs the profile already treats as small */
 var PROFILE_LOW_MEMORY = !!TV_PROFILE.lowMemory;
 function uiLook() {
-  return lsRaw('uiLook', PROFILE_LOW_MEMORY ? 'light' : 'modern');
+  return lsRaw('uiLook', PROFILE_LOW_MEMORY ? 'light' : 'standard');
 }
 function simpleMode() {
   return lsRaw('uiMode', 'full') === 'simple';
 }
-/* Light: no animations or effects, and the smaller caches of the small-TV profile */
+/* Light: no animations or effects, smaller backgrounds and the small-TV caches.
+   Modern: full-screen, sharper backgrounds that move slowly, and larger focus effects. */
 function applyLook() {
-  var light = uiLook() === 'light';
+  var look = uiLook(),
+    light = look === 'light';
   TV_PROFILE.lowMemory = light || PROFILE_LOW_MEMORY;
   if (light) bodyAdd('lowmem');
   else if (!PROFILE_LOW_MEMORY) bodyRemove('lowmem');
   if (light) bodyAdd('lite');
   else bodyRemove('lite');
+  if (look === 'modern') bodyAdd('modern');
+  else bodyRemove('modern');
 }
 /* Draws the panel shared by the first-start questions, the Nuvio profiles and the interface
    languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
@@ -103,6 +107,7 @@ var setupPanel = {
         key: 'uiLook',
         title: tx('setupLookQuestion'),
         options: [
+          ['standard', tx('lookStandard'), tx('lookStandardHint')],
           ['modern', tx('lookModern'), tx('lookModernHint')],
           ['light', tx('lookLight'), tx('lookLightHint')]
         ],
