@@ -61,6 +61,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .suopt.f{background:#fff;color:#0f766e}
 .suname{font-size:30px;font-weight:700}
 .suhelp{margin-top:6px;font-size:22px;opacity:.8}
+.suopt.locked{opacity:.55}
 .suskip{text-align:center;font-size:24px;padding:14px 26px;background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
 #suHint{margin-top:18px;font-size:20px;color:#8b95a0}
 /* the light look: no transitions, animations or shadows */

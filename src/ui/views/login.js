@@ -9,6 +9,8 @@ var login = {
   qrCode: '',
   pollGen: 0,
   statusKey: 'generatingCode',
+  /* which account: 'stremio', or 'nuvio' (experimental, nuvio-account.js on the server) */
+  provider: 'stremio',
   enter: function () {
     var self = this,
       email = $('lgEmail'),
@@ -159,6 +161,21 @@ var login = {
     this.qrCode = '';
     this.pollGen++;
   },
+  /* Nuvio has no sign-in by phone code: its accounts use the email form only */
+  toggleProvider: function () {
+    this.provider = this.provider === 'nuvio' ? 'stremio' : 'nuvio';
+    var scr = $('scrLogin');
+    if (this.provider === 'nuvio') {
+      this.stopQr();
+      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '') + ' nuvio';
+    } else {
+      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '');
+      this.startQr();
+    }
+    $('lgErr').textContent = '';
+    $('lgAccount').textContent = tx(this.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
+    this.paint();
+  },
   doEmail: function () {
     var email = $('lgEmail'),
       pass = $('lgPass');
@@ -175,7 +192,9 @@ var login = {
     $('lgErr').textContent = '';
     toast(tx('signingIn'));
     var self = this;
-    postJson(API + '/api/login', { email: em, password: pw }, function (r) {
+    var body = { email: em, password: pw };
+    if (this.provider === 'nuvio') body.provider = 'nuvio';
+    postJson(API + '/api/login', body, function (r) {
       var res = r && r.result;
       if (!res || !res.authKey) {
         $('lgErr').textContent = (r && r.error && r.error.message) || tx('signInFailed');
@@ -190,6 +209,11 @@ var login = {
     this.stopQr();
     lsSet('authKey', ak);
     this.setStatus('accountConnected');
+    /* a Nuvio account first asks whose profile this is */
+    if (isNuvioAccount())
+      return profilePanel.show(ak, function () {
+        location.reload();
+      });
     postJson(API + '/api/getUser', { authKey: ak }, function (j) {
       if (j && j.result) lsSet('user', j.result);
       syncAddons(function () {
@@ -206,6 +230,13 @@ var login = {
       button = $('lgBtn'),
       lang = $('lgLang');
     if (lang) lang.className = this.zone === 'lang' ? 'f' : '';
+    var prov = $('lgProv');
+    if (prov) {
+      prov.className = this.zone === 'prov' ? 'f' : '';
+      prov.textContent =
+        tx('accountProvider', this.provider === 'nuvio' ? tx('providerNuvio') : 'Stremio') +
+        '  \u2039 \u203a';
+    }
     if (email) email.className = 'lgin' + (this.zone === 'email' ? ' f' : '');
     if (pass) pass.className = 'lgin' + (this.zone === 'pass' ? ' f' : '');
     if (button) button.className = this.zone === 'btn' ? 'f' : '';
@@ -214,7 +245,15 @@ var login = {
     if (this.zone === 'lang') {
       if (k === 37 || k === 39 || k === 13) this.toggleLanguage();
       else if (k === 40) {
-        this.zone = 'email';
+        this.zone = 'prov';
+        this.paint();
+      }
+      return true;
+    }
+    if (this.zone === 'prov') {
+      if (k === 37 || k === 39 || k === 13) this.toggleProvider();
+      else if (k === 40 || k === 38) {
+        this.zone = k === 40 ? 'email' : 'lang';
         this.paint();
       }
       return true;
@@ -223,7 +262,7 @@ var login = {
       this.zone = this.zone === 'email' ? 'pass' : this.zone === 'pass' ? 'btn' : 'btn';
       this.paint();
     } else if (k === 38) {
-      this.zone = this.zone === 'btn' ? 'pass' : this.zone === 'pass' ? 'email' : 'lang';
+      this.zone = this.zone === 'btn' ? 'pass' : this.zone === 'pass' ? 'email' : 'prov';
       this.paint();
     } else if (k === 13) {
       if (this.zone === 'email') {

@@ -405,6 +405,14 @@ var UI_TEXT = {
     setupHint: 'You can change this later in Settings.',
     uiModeLabel: 'How the app is used',
     uiLookLabel: 'Look',
+    accountProvider: 'Account: {0}',
+    providerNuvio: 'Nuvio (experimental)',
+    whoIsWatching: 'Who is watching?',
+    profileNumber: 'Profile {0}',
+    profileLocked: 'Protected with a PIN, not available in StremCompat yet',
+    nuvioProfile: 'Nuvio profile',
+    profilesUnavailable: 'Could not read the Nuvio profiles',
+    nuvioAccountNote: 'Sign in with your Nuvio account. Experimental: Nuvio\'s account service is not made for other apps and may change.',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -784,6 +792,14 @@ var UI_TEXT = {
     setupHint: 'Dá para mudar depois em Configurações.',
     uiModeLabel: 'Modo de uso',
     uiLookLabel: 'Visual',
+    accountProvider: 'Conta: {0}',
+    providerNuvio: 'Nuvio (experimental)',
+    whoIsWatching: 'Quem está assistindo?',
+    profileNumber: 'Perfil {0}',
+    profileLocked: 'Protegido por PIN, ainda não disponível no StremCompat',
+    nuvioProfile: 'Perfil do Nuvio',
+    profilesUnavailable: 'Não foi possível ler os perfis do Nuvio',
+    nuvioAccountNote: 'Entre com sua conta Nuvio. Experimental: o serviço de contas do Nuvio não é feito para outros apps e pode mudar.',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -1769,6 +1785,10 @@ function user() {
 }
 function authKey() {
   return lsJson('authKey');
+}
+/* signed in with a Nuvio account (experimental): the local server answers its calls */
+function isNuvioAccount() {
+  return /^nuvio:/.test(String(authKey() || ''));
 }
 /* Library / Continue Watching / watched all sync to the Stremio account, exactly like
    the official apps: items live under lib_<first4 of user._id>_<id> (shared with the
@@ -5697,7 +5717,7 @@ var setupPanel = {
   els: [],
   /* once, after the first start of this version with an account; Back or Skip keep the defaults */
   maybeShow: function () {
-    if (lsRaw('setupDone', '') || !user()) return;
+    if (lsRaw('setupDone', '') || !user() || profilePanel.open) return;
     this.open = true;
     this.step = 0;
     $('setupPanel').style.display = 'block';
@@ -5769,6 +5789,106 @@ var setupPanel = {
     this.open = false;
     lsRawSet('setupDone', '1');
     $('setupPanel').style.display = 'none';
+  },
+  key: function (k) {
+    if (k === 38) this.idx = Math.max(0, this.idx - 1);
+    else if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
+    else if (k === 13) return this.choose(this.idx);
+    setF(this.els, this.idx);
+  }
+};
+// "Who is watching?": the profiles of a Nuvio account, shown after signing in and from Settings.
+// It uses the same panel as the first-start questions (setup.js).
+var profilePanel = {
+  open: false,
+  idx: 0,
+  els: [],
+  list: [],
+  account: '',
+  done: null,
+  cancel: null,
+  /* done() runs once a profile is in use; cancel(), when given, lets Back close without choosing */
+  show: function (key, done, cancel) {
+    var self = this;
+    this.account = key;
+    this.done = done;
+    this.cancel = cancel || null;
+    xhrJson(
+      '/nuvioprofiles?key=' + encodeURIComponent(key),
+      function (j) {
+        var list = (j && j.profiles) || [];
+        if (!list.length) {
+          toast(tx('profilesUnavailable'));
+          if (!cancel) done();
+          return;
+        }
+        if (list.length === 1 && !list[0].locked && !cancel) return self.use(list[0]);
+        self.list = list;
+        self.build();
+      },
+      20000
+    );
+  },
+  build: function () {
+    var host = $('suOptions');
+    this.open = true;
+    $('setupPanel').style.display = 'block';
+    $('suTitle').textContent = tx('whoIsWatching');
+    $('suHint').textContent = '';
+    host.innerHTML = '';
+    this.els = [];
+    this.idx = 0;
+    for (var i = 0; i < this.list.length; i++) {
+      var p = this.list[i],
+        b = document.createElement('div'),
+        name = document.createElement('div');
+      b.className = 'suopt' + (p.locked ? ' locked' : '');
+      name.className = 'suname';
+      name.textContent = p.name || tx('profileNumber', p.index);
+      b.appendChild(name);
+      if (p.locked) {
+        var hint = document.createElement('div');
+        hint.className = 'suhelp';
+        hint.textContent = tx('profileLocked');
+        b.appendChild(hint);
+      }
+      host.appendChild(b);
+      this.els.push(b);
+      if (p.current) this.idx = i;
+    }
+    setF(this.els, this.idx);
+  },
+  choose: function (i) {
+    var p = this.list[i];
+    if (!p) return;
+    if (p.locked) return toast(tx('profileLocked'));
+    this.use(p);
+  },
+  /* the server switches the session to it; the account's user id names the profile's library */
+  use: function (p) {
+    var self = this;
+    xhrJson(
+      '/nuvioprofile?key=' + encodeURIComponent(this.account) + '&index=' + p.index,
+      function (j) {
+        if (!j || !j.ok) return toast(tx('profilesUnavailable'));
+        postJson(API + '/api/getUser', { authKey: self.account }, function (u) {
+          if (u && u.result) lsSet('user', u.result);
+          lsRawSet('addons', '');
+          self.close();
+          self.done();
+        });
+      },
+      20000
+    );
+  },
+  close: function () {
+    this.open = false;
+    $('setupPanel').style.display = 'none';
+  },
+  back: function () {
+    if (!this.cancel) return;
+    this.close();
+    this.cancel();
   },
   key: function (k) {
     if (k === 38) this.idx = Math.max(0, this.idx - 1);
@@ -7065,16 +7185,22 @@ var settings = {
       { head: tx('addonsGroup') },
       { k: '__sync', lb: tx('syncAddons'), action: true },
       { head: tx('accountGroup') },
+      { k: '__profile', lb: tx('nuvioProfile'), action: true },
       { k: '__logout', lb: tx('signOut'), action: true },
       { head: tx('maintenanceGroup') },
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
+    /* profiles exist only on Nuvio accounts */
+    if (!isNuvioAccount())
+      this.defs = this.defs.filter(function (d) {
+        return d.k !== '__profile';
+      });
     /* Simple keeps what most people change: languages, subtitle size, the look and the account */
     if (simpleMode()) {
       var essential =
-        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__logout|__diag|__reload)$/;
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
       this.defs = this.defs.filter(function (d) {
         return d.head || essential.test(d.k || '');
       });
@@ -7161,6 +7287,14 @@ var settings = {
         self.paintServerAddress();
       });
     } else if (k === '__diag') this.showDiag();
+    else if (k === '__profile')
+      profilePanel.show(
+        authKey(),
+        function () {
+          location.reload();
+        },
+        function () {}
+      );
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
       clearRecentSearches();
@@ -7534,6 +7668,8 @@ var login = {
   qrCode: '',
   pollGen: 0,
   statusKey: 'generatingCode',
+  /* which account: 'stremio', or 'nuvio' (experimental, nuvio-account.js on the server) */
+  provider: 'stremio',
   enter: function () {
     var self = this,
       email = $('lgEmail'),
@@ -7684,6 +7820,21 @@ var login = {
     this.qrCode = '';
     this.pollGen++;
   },
+  /* Nuvio has no sign-in by phone code: its accounts use the email form only */
+  toggleProvider: function () {
+    this.provider = this.provider === 'nuvio' ? 'stremio' : 'nuvio';
+    var scr = $('scrLogin');
+    if (this.provider === 'nuvio') {
+      this.stopQr();
+      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '') + ' nuvio';
+    } else {
+      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '');
+      this.startQr();
+    }
+    $('lgErr').textContent = '';
+    $('lgAccount').textContent = tx(this.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
+    this.paint();
+  },
   doEmail: function () {
     var email = $('lgEmail'),
       pass = $('lgPass');
@@ -7700,7 +7851,9 @@ var login = {
     $('lgErr').textContent = '';
     toast(tx('signingIn'));
     var self = this;
-    postJson(API + '/api/login', { email: em, password: pw }, function (r) {
+    var body = { email: em, password: pw };
+    if (this.provider === 'nuvio') body.provider = 'nuvio';
+    postJson(API + '/api/login', body, function (r) {
       var res = r && r.result;
       if (!res || !res.authKey) {
         $('lgErr').textContent = (r && r.error && r.error.message) || tx('signInFailed');
@@ -7715,6 +7868,11 @@ var login = {
     this.stopQr();
     lsSet('authKey', ak);
     this.setStatus('accountConnected');
+    /* a Nuvio account first asks whose profile this is */
+    if (isNuvioAccount())
+      return profilePanel.show(ak, function () {
+        location.reload();
+      });
     postJson(API + '/api/getUser', { authKey: ak }, function (j) {
       if (j && j.result) lsSet('user', j.result);
       syncAddons(function () {
@@ -7731,6 +7889,13 @@ var login = {
       button = $('lgBtn'),
       lang = $('lgLang');
     if (lang) lang.className = this.zone === 'lang' ? 'f' : '';
+    var prov = $('lgProv');
+    if (prov) {
+      prov.className = this.zone === 'prov' ? 'f' : '';
+      prov.textContent =
+        tx('accountProvider', this.provider === 'nuvio' ? tx('providerNuvio') : 'Stremio') +
+        '  \u2039 \u203a';
+    }
     if (email) email.className = 'lgin' + (this.zone === 'email' ? ' f' : '');
     if (pass) pass.className = 'lgin' + (this.zone === 'pass' ? ' f' : '');
     if (button) button.className = this.zone === 'btn' ? 'f' : '';
@@ -7739,7 +7904,15 @@ var login = {
     if (this.zone === 'lang') {
       if (k === 37 || k === 39 || k === 13) this.toggleLanguage();
       else if (k === 40) {
-        this.zone = 'email';
+        this.zone = 'prov';
+        this.paint();
+      }
+      return true;
+    }
+    if (this.zone === 'prov') {
+      if (k === 37 || k === 39 || k === 13) this.toggleProvider();
+      else if (k === 40 || k === 38) {
+        this.zone = k === 40 ? 'email' : 'lang';
         this.paint();
       }
       return true;
@@ -7748,7 +7921,7 @@ var login = {
       this.zone = this.zone === 'email' ? 'pass' : this.zone === 'pass' ? 'btn' : 'btn';
       this.paint();
     } else if (k === 38) {
-      this.zone = this.zone === 'btn' ? 'pass' : this.zone === 'pass' ? 'email' : 'lang';
+      this.zone = this.zone === 'btn' ? 'pass' : this.zone === 'pass' ? 'email' : 'prov';
       this.paint();
     } else if (k === 13) {
       if (this.zone === 'email') {
@@ -7803,6 +7976,15 @@ function pointerUI(target, activate) {
       serverPanel.idx = i;
       serverPanel.paint();
       if (activate) serverPanel.press(i);
+    }
+    return true;
+  }
+  if (profilePanel.open) {
+    i = pointerIndex(target, profilePanel.els);
+    if (i >= 0) {
+      profilePanel.idx = i;
+      setF(profilePanel.els, i);
+      if (activate) profilePanel.choose(i);
     }
     return true;
   }
@@ -8189,6 +8371,13 @@ on(
       e.stopPropagation();
       if (isBackKey(k)) serverPanel.close();
       else serverPanel.key(k);
+      return;
+    }
+    if (profilePanel.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isBackKey(k)) profilePanel.back();
+      else profilePanel.key(k);
       return;
     }
     if (setupPanel.open) {

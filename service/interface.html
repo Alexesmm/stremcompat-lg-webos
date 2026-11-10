@@ -440,6 +440,10 @@ body:not(.login) #lgNote{display:none}
 #lgStat{margin:18px auto 0;min-height:30px;line-height:30px;font-size:22px;text-align:center;color:rgba(255,255,255,.72)}
 #lgStat.loading:after{content:"  ·  ·  ·";display:inline-block;margin-left:14px;color:#5EEAD4;letter-spacing:4px}
 #lgForm{padding-left:90px}
+#lgProv{display:inline-block;margin:0 0 18px;padding:10px 20px;border-radius:22px;font-size:22px;color:rgba(255,255,255,.82);background:rgba(255,255,255,.08)}
+#lgProv.f{background:#fff;color:#0c0b11;font-weight:700}
+#scrLogin.nuvio #lgQr{display:none}
+#scrLogin.nuvio #lgForm{padding-left:0}
 #lgForm h2{font-size:40px;margin:0 0 22px}
 .lgin{display:block;width:520px;padding:18px 24px;margin-bottom:16px;font-size:28px;border:0;border-radius:12px;background:rgba(255,255,255,.10);color:#fff;outline:none}
 .lgin.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}
@@ -510,6 +514,7 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .suopt.f{background:#fff;color:#0f766e}
 .suname{font-size:30px;font-weight:700}
 .suhelp{margin-top:6px;font-size:22px;opacity:.8}
+.suopt.locked{opacity:.55}
 .suskip{text-align:center;font-size:24px;padding:14px 26px;background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
 #suHint{margin-top:18px;font-size:20px;color:#8b95a0}
 /* the light look: no transitions, animations or shadows */
@@ -610,6 +615,7 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
   <div id="lgWrap"><div id="lgBox">
     <div id="lgQr"><h2 id="lgQrTitle">Sign in with your phone</h2><div class="s" id="lgQrHelp">Scan the code with your camera</div><img id="lgQrImg"><div id="lgCode"></div><div id="lgStat">Generating code…</div></div>
     <div id="lgForm"><h2 id="lgEmailTitle">Or use your email</h2>
+      <div id="lgProv"></div>
       <input class="lgin" id="lgEmail" placeholder="Email">
       <input class="lgin" id="lgPass" placeholder="Password" type="password">
       <div id="lgBtn">Sign in</div>

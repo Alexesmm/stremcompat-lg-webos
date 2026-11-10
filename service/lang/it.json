@@ -370,5 +370,13 @@
   "setupSkip": "Salta",
   "setupHint": "Puoi cambiarlo più tardi nelle Impostazioni.",
   "uiModeLabel": "Modalità d’uso",
-  "uiLookLabel": "Aspetto"
+  "uiLookLabel": "Aspetto",
+  "accountProvider": "Account: {0}",
+  "providerNuvio": "Nuvio (sperimentale)",
+  "whoIsWatching": "Chi sta guardando?",
+  "profileNumber": "Profilo {0}",
+  "profileLocked": "Protetto da PIN, non ancora disponibile in StremCompat",
+  "nuvioProfile": "Profilo Nuvio",
+  "profilesUnavailable": "Impossibile leggere i profili Nuvio",
+  "nuvioAccountNote": "Accedi con il tuo account Nuvio. Sperimentale: il servizio account di Nuvio non è pensato per altre app e può cambiare."
 }

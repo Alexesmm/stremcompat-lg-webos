@@ -16,6 +16,10 @@ body:not(.login) #lgNote{display:none}
 #lgStat{margin:18px auto 0;min-height:30px;line-height:30px;font-size:22px;text-align:center;color:rgba(255,255,255,.72)}
 #lgStat.loading:after{content:"  ·  ·  ·";display:inline-block;margin-left:14px;color:#5EEAD4;letter-spacing:4px}
 #lgForm{padding-left:90px}
+#lgProv{display:inline-block;margin:0 0 18px;padding:10px 20px;border-radius:22px;font-size:22px;color:rgba(255,255,255,.82);background:rgba(255,255,255,.08)}
+#lgProv.f{background:#fff;color:#0c0b11;font-weight:700}
+#scrLogin.nuvio #lgQr{display:none}
+#scrLogin.nuvio #lgForm{padding-left:0}
 #lgForm h2{font-size:40px;margin:0 0 22px}
 .lgin{display:block;width:520px;padding:18px 24px;margin-bottom:16px;font-size:28px;border:0;border-radius:12px;background:rgba(255,255,255,.10);color:#fff;outline:none}
 .lgin.f{background:rgba(255,255,255,.22);box-shadow:0 0 0 3px #fff}

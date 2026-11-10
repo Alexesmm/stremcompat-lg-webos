@@ -128,6 +128,7 @@ var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
       lsRaw: function (k, d) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : d; },
       lsRawSet: function (k, v) { data[k] = String(v); },
       user: function () { return { _id: 'u' }; },
+      profilePanel: { open: false },
       tx: function (k) { return k; },
       $: function (id) { return els[id] || (els[id] = { style: {}, innerHTML: '', textContent: '', appendChild: function () {} }); },
       document: { createElement: function () { return { appendChild: function () {}, style: {} }; }, body: body },

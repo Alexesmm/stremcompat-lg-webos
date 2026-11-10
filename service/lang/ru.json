@@ -370,5 +370,13 @@
   "setupSkip": "Пропустить",
   "setupHint": "Это можно изменить позже в настройках.",
   "uiModeLabel": "Режим",
-  "uiLookLabel": "Вид"
+  "uiLookLabel": "Вид",
+  "accountProvider": "Аккаунт: {0}",
+  "providerNuvio": "Nuvio (экспериментально)",
+  "whoIsWatching": "Кто смотрит?",
+  "profileNumber": "Профиль {0}",
+  "profileLocked": "Защищён PIN-кодом, пока недоступен в StremCompat",
+  "nuvioProfile": "Профиль Nuvio",
+  "profilesUnavailable": "Не удалось прочитать профили Nuvio",
+  "nuvioAccountNote": "Войдите с аккаунтом Nuvio. Экспериментально: сервис аккаунтов Nuvio не рассчитан на другие приложения и может измениться."
 }

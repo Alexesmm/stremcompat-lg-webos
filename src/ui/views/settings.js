@@ -269,16 +269,22 @@ var settings = {
       { head: tx('addonsGroup') },
       { k: '__sync', lb: tx('syncAddons'), action: true },
       { head: tx('accountGroup') },
+      { k: '__profile', lb: tx('nuvioProfile'), action: true },
       { k: '__logout', lb: tx('signOut'), action: true },
       { head: tx('maintenanceGroup') },
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
+    /* profiles exist only on Nuvio accounts */
+    if (!isNuvioAccount())
+      this.defs = this.defs.filter(function (d) {
+        return d.k !== '__profile';
+      });
     /* Simple keeps what most people change: languages, subtitle size, the look and the account */
     if (simpleMode()) {
       var essential =
-        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__logout|__diag|__reload)$/;
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
       this.defs = this.defs.filter(function (d) {
         return d.head || essential.test(d.k || '');
       });
@@ -365,6 +371,14 @@ var settings = {
         self.paintServerAddress();
       });
     } else if (k === '__diag') this.showDiag();
+    else if (k === '__profile')
+      profilePanel.show(
+        authKey(),
+        function () {
+          location.reload();
+        },
+        function () {}
+      );
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
       clearRecentSearches();

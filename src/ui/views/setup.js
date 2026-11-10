@@ -24,7 +24,7 @@ var setupPanel = {
   els: [],
   /* once, after the first start of this version with an account; Back or Skip keep the defaults */
   maybeShow: function () {
-    if (lsRaw('setupDone', '') || !user()) return;
+    if (lsRaw('setupDone', '') || !user() || profilePanel.open) return;
     this.open = true;
     this.step = 0;
     $('setupPanel').style.display = 'block';

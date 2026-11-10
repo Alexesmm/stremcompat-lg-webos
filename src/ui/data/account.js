@@ -6,6 +6,10 @@ function user() {
 function authKey() {
   return lsJson('authKey');
 }
+/* signed in with a Nuvio account (experimental): the local server answers its calls */
+function isNuvioAccount() {
+  return /^nuvio:/.test(String(authKey() || ''));
+}
 /* Library / Continue Watching / watched all sync to the Stremio account, exactly like
    the official apps: items live under lib_<first4 of user._id>_<id> (shared with the
    classic shell on this origin), pulled on boot and pushed on every change. */

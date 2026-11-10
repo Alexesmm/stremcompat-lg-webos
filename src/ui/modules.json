@@ -38,6 +38,7 @@
   "views/detail-episodes.js",
   "views/episode-jump.js",
   "views/setup.js",
+  "views/profiles.js",
   "views/streams.js",
   "views/search.js",
   "views/addons.js",

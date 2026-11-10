@@ -370,5 +370,13 @@
   "setupSkip": "Überspringen",
   "setupHint": "Du kannst das später in den Einstellungen ändern.",
   "uiModeLabel": "Nutzung",
-  "uiLookLabel": "Aussehen"
+  "uiLookLabel": "Aussehen",
+  "accountProvider": "Konto: {0}",
+  "providerNuvio": "Nuvio (experimentell)",
+  "whoIsWatching": "Wer schaut zu?",
+  "profileNumber": "Profil {0}",
+  "profileLocked": "Mit PIN geschützt, in StremCompat noch nicht verfügbar",
+  "nuvioProfile": "Nuvio-Profil",
+  "profilesUnavailable": "Die Nuvio-Profile konnten nicht gelesen werden",
+  "nuvioAccountNote": "Melde dich mit deinem Nuvio-Konto an. Experimentell: Nuvios Kontodienst ist nicht für andere Apps gedacht und kann sich ändern."
 }

@@ -370,5 +370,13 @@
   "setupSkip": "Passer",
   "setupHint": "Tu peux le changer plus tard dans les Réglages.",
   "uiModeLabel": "Mode d’utilisation",
-  "uiLookLabel": "Style"
+  "uiLookLabel": "Style",
+  "accountProvider": "Compte : {0}",
+  "providerNuvio": "Nuvio (expérimental)",
+  "whoIsWatching": "Qui regarde ?",
+  "profileNumber": "Profil {0}",
+  "profileLocked": "Protégé par un code, pas encore disponible dans StremCompat",
+  "nuvioProfile": "Profil Nuvio",
+  "profilesUnavailable": "Impossible de lire les profils Nuvio",
+  "nuvioAccountNote": "Connecte-toi avec ton compte Nuvio. Expérimental : le service de comptes de Nuvio n’est pas fait pour d’autres apps et peut changer."
 }
