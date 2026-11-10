@@ -118,6 +118,21 @@ function accountStorage() {
 }
 
 var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
+/* going back to a season returns to the episode it was left on */
+(function () {
+  var ctx = { detail: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'ui', 'views', 'detail-episodes.js'), 'utf8'), ctx);
+  var d = ctx.detail;
+  d.id = 'tt3'; d.episodeMode = 'season'; d.seasonIdx = 0; d.epIdx = 6;
+  d.buildEps = function () { d.eps = new Array(d.seasonIdx === 0 ? 10 : 4); d.epIdx = 0; };
+  d.switchEpisodeList(function () { d.seasonIdx = 1; });
+  assert.strictEqual(d.epIdx, 0, 'a season never opened did not start at its first episode');
+  d.epIdx = 3;
+  d.switchEpisodeList(function () { d.seasonIdx = 0; });
+  assert.strictEqual(d.epIdx, 6, 'going back to a season lost the episode it was left on');
+  d.switchEpisodeList(function () { d.seasonIdx = 1; });
+  assert.strictEqual(d.epIdx, 3, 'the other season lost its episode');
+})();
 /* the remote meter in Diagnostics: the typical and slowest answer, and late frames */
 (function () {
   var frames = [], clock = 0;

@@ -5256,6 +5256,20 @@ detail.buildSeasons = function () {
   this.epIdx = 0;
   this.buildEps();
 };
+/* The episode each season (or range) was left on, kept while the app is open, so going back
+   to a season returns there instead of to its first episode. */
+var episodeSpots = {};
+function episodeSpotKey(d) {
+  return d.id + ':' + (d.episodeMode === 'season' ? 's' + d.seasonIdx : 'r' + d.rangeIdx);
+}
+/* moves to another season or range with `change`, keeping the spot of the one left */
+detail.switchEpisodeList = function (change) {
+  episodeSpots[episodeSpotKey(this)] = this.epIdx;
+  change();
+  this.buildEps();
+  var spot = episodeSpots[episodeSpotKey(this)] || 0;
+  this.epIdx = Math.min(spot, Math.max(0, (this.eps || []).length - 1));
+};
 detail.addSeasonControl = function (label, act, kind) {
   var host = $('dSeasons'),
     ch = document.createElement('div');
@@ -5285,11 +5299,11 @@ detail.buildSeasonControls = function () {
   this.addSeasonControl(
     '‹',
     function () {
-      if (self.episodeMode === 'season') {
-        if (self.seasonIdx > 0) self.seasonIdx--;
-      } else if (self.rangeIdx > 0) self.rangeIdx--;
-      self.epIdx = 0;
-      self.buildEps();
+      self.switchEpisodeList(function () {
+        if (self.episodeMode === 'season') {
+          if (self.seasonIdx > 0) self.seasonIdx--;
+        } else if (self.rangeIdx > 0) self.rangeIdx--;
+      });
     },
     'arrow'
   );
@@ -5309,11 +5323,11 @@ detail.buildSeasonControls = function () {
   this.addSeasonControl(
     '›',
     function () {
-      if (self.episodeMode === 'season') {
-        if (self.seasonIdx < self.seasons.length - 1) self.seasonIdx++;
-      } else if ((self.rangeIdx + 1) * 50 < self.linearEps.length) self.rangeIdx++;
-      self.epIdx = 0;
-      self.buildEps();
+      self.switchEpisodeList(function () {
+        if (self.episodeMode === 'season') {
+          if (self.seasonIdx < self.seasons.length - 1) self.seasonIdx++;
+        } else if ((self.rangeIdx + 1) * 50 < self.linearEps.length) self.rangeIdx++;
+      });
     },
     'arrow'
   );
