@@ -60,10 +60,28 @@ function ensureTechProbe() {
     if (mode === 'menu' && (subView === 'root' || subView === 'audio')) reopen();
   });
 }
+/* A paused picture left alone for five minutes goes dark, subtitle included, so a still image
+   does not mark an OLED screen. Any key brings it back (keys.js). */
+var PAUSE_DIM_MS = 5 * 60 * 1000,
+  pauseDimT = null;
+function wakePaused() {
+  if (pauseDimT) clearTimeout(pauseDimT);
+  pauseDimT = null;
+  if (pv.className === 'show dim') pv.className = 'show';
+  subEl.style.visibility = '';
+  if (!v.paused) return;
+  pauseDimT = setTimeout(function () {
+    pauseDimT = null;
+    if (!v.paused) return;
+    pv.className = 'show dim';
+    subEl.style.visibility = 'hidden';
+  }, PAUSE_DIM_MS);
+}
 var pvT = null;
 v.addEventListener('pause', function () {
   if (subHolding) return;
   ensureTechProbe();
+  wakePaused();
   if (pvT) clearTimeout(pvT);
   pvT = setTimeout(function () {
     if (v.paused && mode !== 'menu' && load.style.display === 'none') pv.className = 'show';
@@ -72,4 +90,5 @@ v.addEventListener('pause', function () {
 v.addEventListener('play', function () {
   if (pvT) clearTimeout(pvT);
   pv.className = '';
+  wakePaused();
 });

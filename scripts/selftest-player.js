@@ -756,6 +756,33 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   assert.strictEqual(styled.get().delay, 1.4, 'a single press after a hold kept the large step');
 })();
 
+// ---- a paused picture goes dark after five minutes, and any key brings it back (paused.js) ----
+(function () {
+  var els = {}, events = {}, timers = [];
+  var ctx = {
+    LOGO: '', TITLE: 'Film', CERT: '', SNAME: '', URL: 'http://x/a.mp4', HAS_MEDIA_TOOLS: false, subHolding: false, mode: 'video',
+    document: { getElementById: function (id) { return els[id] || (els[id] = element(id)); }, createElement: element },
+    v: { paused: true, addEventListener: function (n, f) { events[n] = f; } },
+    load: { style: { display: 'none' } }, subEl: { style: {} }, xhr: function () {}, setArt: function () {},
+    setTimeout: function (f, ms) { timers.push({ f: f, ms: ms }); return timers.length; }, clearTimeout: function () {}
+  };
+  vm.runInNewContext(src('player/paused.js'), ctx);
+  events.pause();
+  var dim = timers.filter(function (t) { return t.ms === 300000; })[0];
+  assert.ok(dim, 'a pause did not start the five-minute wait');
+  timers.forEach(function (t) { if (t !== dim) t.f(); });
+  assert.strictEqual(els.pv.className, 'show', 'the paused screen did not show');
+  dim.f();
+  assert.strictEqual(els.pv.className, 'show dim', 'a long pause did not darken the picture');
+  assert.strictEqual(ctx.subEl.style.visibility, 'hidden', 'the subtitle stayed lit on the dark screen');
+  vm.runInNewContext('wakePaused()', ctx);
+  assert.strictEqual(els.pv.className, 'show', 'a key did not bring the paused screen back');
+  assert.strictEqual(ctx.subEl.style.visibility, '', 'the subtitle did not come back');
+  ctx.v.paused = false;
+  events.play();
+  assert.strictEqual(els.pv.className, '', 'playing kept the paused screen');
+})();
+
 // ---- a torrent's link ending during a long pause (controls.js) ----
 (function () {
   var code = src('player/controls.js');

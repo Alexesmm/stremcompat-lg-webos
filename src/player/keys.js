@@ -6,6 +6,7 @@ document.addEventListener(
     var k = e.keyCode,
       key = e.key || '';
     viewerActive();
+    wakePaused();
     if (k === 415 || key === 'MediaPlay') {
       setPlaying(true);
       e.preventDefault();
