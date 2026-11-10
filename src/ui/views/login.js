@@ -69,6 +69,13 @@ var login = {
     }
     this.paint();
     this.setStatus(this.statusKey);
+    /* chosen at the first start of 4.0 (setup.js): the form opens on Nuvio */
+    if (lsRaw('loginProvider', '') === 'nuvio') {
+      lsRawSet('loginProvider', '');
+      this.provider = 'stremio';
+      this.setProvider('nuvio');
+      return;
+    }
     this.startQr();
   },
   setStatus: function (key) {

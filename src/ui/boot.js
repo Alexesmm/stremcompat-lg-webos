@@ -100,7 +100,7 @@ function boot() {
             seen = lsRaw('versionSeen', '');
           if (current && current !== seen) {
             lsRawSet('versionSeen', current);
-            if (seen && SCR !== 'login') return toast(tx('whatsNew', current), 9000);
+            if (seen && SCR !== 'login' && !setupPanel.open) return toast(tx('whatsNew', current), 9000);
           }
           var version = answer && answer.version;
           if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;

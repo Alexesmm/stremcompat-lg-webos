@@ -121,14 +121,16 @@ function accountStorage() {
 var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
 /* the first start of 4.0: two questions, and skipping keeps what the TV had */
 (function () {
-  function setup(stored, lowMemory) {
-    var data = Object.assign({}, stored), els = {}, body = { className: '' };
+  function setup(stored, lowMemory, stremio) {
+    var data = Object.assign({}, stored), els = {}, body = { className: '' }, signedOut = [];
     var ctx = {
       TV_PROFILE: { lowMemory: !!lowMemory },
       lsRaw: function (k, d) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : d; },
       lsRawSet: function (k, v) { data[k] = String(v); },
       user: function () { return { _id: 'u' }; },
       profilePanel: { open: false },
+      isNuvioAccount: function () { return !stremio; },
+      settings: { logout: function () { signedOut.push(1); } },
       tx: function (k) { return k; },
       $: function (id) { return els[id] || (els[id] = { style: {}, innerHTML: '', textContent: '', appendChild: function () {} }); },
       document: { createElement: function () { return { appendChild: function () {}, style: {} }; }, body: body },
@@ -139,6 +141,7 @@ var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'ui', 'views', 'setup.js'), 'utf8'), ctx);
     ctx.data = data;
     ctx.body = body;
+    ctx.signedOut = signedOut;
     return ctx;
   }
   var fresh = setup({});
@@ -150,6 +153,18 @@ var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
   assert.strictEqual(fresh.data.uiLook, 'light', 'Light was not kept');
   assert.strictEqual(fresh.setupPanel.open, false, 'the questions did not close after the second answer');
   assert.ok(/\blite\b/.test(fresh.body.className) && fresh.TV_PROFILE.lowMemory, 'Light did not take effect at once');
+  /* a Stremio account hears about Nuvio first */
+  var stremio = setup({}, false, true);
+  stremio.setupPanel.maybeShow();
+  stremio.setupPanel.choose(0);
+  stremio.setupPanel.choose(1);
+  assert.strictEqual(stremio.data.uiMode, 'full', 'keeping Stremio did not go on to the other questions');
+  var toNuvio = setup({}, false, true);
+  toNuvio.setupPanel.maybeShow();
+  toNuvio.setupPanel.choose(1);
+  assert.strictEqual(toNuvio.signedOut.length, 1, 'choosing Nuvio did not leave the Stremio account');
+  assert.strictEqual(toNuvio.data.loginProvider, 'nuvio', 'the sign-in will not open on Nuvio');
+  assert.notStrictEqual(toNuvio.data.setupDone, '1', 'the questions were marked answered before signing in with Nuvio');
   var modern = setup({ uiLook: 'modern' });
   modern.applyLook();
   assert.ok(/modern/.test(modern.body.className) && !/lite/.test(modern.body.className), 'the modern look was not applied');

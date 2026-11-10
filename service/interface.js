@@ -388,7 +388,7 @@ var UI_TEXT = {
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     whatsNew:
-      "Updated to StremCompat {0}. New in the player's settings: episodes, chapters, picture size and speed.",
+      'Updated to StremCompat {0}: sign in with Nuvio, three looks in Settings, and episodes, chapters and speed in the player.',
     lastStartStopped:
       'The last time, StremCompat stopped while starting (step {0}). If it happens again, mention this step in your report.',
     setupUseQuestion: 'How do you want to use StremCompat?',
@@ -398,7 +398,8 @@ var UI_TEXT = {
     modeFullHint: 'Every option, as before.',
     setupLookQuestion: 'Which look?',
     lookModern: 'Modern',
-    lookModernHint: 'Full-screen, sharper backgrounds, more animation. Not recommended for webOS 3 or slower TVs.',
+    lookModernHint:
+      'Full-screen, sharper backgrounds, more animation. Not recommended for webOS 3 or slower TVs.',
     lookLight: 'Light',
     lookLightHint: 'No effects and smaller images. Best for webOS 3 and TVs with little memory.',
     setupSkip: 'Skip',
@@ -407,13 +408,19 @@ var UI_TEXT = {
     uiLookLabel: 'Look',
     lookStandard: 'Standard',
     lookStandardHint: 'Recommended for most TVs. The look of earlier versions.',
+    nuvioNewsTitle: 'New: you can now sign in with a Nuvio account',
+    keepStremio: 'Continue with Stremio',
+    keepStremioHint: 'Your account, library and addons stay as they are.',
+    useNuvio: 'Sign in with Nuvio (experimental)',
+    useNuvioHint: 'Signs out of Stremio on this TV only, and opens the Nuvio sign-in.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Who is watching?',
     profileNumber: 'Profile {0}',
     profileLocked: 'Protected with a PIN, not available in StremCompat yet',
     nuvioProfile: 'Nuvio profile',
     profilesUnavailable: 'Could not read the Nuvio profiles',
-    nuvioAccountNote: 'Sign in with your Nuvio account. Experimental: Nuvio\'s account service is not made for other apps and may change.',
+    nuvioAccountNote:
+      "Sign in with your Nuvio account. Experimental: Nuvio's account service is not made for other apps and may change.",
     becauseYouWatched: 'Because you watched {0}',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
@@ -776,7 +783,7 @@ var UI_TEXT = {
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     whatsNew:
-      'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
+      'Atualizado para o StremCompat {0}: login com Nuvio, três visuais em Configurações e episódios, capítulos e velocidade no player.',
     lastStartStopped:
       'Da última vez, o StremCompat parou enquanto abria (etapa {0}). Se acontecer de novo, cite essa etapa no seu relato.',
     setupUseQuestion: 'Como você quer usar o StremCompat?',
@@ -786,7 +793,8 @@ var UI_TEXT = {
     modeFullHint: 'Todas as opções, como até agora.',
     setupLookQuestion: 'Qual visual?',
     lookModern: 'Moderno',
-    lookModernHint: 'Fundos em tela cheia e mais nítidos, mais animação. Não recomendado para webOS 3 ou TVs mais lentas.',
+    lookModernHint:
+      'Fundos em tela cheia e mais nítidos, mais animação. Não recomendado para webOS 3 ou TVs mais lentas.',
     lookLight: 'Leve',
     lookLightHint: 'Sem efeitos e com imagens menores. Melhor para webOS 3 e TVs com pouca memória.',
     setupSkip: 'Pular',
@@ -795,13 +803,19 @@ var UI_TEXT = {
     uiLookLabel: 'Visual',
     lookStandard: 'Padrão',
     lookStandardHint: 'Recomendado para a maioria das TVs. O visual das versões anteriores.',
+    nuvioNewsTitle: 'Novidade: agora você pode entrar com uma conta Nuvio',
+    keepStremio: 'Continuar com o Stremio',
+    keepStremioHint: 'Sua conta, biblioteca e addons ficam como estão.',
+    useNuvio: 'Entrar com o Nuvio (experimental)',
+    useNuvioHint: 'Sai do Stremio só nesta TV e abre o login do Nuvio.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Quem está assistindo?',
     profileNumber: 'Perfil {0}',
     profileLocked: 'Protegido por PIN, ainda não disponível no StremCompat',
     nuvioProfile: 'Perfil do Nuvio',
     profilesUnavailable: 'Não foi possível ler os perfis do Nuvio',
-    nuvioAccountNote: 'Entre com sua conta Nuvio. Experimental: o serviço de contas do Nuvio não é feito para outros apps e pode mudar.',
+    nuvioAccountNote:
+      'Entre com sua conta Nuvio. Experimental: o serviço de contas do Nuvio não é feito para outros apps e pode mudar.',
     becauseYouWatched: 'Porque você assistiu {0}',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
@@ -5848,7 +5862,19 @@ var setupPanel = {
     this.build();
   },
   questions: function () {
-    return [
+    var list = [];
+    /* signed in with Stremio: first, that a Nuvio account can be used now */
+    if (!isNuvioAccount())
+      list.push({
+        key: 'accountChoice',
+        title: tx('nuvioNewsTitle'),
+        options: [
+          ['stremio', tx('keepStremio'), tx('keepStremioHint')],
+          ['nuvio', tx('useNuvio'), tx('useNuvioHint')]
+        ],
+        current: 'stremio'
+      });
+    return list.concat([
       {
         key: 'uiMode',
         title: tx('setupUseQuestion'),
@@ -5868,7 +5894,7 @@ var setupPanel = {
         ],
         current: uiLook()
       }
-    ];
+    ]);
   },
   build: function () {
     var q = this.questions()[this.step],
@@ -5886,6 +5912,18 @@ var setupPanel = {
   choose: function (i) {
     var q = this.questions()[this.step];
     if (i >= q.options.length) return this.close();
+    /* Nuvio: this TV leaves the Stremio account and the sign-in opens on Nuvio; the other
+       questions come after signing in */
+    if (q.key === 'accountChoice') {
+      if (q.options[i][0] === 'nuvio') {
+        this.open = false;
+        $('setupPanel').style.display = 'none';
+        lsRawSet('loginProvider', 'nuvio');
+        return settings.logout();
+      }
+      this.step++;
+      return this.build();
+    }
     lsRawSet(q.key, q.options[i][0]);
     if (q.key === 'uiLook') applyLook();
     this.step++;
@@ -7823,6 +7861,13 @@ var login = {
     }
     this.paint();
     this.setStatus(this.statusKey);
+    /* chosen at the first start of 4.0 (setup.js): the form opens on Nuvio */
+    if (lsRaw('loginProvider', '') === 'nuvio') {
+      lsRawSet('loginProvider', '');
+      this.provider = 'stremio';
+      this.setProvider('nuvio');
+      return;
+    }
     this.startQr();
   },
   setStatus: function (key) {
@@ -8749,7 +8794,7 @@ function boot() {
             seen = lsRaw('versionSeen', '');
           if (current && current !== seen) {
             lsRawSet('versionSeen', current);
-            if (seen && SCR !== 'login') return toast(tx('whatsNew', current), 9000);
+            if (seen && SCR !== 'login' && !setupPanel.open) return toast(tx('whatsNew', current), 9000);
           }
           var version = answer && answer.version;
           if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;

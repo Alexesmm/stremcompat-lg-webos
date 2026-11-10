@@ -93,7 +93,19 @@ var setupPanel = {
     this.build();
   },
   questions: function () {
-    return [
+    var list = [];
+    /* signed in with Stremio: first, that a Nuvio account can be used now */
+    if (!isNuvioAccount())
+      list.push({
+        key: 'accountChoice',
+        title: tx('nuvioNewsTitle'),
+        options: [
+          ['stremio', tx('keepStremio'), tx('keepStremioHint')],
+          ['nuvio', tx('useNuvio'), tx('useNuvioHint')]
+        ],
+        current: 'stremio'
+      });
+    return list.concat([
       {
         key: 'uiMode',
         title: tx('setupUseQuestion'),
@@ -113,7 +125,7 @@ var setupPanel = {
         ],
         current: uiLook()
       }
-    ];
+    ]);
   },
   build: function () {
     var q = this.questions()[this.step],
@@ -131,6 +143,18 @@ var setupPanel = {
   choose: function (i) {
     var q = this.questions()[this.step];
     if (i >= q.options.length) return this.close();
+    /* Nuvio: this TV leaves the Stremio account and the sign-in opens on Nuvio; the other
+       questions come after signing in */
+    if (q.key === 'accountChoice') {
+      if (q.options[i][0] === 'nuvio') {
+        this.open = false;
+        $('setupPanel').style.display = 'none';
+        lsRawSet('loginProvider', 'nuvio');
+        return settings.logout();
+      }
+      this.step++;
+      return this.build();
+    }
     lsRawSet(q.key, q.options[i][0]);
     if (q.key === 'uiLook') applyLook();
     this.step++;
