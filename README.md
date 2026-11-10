@@ -1,4 +1,4 @@
-# StremCompat for LG webOS
+# StremCompat: Stremio client for older LG TVs (webOS 3 and 4)
 
 <p align="center">
   <img src="docs/assets/stremcompat-hero-en.png" alt="StremCompat home interface running on LG webOS" width="1200">
@@ -19,6 +19,8 @@
 
 StremCompat is an independent, unofficial client for older LG TVs that cannot install the official Stremio app. It works with your own Stremio account and addons, with an interface made for the TV remote. It needs no root and no computer, not even for torrents, and the whole package is about 6 MB.
 
+**Install and update from the Homebrew Channel, with no PC, if your TV already has it.** See [Installation](#installation).
+
 **The stable version is the one for LG.** There is also a [test version for older Samsung TVs](#samsung-tvs-test-version).
 
 This project is not affiliated with or endorsed by Stremio, LG Electronics or Samsung. Use only addons and media sources that you are authorized to access.
@@ -30,11 +32,13 @@ This project is not affiliated with or endorsed by Stremio, LG Electronics or Sa
 - **Best source:** one press goes straight to the video. It asks which quality you want, or uses the one set in Settings.
 - **Source list:** quality and language filters, compatibility warnings, and addons that fail are named.
 - **Playback:** direct, debrid, torrent and HLS, using the TV's hardware decoder. Torrents play on the TV itself, or through a streaming server on another computer if you prefer.
-- **Subtitles and audio:** from addons or inside the file, remembered for each title, with a backup language and a subtitle delay.
-- **Series:** the next episode starts with the same release or a matching source, with an "are you still watching?" check.
+- **Subtitles and audio:** from addons or inside the file, remembered for each title, with a backup language, a subtitle delay, and subtitle position and opacity. Your languages come first in the lists.
+- **Player settings:** the season's episodes, the file's chapters, the other films of a torrent, picture size (whole picture or fill the screen) and speed.
+- **Series:** the next episode starts with the same release or a matching source, even when the addon is slow, with an "are you still watching?" check.
+- **Storage:** torrents never fill the TV's storage; with no room on the TV they can use a USB drive, and Settings clears the torrent cache.
 - **Made for the TV:** remote and Magic Remote, color-button shortcuts and optional larger text.
 - **Seven languages:** English, Brazilian Portuguese, Spanish, French, German, Italian and Russian, following the TV's language at first. Corrections to the translations are welcome.
-- **Your control:** **Do not save history** keeps progress and searches off the TV and your account, and **Settings > Diagnostics** shows memory and recent problems.
+- **Your control:** **Do not save history** keeps progress and searches off the TV and your account, and **Settings > Diagnostics** shows memory, storage, how fast the remote is answered and recent problems.
 
 ## Screenshots
 
@@ -70,7 +74,7 @@ There are two packages, and the video looks the same in both:
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v3.0.6-1080p.ipk` or `StremCompat-v3.0.6-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v3.1.0-1080p.ipk` or `StremCompat-v3.1.0-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 
