@@ -99,7 +99,7 @@
   "removedLibrary": "Убрано из библиотеки",
   "addedLibrary": "Добавлено в библиотеку",
   "inLibrary": "В библиотеке",
-  "libraryButton": "+ Библиотека",
+  "libraryButton": "Библиотека",
   "similar": "Похожее",
   "similarTo": "Похожее на {0}",
   "findingSimilar": "Поиск похожих…",

@@ -99,7 +99,7 @@
   "removedLibrary": "Retiré de la bibliothèque",
   "addedLibrary": "Ajouté à la bibliothèque",
   "inLibrary": "Dans la bibliothèque",
-  "libraryButton": "+ Bibliothèque",
+  "libraryButton": "Bibliothèque",
   "similar": "Similaires",
   "similarTo": "Comme {0}",
   "findingSimilar": "Recherche de titres similaires…",
