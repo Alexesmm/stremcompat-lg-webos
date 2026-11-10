@@ -3050,6 +3050,35 @@ function heroTitleClass(name) {
   return String(name || '').length > 32 ? 'long' : '';
 }
 /* the hero's info line: 109 min   2026   7.8 [IMDb] */
+/* A description longer than its two lines rolls up slowly once the focus has rested for three
+   seconds, waits at the end and goes back, instead of staying cut off. Any new focus restarts it. */
+var heroRoll = { wait: null, step: null };
+function setHeroDesc(text) {
+  var el = $('heroDesc');
+  if (heroRoll.wait) clearTimeout(heroRoll.wait);
+  if (heroRoll.step) clearInterval(heroRoll.step);
+  heroRoll.wait = heroRoll.step = null;
+  el.className = '';
+  el.scrollTop = 0;
+  el.textContent = text || '';
+  if (!text) return;
+  heroRoll.wait = setTimeout(function () {
+    el.className = 'roll';
+    var end = el.scrollHeight - el.clientHeight;
+    if (end <= 2) {
+      el.className = '';
+      return;
+    }
+    heroRoll.step = setInterval(function () {
+      if (el.scrollTop < end) return (el.scrollTop += 1);
+      clearInterval(heroRoll.step);
+      heroRoll.wait = setTimeout(function () {
+        el.scrollTop = 0;
+        el.className = '';
+      }, 2500);
+    }, 60);
+  }, 3000);
+}
 function heroMetaHtml(m) {
   var html = '';
   function add(text) {
@@ -3240,7 +3269,7 @@ function makeBoard(loader) {
         lg.style.display = 'none';
       }
       $('heroMeta').innerHTML = heroMetaOf(it);
-      $('heroDesc').textContent = it.description || '';
+      setHeroDesc(it.description);
       setBg(bgMid(it));
       if (!it.description && it.id) {
         getMeta(it.type, it.id, function (m) {
@@ -3248,7 +3277,7 @@ function makeBoard(loader) {
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
           if (self.focusedItem() === it) {
-            $('heroDesc').textContent = it.description;
+            setHeroDesc(it.description);
             $('heroMeta').innerHTML = heroMetaOf(it);
           }
         });
