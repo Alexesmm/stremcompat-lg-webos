@@ -617,9 +617,12 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
   window.__SC_BOOT_DONE__=false;
   window.__SC_BOOT_FAILED__=false;
   window.__SC_BOOT_PHASE__='G0';
+  /* the step the last start reached: anything but READY means it stopped on the way (boot.js) */
+  try{window.__SC_LAST_PHASE__=localStorage.getItem('lastBootPhase')||'';}catch(e){window.__SC_LAST_PHASE__='';}
   window.__SC_PHASE__=function(code){
     if(window.__SC_BOOT_FAILED__)return;
     window.__SC_BOOT_PHASE__=String(code||'UNKNOWN');
+    try{localStorage.setItem('lastBootPhase',window.__SC_BOOT_PHASE__);}catch(e){}
   };
   window.__SC_SCRIPT_LOADED__=function(){
     if(window.__SC_BOOT_PHASE__==='G0')window.__SC_PHASE__('SCRIPT_LOADED_NO_ENTRY');

@@ -350,5 +350,6 @@
   "playBest": "Fonte migliore",
   "playingBest": "Riproduzione della fonte migliore: {0}",
   "updateAvailable": "StremCompat {0} è disponibile. Aggiornalo in Homebrew Channel.",
-  "whatsNew": "Aggiornato a StremCompat {0}. Novità nelle impostazioni del lettore: episodi, capitoli, dimensione immagine e velocità."
+  "whatsNew": "Aggiornato a StremCompat {0}. Novità nelle impostazioni del lettore: episodi, capitoli, dimensione immagine e velocità.",
+  "lastStartStopped": "L’ultima volta StremCompat si è fermato durante l’avvio (passo {0}). Se succede di nuovo, indica questo passo nella segnalazione."
 }

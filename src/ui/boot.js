@@ -68,6 +68,12 @@ function boot() {
         if (changed) home.built = false;
       });
     }, 8000);
+    /* the last start stopped before Home or login: say where, for a report */
+    var lastPhase = window.__SC_LAST_PHASE__;
+    if (lastPhase && lastPhase !== 'READY' && !window.__SC_BOOT_FAILED__)
+      setTimeout(function () {
+        toast(tx('lastStartStopped', lastPhase), 8000);
+      }, 2500);
     /* what this version brought, once after updating; then a newer version, once per version */
     setTimeout(function () {
       xhrJson(

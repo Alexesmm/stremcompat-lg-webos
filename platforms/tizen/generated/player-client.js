@@ -569,6 +569,7 @@ var UI_TEXT = {
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     whatsNew: 'Updated to StremCompat {0}. New in the player\'s settings: episodes, chapters, picture size and speed.',
+    lastStartStopped: 'The last time, StremCompat stopped while starting (step {0}). If it happens again, mention this step in your report.',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -926,6 +927,7 @@ var UI_TEXT = {
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     whatsNew: 'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
+    lastStartStopped: 'Da última vez, o StremCompat parou enquanto abria (etapa {0}). Se acontecer de novo, cite essa etapa no seu relato.',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
