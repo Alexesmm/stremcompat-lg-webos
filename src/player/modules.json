@@ -11,6 +11,7 @@
   "subtitles.js",
   "controls.js",
   "seek.js",
+  "options.js",
   "menus.js",
   "paused.js",
   "up-next.js",

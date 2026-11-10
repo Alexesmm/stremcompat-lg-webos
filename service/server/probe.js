@@ -35,6 +35,7 @@ function probeStreams(u, cb) {
     'json',
     '-show_format',
     '-show_streams',
+    '-show_chapters',
     localProxy(u)
   ];
   var out = [],
@@ -51,7 +52,7 @@ function probeStreams(u, cb) {
         /* when it cannot read the file, ffprobe still prints an empty object */
         var j = JSON.parse(Buffer.concat(out).toString('utf8'));
         if (!j.streams) throw new Error('no streams');
-        result = { streams: j.streams, format: j.format || {} };
+        result = { streams: j.streams, format: j.format || {}, chapters: j.chapters || [] };
       } catch (e) {
         var line = Buffer.concat(err).toString('utf8').split('\n')[0] || '';
         result = { err: timedOut ? 'timeout' : line.slice(0, 160) || 'probe failed', timedOut: timedOut };

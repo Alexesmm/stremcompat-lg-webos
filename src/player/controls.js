@@ -31,15 +31,17 @@ function nextSourcePref() {
     langs: subtitleLanguagesOnly({ name: SNAME }) ? [] : streamLanguages({ name: SNAME })
   };
 }
-function rememberNextSource() {
-  if (!ID || !NEXTVID) return;
+/* kept for the title page of the episode being opened: the next one, unless another is named */
+function rememberNextSource(vid) {
+  vid = vid || NEXTVID;
+  if (!ID || !vid) return;
   try {
-    localStorage.setItem('tvnextpref_' + ID + '_' + NEXTVID, JSON.stringify(nextSourcePref()));
+    localStorage.setItem('tvnextpref_' + ID + '_' + vid, JSON.stringify(nextSourcePref()));
   } catch (e) {}
 }
-function forgetNextSource() {
+function forgetNextSource(vid) {
   try {
-    localStorage.removeItem('tvnextpref_' + ID + '_' + NEXTVID);
+    localStorage.removeItem('tvnextpref_' + ID + '_' + (vid || NEXTVID));
   } catch (e) {}
 }
 var nextStarting = false;
@@ -159,11 +161,12 @@ function tryAnotherSource() {
   } catch (e) {}
   location.replace(appUrl('/' + (BACK || 'beta')));
 }
-/* The engine's link for a torrent ends after a long pause. The address on :11470 leads to a new
-   one, so the film opens again where it was instead of offering another source. */
+/* A film that was playing and lost its link opens again where it was, once, before another
+   source is offered: the engine's link for a torrent ends after a long pause (the address on
+   :11470 leads to a new one), and a direct link drops when the connection does. */
 var reopenedAt = 0;
-function reopenTorrent() {
-  if (!mediaUsable || !IS_TORRENT || Date.now() - reopenedAt < 60000) return false;
+function reopenSource() {
+  if (!mediaUsable || Date.now() - reopenedAt < 60000) return false;
   reopenedAt = Date.now();
   var at = v.currentTime;
   diag('media_reopen', { at: Math.round(at) });
@@ -180,7 +183,7 @@ function reopenTorrent() {
   return true;
 }
 v.addEventListener('error', function () {
-  if (retryStartup('error') || reopenTorrent()) return;
+  if (retryStartup('error') || reopenSource()) return;
   lname.textContent = P.playbackError;
   if (ID && BACK.indexOf('beta#detail/') === 0) showSourceFailed();
   diag('media_error', {

@@ -50,6 +50,30 @@ function nextEpisodeId(videos, vid, now) {
   return '';
 }
 
+/* The episodes of the season `vid` belongs to that have aired, in order: the player's own list. */
+function seasonEpisodes(videos, vid, now) {
+  var current = null;
+  (videos || []).forEach(function (v) {
+    if (v && v.id === vid) current = v;
+  });
+  if (!current) return [];
+  function episodeOf(v) {
+    return number(v.episode != null ? v.episode : v.number);
+  }
+  return videos
+    .filter(function (v) {
+      var at = releasedAt(v);
+      return v && v.id && number(v.season) === number(current.season) && !(at && at > (now || Date.now()));
+    })
+    .sort(function (a, b) {
+      return episodeOf(a) - episodeOf(b);
+    })
+    .map(function (v) {
+      return { id: v.id, episode: episodeOf(v), name: String(v.name || v.title || '').slice(0, 80) };
+    });
+}
+
 module.exports = {
-  nextEpisodeId: nextEpisodeId
+  nextEpisodeId: nextEpisodeId,
+  seasonEpisodes: seasonEpisodes
 };

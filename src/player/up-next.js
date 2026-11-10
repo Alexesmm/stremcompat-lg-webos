@@ -76,8 +76,8 @@ v.addEventListener('timeupdate', checkNp);
 var nextPrefetched = false,
   nextAnswers = {};
 /* cb(json) once, now if the answer is already here; a failed request is asked again next time */
-function nextSources(ad, cb) {
-  var u = streamUrl(ad, TYPE || 'series', NEXTVID),
+function nextSources(ad, vid, cb) {
+  var u = streamUrl(ad, TYPE || 'series', vid),
     entry = nextAnswers[u];
   if (entry && entry.done) return cb(entry.json);
   if (entry) return entry.waiting.push(cb);
@@ -96,7 +96,7 @@ function prefetchNext() {
   if (nextPrefetched || !isNextEp || !NEXTVID) return;
   nextPrefetched = true;
   var ads = nextEpisodeAddons();
-  for (var i = 0; i < ads.length; i++) nextSources(ads[i], function () {});
+  for (var i = 0; i < ads.length; i++) nextSources(ads[i], NEXTVID, function () {});
 }
 /* the addons that answer for the next episode, without the local streaming server's own */
 function nextEpisodeAddons() {
@@ -131,6 +131,10 @@ function coverForNext() {
   showToast(P.nextLoading, NEXT_DIRECT_LIMIT_MS);
 }
 function openNextDirect() {
+  openEpisodeDirect(NEXTVID, NEXTHREF);
+}
+/* the same for any episode (options.js): `page` is its title page, where a failure ends */
+function openEpisodeDirect(vid, page) {
   var ended = false,
     items = [],
     ads = [],
@@ -140,7 +144,7 @@ function openNextDirect() {
   function giveUp() {
     if (ended || exited) return;
     ended = true;
-    location.replace(appUrl(NEXTHREF));
+    location.replace(appUrl(page));
   }
   function play(source) {
     postStreamRef(source, function (ref) {
@@ -148,7 +152,7 @@ function openNextDirect() {
       if (!ref) return giveUp();
       ended = true;
       clearTimeout(limit);
-      forgetNextSource();
+      forgetNextSource(vid);
       location.replace(
         appUrl(
           '/play?ref=' +
@@ -158,9 +162,9 @@ function openNextDirect() {
             '&id=' +
             encodeURIComponent(ID) +
             '&vid=' +
-            encodeURIComponent(NEXTVID) +
+            encodeURIComponent(vid) +
             '&back=' +
-            encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + NEXTVID)
+            encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + vid)
         )
       );
     });
@@ -174,7 +178,7 @@ function openNextDirect() {
   var pending = ads.length,
     pref = nextSourcePref();
   for (var a = 0; a < ads.length; a++)
-    nextSources(ads[a], function (j) {
+    nextSources(ads[a], vid, function (j) {
       var st = (j && j.streams) || [];
       for (var k = 0; k < st.length; k++) {
         var item = sourceItem(st[k], ADDON, ADDONBASE);

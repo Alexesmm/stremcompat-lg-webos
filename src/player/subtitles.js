@@ -24,6 +24,10 @@ subSize = Math.round(38 * ((SIZEPCT[lsGet('subtitleSize', '2')] || 100) / 100));
 subColor = lsGet('subsColor', '#ffffff');
 subOutline = lsGet('subsOutlineColor', '#000000');
 subBgOp = parseFloat(lsGet('subsBgStyle', '0')) || 0;
+/* how far from the bottom of the screen, in percent, and how solid (the player's Style menu) */
+var subBottom = parseInt(lsGet('subsBottom', '8'), 10) || 8,
+  subOpacity = parseFloat(lsGet('subsOpacity', '1')) || 1;
+subEl.style.bottom = subBottom + '%';
 var SEEKSTEP = parseInt(lsGet('seekStep', '10'), 10) || 10;
 var EMBMODE = lsGet('embSubsMode', 'server');
 // "server"=our ffmpeg extraction, "native"=TV textTracks
@@ -502,7 +506,7 @@ function subStyle() {
     o +
     ';';
   var bg = subBgOp > 0 ? 'background:rgba(0,0,0,' + subBgOp + ');padding:2px 16px;border-radius:8px;' : '';
-  return 'font-size:' + subSize + 'px;color:' + subColor + ';' + sh + bg;
+  return 'font-size:' + subSize + 'px;color:' + subColor + ';opacity:' + subOpacity + ';' + sh + bg;
 }
 /* Cues can arrive out of order (an extraction restarted from 0 appends earlier lines),
    so the first matching cue is found by a full scan. The scan also records when the

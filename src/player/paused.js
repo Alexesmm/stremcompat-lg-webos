@@ -54,7 +54,10 @@ function ensureTechProbe() {
   if (techProbed || !HAS_MEDIA_TOOLS) return;
   techProbed = true;
   xhr('/probe?u=' + encodeURIComponent(URL), function (j) {
-    if (j) fillBadges(j);
+    if (!j) return;
+    mediaInfo = j;
+    fillBadges(j);
+    if (mode === 'menu' && (subView === 'root' || subView === 'audio')) reopen();
   });
 }
 var pvT = null;

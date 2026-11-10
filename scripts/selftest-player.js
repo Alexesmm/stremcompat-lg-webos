@@ -601,8 +601,9 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
 (function () {
   var subtitleCode = src('player/subtitles.js');
   var label = subtitleCode.slice(subtitleCode.indexOf('function selectedLabel'), subtitleCode.indexOf('function eh('));
-  function player(curSub, tracks, extSubs) {
-    var rows = [];
+  function player(curSub, tracks, extSubs, more) {
+    more = more || {};
+    var rows = [], calls = [], stored = {};
     var menu = {
       className: '',
       querySelectorAll: function () { return rows; },
@@ -616,17 +617,32 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
         });
       }
     };
-    var names = ['settings', 'audio', 'subtitles', 'none', 'off', 'embedded', 'external', 'style', 'delay', 'language', 'selected'];
+    var names = ['settings', 'audio', 'subtitles', 'none', 'off', 'embedded', 'external', 'style', 'delay', 'language', 'selected', 'moreLanguages', 'episodes', 'chapters', 'files', 'picture', 'pictureFit', 'pictureZoom', 'speed', 'higher', 'lower', 'opacity', 'later', 'earlier', 'reset', 'readingTracks'];
     var P = {};
     names.forEach(function (name) { P[name] = name; });
     var context = {
-      history: { pushState: function () {} }, window: { addEventListener: function () {} },
+      history: { pushState: function () {} },
       menu: menu, P: P, curSub: curSub, extSubs: extSubs || [], embTracks: [], embTracksLoading: false,
-      v: { audioTracks: tracks || [] }, subColor: '#ffffff', subBgOp: 0,
+      v: Object.assign({ audioTracks: tracks || [], addEventListener: function () {}, style: {}, currentTime: 0, playbackRate: 1 }, more.video),
+      subColor: '#ffffff', subBgOp: 0, subBottom: 8, subOpacity: 1, subDelay: 0, subEl: { style: {} },
       eh: function (s) { return s; }, audioName: function () { return ''; }, subtitleName: function () { return ''; },
-      ensureEmbTracks: function () {}, goBack: function () {}, paintBtns: function () {}
+      ensureEmbTracks: function () {}, goBack: function () {}, paintBtns: function () {}, showBar: function () {},
+      ensureTechProbe: function () {}, showToast: function () {}, saveTitlePref: function () {},
+      lsGet: function (k, d) { return d; }, sameLanguage: function (a, b) { return !!a && a === b; },
+      WANTAUD: more.audio || '', WANTAUD2: '', WANTSUB: more.subtitle || '', WANTSUB2: '', defaultMediaLanguage: function () { return 'eng'; },
+      TYPE: more.type || 'movie', ID: 'tt5', VID: more.vid || '', BACK: 'beta#detail/x', URL: more.url || 'http://x/a.mp4', IS_TORRENT: !!more.torrent,
+      ADDON: 'A', ADDONBASE: 'https://a.example', SNAME: 'A 1080p', QUALITY: '1080p', COMPAT: '',
+      window: { addEventListener: function () {}, innerWidth: 1920, innerHeight: 1080 }, localStorage: { setItem: function (k, v) { stored[k] = v; } },
+      tx: function (key, n) { return key + ' ' + n; }, fmt: function (s) { return 't' + s; }, Date: more.clock || Date,
+      xhr: function (u, cb) { calls.push(u); cb(more.answers && more.answers[u.split('?')[0]]); },
+      seekTo: function (t) { calls.push('seek ' + t); }, saveProgress: function () {}, pushLib: function () {},
+      rememberNextSource: function (vid) { calls.push('remember ' + vid); }, openEpisodeDirect: function (vid, page) { calls.push('open ' + vid + ' ' + page); },
+      postStreamRef: function (source, cb) { calls.push('ref ' + source.url); cb('R9'); }, location: { replace: function (u) { calls.push('go ' + u); } },
+      appUrl: function (p) { return p; }, nextStarting: false, setTimeout: function () {}
     };
-    vm.runInNewContext(label + src('player/menus.js') + ';var menuItems,mIdx,subView,mode;this.menuRows=function(){return menu.querySelectorAll()};this.focus=function(){return mIdx};this.setFocus=function(i){mIdx=i;paintMenu()};', context);
+    vm.runInNewContext(label + src('player/options.js') + src('player/menus.js') + ';var menuItems,mIdx,subView,mode;this.menuRows=function(){return menu.querySelectorAll()};this.focus=function(){return mIdx};this.setFocus=function(i){mIdx=i;paintMenu()};this.texts=function(){return menu.querySelectorAll().map(function(r){return r.text})};this.press=function(i){mIdx=i;chooseMenu()};this.set=function(k,v){if(k==="mediaInfo")mediaInfo=v;};this.get=function(){return{bottom:subBottom,opacity:subOpacity,delay:subDelay,view:subView}};', context);
+    context.calls = calls;
+    context.stored = stored;
     return context;
   }
   var audio = player('off', [{ language: 'en', enabled: false }, { language: 'pt', enabled: true }]);
@@ -654,6 +670,90 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   assert.strictEqual(off.focus(), 0, 'Off in use is the first row');
   off.openMenu('style');
   assert.strictEqual(off.focus(), 0, 'lists without a selection open on the first row');
+
+  /* the audio asked for comes first, each track with what the file says about it */
+  var dubbed = player('off', [{ language: 'en', enabled: true }, { language: 'pt', enabled: false }], [], { audio: 'pt' });
+  dubbed.set('mediaInfo', { audios: [{ lang: 'English', title: 'Commentary', format: 'AAC 2.0' }, { lang: 'Portuguese', title: '', format: 'Dolby Digital 5.1' }] });
+  dubbed.openMenu('audio');
+  assert.deepStrictEqual(dubbed.texts(), ['Portuguese  ·  Dolby Digital 5.1', 'English  ·  Commentary  ·  AAC 2.0 — selected'], 'the audio list is not in the asked order with its details');
+  assert.strictEqual(dubbed.focus(), 1, 'the audio list did not open on the track in use after reordering');
+
+  /* subtitle languages: the asked ones and English first, the rest behind one row */
+  var many = [{ lang: 'eng', name: 'English', u: 'a' }, { lang: 'fre', name: 'French', u: 'b' }, { lang: 'ger', name: 'German', u: 'c' }, { lang: 'por', name: 'Portuguese', u: 'd' }];
+  var grouped = player('ext:b', [], many, { subtitle: 'por' });
+  grouped.openMenu('external');
+  assert.deepStrictEqual(grouped.texts(), ['English ›', 'Portuguese ›', 'moreLanguages — selected ›'].map(function (t) { return t.replace(' ›', ' \u203a'); }), 'the other languages were not gathered under one row');
+  grouped.press(2);
+  assert.deepStrictEqual(grouped.texts(), ['French — selected \u203a', 'German \u203a'], 'More languages does not list the rest');
+
+  /* the main menu offers only what this video has */
+  var film = player('off', [], [], { video: { tagName: 'VIDEO', videoWidth: 1920, videoHeight: 800 } });
+  film.openMenu('root');
+  assert.deepStrictEqual(film.texts().slice(2), ['picture: pictureFit', 'speed: 1\u00d7 \u203a'], 'a film offered episodes, chapters or files it does not have');
+  film.press(2);
+  assert.strictEqual(film.v.style.width, '135%', 'a film wider than the screen was not grown to fill it');
+  assert.strictEqual(film.v.style.left, '-17.5%', 'the grown picture is not centred');
+  assert.strictEqual(film.stored.pictureMode, 'zoom', 'the picture choice was not kept');
+  film.press(2);
+  assert.strictEqual(film.v.style.width, '100%', 'the whole picture did not come back');
+  var samsung = player('off', [], []);
+  samsung.openMenu('root');
+  assert.strictEqual(samsung.texts().length, 2, 'picture and speed were offered where the video is not an element of the page');
+
+  /* chapters */
+  var chaptered = player('off', [], [], { video: { currentTime: 700 } });
+  chaptered.set('mediaInfo', { chapters: [{ t: 0, name: 'Opening' }, { t: 600, name: '' }, { t: 1300, name: 'Credits' }] });
+  chaptered.openMenu('root');
+  assert.ok(chaptered.texts().indexOf('chapters \u203a') >= 0, 'a file with chapters does not offer them');
+  chaptered.openMenu('chapters');
+  assert.deepStrictEqual(chaptered.texts(), ['t0  ·  Opening', 't600 — selected', 't1300  ·  Credits'], 'the chapter list is wrong');
+  chaptered.press(2);
+  assert.deepStrictEqual(chaptered.calls, ['seek 1300'], 'choosing a chapter did not jump to it');
+
+  /* the season's episodes, opened with the matching source */
+  var series = player('off', [], [], { type: 'series', vid: 'tt5:2:1', answers: { '/episodes': { episodes: [{ id: 'tt5:2:1', episode: 1, name: 'One' }, { id: 'tt5:2:2', episode: 2, name: '' }] } } });
+  series.openMenu('root');
+  assert.strictEqual(series.texts()[2], 'episodes \u203a', 'a series does not offer its episodes');
+  series.press(2);
+  assert.deepStrictEqual(series.texts(), ['episode 1  ·  One — selected', 'episode 2'], 'the episode list is wrong');
+  series.press(0);
+  assert.strictEqual(series.calls.length, 1, 'choosing the episode being watched left the player');
+  series.openMenu('episodes');
+  series.press(1);
+  assert.deepStrictEqual(series.calls.slice(1), ['remember tt5:2:2', 'open tt5:2:2 /beta#detail/series/tt5/tt5%3A2%3A2'], 'another episode did not open from the player');
+
+  /* the other video files of a torrent */
+  var hash = 'c'.repeat(40);
+  var pack = player('off', [], [], { torrent: true, url: 'http://127.0.0.1:11470/' + hash + '/1?tr=x', answers: { '/torrentfiles': { files: [{ index: 1, name: 'a.mkv', size: 2147483648, playing: true }, { index: 4, name: 'b.mkv', size: 734003200, playing: false }] } } });
+  pack.openMenu('root');
+  assert.strictEqual(pack.texts()[2], 'files \u203a', 'a torrent with two films does not offer them');
+  pack.press(2);
+  assert.deepStrictEqual(pack.texts(), ['a.mkv  ·  2.0 GB — selected', 'b.mkv  ·  700 MB'], 'the file list is wrong');
+  pack.press(1);
+  assert.deepStrictEqual(pack.calls.slice(1), ['ref http://127.0.0.1:11470/' + hash + '/4?tr=x', 'go /play?ref=R9&type=movie&id=tt5&vid=&back=' + encodeURIComponent('beta#detail/x')], 'another file of the torrent did not open');
+  var single = player('off', [], [], { torrent: true, answers: { '/torrentfiles': { files: [{ index: 0, name: 'a.mkv', size: 1, playing: true }] } } });
+  single.openMenu('root');
+  assert.strictEqual(single.texts().length, 2, 'a torrent with one film offered a file list');
+
+  /* subtitles: position, opacity and a delay that speeds up when the key is held */
+  var now = 0, clock = { now: function () { return now; } };
+  var styled = player('ext:a', [], [{ lang: 'eng', name: 'English', u: 'a' }], { clock: clock });
+  styled.openMenu('style');
+  styled.press(4);
+  assert.strictEqual(styled.get().bottom, 12, 'subtitles did not move up');
+  assert.strictEqual(styled.subEl.style.bottom, '12%', 'the new position was not applied at once');
+  assert.strictEqual(styled.stored.subsBottom, '12', 'the subtitle position was not kept');
+  styled.press(6);
+  assert.strictEqual(styled.get().opacity, 0.8, 'the opacity did not change');
+  styled.openMenu('delay');
+  now = 10000;
+  styled.press(0);
+  assert.strictEqual(styled.get().delay, 0.1, 'one press is not a tenth of a second');
+  for (var hold = 0; hold < 6; hold++) { now += 100; styled.press(0); }
+  assert.strictEqual(styled.get().delay, 1.5, 'holding the key did not speed the delay up');
+  now += 2000;
+  styled.press(1);
+  assert.strictEqual(styled.get().delay, 1.4, 'a single press after a hold kept the large step');
 })();
 
 // ---- a torrent's link ending during a long pause (controls.js) ----
@@ -670,7 +770,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
       play: function () { this.plays++; }
     };
     var context = {
-      URL: address, IS_TORRENT: /:11470\//.test(address), mediaUsable: usable, v: video, P: { retrying: '' }, Date: Date,
+      URL: address, mediaUsable: usable, v: video, P: { retrying: '' }, Date: Date,
       diag: function () {}, showToast: function () {}
     };
     vm.runInNewContext(body, context);
@@ -679,7 +779,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   var torrent = 'http://127.0.0.1:11470/' + 'a'.repeat(40) + '/0';
 
   var paused = player(torrent, true);
-  assert.strictEqual(paused.context.reopenTorrent(), true, 'a torrent whose link ended was not opened again');
+  assert.strictEqual(paused.context.reopenSource(), true, 'a torrent whose link ended was not opened again');
   assert.strictEqual(paused.video.src, torrent, 'the torrent did not go back to its address on :11470');
   assert.strictEqual(paused.video.loads, 1);
   paused.video.currentTime = 0;
@@ -687,12 +787,12 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   assert.strictEqual(paused.video.currentTime, 1234, 'the film did not return to where it was');
   assert.strictEqual(paused.video.plays, 1, 'the film did not start again');
   assert.strictEqual(paused.listeners.loadedmetadata, undefined, 'a later load would jump back to the old position');
-  assert.strictEqual(paused.context.reopenTorrent(), false, 'a link that keeps failing must offer another source, not loop');
+  assert.strictEqual(paused.context.reopenSource(), false, 'a link that keeps failing must offer another source, not loop');
 
-  assert.strictEqual(player('http://example.com/film.mp4', true).context.reopenTorrent(), false, 'only torrents have a new link to ask for');
-  assert.strictEqual(player(torrent, false).context.reopenTorrent(), false, 'a torrent that never played is a startup failure, not a pause');
+  assert.strictEqual(player('http://example.com/film.mp4', true).context.reopenSource(), true, 'a direct link that dropped was not opened again');
+  assert.strictEqual(player(torrent, false).context.reopenSource(), false, 'a torrent that never played is a startup failure, not a pause');
 })();
 
-console.log('OK: settings menu shows what is in use.');
+console.log('OK: settings menu shows what is in use, with episodes, chapters, torrent files, picture, speed and subtitle position.');
 console.log('OK: torrent opened again after a long pause.');
 console.log('OK: watched state like the official apps, next-episode countdown, next episode opened directly, waiting for a chosen subtitle, do not save history, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');

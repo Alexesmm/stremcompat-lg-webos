@@ -107,6 +107,28 @@ function mediaAndDiskTests() {
   assert.strictEqual(res(3840, 1600), '4K', 'a 4K film in a cinema format was not called 4K');
   assert.strictEqual(res(1920, 800), '1080p', 'a 1080p film in a cinema format was not called 1080p');
   assert.strictEqual(res(1280, 534), '720p', 'a 720p film in a cinema format was not called 720p');
+  var described = media.describe(
+    [
+      { codec_type: 'video', codec_name: 'h264', width: 1920, height: 1080 },
+      { codec_type: 'audio', codec_name: 'ac3', channels: 6, tags: { language: 'por', title: 'Dublado' } },
+      { codec_type: 'audio', codec_name: 'aac', channels: 2, tags: { language: 'eng' } }
+    ],
+    {},
+    [{ start_time: '0.000000', tags: { title: 'Opening' } }, { start_time: '95.500000' }]
+  );
+  assert.deepStrictEqual(described.audios, [{ lang: 'Portuguese', title: 'Dublado', format: 'Dolby Digital 5.1' }, { lang: 'English', title: '', format: 'AAC 2.0' }], 'the audio tracks were not described for the player');
+  assert.deepStrictEqual(described.chapters, [{ t: 0, name: 'Opening' }, { t: 95.5, name: '' }], 'the chapters were not read');
+  assert.strictEqual(media.describe([{ codec_type: 'video', codec_name: 'h264' }], {}, [{ start_time: '0' }]).chapters, undefined, 'a single chapter is not a list');
+  var season = require(path.join(root, 'service', 'server', 'episodes.js')).seasonEpisodes(
+    [
+      { id: 's:1:2', season: 1, episode: 2, name: 'Two' },
+      { id: 's:2:1', season: 2, episode: 1 },
+      { id: 's:1:1', season: 1, episode: 1, name: 'One' },
+      { id: 's:1:3', season: 1, episode: 3, released: '2999-01-01T00:00:00.000Z' }
+    ],
+    's:1:2'
+  );
+  assert.deepStrictEqual(season, [{ id: 's:1:1', episode: 1, name: 'One' }, { id: 's:1:2', episode: 2, name: 'Two' }], 'the season list is not the aired episodes in order');
   var table = 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/mmcblk0p20 1024000 863232 160768 85% /media/developer\n';
   assert.deepStrictEqual(disk.parse(table), { totalMb: 1000, freeMb: 157 }, 'free space was not read from df');
   assert.strictEqual(disk.parse('df: unknown option -- P'), null, 'an error from df was taken for a size');
@@ -238,6 +260,8 @@ async function engineRoutesTests() {
   assert.strictEqual((await ask('/' + 'b'.repeat(39) + '/1')).status, 404, 'a malformed hash was accepted');
   var refused = await ask('/' + 'deadbeef'.repeat(5) + '/0');
   assert.strictEqual(refused.status, 503, 'a torrent the engine refuses was not reported');
+  var listed = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/torrentfiles?u=' + encodeURIComponent('http://127.0.0.1:11470/' + hash + '/1') })).text).files;
+  assert.deepStrictEqual(listed, [{ index: 1, name: 'movie.mkv', size: 200000, playing: true }, { index: 2, name: 'sample.mkv', size: 5000, playing: false }], 'the video files of a torrent were not listed for the player');
   var file = await ask('/streamfile');
   assert.strictEqual(file.status, 404, 'the torrent address answers the interface routes');
   console.log('OK: torrent address, redirect to the engine, file choice, OpenSubtitles hash, refused torrent.');

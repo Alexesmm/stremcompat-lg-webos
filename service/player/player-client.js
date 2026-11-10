@@ -347,6 +347,18 @@ var UI_TEXT = {
       restartHint: 'OK: start over',
       fromStart: 'Playing from the start',
       nextLoading: 'Next episode…',
+      moreLanguages: 'More languages',
+      higher: 'Move up',
+      lower: 'Move down',
+      opacity: 'Opacity',
+      episodes: 'Episodes',
+      chapters: 'Chapters',
+      files: 'Files in this torrent',
+      picture: 'Picture',
+      pictureFit: 'Whole picture',
+      pictureZoom: 'Fill the screen',
+      speed: 'Speed',
+      speedRefused: 'This TV does not change the speed of this video',
       subtitlesReady: 'Subtitles ready',
       subtitleFailed: 'Subtitle extraction failed',
       nativeSubs: 'Native subtitles on',
@@ -370,8 +382,8 @@ var UI_TEXT = {
       tryAgain: 'Try again',
       style: 'Style',
       delay: 'Delay',
-      later: 'Later (+0.5s)',
-      earlier: 'Earlier (-0.5s)',
+      later: 'Later (+0.1s)',
+      earlier: 'Earlier (-0.1s)',
       reset: 'Reset',
       bigger: 'Text bigger',
       smaller: 'Text smaller',
@@ -685,6 +697,18 @@ var UI_TEXT = {
       restartHint: 'OK: recomeçar',
       fromStart: 'Reproduzindo do início',
       nextLoading: 'Próximo episódio…',
+      moreLanguages: 'Mais idiomas',
+      higher: 'Mais para cima',
+      lower: 'Mais para baixo',
+      opacity: 'Opacidade',
+      episodes: 'Episódios',
+      chapters: 'Capítulos',
+      files: 'Arquivos deste torrent',
+      picture: 'Imagem',
+      pictureFit: 'Imagem inteira',
+      pictureZoom: 'Preencher a tela',
+      speed: 'Velocidade',
+      speedRefused: 'Esta TV não muda a velocidade deste vídeo',
       subtitlesReady: 'Legendas prontas',
       subtitleFailed: 'Falha ao extrair legendas',
       nativeSubs: 'Legendas nativas ativadas',
@@ -708,8 +732,8 @@ var UI_TEXT = {
       tryAgain: 'Tentar de novo',
       style: 'Estilo',
       delay: 'Atraso',
-      later: 'Mais tarde (+0,5s)',
-      earlier: 'Mais cedo (-0,5s)',
+      later: 'Mais tarde (+0,1s)',
+      earlier: 'Mais cedo (-0,1s)',
       reset: 'Redefinir',
       bigger: 'Aumentar texto',
       smaller: 'Diminuir texto',
@@ -1613,6 +1637,10 @@ subSize = Math.round(38 * ((SIZEPCT[lsGet('subtitleSize', '2')] || 100) / 100));
 subColor = lsGet('subsColor', '#ffffff');
 subOutline = lsGet('subsOutlineColor', '#000000');
 subBgOp = parseFloat(lsGet('subsBgStyle', '0')) || 0;
+/* how far from the bottom of the screen, in percent, and how solid (the player's Style menu) */
+var subBottom = parseInt(lsGet('subsBottom', '8'), 10) || 8,
+  subOpacity = parseFloat(lsGet('subsOpacity', '1')) || 1;
+subEl.style.bottom = subBottom + '%';
 var SEEKSTEP = parseInt(lsGet('seekStep', '10'), 10) || 10;
 var EMBMODE = lsGet('embSubsMode', 'server');
 // "server"=our ffmpeg extraction, "native"=TV textTracks
@@ -2091,7 +2119,7 @@ function subStyle() {
     o +
     ';';
   var bg = subBgOp > 0 ? 'background:rgba(0,0,0,' + subBgOp + ');padding:2px 16px;border-radius:8px;' : '';
-  return 'font-size:' + subSize + 'px;color:' + subColor + ';' + sh + bg;
+  return 'font-size:' + subSize + 'px;color:' + subColor + ';opacity:' + subOpacity + ';' + sh + bg;
 }
 /* Cues can arrive out of order (an extraction restarted from 0 appends earlier lines),
    so the first matching cue is found by a full scan. The scan also records when the
@@ -2169,15 +2197,17 @@ function nextSourcePref() {
     langs: subtitleLanguagesOnly({ name: SNAME }) ? [] : streamLanguages({ name: SNAME })
   };
 }
-function rememberNextSource() {
-  if (!ID || !NEXTVID) return;
+/* kept for the title page of the episode being opened: the next one, unless another is named */
+function rememberNextSource(vid) {
+  vid = vid || NEXTVID;
+  if (!ID || !vid) return;
   try {
-    localStorage.setItem('tvnextpref_' + ID + '_' + NEXTVID, JSON.stringify(nextSourcePref()));
+    localStorage.setItem('tvnextpref_' + ID + '_' + vid, JSON.stringify(nextSourcePref()));
   } catch (e) {}
 }
-function forgetNextSource() {
+function forgetNextSource(vid) {
   try {
-    localStorage.removeItem('tvnextpref_' + ID + '_' + NEXTVID);
+    localStorage.removeItem('tvnextpref_' + ID + '_' + (vid || NEXTVID));
   } catch (e) {}
 }
 var nextStarting = false;
@@ -2297,11 +2327,12 @@ function tryAnotherSource() {
   } catch (e) {}
   location.replace(appUrl('/' + (BACK || 'beta')));
 }
-/* The engine's link for a torrent ends after a long pause. The address on :11470 leads to a new
-   one, so the film opens again where it was instead of offering another source. */
+/* A film that was playing and lost its link opens again where it was, once, before another
+   source is offered: the engine's link for a torrent ends after a long pause (the address on
+   :11470 leads to a new one), and a direct link drops when the connection does. */
 var reopenedAt = 0;
-function reopenTorrent() {
-  if (!mediaUsable || !IS_TORRENT || Date.now() - reopenedAt < 60000) return false;
+function reopenSource() {
+  if (!mediaUsable || Date.now() - reopenedAt < 60000) return false;
   reopenedAt = Date.now();
   var at = v.currentTime;
   diag('media_reopen', { at: Math.round(at) });
@@ -2318,7 +2349,7 @@ function reopenTorrent() {
   return true;
 }
 v.addEventListener('error', function () {
-  if (retryStartup('error') || reopenTorrent()) return;
+  if (retryStartup('error') || reopenSource()) return;
   lname.textContent = P.playbackError;
   if (ID && BACK.indexOf('beta#detail/') === 0) showSourceFailed();
   diag('media_error', {
@@ -2676,6 +2707,173 @@ function goBack() {
     exit();
   }
 }
+// What the settings menu offers beyond audio and subtitles: the season's episodes, chapters,
+// the files of a torrent, the picture size and the speed.
+
+/* what FFprobe read from the file, once asked (paused.js): chapters and the audio tracks */
+var mediaInfo = null;
+
+/* ---- audio tracks: the languages asked for first, each with what the file says about it ---- */
+function audioOrder() {
+  var first = [],
+    rest = [];
+  for (var i = 0; i < v.audioTracks.length; i++) {
+    var lang = v.audioTracks[i].language;
+    (sameLanguage(lang, WANTAUD) || sameLanguage(lang, WANTAUD2) ? first : rest).push(i);
+  }
+  return first.concat(rest);
+}
+function audioLabel(i) {
+  var track = v.audioTracks[i],
+    plain = track.label || track.language || P.audio + ' ' + (i + 1),
+    known =
+      mediaInfo &&
+      mediaInfo.audios &&
+      mediaInfo.audios.length === v.audioTracks.length &&
+      mediaInfo.audios[i];
+  if (!known) return plain;
+  var parts = [known.lang || plain];
+  if (known.title && known.title !== known.lang) parts.push(known.title);
+  if (known.format) parts.push(known.format);
+  return parts.join('  ·  ');
+}
+
+/* ---- subtitle languages: the ones asked for, the interface's and English come first ---- */
+function wantedSubtitleLanguage(lang) {
+  return (
+    sameLanguage(lang, WANTSUB) ||
+    sameLanguage(lang, WANTSUB2) ||
+    sameLanguage(lang, defaultMediaLanguage()) ||
+    sameLanguage(lang, 'eng')
+  );
+}
+
+/* ---- picture: the whole image, or grown until it fills the screen ----
+   The TV draws the video inside the element's box and keeps its shape, so a box larger than
+   the screen crops the sides (or the top and bottom) of a film wider or narrower than it. */
+var IS_VIDEO_ELEMENT = v.tagName === 'VIDEO',
+  pictureMode = IS_VIDEO_ELEMENT ? lsGet('pictureMode', 'fit') : 'fit';
+function applyPicture() {
+  if (!IS_VIDEO_ELEMENT) return;
+  var grow = 1;
+  if (pictureMode === 'zoom' && v.videoWidth && v.videoHeight) {
+    var screen = window.innerWidth / window.innerHeight,
+      video = v.videoWidth / v.videoHeight;
+    grow = Math.max(screen / video, video / screen);
+  }
+  var size = Math.round(grow * 1000) / 10 + '%',
+    offset = Math.round((1 - grow) * 500) / 10 + '%';
+  v.style.width = size;
+  v.style.height = size;
+  v.style.left = offset;
+  v.style.top = offset;
+}
+function togglePicture() {
+  pictureMode = pictureMode === 'zoom' ? 'fit' : 'zoom';
+  try {
+    localStorage.setItem('pictureMode', pictureMode);
+  } catch (e) {}
+  applyPicture();
+}
+v.addEventListener('loadedmetadata', applyPicture);
+
+/* ---- speed: offered until the TV shows it does not follow ---- */
+var SPEEDS = [0.75, 1, 1.25, 1.5],
+  speedRefused = false;
+function canChangeSpeed() {
+  return IS_VIDEO_ELEMENT && typeof v.playbackRate === 'number' && !speedRefused;
+}
+function speedLabel(rate) {
+  return rate + '×';
+}
+function setSpeed(rate) {
+  try {
+    v.playbackRate = rate;
+  } catch (e) {}
+  setTimeout(function () {
+    if (Math.abs(v.playbackRate - rate) < 0.01) return;
+    speedRefused = true;
+    showToast(P.speedRefused);
+  }, 500);
+}
+
+/* ---- chapters ---- */
+function currentChapter() {
+  var list = (mediaInfo && mediaInfo.chapters) || [],
+    at = -1;
+  for (var i = 0; i < list.length; i++) if (list[i].t <= v.currentTime + 0.5) at = i;
+  return at;
+}
+
+/* ---- the episodes of this season, opened from here with the source that matches this one ---- */
+var CAN_LIST_EPISODES = TYPE === 'series' && !!ID && VID.indexOf(':') > 0 && BACK.indexOf('beta') === 0,
+  seasonList = null,
+  seasonListAsked = false;
+function ensureSeasonList() {
+  if (seasonListAsked) return;
+  seasonListAsked = true;
+  xhr('/episodes?id=' + encodeURIComponent(ID) + '&vid=' + encodeURIComponent(VID), function (j) {
+    seasonList = (j && j.episodes) || [];
+    if (mode === 'menu' && subView === 'episodes') reopen();
+  });
+}
+function episodePage(vid) {
+  return '/beta#detail/' + [TYPE, ID, vid].map(encodeURIComponent).join('/');
+}
+function goToEpisode(vid) {
+  if (nextStarting) return;
+  nextStarting = true;
+  try {
+    saveProgress();
+    pushLib(true);
+    rememberNextSource(vid);
+    openEpisodeDirect(vid, episodePage(vid));
+  } catch (e) {
+    location.replace(appUrl(episodePage(vid)));
+  }
+}
+
+/* ---- a torrent with several films or episodes: its other video files ---- */
+var torrentFileList = null,
+  torrentFilesAsked = false;
+function ensureTorrentFiles() {
+  if (torrentFilesAsked || !IS_TORRENT) return;
+  torrentFilesAsked = true;
+  xhr('/torrentfiles?u=' + encodeURIComponent(URL), function (j) {
+    torrentFileList = (j && j.files) || [];
+    if (torrentFileList.length > 1 && mode === 'menu' && subView === 'root') reopen();
+  });
+}
+function fileSize(bytes) {
+  return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(1) + ' GB' : Math.round(bytes / 1048576) + ' MB';
+}
+function playTorrentFile(index) {
+  var source = {
+    url: URL.replace(/(:11470\/[0-9a-f]{40}\/)\d+/i, '$1' + index),
+    addon: ADDON,
+    addonBase: ADDONBASE,
+    name: SNAME,
+    quality: QUALITY,
+    compatLabels: COMPAT ? COMPAT.split(',') : []
+  };
+  postStreamRef(source, function (ref) {
+    if (!ref) return showToast(P.sourceFailed);
+    location.replace(
+      appUrl(
+        '/play?ref=' +
+          encodeURIComponent(ref) +
+          '&type=' +
+          encodeURIComponent(TYPE) +
+          '&id=' +
+          encodeURIComponent(ID) +
+          '&vid=' +
+          encodeURIComponent(VID) +
+          '&back=' +
+          encodeURIComponent(BACK)
+      )
+    );
+  });
+}
 // Settings menu: audio, subtitles, embedded tracks and subtitle style.
 // This TV delivers Back as a history pop. We keep ONE dummy entry: popstate closes the
 // menu/controls (re-pushing to stay), or exits when nothing is open.
@@ -2695,20 +2893,82 @@ function openMenu(view) {
   menuItems = [];
   var html = '';
   if (view === 'subsroot' || view === 'embedded') ensureEmbTracks();
+  if (view === 'root' || view === 'audio') ensureTechProbe();
+  if (view === 'root') ensureTorrentFiles();
+  if (view === 'episodes') ensureSeasonList();
   if (view === 'root') {
     html += '<div class=mh>' + P.settings + '</div>';
     html += '<div class=mi>' + P.audio + ': ' + eh(audioName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'audio' });
     html += '<div class=mi>' + P.subtitles + ': ' + eh(subtitleName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'subsroot' });
+    if (CAN_LIST_EPISODES) {
+      html += '<div class=mi>' + P.episodes + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'episodes' });
+    }
+    if (mediaInfo && mediaInfo.chapters) {
+      html += '<div class=mi>' + P.chapters + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'chapters' });
+    }
+    if (torrentFileList && torrentFileList.length > 1) {
+      html += '<div class=mi>' + P.files + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'files' });
+    }
+    if (IS_VIDEO_ELEMENT) {
+      html +=
+        '<div class=mi>' +
+        P.picture +
+        ': ' +
+        (pictureMode === 'zoom' ? P.pictureZoom : P.pictureFit) +
+        '</div>';
+      menuItems.push({ k: 'picture' });
+    }
+    if (canChangeSpeed()) {
+      html += '<div class=mi>' + P.speed + ': ' + speedLabel(v.playbackRate) + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'speed' });
+    }
+  } else if (view === 'episodes') {
+    html += '<div class=mh>' + P.episodes + '</div>';
+    if (!seasonList) html += '<div class=mi style="opacity:.5">' + P.readingTracks + '</div>';
+    else if (!seasonList.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
+    for (var se = 0; seasonList && se < seasonList.length; se++) {
+      var here = seasonList[se].id === VID;
+      html += choiceRow(
+        tx('episode', seasonList[se].episode) + (seasonList[se].name ? '  ·  ' + seasonList[se].name : ''),
+        here
+      );
+      menuItems.push({ k: 'episode', vid: seasonList[se].id, on: here });
+    }
+  } else if (view === 'chapters') {
+    html += '<div class=mh>' + P.chapters + '</div>';
+    var nowIn = currentChapter();
+    for (var ch = 0; ch < mediaInfo.chapters.length; ch++) {
+      var mark = mediaInfo.chapters[ch];
+      html += choiceRow(fmt(mark.t) + (mark.name ? '  ·  ' + mark.name : ''), ch === nowIn);
+      menuItems.push({ k: 'chapter', t: mark.t, on: ch === nowIn });
+    }
+  } else if (view === 'files') {
+    html += '<div class=mh>' + P.files + '</div>';
+    for (var tf = 0; tf < torrentFileList.length; tf++) {
+      var file = torrentFileList[tf];
+      html += choiceRow(file.name + '  ·  ' + fileSize(file.size), file.playing);
+      menuItems.push({ k: 'file', index: file.index, on: file.playing });
+    }
+  } else if (view === 'speed') {
+    html += '<div class=mh>' + P.speed + '</div>';
+    for (var sp = 0; sp < SPEEDS.length; sp++) {
+      var inUse = Math.abs(v.playbackRate - SPEEDS[sp]) < 0.01;
+      html += choiceRow(speedLabel(SPEEDS[sp]), inUse);
+      menuItems.push({ k: 'speed', rate: SPEEDS[sp], on: inUse });
+    }
   } else if (view === 'audio') {
     html += '<div class=mh>' + P.audio + '</div>';
     try {
-      for (var a = 0; a < v.audioTracks.length; a++) {
-        var at = v.audioTracks[a],
-          al = at.label || at.language || P.audio + ' ' + (a + 1);
-        html += choiceRow(al, at.enabled);
-        menuItems.push({ k: 'aud', idx: a, on: at.enabled });
+      var order = audioOrder();
+      for (var a = 0; a < order.length; a++) {
+        var at = v.audioTracks[order[a]];
+        html += choiceRow(audioLabel(order[a]), at.enabled);
+        menuItems.push({ k: 'aud', idx: order[a], on: at.enabled });
       }
     } catch (e) {}
     if (!menuItems.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
@@ -2761,19 +3021,35 @@ function openMenu(view) {
         menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang, on: fb });
       }
     }
-  } else if (view === 'external') {
-    html += '<div class=mh>' + P.external + ' \u2014 ' + P.language + '</div>';
+  } else if (view === 'external' || view === 'extmore') {
+    /* the languages asked for come first; the others wait under "More languages" */
+    var more = view === 'extmore';
+    html += '<div class=mh>' + P.external + ' \u2014 ' + (more ? P.moreLanguages : P.language) + '</div>';
     if (!extSubs.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
     var seen = {},
-      curLang = null;
-    for (var i = 0; i < extSubs.length; i++) if (curSub === 'ext:' + extSubs[i].u) curLang = extSubs[i].lang;
+      curLang = null,
+      anyWanted = false,
+      others = 0,
+      otherInUse = false;
+    for (var i = 0; i < extSubs.length; i++) {
+      if (curSub === 'ext:' + extSubs[i].u) curLang = extSubs[i].lang;
+      if (wantedSubtitleLanguage(extSubs[i].lang)) anyWanted = true;
+    }
     for (var i = 0; i < extSubs.length; i++) {
       var L = extSubs[i].lang;
-      if (!seen[L]) {
-        seen[L] = 1;
-        html += choiceRow(extSubs[i].name, L === curLang, ' \u203a');
-        menuItems.push({ k: 'lang', lang: L, on: L === curLang });
+      if (seen[L]) continue;
+      seen[L] = 1;
+      if (anyWanted && wantedSubtitleLanguage(L) === more) {
+        others++;
+        if (L === curLang) otherInUse = true;
+        continue;
       }
+      html += choiceRow(extSubs[i].name, L === curLang, ' \u203a');
+      menuItems.push({ k: 'lang', lang: L, on: L === curLang });
+    }
+    if (!more && others) {
+      html += choiceRow(P.moreLanguages, otherInUse, ' \u203a');
+      menuItems.push({ k: 'go', to: 'extmore', on: otherInUse });
     }
   } else if (view === 'extlang') {
     var nm = '';
@@ -2809,6 +3085,12 @@ function openMenu(view) {
     menuItems.push({ k: 'color' });
     html += '<div class=mi>' + P.background + ': ' + (subBgOp > 0 ? P.on : P.off) + '</div>';
     menuItems.push({ k: 'bg' });
+    html += '<div class=mi>' + P.higher + '</div>';
+    menuItems.push({ k: 'pos+' });
+    html += '<div class=mi>' + P.lower + '</div>';
+    menuItems.push({ k: 'pos-' });
+    html += '<div class=mi>' + P.opacity + ': ' + Math.round(subOpacity * 100) + '%</div>';
+    menuItems.push({ k: 'opacity' });
   } else if (view === 'delay') {
     html += '<div class=mh>' + P.delay + ': ' + (subDelay > 0 ? '+' : '') + subDelay.toFixed(1) + 's</div>';
     html += '<div class=mi>' + P.later + '</div>';
@@ -2841,8 +3123,16 @@ function reopen() {
 function menuBack() {
   if (subView === 'embedded' || subView === 'external' || subView === 'style' || subView === 'delay')
     openMenu('subsroot');
-  else if (subView === 'extlang') openMenu('external');
-  else if (subView === 'audio' || subView === 'subsroot') openMenu('root');
+  else if (subView === 'extlang' || subView === 'extmore') openMenu('external');
+  else if (
+    subView === 'audio' ||
+    subView === 'subsroot' ||
+    subView === 'episodes' ||
+    subView === 'chapters' ||
+    subView === 'files' ||
+    subView === 'speed'
+  )
+    openMenu('root');
   else {
     menu.className = '';
     mode = 'controls';
@@ -2895,16 +3185,47 @@ function chooseMenu() {
     reopen();
     return;
   }
-  if (it.k === 'd+') {
-    subDelay += 0.5;
+  if (it.k === 'pos+' || it.k === 'pos-') {
+    subBottom = Math.max(2, Math.min(42, subBottom + (it.k === 'pos+' ? 4 : -4)));
+    subEl.style.bottom = subBottom + '%';
+    keepSetting('subsBottom', subBottom);
+    reopen();
+    return;
+  }
+  if (it.k === 'opacity') {
+    subOpacity = subOpacity <= 0.45 ? 1 : Math.round((subOpacity - 0.2) * 10) / 10;
+    subEl._t = null;
+    keepSetting('subsOpacity', subOpacity);
+    reopen();
+    return;
+  }
+  if (it.k === 'd+' || it.k === 'd-') {
+    subDelay = Math.round((subDelay + (it.k === 'd+' ? 1 : -1) * delayStep()) * 10) / 10;
     saveTitlePref('delay', subDelay);
     reopen();
     return;
   }
-  if (it.k === 'd-') {
-    subDelay -= 0.5;
-    saveTitlePref('delay', subDelay);
+  if (it.k === 'picture') {
+    togglePicture();
     reopen();
+    return;
+  }
+  if (it.k === 'speed') {
+    setSpeed(it.rate);
+    closeMenu();
+    showToast(P.speed + ': ' + speedLabel(it.rate));
+    return;
+  }
+  if (it.k === 'chapter') {
+    closeMenu();
+    seekTo(it.t);
+    return;
+  }
+  if (it.k === 'episode' || it.k === 'file') {
+    closeMenu();
+    if (it.on) return;
+    if (it.k === 'episode') goToEpisode(it.vid);
+    else playTorrentFile(it.index);
     return;
   }
   if (it.k === 'd0') {
@@ -2934,6 +3255,20 @@ function chooseMenu() {
   closeMenu();
   showToast(chosen);
   if (it.k === 'ext' || it.k === 'emb') holdForSubtitle();
+}
+function keepSetting(key, value) {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch (e) {}
+}
+/* a tenth of a second per press; held down, the presses come fast and each one counts for five */
+var delayPressedAt = 0,
+  delayPresses = 0;
+function delayStep() {
+  var now = Date.now();
+  delayPresses = now - delayPressedAt < 350 ? delayPresses + 1 : 0;
+  delayPressedAt = now;
+  return delayPresses >= 5 ? 0.5 : 0.1;
 }
 function closeMenu() {
   menu.className = '';
@@ -2997,7 +3332,10 @@ function ensureTechProbe() {
   if (techProbed || !HAS_MEDIA_TOOLS) return;
   techProbed = true;
   xhr('/probe?u=' + encodeURIComponent(URL), function (j) {
-    if (j) fillBadges(j);
+    if (!j) return;
+    mediaInfo = j;
+    fillBadges(j);
+    if (mode === 'menu' && (subView === 'root' || subView === 'audio')) reopen();
   });
 }
 var pvT = null;
@@ -3091,8 +3429,8 @@ v.addEventListener('timeupdate', checkNp);
 var nextPrefetched = false,
   nextAnswers = {};
 /* cb(json) once, now if the answer is already here; a failed request is asked again next time */
-function nextSources(ad, cb) {
-  var u = streamUrl(ad, TYPE || 'series', NEXTVID),
+function nextSources(ad, vid, cb) {
+  var u = streamUrl(ad, TYPE || 'series', vid),
     entry = nextAnswers[u];
   if (entry && entry.done) return cb(entry.json);
   if (entry) return entry.waiting.push(cb);
@@ -3111,7 +3449,7 @@ function prefetchNext() {
   if (nextPrefetched || !isNextEp || !NEXTVID) return;
   nextPrefetched = true;
   var ads = nextEpisodeAddons();
-  for (var i = 0; i < ads.length; i++) nextSources(ads[i], function () {});
+  for (var i = 0; i < ads.length; i++) nextSources(ads[i], NEXTVID, function () {});
 }
 /* the addons that answer for the next episode, without the local streaming server's own */
 function nextEpisodeAddons() {
@@ -3146,6 +3484,10 @@ function coverForNext() {
   showToast(P.nextLoading, NEXT_DIRECT_LIMIT_MS);
 }
 function openNextDirect() {
+  openEpisodeDirect(NEXTVID, NEXTHREF);
+}
+/* the same for any episode (options.js): `page` is its title page, where a failure ends */
+function openEpisodeDirect(vid, page) {
   var ended = false,
     items = [],
     ads = [],
@@ -3155,7 +3497,7 @@ function openNextDirect() {
   function giveUp() {
     if (ended || exited) return;
     ended = true;
-    location.replace(appUrl(NEXTHREF));
+    location.replace(appUrl(page));
   }
   function play(source) {
     postStreamRef(source, function (ref) {
@@ -3163,7 +3505,7 @@ function openNextDirect() {
       if (!ref) return giveUp();
       ended = true;
       clearTimeout(limit);
-      forgetNextSource();
+      forgetNextSource(vid);
       location.replace(
         appUrl(
           '/play?ref=' +
@@ -3173,9 +3515,9 @@ function openNextDirect() {
             '&id=' +
             encodeURIComponent(ID) +
             '&vid=' +
-            encodeURIComponent(NEXTVID) +
+            encodeURIComponent(vid) +
             '&back=' +
-            encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + NEXTVID)
+            encodeURIComponent('beta#detail/' + TYPE + '/' + ID + '/' + vid)
         )
       );
     });
@@ -3189,7 +3531,7 @@ function openNextDirect() {
   var pending = ads.length,
     pref = nextSourcePref();
   for (var a = 0; a < ads.length; a++)
-    nextSources(ads[a], function (j) {
+    nextSources(ads[a], vid, function (j) {
       var st = (j && j.streams) || [];
       for (var k = 0; k < st.length; k++) {
         var item = sourceItem(st[k], ADDON, ADDONBASE);

@@ -17,20 +17,82 @@ function openMenu(view) {
   menuItems = [];
   var html = '';
   if (view === 'subsroot' || view === 'embedded') ensureEmbTracks();
+  if (view === 'root' || view === 'audio') ensureTechProbe();
+  if (view === 'root') ensureTorrentFiles();
+  if (view === 'episodes') ensureSeasonList();
   if (view === 'root') {
     html += '<div class=mh>' + P.settings + '</div>';
     html += '<div class=mi>' + P.audio + ': ' + eh(audioName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'audio' });
     html += '<div class=mi>' + P.subtitles + ': ' + eh(subtitleName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'subsroot' });
+    if (CAN_LIST_EPISODES) {
+      html += '<div class=mi>' + P.episodes + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'episodes' });
+    }
+    if (mediaInfo && mediaInfo.chapters) {
+      html += '<div class=mi>' + P.chapters + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'chapters' });
+    }
+    if (torrentFileList && torrentFileList.length > 1) {
+      html += '<div class=mi>' + P.files + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'files' });
+    }
+    if (IS_VIDEO_ELEMENT) {
+      html +=
+        '<div class=mi>' +
+        P.picture +
+        ': ' +
+        (pictureMode === 'zoom' ? P.pictureZoom : P.pictureFit) +
+        '</div>';
+      menuItems.push({ k: 'picture' });
+    }
+    if (canChangeSpeed()) {
+      html += '<div class=mi>' + P.speed + ': ' + speedLabel(v.playbackRate) + ' \u203a</div>';
+      menuItems.push({ k: 'go', to: 'speed' });
+    }
+  } else if (view === 'episodes') {
+    html += '<div class=mh>' + P.episodes + '</div>';
+    if (!seasonList) html += '<div class=mi style="opacity:.5">' + P.readingTracks + '</div>';
+    else if (!seasonList.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
+    for (var se = 0; seasonList && se < seasonList.length; se++) {
+      var here = seasonList[se].id === VID;
+      html += choiceRow(
+        tx('episode', seasonList[se].episode) + (seasonList[se].name ? '  ·  ' + seasonList[se].name : ''),
+        here
+      );
+      menuItems.push({ k: 'episode', vid: seasonList[se].id, on: here });
+    }
+  } else if (view === 'chapters') {
+    html += '<div class=mh>' + P.chapters + '</div>';
+    var nowIn = currentChapter();
+    for (var ch = 0; ch < mediaInfo.chapters.length; ch++) {
+      var mark = mediaInfo.chapters[ch];
+      html += choiceRow(fmt(mark.t) + (mark.name ? '  ·  ' + mark.name : ''), ch === nowIn);
+      menuItems.push({ k: 'chapter', t: mark.t, on: ch === nowIn });
+    }
+  } else if (view === 'files') {
+    html += '<div class=mh>' + P.files + '</div>';
+    for (var tf = 0; tf < torrentFileList.length; tf++) {
+      var file = torrentFileList[tf];
+      html += choiceRow(file.name + '  ·  ' + fileSize(file.size), file.playing);
+      menuItems.push({ k: 'file', index: file.index, on: file.playing });
+    }
+  } else if (view === 'speed') {
+    html += '<div class=mh>' + P.speed + '</div>';
+    for (var sp = 0; sp < SPEEDS.length; sp++) {
+      var inUse = Math.abs(v.playbackRate - SPEEDS[sp]) < 0.01;
+      html += choiceRow(speedLabel(SPEEDS[sp]), inUse);
+      menuItems.push({ k: 'speed', rate: SPEEDS[sp], on: inUse });
+    }
   } else if (view === 'audio') {
     html += '<div class=mh>' + P.audio + '</div>';
     try {
-      for (var a = 0; a < v.audioTracks.length; a++) {
-        var at = v.audioTracks[a],
-          al = at.label || at.language || P.audio + ' ' + (a + 1);
-        html += choiceRow(al, at.enabled);
-        menuItems.push({ k: 'aud', idx: a, on: at.enabled });
+      var order = audioOrder();
+      for (var a = 0; a < order.length; a++) {
+        var at = v.audioTracks[order[a]];
+        html += choiceRow(audioLabel(order[a]), at.enabled);
+        menuItems.push({ k: 'aud', idx: order[a], on: at.enabled });
       }
     } catch (e) {}
     if (!menuItems.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
@@ -83,19 +145,35 @@ function openMenu(view) {
         menuItems.push({ k: 'emb', idx: et.n, ti: et.ti, lang: et.lang, on: fb });
       }
     }
-  } else if (view === 'external') {
-    html += '<div class=mh>' + P.external + ' \u2014 ' + P.language + '</div>';
+  } else if (view === 'external' || view === 'extmore') {
+    /* the languages asked for come first; the others wait under "More languages" */
+    var more = view === 'extmore';
+    html += '<div class=mh>' + P.external + ' \u2014 ' + (more ? P.moreLanguages : P.language) + '</div>';
     if (!extSubs.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
     var seen = {},
-      curLang = null;
-    for (var i = 0; i < extSubs.length; i++) if (curSub === 'ext:' + extSubs[i].u) curLang = extSubs[i].lang;
+      curLang = null,
+      anyWanted = false,
+      others = 0,
+      otherInUse = false;
+    for (var i = 0; i < extSubs.length; i++) {
+      if (curSub === 'ext:' + extSubs[i].u) curLang = extSubs[i].lang;
+      if (wantedSubtitleLanguage(extSubs[i].lang)) anyWanted = true;
+    }
     for (var i = 0; i < extSubs.length; i++) {
       var L = extSubs[i].lang;
-      if (!seen[L]) {
-        seen[L] = 1;
-        html += choiceRow(extSubs[i].name, L === curLang, ' \u203a');
-        menuItems.push({ k: 'lang', lang: L, on: L === curLang });
+      if (seen[L]) continue;
+      seen[L] = 1;
+      if (anyWanted && wantedSubtitleLanguage(L) === more) {
+        others++;
+        if (L === curLang) otherInUse = true;
+        continue;
       }
+      html += choiceRow(extSubs[i].name, L === curLang, ' \u203a');
+      menuItems.push({ k: 'lang', lang: L, on: L === curLang });
+    }
+    if (!more && others) {
+      html += choiceRow(P.moreLanguages, otherInUse, ' \u203a');
+      menuItems.push({ k: 'go', to: 'extmore', on: otherInUse });
     }
   } else if (view === 'extlang') {
     var nm = '';
@@ -131,6 +209,12 @@ function openMenu(view) {
     menuItems.push({ k: 'color' });
     html += '<div class=mi>' + P.background + ': ' + (subBgOp > 0 ? P.on : P.off) + '</div>';
     menuItems.push({ k: 'bg' });
+    html += '<div class=mi>' + P.higher + '</div>';
+    menuItems.push({ k: 'pos+' });
+    html += '<div class=mi>' + P.lower + '</div>';
+    menuItems.push({ k: 'pos-' });
+    html += '<div class=mi>' + P.opacity + ': ' + Math.round(subOpacity * 100) + '%</div>';
+    menuItems.push({ k: 'opacity' });
   } else if (view === 'delay') {
     html += '<div class=mh>' + P.delay + ': ' + (subDelay > 0 ? '+' : '') + subDelay.toFixed(1) + 's</div>';
     html += '<div class=mi>' + P.later + '</div>';
@@ -163,8 +247,16 @@ function reopen() {
 function menuBack() {
   if (subView === 'embedded' || subView === 'external' || subView === 'style' || subView === 'delay')
     openMenu('subsroot');
-  else if (subView === 'extlang') openMenu('external');
-  else if (subView === 'audio' || subView === 'subsroot') openMenu('root');
+  else if (subView === 'extlang' || subView === 'extmore') openMenu('external');
+  else if (
+    subView === 'audio' ||
+    subView === 'subsroot' ||
+    subView === 'episodes' ||
+    subView === 'chapters' ||
+    subView === 'files' ||
+    subView === 'speed'
+  )
+    openMenu('root');
   else {
     menu.className = '';
     mode = 'controls';
@@ -217,16 +309,47 @@ function chooseMenu() {
     reopen();
     return;
   }
-  if (it.k === 'd+') {
-    subDelay += 0.5;
+  if (it.k === 'pos+' || it.k === 'pos-') {
+    subBottom = Math.max(2, Math.min(42, subBottom + (it.k === 'pos+' ? 4 : -4)));
+    subEl.style.bottom = subBottom + '%';
+    keepSetting('subsBottom', subBottom);
+    reopen();
+    return;
+  }
+  if (it.k === 'opacity') {
+    subOpacity = subOpacity <= 0.45 ? 1 : Math.round((subOpacity - 0.2) * 10) / 10;
+    subEl._t = null;
+    keepSetting('subsOpacity', subOpacity);
+    reopen();
+    return;
+  }
+  if (it.k === 'd+' || it.k === 'd-') {
+    subDelay = Math.round((subDelay + (it.k === 'd+' ? 1 : -1) * delayStep()) * 10) / 10;
     saveTitlePref('delay', subDelay);
     reopen();
     return;
   }
-  if (it.k === 'd-') {
-    subDelay -= 0.5;
-    saveTitlePref('delay', subDelay);
+  if (it.k === 'picture') {
+    togglePicture();
     reopen();
+    return;
+  }
+  if (it.k === 'speed') {
+    setSpeed(it.rate);
+    closeMenu();
+    showToast(P.speed + ': ' + speedLabel(it.rate));
+    return;
+  }
+  if (it.k === 'chapter') {
+    closeMenu();
+    seekTo(it.t);
+    return;
+  }
+  if (it.k === 'episode' || it.k === 'file') {
+    closeMenu();
+    if (it.on) return;
+    if (it.k === 'episode') goToEpisode(it.vid);
+    else playTorrentFile(it.index);
     return;
   }
   if (it.k === 'd0') {
@@ -256,6 +379,20 @@ function chooseMenu() {
   closeMenu();
   showToast(chosen);
   if (it.k === 'ext' || it.k === 'emb') holdForSubtitle();
+}
+function keepSetting(key, value) {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch (e) {}
+}
+/* a tenth of a second per press; held down, the presses come fast and each one counts for five */
+var delayPressedAt = 0,
+  delayPresses = 0;
+function delayStep() {
+  var now = Date.now();
+  delayPresses = now - delayPressedAt < 350 ? delayPresses + 1 : 0;
+  delayPressedAt = now;
+  return delayPresses >= 5 ? 0.5 : 0.1;
 }
 function closeMenu() {
   menu.className = '';

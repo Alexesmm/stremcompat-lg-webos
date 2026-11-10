@@ -9,7 +9,8 @@ var { EMBEDDED_INTERFACE_SCRIPT_B64, EMBEDDED_INTERFACE_HTML_B64 } = require('./
 var { safeText } = require('./text');
 var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
-var { engineStatus } = require('./streaming-server');
+var { engineStatus, torrentFiles } = require('./streaming-server');
+var { seasonEpisodes } = require('./episodes');
 var { remoteAddress, setServerAddress, streamingUrl } = require('./server-address');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
 var { handleProxy } = require('./proxy');
@@ -287,6 +288,15 @@ var ROUTES = {
     ytResolve(String(q.v || ''), !!q.lq, function (link, why) {
       sendJson(res, link ? { url: link } : { err: why || 'unavailable' });
     });
+  },
+  /* for the player's own lists: this season's episodes, and a torrent's video files */
+  '/episodes': function (req, res, q) {
+    seriesVideos(q.id || '', function (videos) {
+      sendJson(res, { episodes: seasonEpisodes(videos, q.vid || '') });
+    });
+  },
+  '/torrentfiles': function (req, res, q) {
+    sendJson(res, { files: torrentFiles(q.u || '') });
   },
   '/probe': function (req, res, q) {
     probeInfo(q.u || '', res);

@@ -319,6 +319,30 @@ function chooseFile(files, index) {
   return largest || asked || files[0] || null;
 }
 
+/* The video files of the torrent behind an address on :11470, for the player's file list. Empty
+   when torrents play on another computer, or the engine does not have this one open. */
+function torrentFiles(address) {
+  var m = /:11470\/([0-9a-f]{40})\/(\d+)/i.exec(String(address || '')),
+    t = m && !remoteAddress() && torrents[m[1].toLowerCase()];
+  if (!t || !t.files) return [];
+  var playing = chooseFile(t.files, parseInt(m[2], 10));
+  return t.files
+    .filter(function (file) {
+      return VIDEO_FILE.test(file.path);
+    })
+    .sort(function (a, b) {
+      return a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
+    })
+    .map(function (file) {
+      return {
+        index: file.index,
+        name: String(file.path).replace(/^.*[\\/]/, ''),
+        size: file.size,
+        playing: file === playing
+      };
+    });
+}
+
 /* cb runs once: cb(message), or cb(null, value) */
 function onceWithin(ms, waiters, cb) {
   var done = false,
@@ -513,5 +537,6 @@ module.exports = {
   portUp: portUp,
   startStreamingServer: startStreamingServer,
   streamingServerUp: streamingServerUp,
+  torrentFiles: torrentFiles,
   waitForServer: waitForServer
 };

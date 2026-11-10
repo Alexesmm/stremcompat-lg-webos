@@ -7,6 +7,7 @@ var { sendJson } = require('./http-util');
 var { localProxy } = require('./proxy');
 var { NICE, lowerPriority } = require('./priority');
 var { probeStreams } = require('./probe');
+var { langName } = require('./subtitles');
 
 /* ---------- the badges ---------- */
 var VIDEO_NAMES = { hevc: 'HEVC', h264: 'H.264', av1: 'AV1' };
@@ -54,7 +55,7 @@ function audioName(audio) {
   return layout ? name + ' ' + layout : name;
 }
 
-function describe(streams, format) {
+function describe(streams, format, chapters) {
   var info = {};
   var video = firstStream(streams, function (s) {
     return s.codec_type === 'video' && COVER_ART.indexOf(String(s.codec_name || '')) < 0;
@@ -62,6 +63,31 @@ function describe(streams, format) {
   var audio = firstStream(streams, function (s) {
     return s.codec_type === 'audio';
   });
+  /* every audio track for the player's list, and the chapters when the file has some */
+  var audios = streams.filter(function (s) {
+    return s.codec_type === 'audio';
+  });
+  if (audios.length > 1)
+    info.audios = audios.map(function (track) {
+      var tags = track.tags || {};
+      return {
+        lang: tags.language ? langName(String(tags.language).toLowerCase()) : '',
+        title: String(tags.title || '').slice(0, 60),
+        format: audioName(track)
+      };
+    });
+  var marks = (chapters || [])
+    .map(function (chapter) {
+      return {
+        t: Number(chapter.start_time),
+        name: String((chapter.tags && chapter.tags.title) || '').slice(0, 60)
+      };
+    })
+    .filter(function (mark) {
+      return mark.t >= 0;
+    })
+    .slice(0, 80);
+  if (marks.length > 1) info.chapters = marks;
   if (video) {
     var codec = String(video.codec_name || '').toLowerCase();
     info.res = resolutionName(video.width || 0, video.height || 0);
@@ -85,7 +111,7 @@ function probeInfo(u, res) {
   if (described[u]) return sendJson(res, described[u]);
   probeStreams(u, function (probe) {
     if (probe.err) return sendJson(res, {});
-    var info = describe(probe.streams || [], probe.format || {});
+    var info = describe(probe.streams || [], probe.format || {}, probe.chapters);
     if (Object.keys(described).length > 20) described = {};
     described[u] = info;
     sendJson(res, info);
