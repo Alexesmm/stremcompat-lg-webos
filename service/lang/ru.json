@@ -267,8 +267,8 @@
   "enterCredentials": "Введите эл. почту и пароль",
   "signingIn": "Вход",
   "signInFailed": "Не удалось войти",
-  "accountNote": "Войдите с учётной записью Stremio. Нет её? Создайте бесплатно на stremio.com/register",
-  "unofficialNote": "Неофициальный клиент. Не связан со Stremio или LG и не одобрен ими.",
+  "accountNote": "Нет аккаунта? Создайте бесплатно на stremio.com/register или nuvio.tv",
+  "unofficialNote": "Неофициальный клиент. Не связан со Stremio, Nuvio или LG.",
   "accountConnected": "Учётная запись подключена! Загрузка",
   "genreAction": "Боевик",
   "genreComedy": "Комедия",
@@ -383,6 +383,6 @@
   "profileLocked": "Защищён PIN-кодом, пока недоступен в StremCompat",
   "nuvioProfile": "Профиль Nuvio",
   "profilesUnavailable": "Не удалось прочитать профили Nuvio",
-  "nuvioAccountNote": "Войдите с аккаунтом Nuvio. Экспериментально: сервис аккаунтов Nuvio не рассчитан на другие приложения и может измениться.",
-  "becauseYouWatched": "Потому что вы смотрели {0}"
+  "becauseYouWatched": "Потому что вы смотрели {0}",
+  "syncSiteNote": "Копирование аддонов и библиотеки между Stremio и Nuvio: addons-sync.vercel.app"
 }

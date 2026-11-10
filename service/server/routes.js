@@ -18,7 +18,7 @@ var { playerConstants, playerContext, playerPage } = require('./player-page');
 var { embCues, embStart, embTracks, subtitleCues } = require('./subtitles');
 var { addonSubtitles } = require('./subtitle-addons');
 var { postStremioApi } = require('./stremio-api');
-var { chooseProfile, profiles } = require('./nuvio-account');
+var { chooseProfile, profiles, qrPoll, qrStart } = require('./nuvio-account');
 var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
@@ -300,6 +300,16 @@ var ROUTES = {
   '/nuvioprofiles': function (req, res, q) {
     profiles(q.key || '', function (list) {
       sendJson(res, list ? { profiles: list } : { error: 'unavailable' });
+    });
+  },
+  '/nuvioqr': function (req, res) {
+    qrStart(function (started) {
+      sendJson(res, started || { error: 'unavailable' });
+    });
+  },
+  '/nuvioqrpoll': function (req, res, q) {
+    qrPoll(q.id || '', function (state) {
+      sendJson(res, state);
     });
   },
   '/nuvioprofile': function (req, res, q) {

@@ -419,9 +419,8 @@ var UI_TEXT = {
     profileLocked: 'Protected with a PIN, not available in StremCompat yet',
     nuvioProfile: 'Nuvio profile',
     profilesUnavailable: 'Could not read the Nuvio profiles',
-    nuvioAccountNote:
-      "Sign in with your Nuvio account. Experimental: Nuvio's account service is not made for other apps and may change.",
     becauseYouWatched: 'Because you watched {0}',
+    syncSiteNote: 'Copy addons and library between Stremio and Nuvio: addons-sync.vercel.app',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -561,8 +560,8 @@ var UI_TEXT = {
     enterCredentials: 'Enter your email and password',
     signingIn: 'Signing in',
     signInFailed: 'Could not sign in',
-    accountNote: 'Sign in with your Stremio account. No account? Create one for free at stremio.com/register',
-    unofficialNote: 'Unofficial client. Not affiliated with or endorsed by Stremio or LG.',
+    accountNote: "No account? Create one for free at stremio.com/register or nuvio.tv",
+    unofficialNote: "Unofficial client. Not affiliated with Stremio, Nuvio or LG.",
     accountConnected: 'Account connected! Loading',
     genreAction: 'Action',
     genreComedy: 'Comedy',
@@ -814,9 +813,8 @@ var UI_TEXT = {
     profileLocked: 'Protegido por PIN, ainda não disponível no StremCompat',
     nuvioProfile: 'Perfil do Nuvio',
     profilesUnavailable: 'Não foi possível ler os perfis do Nuvio',
-    nuvioAccountNote:
-      'Entre com sua conta Nuvio. Experimental: o serviço de contas do Nuvio não é feito para outros apps e pode mudar.',
     becauseYouWatched: 'Porque você assistiu {0}',
+    syncSiteNote: 'Copie addons e biblioteca entre Stremio e Nuvio: addons-sync.vercel.app',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -957,8 +955,8 @@ var UI_TEXT = {
     enterCredentials: 'Digite e-mail e senha',
     signingIn: 'Entrando',
     signInFailed: 'Não foi possível entrar',
-    accountNote: 'Entre com sua conta Stremio. Não tem conta? Crie grátis em stremio.com/register',
-    unofficialNote: 'Cliente não oficial. Sem vínculo com o Stremio ou a LG.',
+    accountNote: "Não tem conta? Crie grátis em stremio.com/register ou nuvio.tv",
+    unofficialNote: "Cliente não oficial. Sem vínculo com o Stremio, o Nuvio ou a LG.",
     accountConnected: 'Conta conectada! Carregando',
     genreAction: 'Ação',
     genreComedy: 'Comédia',
@@ -1374,7 +1372,8 @@ function streamRefBody(s) {
     quality: s.quality || '',
     compat: (s.compatLabels || []).join(','),
     notWebReady: !!s.notWebReady,
-    headers: s.headers || null
+    headers: s.headers || null,
+    meta: s.meta || null
   };
 }
 function sourceTraits(value) {
@@ -1490,6 +1489,7 @@ function applyStaticLanguage() {
     discTitle: 'discoverTitle',
     lgAccount: 'accountNote',
     lgNote: 'unofficialNote',
+    lgSync: 'syncSiteNote',
     lgQrTitle: 'phoneSignIn',
     lgQrHelp: 'scanCode',
     lgEmailTitle: 'emailSignIn',
@@ -2498,6 +2498,7 @@ function playUrl(source, type, id, vid, backHash) {
   /* Keep signed cookies/authorization out of browser history and localStorage. The
      Node service stores a small, sanitized stream reference and returns only its id. */
   var body = streamRefBody(s);
+  body.meta = s.meta || knownArtwork(type, id);
   function prepare(attempt) {
     postJson(
       '/streamref',
@@ -2780,6 +2781,16 @@ function capMetaCache(k) {
     } catch (e) {}
   }
   lsSet('beta_meta_keys', keys);
+}
+/* What is already known about a title, at once: its name and artwork for the player (playback.js).
+   Kitsu anime and long series such as One Piece answer the player's own lookup too late or not
+   at all, and the player then had only the torrent's name and no picture. */
+function knownArtwork(type, id) {
+  var k = type + '_' + id,
+    kept = lsJson('beta_meta_' + k),
+    m = metaMem[k] || (kept && kept.meta);
+  if (!m) return null;
+  return { name: m.name || '', logo: m.logo || '', background: m.background || '', poster: m.poster || '' };
 }
 function getMeta(type, id, cb) {
   var k = type + '_' + id;
@@ -7889,7 +7900,6 @@ var login = {
     var self = this;
     languagePanel.show(function () {
       self.setStatus(self.statusKey);
-      $('lgAccount').textContent = tx(self.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
       self.paint();
     });
   },
@@ -7903,6 +7913,26 @@ var login = {
     this.suspended = false;
     var self = this,
       gen = ++this.pollGen;
+    /* Nuvio: the local server asks Nuvio for a code and draws its QR (nuvio-account.js, qr.js) */
+    if (this.provider === 'nuvio')
+      return xhrJson(
+        '/nuvioqr',
+        function (j) {
+          if (self.pollGen !== gen) return;
+          if (!j || !j.id) {
+            self.started = false;
+            self.setStatus('qrUnavailable');
+            return;
+          }
+          self.qrCode = j.id;
+          self.qrEvery = j.interval * 1000;
+          $('lgQrImg').src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(j.qr);
+          $('lgCode').textContent = j.code;
+          self.setStatus('waitingPhone');
+          self.schedulePoll(gen);
+        },
+        20000
+      );
     xhrJson('https://link.stremio.com/api/create', function (j) {
       if (self.pollGen !== gen) return;
       if (!j || !j.code) {
@@ -7930,15 +7960,37 @@ var login = {
   schedulePoll: function (gen) {
     var self = this;
     if (this.suspended || !this.qrCode || this.poll || this.polling || gen !== this.pollGen) return;
-    this.poll = setTimeout(function () {
-      self.poll = null;
-      self.pollOnce(gen);
-    }, 2500);
+    this.poll = setTimeout(
+      function () {
+        self.poll = null;
+        self.pollOnce(gen);
+      },
+      this.provider === 'nuvio' ? this.qrEvery || 3000 : 2500
+    );
   },
   pollOnce: function (gen) {
     if (this.suspended || this.polling || gen !== this.pollGen || !this.qrCode) return;
     this.polling = true;
     var self = this;
+    if (this.provider === 'nuvio')
+      return xhrJson(
+        '/nuvioqrpoll?id=' + encodeURIComponent(this.qrCode),
+        function (r) {
+          if (gen !== self.pollGen) return;
+          self.polling = false;
+          if (r && r.result && r.result.authKey) {
+            lsSet('user', r.result.user);
+            return self.finish(r.result.authKey);
+          }
+          /* a code that ran out is replaced by a new one */
+          if (r && (r.status === 'expired' || r.status === 'used' || r.status === 'cancelled')) {
+            self.stopQr();
+            return self.startQr();
+          }
+          self.schedulePoll(gen);
+        },
+        20000
+      );
     xhrJson(
       'https://link.stremio.com/api/read?code=' + encodeURIComponent(this.qrCode),
       function (r) {
@@ -7976,20 +8028,16 @@ var login = {
     this.qrCode = '';
     this.pollGen++;
   },
-  /* Nuvio has no sign-in by phone code: its accounts use the email form only */
+  /* the QR code and the form follow the account chosen */
   setProvider: function (provider) {
     if (provider === this.provider) return;
     this.provider = provider;
-    var scr = $('scrLogin');
-    if (this.provider === 'nuvio') {
-      this.stopQr();
-      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '') + ' nuvio';
-    } else {
-      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '');
-      this.startQr();
-    }
+    this.stopQr();
+    $('lgQrImg').removeAttribute('src');
+    $('lgCode').textContent = '';
+    this.setStatus('generatingCode');
+    this.startQr();
     $('lgErr').textContent = '';
-    $('lgAccount').textContent = tx(this.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
     this.paint();
   },
   doEmail: function () {

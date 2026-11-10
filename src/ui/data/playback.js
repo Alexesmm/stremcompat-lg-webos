@@ -20,6 +20,7 @@ function playUrl(source, type, id, vid, backHash) {
   /* Keep signed cookies/authorization out of browser history and localStorage. The
      Node service stores a small, sanitized stream reference and returns only its id. */
   var body = streamRefBody(s);
+  body.meta = s.meta || knownArtwork(type, id);
   function prepare(attempt) {
     postJson(
       '/streamref',

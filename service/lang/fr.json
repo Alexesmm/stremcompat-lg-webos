@@ -267,8 +267,8 @@
   "enterCredentials": "Saisissez votre e-mail et votre mot de passe",
   "signingIn": "Connexion",
   "signInFailed": "Connexion impossible",
-  "accountNote": "Connectez-vous avec votre compte Stremio. Pas de compte ? Créez-en un gratuitement sur stremio.com/register",
-  "unofficialNote": "Client non officiel. Sans lien avec Stremio ou LG, ni approuvé par eux.",
+  "accountNote": "Pas de compte ? Crée-en un gratuitement sur stremio.com/register ou nuvio.tv",
+  "unofficialNote": "Client non officiel. Sans lien avec Stremio, Nuvio ou LG.",
   "accountConnected": "Compte connecté ! Chargement",
   "genreAction": "Action",
   "genreComedy": "Comédie",
@@ -383,6 +383,6 @@
   "profileLocked": "Protégé par un code, pas encore disponible dans StremCompat",
   "nuvioProfile": "Profil Nuvio",
   "profilesUnavailable": "Impossible de lire les profils Nuvio",
-  "nuvioAccountNote": "Connecte-toi avec ton compte Nuvio. Expérimental : le service de comptes de Nuvio n’est pas fait pour d’autres apps et peut changer.",
-  "becauseYouWatched": "Parce que tu as regardé {0}"
+  "becauseYouWatched": "Parce que tu as regardé {0}",
+  "syncSiteNote": "Copier addons et bibliothèque entre Stremio et Nuvio : addons-sync.vercel.app"
 }

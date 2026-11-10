@@ -29,6 +29,7 @@ function applyStaticLanguage() {
     discTitle: 'discoverTitle',
     lgAccount: 'accountNote',
     lgNote: 'unofficialNote',
+    lgSync: 'syncSiteNote',
     lgQrTitle: 'phoneSignIn',
     lgQrHelp: 'scanCode',
     lgEmailTitle: 'emailSignIn',

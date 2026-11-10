@@ -174,9 +174,8 @@ var UI_TEXT = {
     profileLocked: 'Protected with a PIN, not available in StremCompat yet',
     nuvioProfile: 'Nuvio profile',
     profilesUnavailable: 'Could not read the Nuvio profiles',
-    nuvioAccountNote:
-      "Sign in with your Nuvio account. Experimental: Nuvio's account service is not made for other apps and may change.",
     becauseYouWatched: 'Because you watched {0}',
+    syncSiteNote: 'Copy addons and library between Stremio and Nuvio: addons-sync.vercel.app',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -316,8 +315,8 @@ var UI_TEXT = {
     enterCredentials: 'Enter your email and password',
     signingIn: 'Signing in',
     signInFailed: 'Could not sign in',
-    accountNote: 'Sign in with your Stremio account. No account? Create one for free at stremio.com/register',
-    unofficialNote: 'Unofficial client. Not affiliated with or endorsed by Stremio or LG.',
+    accountNote: "No account? Create one for free at stremio.com/register or nuvio.tv",
+    unofficialNote: "Unofficial client. Not affiliated with Stremio, Nuvio or LG.",
     accountConnected: 'Account connected! Loading',
     genreAction: 'Action',
     genreComedy: 'Comedy',
@@ -569,9 +568,8 @@ var UI_TEXT = {
     profileLocked: 'Protegido por PIN, ainda não disponível no StremCompat',
     nuvioProfile: 'Perfil do Nuvio',
     profilesUnavailable: 'Não foi possível ler os perfis do Nuvio',
-    nuvioAccountNote:
-      'Entre com sua conta Nuvio. Experimental: o serviço de contas do Nuvio não é feito para outros apps e pode mudar.',
     becauseYouWatched: 'Porque você assistiu {0}',
+    syncSiteNote: 'Copie addons e biblioteca entre Stremio e Nuvio: addons-sync.vercel.app',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -712,8 +710,8 @@ var UI_TEXT = {
     enterCredentials: 'Digite e-mail e senha',
     signingIn: 'Entrando',
     signInFailed: 'Não foi possível entrar',
-    accountNote: 'Entre com sua conta Stremio. Não tem conta? Crie grátis em stremio.com/register',
-    unofficialNote: 'Cliente não oficial. Sem vínculo com o Stremio ou a LG.',
+    accountNote: "Não tem conta? Crie grátis em stremio.com/register ou nuvio.tv",
+    unofficialNote: "Cliente não oficial. Sem vínculo com o Stremio, o Nuvio ou a LG.",
     accountConnected: 'Conta conectada! Carregando',
     genreAction: 'Ação',
     genreComedy: 'Comédia',

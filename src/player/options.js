@@ -149,7 +149,8 @@ function playTorrentFile(index) {
     addonBase: ADDONBASE,
     name: SNAME,
     quality: QUALITY,
-    compatLabels: COMPAT ? COMPAT.split(',') : []
+    compatLabels: COMPAT ? COMPAT.split(',') : [],
+    meta: { name: TITLE, logo: LOGO, background: BG, poster: POSTER }
   };
   postStreamRef(source, function (ref) {
     if (!ref) return showToast(P.sourceFailed);

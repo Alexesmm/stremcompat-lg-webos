@@ -192,7 +192,8 @@ function streamRefBody(s) {
     quality: s.quality || '',
     compat: (s.compatLabels || []).join(','),
     notWebReady: !!s.notWebReady,
-    headers: s.headers || null
+    headers: s.headers || null,
+    meta: s.meta || null
   };
 }
 function sourceTraits(value) {

@@ -178,6 +178,81 @@ function nuvioTests() {
   });
 }
 
+/* the QR code for the phone sign-in: a symbol checked module by module against the Python qrcode
+   library when this was written, and the Nuvio flow against a stand-in server */
+function qrTests() {
+  var qr = require(path.join(root, 'service', 'server', 'qr.js'));
+  var rows = qr.qrMatrix('https://nuvio.tv/link?code=ABCD-1234', 2).map(function (r) { return r.map(function (b) { return b ? 1 : 0; }).join(''); }).join('\n');
+  assert.strictEqual(require('crypto').createHash('sha1').update(rows).digest('hex'), '0fa01240e9ba7b40b71b995d866a5dc419f589fd', 'the QR code changed from the verified one');
+  assert.strictEqual(qr.qrMatrix('x'.repeat(210)).length, 57, 'a long link did not get a version 10 symbol');
+  assert.ok(/^<svg[^>]+viewBox="0 0 37 37"/.test(qr.qrSvg('https://nuvio.tv/link?code=ABCD-1234')), 'the QR image has no quiet zone or the wrong size');
+}
+function nuvioQrTests() {
+  var seen = [], approved = false;
+  var server = http.createServer(function (req, res) {
+    var body = '';
+    req.on('data', function (d) { body += d; });
+    req.on('end', function () {
+      var json = body ? JSON.parse(body) : null, u = req.url;
+      seen.push({ url: u, body: json, auth: req.headers.authorization });
+      function send(status, value) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); }
+      if (u === '/auth/v1/signup') return send(200, { access_token: 'GUEST', refresh_token: 'G' });
+      if (u === '/rest/v1/rpc/start_device_login_session') return send(200, [{ device_code: 'DEV1', user_code: 'AB12', verification_uri_complete: 'https://nuvio.tv/link?code=AB12', poll_interval_seconds: 3 }]);
+      if (u === '/rest/v1/rpc/poll_tv_login_session') return send(200, [{ status: approved ? 'approved' : 'pending' }]);
+      if (u === '/functions/v1/tv-logins-exchange') return send(200, { access_token: 'REAL', refresh_token: 'R', user: { id: 'u7', email: 'tv@example.com' } });
+      send(404, {});
+    });
+  });
+  return new Promise(function (resolve) {
+    server.listen(0, '127.0.0.1', function () {
+      var home = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-nuvioqr-')), realHome = process.env.HOME;
+      process.env.HOME = home;
+      process.env.SC_NUVIO_URL = 'http://127.0.0.1:' + server.address().port;
+      var modulePath = path.join(root, 'service', 'server', 'nuvio-account.js');
+      delete require.cache[require.resolve(modulePath)];
+      var nuvio = require(modulePath);
+      nuvio.qrStart(function (started) {
+        assert.ok(started && started.code === 'AB12' && /^<svg/.test(started.qr), 'the Nuvio code and its QR were not given');
+        var begin = seen.filter(function (r) { return r.url === '/rest/v1/rpc/start_device_login_session'; })[0];
+        assert.strictEqual(begin.auth, 'Bearer GUEST', 'the code was not asked with the guest session');
+        nuvio.qrPoll(started.id, function (waiting) {
+          assert.strictEqual(waiting.status, 'pending', 'a code not yet approved signed in');
+          approved = true;
+          nuvio.qrPoll(started.id, function (done) {
+            assert.ok(done.result && /^nuvio:/.test(done.result.authKey) && done.result.user._id === 'nv01u7', 'an approved code did not sign in');
+            var trade = seen.filter(function (r) { return r.url === '/functions/v1/tv-logins-exchange'; })[0];
+            assert.strictEqual(trade.body.code, 'DEV1', 'the code was not traded for the session');
+            nuvio.qrPoll(started.id, function (again) {
+              assert.strictEqual(again.status, 'expired', 'a used code could sign in twice');
+              server.close();
+              process.env.HOME = realHome;
+              delete process.env.SC_NUVIO_URL;
+              delete require.cache[require.resolve(modulePath)];
+              resolve();
+            });
+          });
+        });
+      });
+    });
+  });
+}
+/* the title's name and artwork travel with the source, so the player has them at once */
+function artworkTests() {
+  var refs = require(path.join(root, 'service', 'server', 'stream-refs.js'));
+  var page = require(path.join(root, 'service', 'server', 'player-page.js'));
+  var ref = refs.storeStreamRef({ url: 'http://x/a.mkv', name: 'One.Piece.1100.1080p', meta: { name: 'One Piece', logo: 'https://img.example/l.png', background: 'javascript:alert(1)', poster: 'https://img.example/p.jpg' } });
+  var stream = refs.getStreamRef(ref);
+  assert.deepStrictEqual(stream.artwork, { name: 'One Piece', logo: 'https://img.example/l.png', background: '', poster: 'https://img.example/p.jpg' }, 'the artwork was not kept, or something that is not a web address was');
+  return new Promise(function (resolve) {
+    page.playerContext(stream, { type: 'series', id: 'kitsu:12', vid: 'kitsu:12:1:1100' }, function (context) {
+      var constants = page.playerConstants(stream, context);
+      assert.strictEqual(constants.TITLE, 'One Piece', 'the player showed the torrent\'s name instead of the title');
+      assert.strictEqual(constants.LOGO, 'https://img.example/l.png', 'the player lost the title\'s logo');
+      resolve();
+    });
+  });
+}
+
 /* Cinemeta answering too late must not leave the player without a next episode. */
 function lateMetaTests() {
   var util = require(path.join(root, 'service', 'server', 'http-util.js'));
@@ -524,6 +599,9 @@ async function main() {
     await lateMetaTests();
     await speedTests();
     await nuvioTests();
+    qrTests();
+    await nuvioQrTests();
+    await artworkTests();
     await engineRoutesTests();
     await proxyTests();
     var noUpdate = await request({ hostname: '127.0.0.1', port: appPort, path: '/update' });

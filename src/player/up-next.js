@@ -147,6 +147,7 @@ function openEpisodeDirect(vid, page) {
     location.replace(appUrl(page));
   }
   function play(source) {
+    source.meta = { name: TITLE, logo: LOGO, background: BG, poster: POSTER };
     postStreamRef(source, function (ref) {
       if (ended || exited) return;
       if (!ref) return giveUp();

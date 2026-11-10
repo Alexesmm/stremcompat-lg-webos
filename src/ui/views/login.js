@@ -97,7 +97,6 @@ var login = {
     var self = this;
     languagePanel.show(function () {
       self.setStatus(self.statusKey);
-      $('lgAccount').textContent = tx(self.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
       self.paint();
     });
   },
@@ -111,6 +110,26 @@ var login = {
     this.suspended = false;
     var self = this,
       gen = ++this.pollGen;
+    /* Nuvio: the local server asks Nuvio for a code and draws its QR (nuvio-account.js, qr.js) */
+    if (this.provider === 'nuvio')
+      return xhrJson(
+        '/nuvioqr',
+        function (j) {
+          if (self.pollGen !== gen) return;
+          if (!j || !j.id) {
+            self.started = false;
+            self.setStatus('qrUnavailable');
+            return;
+          }
+          self.qrCode = j.id;
+          self.qrEvery = j.interval * 1000;
+          $('lgQrImg').src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(j.qr);
+          $('lgCode').textContent = j.code;
+          self.setStatus('waitingPhone');
+          self.schedulePoll(gen);
+        },
+        20000
+      );
     xhrJson('https://link.stremio.com/api/create', function (j) {
       if (self.pollGen !== gen) return;
       if (!j || !j.code) {
@@ -138,15 +157,37 @@ var login = {
   schedulePoll: function (gen) {
     var self = this;
     if (this.suspended || !this.qrCode || this.poll || this.polling || gen !== this.pollGen) return;
-    this.poll = setTimeout(function () {
-      self.poll = null;
-      self.pollOnce(gen);
-    }, 2500);
+    this.poll = setTimeout(
+      function () {
+        self.poll = null;
+        self.pollOnce(gen);
+      },
+      this.provider === 'nuvio' ? this.qrEvery || 3000 : 2500
+    );
   },
   pollOnce: function (gen) {
     if (this.suspended || this.polling || gen !== this.pollGen || !this.qrCode) return;
     this.polling = true;
     var self = this;
+    if (this.provider === 'nuvio')
+      return xhrJson(
+        '/nuvioqrpoll?id=' + encodeURIComponent(this.qrCode),
+        function (r) {
+          if (gen !== self.pollGen) return;
+          self.polling = false;
+          if (r && r.result && r.result.authKey) {
+            lsSet('user', r.result.user);
+            return self.finish(r.result.authKey);
+          }
+          /* a code that ran out is replaced by a new one */
+          if (r && (r.status === 'expired' || r.status === 'used' || r.status === 'cancelled')) {
+            self.stopQr();
+            return self.startQr();
+          }
+          self.schedulePoll(gen);
+        },
+        20000
+      );
     xhrJson(
       'https://link.stremio.com/api/read?code=' + encodeURIComponent(this.qrCode),
       function (r) {
@@ -184,20 +225,16 @@ var login = {
     this.qrCode = '';
     this.pollGen++;
   },
-  /* Nuvio has no sign-in by phone code: its accounts use the email form only */
+  /* the QR code and the form follow the account chosen */
   setProvider: function (provider) {
     if (provider === this.provider) return;
     this.provider = provider;
-    var scr = $('scrLogin');
-    if (this.provider === 'nuvio') {
-      this.stopQr();
-      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '') + ' nuvio';
-    } else {
-      if (scr) scr.className = scr.className.replace(/\s*\bnuvio\b/g, '');
-      this.startQr();
-    }
+    this.stopQr();
+    $('lgQrImg').removeAttribute('src');
+    $('lgCode').textContent = '';
+    this.setStatus('generatingCode');
+    this.startQr();
     $('lgErr').textContent = '';
-    $('lgAccount').textContent = tx(this.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
     this.paint();
   },
   doEmail: function () {

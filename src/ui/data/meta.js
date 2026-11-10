@@ -55,6 +55,16 @@ function capMetaCache(k) {
   }
   lsSet('beta_meta_keys', keys);
 }
+/* What is already known about a title, at once: its name and artwork for the player (playback.js).
+   Kitsu anime and long series such as One Piece answer the player's own lookup too late or not
+   at all, and the player then had only the torrent's name and no picture. */
+function knownArtwork(type, id) {
+  var k = type + '_' + id,
+    kept = lsJson('beta_meta_' + k),
+    m = metaMem[k] || (kept && kept.meta);
+  if (!m) return null;
+  return { name: m.name || '', logo: m.logo || '', background: m.background || '', poster: m.poster || '' };
+}
 function getMeta(type, id, cb) {
   var k = type + '_' + id;
   if (metaMem[k]) {

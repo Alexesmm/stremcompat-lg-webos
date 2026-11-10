@@ -32,6 +32,22 @@ function safeProxyHeaders(raw) {
   return out;
 }
 
+/* the title's name and artwork as the interface knew them, or null */
+function safeArtwork(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  function link(u) {
+    var v = safeText(u, 2048);
+    return /^https?:\/\//i.test(v) ? v : '';
+  }
+  var art = {
+    name: safeText(raw.name, 200),
+    logo: link(raw.logo),
+    background: link(raw.background),
+    poster: link(raw.poster)
+  };
+  return art.name || art.background || art.logo ? art : null;
+}
+
 function storeStreamRef(raw) {
   raw = raw || {};
   var streamUrl = safeText(raw.url, 8192);
@@ -50,6 +66,7 @@ function storeStreamRef(raw) {
     compat: safeText(raw.compat, 160),
     headers: safeProxyHeaders(raw.headers),
     notWebReady: !!raw.notWebReady,
+    artwork: safeArtwork(raw.meta),
     at: Date.now()
   };
   streamRefOrder.push(ref);

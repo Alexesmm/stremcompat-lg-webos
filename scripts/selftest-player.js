@@ -72,6 +72,7 @@ function nextDirect(streams, opts) {
   var ctx = {
     SEASON: '1', EPISODE: '2', EPTITLE: '', BACK: 'beta#detail/series/tt1/tt1:1:2', TYPE: 'series', ID: 'tt1',
     NEXTHREF: '/beta#detail/series/tt1/tt1:1:3', NEXTTITLE: '', NEXTVID: 'tt1:1:3', NEXTTHUMB: '',
+    TITLE: 'One Piece', LOGO: 'https://img.example/logo.png', BG: 'https://img.example/bg.jpg', POSTER: '',
     ADDON: 'Torrentio', ADDONBASE: opts.base || '', QUALITY: '1080p', COMPAT: '', SNAME: opts.sname || 'Torrentio 1080p Show.S01E02.1080p 🇧🇷', BINGE: opts.binge || '',
     exited: false, startupWatch: null, mode: 'video', menu: {}, bar: {}, load: { style: { display: 'none' } }, subEl: {},
     localStorage: memoryStorage({ uiLanguage: 'pt-BR', addons: JSON.stringify(addons) }),
@@ -121,6 +122,7 @@ assert.strictEqual(
   'the next episode did not open straight in the player'
 );
 assert.strictEqual(direct.removed.length, 1, 'the used preference stayed behind and would autoplay on Back');
+assert.deepStrictEqual(direct.posted[0].meta, { name: 'One Piece', logo: 'https://img.example/logo.png', background: 'https://img.example/bg.jpg', poster: '' }, 'the next episode lost the title\'s name and artwork');
 assert.strictEqual(direct.ctx.paused, true, 'the finished episode kept playing behind the cover');
 assert.strictEqual(direct.ctx.toast, 'Próximo episódio…', 'no notice while the next episode was looked for');
 assert.strictEqual(direct.asked.length, 1, 'addons other than the source addon were asked');
@@ -631,7 +633,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
       lsGet: function (k, d) { return d; }, sameLanguage: function (a, b) { return !!a && a === b; },
       WANTAUD: more.audio || '', WANTAUD2: '', WANTSUB: more.subtitle || '', WANTSUB2: '', defaultMediaLanguage: function () { return 'eng'; },
       TYPE: more.type || 'movie', ID: 'tt5', VID: more.vid || '', BACK: 'beta#detail/x', URL: more.url || 'http://x/a.mp4', IS_TORRENT: !!more.torrent,
-      ADDON: 'A', ADDONBASE: 'https://a.example', SNAME: 'A 1080p', QUALITY: '1080p', COMPAT: '',
+      ADDON: 'A', ADDONBASE: 'https://a.example', SNAME: 'A 1080p', QUALITY: '1080p', COMPAT: '', TITLE: 'Film', LOGO: '', BG: '', POSTER: '',
       window: { addEventListener: function () {}, innerWidth: 1920, innerHeight: 1080 }, localStorage: { setItem: function (k, v) { stored[k] = v; } },
       tx: function (key, n) { return key + ' ' + n; }, fmt: function (s) { return 't' + s; }, Date: more.clock || Date,
       xhr: function (u, cb) { calls.push(u); cb(more.answers && more.answers[u.split('?')[0]]); },

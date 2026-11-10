@@ -13,6 +13,7 @@ var { DIR } = require('./config');
 var { dbg } = require('./log');
 var { fetchAddonJson } = require('./http-util');
 var { seriesVideos, setWatched } = require('./watched');
+var { qrSvg } = require('./qr');
 
 /* the tests point this at a stand-in server */
 var BASE = urlmod.parse(process.env.SC_NUVIO_URL || 'https://api.nuvio.tv');
@@ -140,17 +141,103 @@ function login(email, password, cb) {
         return cb({
           error: { code: status || 0, message: status ? 'Wrong email or password' : 'Nuvio did not answer' }
         });
-      var id = crypto.randomBytes(12).toString('hex');
-      loadSessions()[id] = {
-        access: json.access_token,
-        refresh: json.refresh_token,
-        uid: (json.user && json.user.id) || id,
-        email: (json.user && json.user.email) || email,
-        profile: 1,
-        primaryAddons: true
-      };
-      saveSessions();
-      cb({ result: { authKey: 'nuvio:' + id, user: userOf(loadSessions()[id]) } });
+      cb(startSession(json, email));
+    }
+  );
+}
+/* a signed-in account as this TV keeps it, and the answer the interface expects */
+function startSession(json, email) {
+  var id = crypto.randomBytes(12).toString('hex');
+  loadSessions()[id] = {
+    access: json.access_token,
+    refresh: json.refresh_token,
+    uid: (json.user && json.user.id) || id,
+    email: (json.user && json.user.email) || email || '',
+    profile: 1,
+    primaryAddons: true
+  };
+  saveSessions();
+  return { result: { authKey: 'nuvio:' + id, user: userOf(loadSessions()[id]) } };
+}
+
+/* ---------- signing in by phone, as Nuvio's own TV apps do ----------
+   The TV gets a guest session, asks for a code tied to a random nonce, shows the link with the
+   code as a QR, asks every few seconds whether the phone approved it, and then trades the code
+   for the account's session. */
+var LINK_PAGE = 'https://nuvio.tv/link';
+var pending = {};
+function qrStart(cb) {
+  var key = null;
+  call('POST', '/auth/v1/signup', null, { data: { tv_client: 'StremCompat' } }, function (status, guest) {
+    if (!guest || !guest.access_token)
+      return call('POST', '/auth/v1/token?grant_type=anonymous', null, {}, function (s2, guest2) {
+        if (!guest2 || !guest2.access_token) return cb(null);
+        begin(guest2);
+      });
+    begin(guest);
+  });
+  function begin(guest) {
+    key = guest;
+    var nonce = crypto.randomBytes(18).toString('hex');
+    call(
+      'POST',
+      '/rest/v1/rpc/start_device_login_session',
+      key.access_token,
+      {
+        p_device_nonce: nonce,
+        p_redirect_base_url: LINK_PAGE,
+        p_device_type: 'tv',
+        p_device_name: 'StremCompat'
+      },
+      function (status, rows) {
+        var row = rows && rows[0];
+        var link = row && (row.verification_uri_complete || row.verification_uri);
+        if (!row || !row.device_code || !link) return cb(null);
+        var id = crypto.randomBytes(12).toString('hex');
+        pending[id] = { guest: key.access_token, code: row.device_code, nonce: nonce, at: Date.now() };
+        cb({
+          id: id,
+          code: String(row.user_code || ''),
+          link: link,
+          qr: qrSvg(link),
+          interval: Math.max(2, Number(row.poll_interval_seconds) || 3)
+        });
+      }
+    );
+  }
+}
+/* cb({ status }) while waiting; cb({ result: { authKey, user } }) once the phone approved */
+function qrPoll(id, cb) {
+  var p = pending[id];
+  if (!p || Date.now() - p.at > 15 * 60000) return cb({ status: 'expired' });
+  call(
+    'POST',
+    '/rest/v1/rpc/poll_tv_login_session',
+    p.guest,
+    { p_code: p.code, p_device_nonce: p.nonce },
+    function (status, rows) {
+      var state = (rows && rows[0] && rows[0].status) || (status ? 'pending' : 'offline');
+      if (state !== 'approved') {
+        if (state === 'expired' || state === 'used' || state === 'cancelled') delete pending[id];
+        return cb({ status: state });
+      }
+      call(
+        'POST',
+        '/functions/v1/tv-logins-exchange',
+        p.guest,
+        { code: p.code, device_nonce: p.nonce },
+        function (s, json) {
+          var tokens = json && (json.access_token ? json : json.session);
+          if (!tokens || !tokens.access_token) return cb({ status: 'pending' });
+          delete pending[id];
+          if (tokens.user && tokens.user.id) return cb(startSession(tokens, tokens.user.email));
+          /* without the user in the answer, the account says who it is */
+          call('GET', '/auth/v1/user', tokens.access_token, null, function (s2, account) {
+            tokens.user = account || null;
+            cb(startSession(tokens, account && account.email));
+          });
+        }
+      );
     }
   );
 }
@@ -571,5 +658,7 @@ module.exports = {
     return /^nuvio:/.test(String(key || ''));
   },
   nuvioApi: nuvioApi,
-  profiles: profiles
+  profiles: profiles,
+  qrPoll: qrPoll,
+  qrStart: qrStart
 };

@@ -85,13 +85,17 @@ function addEpisodeDetails(context, videos) {
 /* Artwork and episode details, fetched here so the loading screen shows the logo at once. It
    waits only a moment for them; a torrent also waits for its address to answer. */
 function playerContext(stream, query, done) {
+  var known = stream.artwork;
   var context = {
     type: query.type || '',
     id: query.id || '',
     vid: query.vid || '',
     back: query.back || '',
     streamRef: query.ref || '',
-    meta: null
+    /* what the interface already showed: the player does not wait for Cinemeta to have it */
+    meta: known
+      ? { name: known.name, logo: known.logo, background: known.background, poster: known.poster, cert: '' }
+      : null
   };
   var artworkSettled = false,
     isEpisode = context.vid.indexOf(':') >= 0;
@@ -108,7 +112,7 @@ function playerContext(stream, query, done) {
   function settled() {
     if (artworkSettled) return;
     artworkSettled = true;
-    if (isEpisode && !context.meta) addEpisodeDetails(context, rememberedVideos(context.id));
+    if (isEpisode && !context.nextVid) addEpisodeDetails(context, rememberedVideos(context.id));
     ready();
   }
   var address =
@@ -120,11 +124,12 @@ function playerContext(stream, query, done) {
   fetchJson(address, function (answer) {
     var meta = (answer && answer.meta) || {};
     if (artworkSettled) return rememberVideos(context.id, meta.videos);
+    var have = context.meta || {};
     context.meta = {
-      name: meta.name || '',
-      logo: meta.logo || '',
-      background: meta.background || meta.poster || '',
-      poster: meta.poster || '',
+      name: have.name || meta.name || '',
+      logo: have.logo || meta.logo || '',
+      background: have.background || meta.background || meta.poster || '',
+      poster: have.poster || meta.poster || '',
       cert: meta.certification || ''
     };
     if (isEpisode) addEpisodeDetails(context, meta.videos);
