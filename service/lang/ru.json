@@ -348,5 +348,6 @@
   },
   "playBest": "Лучший источник",
   "playingBest": "Воспроизводится лучший источник: {0}",
-  "updateAvailable": "Доступен StremCompat {0}. Обновите его в Homebrew Channel."
+  "updateAvailable": "Доступен StremCompat {0}. Обновите его в Homebrew Channel.",
+  "whatsNew": "Обновлено до StremCompat {0}. Новое в настройках плеера: серии, главы, размер изображения и скорость."
 }

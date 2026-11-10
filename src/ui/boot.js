@@ -68,11 +68,17 @@ function boot() {
         if (changed) home.built = false;
       });
     }, 8000);
-    /* a new version, once per version */
+    /* what this version brought, once after updating; then a newer version, once per version */
     setTimeout(function () {
       xhrJson(
         '/update',
         function (answer) {
+          var current = answer && answer.current,
+            seen = lsRaw('versionSeen', '');
+          if (current && current !== seen) {
+            lsRawSet('versionSeen', current);
+            if (seen && SCR !== 'login') return toast(tx('whatsNew', current), 9000);
+          }
           var version = answer && answer.version;
           if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;
           lsRawSet('updateShown', version);

@@ -22,7 +22,9 @@ function checkUpdate(req, res) {
   var address = PROFILE.updateManifest;
   function answer() {
     var version = latest && latest.version;
-    sendJson(res, version && isNewer(version, APP_VERSION) ? { version: version } : {});
+    var reply = { current: APP_VERSION };
+    if (version && isNewer(version, APP_VERSION)) reply.version = version;
+    sendJson(res, reply);
   }
   if (!address || (latest && Date.now() - latest.at < UPDATE_LIFETIME_MS)) return answer();
   fetchJson(address, function (manifest) {

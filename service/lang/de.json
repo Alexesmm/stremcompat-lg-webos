@@ -348,5 +348,6 @@
   },
   "playBest": "Beste Quelle",
   "playingBest": "Beste Quelle wird abgespielt: {0}",
-  "updateAvailable": "StremCompat {0} ist verfügbar. Aktualisiere es im Homebrew Channel."
+  "updateAvailable": "StremCompat {0} ist verfügbar. Aktualisiere es im Homebrew Channel.",
+  "whatsNew": "Auf StremCompat {0} aktualisiert. Neu in den Player-Einstellungen: Folgen, Kapitel, Bildgröße und Geschwindigkeit."
 }

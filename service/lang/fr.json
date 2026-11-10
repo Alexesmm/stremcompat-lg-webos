@@ -348,5 +348,6 @@
   },
   "playBest": "Meilleure source",
   "playingBest": "Lecture de la meilleure source : {0}",
-  "updateAvailable": "StremCompat {0} est disponible. Mettez-le à jour dans Homebrew Channel."
+  "updateAvailable": "StremCompat {0} est disponible. Mettez-le à jour dans Homebrew Channel.",
+  "whatsNew": "Mis à jour vers StremCompat {0}. Nouveau dans les réglages du lecteur : épisodes, chapitres, taille de l’image et vitesse."
 }

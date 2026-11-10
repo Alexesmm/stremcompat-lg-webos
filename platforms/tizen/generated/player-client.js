@@ -568,6 +568,7 @@ var UI_TEXT = {
     playBest: 'Best source',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
+    whatsNew: 'Updated to StremCompat {0}. New in the player\'s settings: episodes, chapters, picture size and speed.',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -923,6 +924,7 @@ var UI_TEXT = {
     playBest: 'Melhor fonte',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
+    whatsNew: 'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:

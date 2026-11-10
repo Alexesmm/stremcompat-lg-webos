@@ -387,6 +387,7 @@ var UI_TEXT = {
     playBest: 'Best source',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
+    whatsNew: 'Updated to StremCompat {0}. New in the player\'s settings: episodes, chapters, picture size and speed.',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -742,6 +743,7 @@ var UI_TEXT = {
     playBest: 'Melhor fonte',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
+    whatsNew: 'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -8091,11 +8093,17 @@ function boot() {
         if (changed) home.built = false;
       });
     }, 8000);
-    /* a new version, once per version */
+    /* what this version brought, once after updating; then a newer version, once per version */
     setTimeout(function () {
       xhrJson(
         '/update',
         function (answer) {
+          var current = answer && answer.current,
+            seen = lsRaw('versionSeen', '');
+          if (current && current !== seen) {
+            lsRawSet('versionSeen', current);
+            if (seen && SCR !== 'login') return toast(tx('whatsNew', current), 9000);
+          }
           var version = answer && answer.version;
           if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;
           lsRawSet('updateShown', version);
