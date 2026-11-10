@@ -224,15 +224,18 @@ function makeBoard(loader) {
       }
       $('heroMeta').innerHTML = heroMetaOf(it);
       setHeroDesc(it.description);
+      $('heroCast').textContent = it.cast || '';
       setBg(bgMid(it));
-      if (!it.description && it.id) {
+      if ((!it.description || it.cast === undefined) && it.id) {
         getMeta(it.type, it.id, function (m) {
           if (!m) return;
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
+          it.cast = (m.cast || []).slice(0, 3).join(', ');
           if (self.focusedItem() === it) {
             setHeroDesc(it.description);
             $('heroMeta').innerHTML = heroMetaOf(it);
+            $('heroCast').textContent = it.cast;
           }
         });
       }

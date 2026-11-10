@@ -87,6 +87,7 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 /* two lines ending in an ellipsis instead of a sentence cut in half */
 #heroDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-height:73px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .card .rank{position:absolute;left:10px;top:4px;font-size:72px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.85),0 0 2px #000;pointer-events:none}
+#heroCast{display:none}
 #heroDesc.roll{display:block;-webkit-line-clamp:none}
 
 /* ---------- rows ---------- */
@@ -523,19 +524,45 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .suopt.locked{opacity:.55}
 .suskip{text-align:center;font-size:24px;padding:14px 26px;background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
 #suHint{margin-top:18px;font-size:20px;color:#8b95a0}
-/* the modern look: the background fills the screen, darkened where the text sits, and drifts slowly */
-body.modern #bg,body.modern #bg2{left:0;height:100%;-webkit-transition:opacity .7s ease;transition:opacity .7s ease}
-body.modern #bg:after,body.modern #bg2:after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,#090b12 0%,rgba(9,11,18,.88) 28%,rgba(9,11,18,.35) 62%,rgba(9,11,18,.1) 100%),linear-gradient(0deg,#090b12 0%,rgba(9,11,18,.6) 38%,rgba(9,11,18,0) 62%)}
-body.modern #bg.on{opacity:1;-webkit-animation:drift 26s ease-out forwards;animation:drift 26s ease-out forwards}
-@-webkit-keyframes drift{from{-webkit-transform:scale(1)}to{-webkit-transform:scale(1.07)}}
-@keyframes drift{from{transform:scale(1)}to{transform:scale(1.07)}}
-body.modern .card{-webkit-transition:-webkit-transform .22s ease,box-shadow .22s ease;transition:transform .22s ease,box-shadow .22s ease}
-body.modern .card.f{-webkit-transform:scale(1.06);transform:scale(1.06);-webkit-transform-origin:50% 25%;transform-origin:50% 25%;box-shadow:0 0 0 3px #090b12,0 0 0 7px #fff,0 18px 40px rgba(0,0,0,.6) !important}
-body.modern .card.ph{background:linear-gradient(100deg,rgba(255,255,255,.05) 30%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 70%);background-size:300% 100%;-webkit-animation:shimmer 1.4s linear infinite;animation:shimmer 1.4s linear infinite}
-@-webkit-keyframes shimmer{from{background-position:100% 0}to{background-position:0 0}}
-@keyframes shimmer{from{background-position:100% 0}to{background-position:0 0}}
-body.modern #setupPanel,body.modern #episodeJump{background:rgba(5,4,10,.72)}
-body.modern #suBox,body.modern #ejBox{background:rgba(19,25,34,.86);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+/* The modern look: a large billboard as in the big streaming apps. The background spans the
+   width of the screen and the upper two thirds, darkened by the fixed #bgshade layer, which is
+   painted once and never moves. Nothing animates on its own: only the background's opacity
+   changes, when the focus has settled. Panels are opaque, so no layers are blended. */
+body.modern #bg,body.modern #bg2{left:0;height:74%;-webkit-transition:opacity .4s ease;transition:opacity .4s ease}
+body.modern #bg.on,body.modern #bg2.on{opacity:1}
+body.modern #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,0) 40%,rgba(9,11,18,.55) 58%,#090b12 74%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.92) 22%,rgba(9,11,18,.55) 42%,rgba(9,11,18,.12) 62%,rgba(9,11,18,0) 75%)}
+body.modern.detail #bg,body.modern.detail #bg2{left:0;height:100%}
+body.modern.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,0) 45%,rgba(9,11,18,.75) 78%,#090b12 96%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.94) 26%,rgba(9,11,18,.6) 46%,rgba(9,11,18,.15) 66%,rgba(9,11,18,0) 80%)}
+body.modern #topnav{background:#11141b}
+body.modern #hero{top:96px;width:44%}
+body.modern #heroLogo{width:560px;height:170px}
+body.modern #heroTitle{height:170px;font-size:84px;letter-spacing:-2px}
+body.modern #heroTitle.long{font-size:60px}
+body.modern #heroMeta{margin-top:22px;font-size:27px;color:#fff}
+body.modern #heroDesc{margin-top:16px;font-size:27px;line-height:1.45;max-height:118px;-webkit-line-clamp:3;color:rgba(255,255,255,.86)}
+body.modern #heroCast{display:block;margin-top:14px;font-size:22px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.modern #rowsClip{top:590px}
+body.modern .rowtitle{font-size:32px;color:#fff;margin-bottom:18px}
+body.modern #rows .card{width:250px;height:375px;margin-right:26px}
+body.modern #rows .card.wide{width:430px;height:242px}
+body.modern .card.f{-webkit-transform:scale(1.05);transform:scale(1.05);-webkit-transform-origin:50% 30%;transform-origin:50% 30%;box-shadow:0 0 0 4px #fff !important}
+body.modern #setupPanel,body.modern #episodeJump{background:#090b12}
+body.modern #suBox,body.modern #ejBox{background:#151a23}
+/* the modern look on the 1280x720 package (after the rules above, so they win) */
+@media (max-height:800px){
+  body.modern #hero{top:60px;width:46%}
+  body.modern #heroLogo{width:370px;height:112px}
+  body.modern #heroTitle{height:112px;font-size:56px}
+  body.modern #heroTitle.long{font-size:40px}
+  body.modern #heroMeta{margin-top:14px;font-size:18px}
+  body.modern #heroDesc{margin-top:10px;font-size:18px;max-height:78px}
+  body.modern #heroCast{margin-top:9px;font-size:15px}
+  body.modern #rowsClip{top:392px}
+  body.modern .rowtitle{font-size:22px;margin-bottom:12px}
+  body.modern #rows .card{width:167px;height:250px;margin-right:17px}
+  body.modern #rows .card.wide{width:287px;height:161px}
+  body.modern .card.f{box-shadow:0 0 0 3px #fff !important}
+}
 /* the light look: no transitions, animations or shadows */
 body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-animation:none!important;animation:none!important;box-shadow:none!important;text-shadow:none!important}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
@@ -580,7 +607,7 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 
 <!-- Home and Library share the cinematic hero/rows layer. Discover has its own grid. -->
 <div class="scr" id="scrBoard">
-  <div id="hero"><img id="heroLogo"><div id="heroTitle"></div><div id="heroMeta"></div><div id="heroDesc"></div></div>
+  <div id="hero"><img id="heroLogo"><div id="heroTitle"></div><div id="heroMeta"></div><div id="heroDesc"></div><div id="heroCast"></div></div>
   <div id="rowsClip"><div id="rows"></div></div>
   <div id="boardMsg"></div>
 </div>

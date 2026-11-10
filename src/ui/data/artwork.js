@@ -34,7 +34,7 @@ function bgSmall(it) {
 function bgWidth() {
   var look = uiLook();
   if (look === 'light') return 640;
-  if (look === 'modern') return viewportWidth() >= 1600 ? 1920 : 1280;
+  if (look === 'modern') return 1280;
   return 0;
 }
 function bgMid(it) {

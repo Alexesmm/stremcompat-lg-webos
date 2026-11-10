@@ -12,6 +12,8 @@ var appPort = parseInt(process.argv[3], 10);
 var width = parseInt(process.argv[4], 10);
 var height = parseInt(process.argv[5], 10);
 var output = path.resolve(process.argv[6] || '');
+/* the look to test: standard (default) or modern */
+var look = process.argv[7] || 'standard';
 var chrome = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 if (!stage || !appPort || !width || !height || !output) throw new Error('Usage: node visualtest-layout.js <stage> <port> <width> <height> <output.png>');
 if (!fs.existsSync(chrome)) throw new Error('Chrome was not found: ' + chrome);
@@ -130,7 +132,7 @@ async function main() {
     assert.strictEqual(localizedState.loginTitle, 'Entrar pelo celular', 'Login text was not translated.');
     assert.strictEqual(localizedState.password, 'Senha', 'Login placeholder was not translated.');
     await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('en-US')" });
-    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('setupDone','1');localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
+    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('setupDone','1');localStorage.setItem('uiLook','" + look + "');localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
     await delay(1800);
     for (var catalogWait = 0; catalogWait < 25; catalogWait++) {
@@ -151,7 +153,7 @@ async function main() {
     assert.strictEqual(boardState.total, 14, 'Profile discarded addon catalogs before the configured row limit.');
     assert.strictEqual(boardState.visible, 12, 'Failed addon catalogs were not isolated from successful rows.');
     assert.strictEqual(boardState.focused, 1, 'Focus did not settle on the first successful catalog after an initial failure.');
-    assert.ok(boardState.card && boardState.card.top >= boardState.clip.top && boardState.card.bottom <= height, 'Focused catalog card is clipped at ' + width + 'x' + height + '.');
+    assert.ok(boardState.card && boardState.card.top >= boardState.clip.top && boardState.card.bottom <= height, 'Focused catalog card is clipped at ' + width + 'x' + height + ': ' + JSON.stringify(boardState));
     await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
     await delay(180);
     var nextBoardEval = await protocol.call('Runtime.evaluate', { expression: boardExpression, returnByValue: true });
