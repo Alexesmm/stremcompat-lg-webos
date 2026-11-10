@@ -400,7 +400,8 @@ var settings = {
           tx('diagStreaming', diagStreamingState(j)),
           j.nativeProbe ? 'Native code: ' + j.nativeProbe : '',
           tx('diagInterface', heap, shown, home),
-          tx('diagPeak', j.peakRssMb, j.minAvailableMb)
+          tx('diagPeak', j.peakRssMb, j.minAvailableMb),
+          smoothnessLine()
         ];
         var events = j.events || [];
         lines.push(events.length ? tx('diagRecent') : tx('diagNoProblems'));

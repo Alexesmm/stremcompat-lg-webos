@@ -171,6 +171,7 @@
   "diagStopped": "gestoppt",
   "diagInterface": "Oberfläche: {0} MB JS · Start nach {1} s · Kataloge nach {2} s",
   "diagPeak": "Seit dem Start: Spitze des lokalen Servers {0} MB · wenigster freier Speicher {1} MB",
+  "diagRemote": "Fernbedienung: {0} ms üblich · {1} ms langsamste · {2} % der Bilder verspätet",
   "diagRecent": "Letzte Probleme:",
   "diagNoProblems": "Seit dem Start keine Probleme",
   "evMediaError": "Quelle ließ sich nicht abspielen",

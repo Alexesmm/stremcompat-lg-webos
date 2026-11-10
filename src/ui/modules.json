@@ -12,6 +12,7 @@
   "core/i18n.js",
   "core/format.js",
   "core/runtime.js",
+  "core/smoothness.js",
   "data/artwork.js",
   "data/account.js",
   "data/addons.js",

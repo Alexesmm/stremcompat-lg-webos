@@ -118,6 +118,23 @@ function accountStorage() {
 }
 
 var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
+/* the remote meter in Diagnostics: the typical and slowest answer, and late frames */
+(function () {
+  var frames = [], clock = 0;
+  var meter = { window: {}, performance: { now: function () { return clock; } }, Date: { now: function () { return clock; } }, Math: Math,
+    tx: function (k, a, b, c) { return [a, b, c].join(' '); } };
+  meter.window.requestAnimationFrame = meter.requestAnimationFrame = function (f) { frames.push(f); };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'ui', 'core', 'smoothness.js'), 'utf8'), meter);
+  assert.strictEqual(meter.smoothnessLine(), '', 'the meter spoke before any key');
+  [40, 60, 300].forEach(function (wait) {
+    clock += 1000;
+    meter.noteKey();
+    var start = clock;
+    /* the frames that answer the key, then the frame watch runs out */
+    for (var f = 0; frames.length && f < 200; f++) { clock = f < 3 ? start + wait : clock + 17; frames.shift()(clock); }
+  });
+  assert.strictEqual(meter.smoothnessLine().split(' ').slice(0, 2).join(' '), '60 300', 'the typical and slowest answers are wrong');
+})();
 assert.strictEqual(typeof firstRun.context.__SC_RESUME_CHECK__, 'function', 'runtime resume recovery hook is missing');
 assert.strictEqual(typeof firstRun.context.__SC_MANUAL_RECOVER__, 'function', 'manual recovery hook is missing');
 assert.deepStrictEqual(JSON.parse(JSON.stringify(firstRun.context.__SC_STREAM_COMPAT__({ title: 'AV1 2160p' }))), { labels: ['AV1'], rank: 3 });

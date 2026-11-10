@@ -171,6 +171,7 @@
   "diagStopped": "detenido",
   "diagInterface": "Interfaz: {0} MB de JS · Inicio en pantalla en {1} s · catálogos en {2} s",
   "diagPeak": "Desde el inicio: pico del servidor local {0} MB · mínimo de memoria libre {1} MB",
+  "diagRemote": "Mando: {0} ms habitual · {1} ms el más lento · {2} % de fotogramas tarde",
   "diagRecent": "Problemas recientes:",
   "diagNoProblems": "Sin problemas desde el inicio",
   "evMediaError": "La fuente no se reprodujo",

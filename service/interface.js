@@ -430,6 +430,7 @@ var UI_TEXT = {
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
     diagPeak: 'Since start: local server peak {0} MB · lowest TV free memory {1} MB',
+    diagRemote: 'Remote: {0} ms typical · {1} ms slowest · {2} % of frames late',
     diagRecent: 'Recent problems:',
     diagNoProblems: 'No problems recorded since start',
     evMediaError: 'Source would not play',
@@ -785,6 +786,7 @@ var UI_TEXT = {
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
     diagPeak: 'Desde o início: pico do servidor local {0} MB · menor memória livre da TV {1} MB',
+    diagRemote: 'Controle: {0} ms normalmente · {1} ms no pior caso · {2} % dos quadros atrasados',
     diagRecent: 'Problemas recentes:',
     diagNoProblems: 'Nenhum problema registrado desde o início',
     evMediaError: 'A fonte não reproduziu',
@@ -1617,6 +1619,54 @@ function manualRecover() {
   });
 }
 window.__SC_MANUAL_RECOVER__ = manualRecover;
+// How fast the screen answers the remote, measured on the TV itself for Diagnostics: the time
+// from a key to the frame that shows its result, and frames that came late while keys arrived.
+var smooth = { waits: [], late: 0, frames: 0 };
+function keyAnswered(started) {
+  if (!window.requestAnimationFrame) return;
+  /* the frame after the next one is the first that can show what the key changed */
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function (now) {
+      var wait = Math.round((now || Date.now()) - started);
+      if (wait < 0 || wait > 5000) return;
+      smooth.waits.push(wait);
+      if (smooth.waits.length > 60) smooth.waits.shift();
+    });
+  });
+}
+/* frames are watched only for a moment after each key, so an idle TV does no work */
+var frameWatchUntil = 0,
+  frameWatching = false;
+function watchFrames() {
+  frameWatchUntil = Date.now() + 1500;
+  if (frameWatching || !window.requestAnimationFrame) return;
+  frameWatching = true;
+  var last = 0;
+  function tick(now) {
+    now = now || Date.now();
+    if (last) {
+      smooth.frames++;
+      if (now - last > 50) smooth.late += Math.min(10, Math.round((now - last) / 16.7) - 1);
+    }
+    last = now;
+    if (Date.now() < frameWatchUntil) requestAnimationFrame(tick);
+    else frameWatching = false;
+  }
+  requestAnimationFrame(tick);
+}
+function noteKey() {
+  keyAnswered(window.performance && performance.now ? performance.now() : Date.now());
+  watchFrames();
+}
+/* '42 ms typical · 180 ms slowest · 3 % of frames late', or '' before any key */
+function smoothnessLine() {
+  var w = smooth.waits.slice().sort(function (a, b) {
+    return a - b;
+  });
+  if (!w.length) return '';
+  var late = smooth.frames ? Math.round((smooth.late / (smooth.frames + smooth.late)) * 100) : 0;
+  return tx('diagRemote', w[Math.floor(w.length / 2)], w[w.length - 1], late);
+}
 // Poster, backdrop and icon URLs.
 function isImdb(id) {
   return String(id || '').indexOf('tt') === 0;
@@ -6920,7 +6970,8 @@ var settings = {
           tx('diagStreaming', diagStreamingState(j)),
           j.nativeProbe ? 'Native code: ' + j.nativeProbe : '',
           tx('diagInterface', heap, shown, home),
-          tx('diagPeak', j.peakRssMb, j.minAvailableMb)
+          tx('diagPeak', j.peakRssMb, j.minAvailableMb),
+          smoothnessLine()
         ];
         var events = j.events || [];
         lines.push(events.length ? tx('diagRecent') : tx('diagNoProblems'));
@@ -7834,6 +7885,7 @@ on(
   function (e) {
     var k = e.keyCode;
     idleTouch();
+    noteKey();
     var a = document.activeElement;
     if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass'))
       return; /* typing: inputs manage themselves */

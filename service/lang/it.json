@@ -171,6 +171,7 @@
   "diagStopped": "fermo",
   "diagInterface": "Interfaccia: {0} MB di JS · Home sullo schermo in {1} s · cataloghi in {2} s",
   "diagPeak": "Dall'avvio: picco del server locale {0} MB · memoria libera minima {1} MB",
+  "diagRemote": "Telecomando: {0} ms di solito · {1} ms il più lento · {2} % dei fotogrammi in ritardo",
   "diagRecent": "Problemi recenti:",
   "diagNoProblems": "Nessun problema dall'avvio",
   "evMediaError": "La fonte non è stata riprodotta",

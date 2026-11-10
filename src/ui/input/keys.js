@@ -22,6 +22,7 @@ on(
   function (e) {
     var k = e.keyCode;
     idleTouch();
+    noteKey();
     var a = document.activeElement;
     if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass'))
       return; /* typing: inputs manage themselves */

@@ -171,6 +171,7 @@
   "diagStopped": "arrêté",
   "diagInterface": "Interface : {0} Mo de JS · Accueil affiché en {1} s · catalogues en {2} s",
   "diagPeak": "Depuis le démarrage : pic du serveur local {0} Mo · mémoire libre minimale {1} Mo",
+  "diagRemote": "Télécommande : {0} ms en général · {1} ms au pire · {2} % des images en retard",
   "diagRecent": "Problèmes récents :",
   "diagNoProblems": "Aucun problème depuis le démarrage",
   "evMediaError": "La source n'a pas pu être lue",
