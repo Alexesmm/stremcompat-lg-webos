@@ -1,5 +1,6 @@
 // Startup: choose login or Home, restore deep links and start the silent syncs.
 /* ================= boot ================= */
+var HOME_WAIT_MS = 7000;
 function boot() {
   try {
     window.__SC_PHASE__('B0');
@@ -38,7 +39,10 @@ function boot() {
     try {
       history.replaceState(history.state, '', appUrl('/beta'));
     } catch (e) {}
-    setTimeout(function () {
+    var revealed = false;
+    var reveal = function () {
+      if (revealed) return;
+      revealed = true;
       window.__SC_BOOT_DONE__ = true;
       window.__SC_PHASE__('READY');
       $('boot').style.display = 'none';
@@ -46,7 +50,18 @@ function boot() {
       try {
         window.__SC_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
       } catch (e) {}
-    }, 120);
+    };
+    /* Home appears once its first rows are in, and the artwork has had a moment; a title page
+       opened from a link shows at once; slow addons never keep the opening screen past 7 s */
+    if (m || ms) setTimeout(reveal, 120);
+    else {
+      var limit = setTimeout(reveal, HOME_WAIT_MS);
+      onHomeFilled = function () {
+        clearTimeout(limit);
+        setTimeout(reveal, 350);
+      };
+      if (homeFilled) onHomeFilled();
+    }
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
     setTimeout(function () {
       pullLib(function () {

@@ -58,7 +58,8 @@ function run(storage, expectedScreen, missingIds, expectedLanguage) {
     navigator: { userAgent: 'QtWebEngine/5.2.1 Chrome/38.0.2125.122 WebAppManager' },
     XMLHttpRequest: function () { this.open=function(){};this.send=function(){};this.abort=function(){};this.setRequestHeader=function(){}; },
     Image: function () { return element('img'); },
-    setTimeout: function (callback, delay) { if ((delay || 0) < 500) callback();return 1; }, clearTimeout: function () {},
+    /* short timers run at once, and so does the 7 s limit of the opening screen (no catalog answers here) */
+    setTimeout: function (callback, delay) { if ((delay || 0) < 500 || delay === 7000) callback();return 1; }, clearTimeout: function () {},
     setInterval: function () { return 1; }, clearInterval: function () {},
     console: console
   };

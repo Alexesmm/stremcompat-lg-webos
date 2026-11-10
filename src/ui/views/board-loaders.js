@@ -21,6 +21,15 @@ function settleBoardMessage(board) {
     paintBoardMessage(board);
   });
 }
+/* The opening screen stays until Home has its first rows (boot.js), so Home appears once,
+   filled, instead of empty rows that fill in and blink. */
+var homeFilled = false,
+  onHomeFilled = null;
+function markHomeFilled() {
+  if (homeFilled) return;
+  homeFilled = true;
+  if (onHomeFilled) onHomeFilled();
+}
 /* generic catalog-backed board loader (rows fill in asynchronously, cache-first) */
 function loadCatalogRows(board, defs, includeCW, keepFocus) {
   var oldRow = board.rowIdx,
@@ -29,7 +38,9 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
   board._loadGen = loadGen;
   board.empty = false;
   var waiting = defs.length,
+    firstRows = Math.min(3, defs.length),
     started = Date.now();
+  if (board === home && !firstRows) markHomeFilled();
   if (keepFocus) for (var i0 = 0; i0 < board.rows.length; i0++) oldCols.push(board.rows[i0].col);
   board.rows = [];
   function reveal(row, delay) {
@@ -81,11 +92,17 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
       /* only the rows that start on screen get placeholders; a rebuild keeps its rows */
       if (!keepFocus && di < 3) placeholderCards(row);
       else row.el.style.display = 'none';
-      getCatalogUrl(def.url, def.key, def.type, function (items) {
+      getCatalogUrl(def.url, def.key, def.type, function (items, cached) {
         if (board._loadGen !== loadGen) return; /* ignore callbacks from a superseded rebuild */
+        /* A row already shown from the cache keeps it once Home is on screen: the fresher
+           list is saved for the next start instead of redrawing the row under the viewer. */
+        if (!cached && row.fromCache && homeFilled && row.items.length) return;
+        row.fromCache = !!cached;
         if (!row.answered) {
           row.answered = true;
           waiting--;
+          if (di < 3) firstRows--;
+          if (board === home && (!firstRows || !waiting)) markHomeFilled();
           /* shown by Settings > Diagnostics */
           if (!waiting && board === home) window.__SC_HOME_LOAD_MS__ = Date.now() - started;
         }

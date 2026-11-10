@@ -3922,6 +3922,15 @@ function settleBoardMessage(board) {
     paintBoardMessage(board);
   });
 }
+/* The opening screen stays until Home has its first rows (boot.js), so Home appears once,
+   filled, instead of empty rows that fill in and blink. */
+var homeFilled = false,
+  onHomeFilled = null;
+function markHomeFilled() {
+  if (homeFilled) return;
+  homeFilled = true;
+  if (onHomeFilled) onHomeFilled();
+}
 /* generic catalog-backed board loader (rows fill in asynchronously, cache-first) */
 function loadCatalogRows(board, defs, includeCW, keepFocus) {
   var oldRow = board.rowIdx,
@@ -3930,7 +3939,9 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
   board._loadGen = loadGen;
   board.empty = false;
   var waiting = defs.length,
+    firstRows = Math.min(3, defs.length),
     started = Date.now();
+  if (board === home && !firstRows) markHomeFilled();
   if (keepFocus) for (var i0 = 0; i0 < board.rows.length; i0++) oldCols.push(board.rows[i0].col);
   board.rows = [];
   function reveal(row, delay) {
@@ -3982,11 +3993,17 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
       /* only the rows that start on screen get placeholders; a rebuild keeps its rows */
       if (!keepFocus && di < 3) placeholderCards(row);
       else row.el.style.display = 'none';
-      getCatalogUrl(def.url, def.key, def.type, function (items) {
+      getCatalogUrl(def.url, def.key, def.type, function (items, cached) {
         if (board._loadGen !== loadGen) return; /* ignore callbacks from a superseded rebuild */
+        /* A row already shown from the cache keeps it once Home is on screen: the fresher
+           list is saved for the next start instead of redrawing the row under the viewer. */
+        if (!cached && row.fromCache && homeFilled && row.items.length) return;
+        row.fromCache = !!cached;
         if (!row.answered) {
           row.answered = true;
           waiting--;
+          if (di < 3) firstRows--;
+          if (board === home && (!firstRows || !waiting)) markHomeFilled();
           /* shown by Settings > Diagnostics */
           if (!waiting && board === home) window.__SC_HOME_LOAD_MS__ = Date.now() - started;
         }
@@ -8139,6 +8156,7 @@ window.__SC_PHASE__('M4');
 })();
 // Startup: choose login or Home, restore deep links and start the silent syncs.
 /* ================= boot ================= */
+var HOME_WAIT_MS = 7000;
 function boot() {
   try {
     window.__SC_PHASE__('B0');
@@ -8177,7 +8195,10 @@ function boot() {
     try {
       history.replaceState(history.state, '', appUrl('/beta'));
     } catch (e) {}
-    setTimeout(function () {
+    var revealed = false;
+    var reveal = function () {
+      if (revealed) return;
+      revealed = true;
       window.__SC_BOOT_DONE__ = true;
       window.__SC_PHASE__('READY');
       $('boot').style.display = 'none';
@@ -8185,7 +8206,18 @@ function boot() {
       try {
         window.__SC_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;
       } catch (e) {}
-    }, 120);
+    };
+    /* Home appears once its first rows are in, and the artwork has had a moment; a title page
+       opened from a link shows at once; slow addons never keep the opening screen past 7 s */
+    if (m || ms) setTimeout(reveal, 120);
+    else {
+      var limit = setTimeout(reveal, HOME_WAIT_MS);
+      onHomeFilled = function () {
+        clearTimeout(limit);
+        setTimeout(reveal, 350);
+      };
+      if (homeFilled) onHomeFilled();
+    }
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
     setTimeout(function () {
       pullLib(function () {
