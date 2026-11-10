@@ -1,13 +1,16 @@
 // Runtime numbers for the Settings diagnostics: this server, the television and the streaming server.
 
 var fs = require('fs');
+var http = require('http');
 var https = require('https');
+var urlmod = require('url');
 var os = require('os');
 var { APP_VERSION, PROFILE } = require('./config');
 var { sendJson } = require('./http-util');
 var { diskSpace } = require('./disk');
 var { engineStatus, streamingServerUp } = require('./streaming-server');
-var { remoteAddress } = require('./server-address');
+var { isStreamingUrl, remoteAddress } = require('./server-address');
+var { lastStreamRef } = require('./stream-refs');
 
 function mb(bytes) {
   return Math.round((bytes || 0) / 1048576);
@@ -117,6 +120,81 @@ function reach(u, cb) {
     finish('ERROR');
   }
 }
+/* How fast the connection is, asked from Settings: how long Stremio takes to answer, and how
+   fast the start of the last source played downloads (at most 4 MB or 8 s; torrents, which
+   come from the TV's own engine, are not measured). */
+var SPEED_BYTES = 4 * 1048576,
+  SPEED_MS = 8000;
+function sourceSpeed(stream, cb) {
+  var started = Date.now(),
+    bytes = 0,
+    done = false,
+    request = null;
+  function finish(ok) {
+    if (done) return;
+    done = true;
+    try {
+      if (request) request.abort();
+    } catch (e) {}
+    var ms = Date.now() - started;
+    cb(ok && bytes > 65536 && ms > 0 ? Math.round(((bytes * 8) / ms / 1000) * 10) / 10 : null);
+  }
+  function get(address, hops) {
+    var target = urlmod.parse(address),
+      headers = {};
+    Object.keys(stream.headers || {}).forEach(function (k) {
+      headers[k] = stream.headers[k];
+    });
+    headers.Range = 'bytes=0-' + (SPEED_BYTES - 1);
+    try {
+      request = (target.protocol === 'https:' ? https : http).get(
+        { hostname: target.hostname, port: target.port, path: target.path, headers: headers },
+        function (res) {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && hops < 4) {
+            res.resume();
+            return get(urlmod.resolve(address, res.headers.location), hops + 1);
+          }
+          if (res.statusCode >= 400) return finish(false);
+          started = Date.now();
+          res.on('data', function (chunk) {
+            bytes += chunk.length;
+            if (bytes >= SPEED_BYTES) finish(true);
+          });
+          res.on('end', function () {
+            finish(true);
+          });
+        }
+      );
+      request.on('error', function () {
+        finish(bytes > 0);
+      });
+    } catch (e) {
+      finish(false);
+    }
+  }
+  setTimeout(function () {
+    finish(true);
+  }, SPEED_MS);
+  get(stream.url, 0);
+}
+function speedTest(res) {
+  var started = Date.now();
+  reach(NETCHECK_URLS[0], function (code) {
+    var latencyMs = code ? null : Date.now() - started,
+      stream = lastStreamRef();
+    if (!stream || !/^https?:/.test(stream.url || '') || isStreamingUrl(stream.url))
+      return sendJson(res, { latencyMs: latencyMs, error: code || '' });
+    sourceSpeed(stream, function (mbps) {
+      sendJson(res, {
+        latencyMs: latencyMs,
+        error: code || '',
+        mbps: mbps,
+        host: urlmod.parse(stream.url).hostname
+      });
+    });
+  });
+}
+
 function netcheck(res) {
   var left = NETCHECK_URLS.length,
     code = '',
@@ -135,5 +213,7 @@ function netcheck(res) {
 module.exports = {
   diagnostics: diagnostics,
   netcheck: netcheck,
+  sourceSpeed: sourceSpeed,
+  speedTest: speedTest,
   recordEvent: recordEvent
 };

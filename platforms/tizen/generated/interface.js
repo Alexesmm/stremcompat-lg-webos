@@ -454,6 +454,11 @@ var UI_TEXT = {
     clearTorrentCache: 'Clear torrent cache',
     cacheCleared: '{0} MB of torrent cache cleared',
     cacheInUse: 'A torrent is playing. Try again when it stops.',
+    testConnection: 'Test connection',
+    testingConnection: 'Testing the connection…',
+    connectionLatency: 'Stremio answers in {0} ms',
+    connectionSpeed: 'last source {0} Mbit/s ({1})',
+    connectionFailed: 'Stremio did not answer ({0})',
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
@@ -813,6 +818,11 @@ var UI_TEXT = {
     clearTorrentCache: 'Limpar cache de torrents',
     cacheCleared: '{0} MB de cache de torrents apagados',
     cacheInUse: 'Um torrent está tocando. Tente de novo quando ele parar.',
+    testConnection: 'Testar conexão',
+    testingConnection: 'Testando a conexão…',
+    connectionLatency: 'O Stremio responde em {0} ms',
+    connectionSpeed: 'última fonte {0} Mbit/s ({1})',
+    connectionFailed: 'O Stremio não respondeu ({0})',
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
@@ -6898,6 +6908,7 @@ var settings = {
       { k: '__logout', lb: tx('signOut'), action: true },
       { head: tx('maintenanceGroup') },
       { k: '__diag', lb: tx('diagnostics'), action: true },
+      { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
     /* these depend on FFmpeg or on memory only the LG packages can spare */
@@ -6982,6 +6993,18 @@ var settings = {
     else if (k === '__clearSearches') {
       clearRecentSearches();
       toast(tx('searchesCleared'));
+    } else if (k === '__speed') {
+      toast(tx('testingConnection'), 12000);
+      xhrJson(
+        '/speedtest',
+        function (j) {
+          if (!j || j.latencyMs == null) return toast(tx('connectionFailed', (j && j.error) || '—'), 6000);
+          var line = tx('connectionLatency', j.latencyMs);
+          if (j.mbps != null) line += '  ·  ' + tx('connectionSpeed', j.mbps, j.host);
+          toast(line, 9000);
+        },
+        20000
+      );
     } else if (k === '__clearCache') {
       xhrJson(
         '/clearcache',

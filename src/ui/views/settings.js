@@ -254,6 +254,7 @@ var settings = {
       { k: '__logout', lb: tx('signOut'), action: true },
       { head: tx('maintenanceGroup') },
       { k: '__diag', lb: tx('diagnostics'), action: true },
+      { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
     /* these depend on FFmpeg or on memory only the LG packages can spare */
@@ -338,6 +339,18 @@ var settings = {
     else if (k === '__clearSearches') {
       clearRecentSearches();
       toast(tx('searchesCleared'));
+    } else if (k === '__speed') {
+      toast(tx('testingConnection'), 12000);
+      xhrJson(
+        '/speedtest',
+        function (j) {
+          if (!j || j.latencyMs == null) return toast(tx('connectionFailed', (j && j.error) || '—'), 6000);
+          var line = tx('connectionLatency', j.latencyMs);
+          if (j.mbps != null) line += '  ·  ' + tx('connectionSpeed', j.mbps, j.host);
+          toast(line, 9000);
+        },
+        20000
+      );
     } else if (k === '__clearCache') {
       xhrJson(
         '/clearcache',

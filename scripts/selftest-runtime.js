@@ -70,6 +70,34 @@ function waitForHealth(attempt) {
 }
 
 
+/* the connection test measures the start of the last source, following its redirect */
+function speedTests() {
+  var diag = require(path.join(root, 'service', 'server', 'diag.js'));
+  var seen = {};
+  var server = http.createServer(function (req, res) {
+    if (req.url === '/moved') {
+      res.writeHead(302, { Location: '/film' });
+      return res.end();
+    }
+    seen.range = req.headers.range;
+    seen.auth = req.headers.authorization;
+    res.writeHead(206, { 'Content-Type': 'video/mp4' });
+    res.end(Buffer.alloc(1048576));
+  });
+  return new Promise(function (resolve) {
+    server.listen(0, '127.0.0.1', function () {
+      var address = 'http://127.0.0.1:' + server.address().port + '/moved';
+      diag.sourceSpeed({ url: address, headers: { Authorization: 'Bearer t' } }, function (mbps) {
+        server.close();
+        assert.ok(mbps > 0, 'the speed of the last source was not measured');
+        assert.strictEqual(seen.range, 'bytes=0-4194303', 'the test downloaded more than the start of the source');
+        assert.strictEqual(seen.auth, 'Bearer t', 'the headers the source needs were not sent');
+        resolve();
+      });
+    });
+  });
+}
+
 /* Cinemeta answering too late must not leave the player without a next episode. */
 function lateMetaTests() {
   var util = require(path.join(root, 'service', 'server', 'http-util.js'));
@@ -412,6 +440,7 @@ async function main() {
     assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
     mediaAndDiskTests();
     await lateMetaTests();
+    await speedTests();
     await engineRoutesTests();
     await proxyTests();
     var noUpdate = await request({ hostname: '127.0.0.1', port: appPort, path: '/update' });

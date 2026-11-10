@@ -22,7 +22,7 @@ var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
 var { checkUpdate } = require('./update-check');
-var { diagnostics, netcheck, recordEvent } = require('./diag');
+var { diagnostics, netcheck, recordEvent, speedTest } = require('./diag');
 var { cachedAddonJson } = require('./addon-cache');
 var { handleTakeover } = require('./takeover');
 var { decodeField, seriesVideos, setWatched } = require('./watched');
@@ -294,6 +294,9 @@ var ROUTES = {
     seriesVideos(q.id || '', function (videos) {
       sendJson(res, { episodes: seasonEpisodes(videos, q.vid || '') });
     });
+  },
+  '/speedtest': function (req, res) {
+    speedTest(res);
   },
   '/clearcache': function (req, res) {
     clearTorrentCache(function (result) {

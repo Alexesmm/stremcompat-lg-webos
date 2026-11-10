@@ -68,7 +68,13 @@ function getStreamRef(ref) {
   return s;
 }
 
+/* the source played most recently, or null */
+function lastStreamRef() {
+  return streamRefs[streamRefOrder[streamRefOrder.length - 1]] || null;
+}
+
 module.exports = {
   getStreamRef: getStreamRef,
+  lastStreamRef: lastStreamRef,
   storeStreamRef: storeStreamRef
 };
