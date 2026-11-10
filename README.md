@@ -32,13 +32,13 @@ This project is not affiliated with or endorsed by Stremio, LG Electronics or Sa
 - **Best source:** one press goes straight to the video. It asks which quality you want, or uses the one set in Settings.
 - **Source list:** quality and language filters, compatibility warnings, and addons that fail are named.
 - **Playback:** direct, debrid, torrent and HLS, using the TV's hardware decoder. Torrents play on the TV itself, or through a streaming server on another computer if you prefer.
-- **Subtitles and audio:** from addons or inside the file, remembered for each title, with a backup language, a subtitle delay, and subtitle position and opacity. Your languages come first in the lists.
+- **Subtitles and audio:** from addons or inside the file, remembered for each title, with a backup language, a subtitle delay, and subtitle position and opacity. Your languages come first in the lists. ASS subtitles can keep their position, italics and colours (Settings, off by default).
 - **Player settings:** the season's episodes, the file's chapters, the other films of a torrent, picture size (whole picture or fill the screen) and speed.
 - **Series:** the next episode starts with the same release or a matching source, even when the addon is slow, with an "are you still watching?" check.
 - **Storage:** torrents never fill the TV's storage; with no room on the TV they can use a USB drive, and Settings clears the torrent cache.
 - **Made for the TV:** remote and Magic Remote, color-button shortcuts and optional larger text.
-- **Seven languages:** English, Brazilian Portuguese, Spanish, French, German, Italian and Russian, following the TV's language at first. Corrections to the translations are welcome.
-- **Your control:** **Do not save history** keeps progress and searches off the TV and your account, and **Settings > Diagnostics** shows memory, storage, how fast the remote is answered and recent problems.
+- **Eight languages:** English, Brazilian Portuguese, Spanish from Spain and from Latin America, French, German, Italian and Russian, following the TV's language at first. Corrections to the translations are welcome.
+- **Your control:** **Do not save history** keeps progress and searches off the TV and your account, **Settings > Diagnostics** shows memory, storage, how fast the remote is answered and recent problems, and **Test connection** measures Stremio and the last source.
 
 ## Screenshots
 
