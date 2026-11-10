@@ -9,7 +9,7 @@ var { EMBEDDED_INTERFACE_SCRIPT_B64, EMBEDDED_INTERFACE_HTML_B64 } = require('./
 var { safeText } = require('./text');
 var { fetchJson, readJsonBody, sendJson } = require('./http-util');
 var { fontFile, logoPng, readUiAsset, renderInterfaceHtml } = require('./ui-assets');
-var { engineStatus, torrentFiles } = require('./streaming-server');
+var { clearTorrentCache, engineStatus, torrentFiles } = require('./streaming-server');
 var { seasonEpisodes } = require('./episodes');
 var { remoteAddress, setServerAddress, streamingUrl } = require('./server-address');
 var { getStreamRef, storeStreamRef } = require('./stream-refs');
@@ -293,6 +293,11 @@ var ROUTES = {
   '/episodes': function (req, res, q) {
     seriesVideos(q.id || '', function (videos) {
       sendJson(res, { episodes: seasonEpisodes(videos, q.vid || '') });
+    });
+  },
+  '/clearcache': function (req, res) {
+    clearTorrentCache(function (result) {
+      sendJson(res, result);
     });
   },
   '/torrentfiles': function (req, res, q) {

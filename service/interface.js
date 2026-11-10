@@ -421,6 +421,11 @@ var UI_TEXT = {
       'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
     torrentsNoRoom: 'Not enough free space on the TV for torrents. Debrid and direct sources still work.',
+    diagOnUsb: 'on the USB drive',
+    diagCache: 'cache {0} of {1} MB',
+    clearTorrentCache: 'Clear torrent cache',
+    cacheCleared: '{0} MB of torrent cache cleared',
+    cacheInUse: 'A torrent is playing. Try again when it stops.',
     diagRunning: 'running',
     diagStopped: 'stopped',
     diagInterface: 'Interface: {0} MB of JS · Home on screen in {1} s · catalogs in {2} s',
@@ -771,6 +776,11 @@ var UI_TEXT = {
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     torrentsNoRoom:
       'Não há espaço livre suficiente na TV para torrents. Fontes debrid e diretas continuam funcionando.',
+    diagOnUsb: 'no pendrive',
+    diagCache: 'cache {0} de {1} MB',
+    clearTorrentCache: 'Limpar cache de torrents',
+    cacheCleared: '{0} MB de cache de torrents apagados',
+    cacheInUse: 'Um torrent está tocando. Tente de novo quando ele parar.',
     diagRunning: 'ativo',
     diagStopped: 'parado',
     diagInterface: 'Interface: {0} MB de JS · Início na tela em {1} s · catálogos em {2} s',
@@ -6554,7 +6564,9 @@ function diagStreamingState(j) {
     return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
   if (f.state === 'failed') return tx('diagStreamFailed', 'sc-engine');
   if (f.state === 'no-room') return tx('torrentsNoRoom');
-  return tx(f.running ? 'diagRunning' : 'diagEngineReady');
+  var where = f.usb ? '  ·  ' + tx('diagOnUsb') : '',
+    cache = f.cacheMb != null && f.cacheCapMb ? '  ·  ' + tx('diagCache', f.cacheMb, f.cacheCapMb) : '';
+  return tx(f.running ? 'diagRunning' : 'diagEngineReady') + where + cache;
 }
 var settings = {
   idx: 0,
@@ -6744,6 +6756,7 @@ var settings = {
       },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
+      { k: '__clearCache', lb: tx('clearTorrentCache'), action: true },
       { head: tx('serverGroup') },
       { k: '__server', lb: tx('serverAddress'), action: true, info: true },
       { head: tx('addonsGroup') },
@@ -6757,7 +6770,8 @@ var settings = {
     /* these depend on FFmpeg or on memory only the LG packages can spare */
     if (!HAS_MEDIA_TOOLS)
       for (var nf = this.defs.length - 1; nf >= 0; nf--)
-        if (/^(scrubPreview|embSubsMode|bgTrailer)$/.test(this.defs[nf].k || '')) this.defs.splice(nf, 1);
+        if (/^(scrubPreview|embSubsMode|bgTrailer|__clearCache)$/.test(this.defs[nf].k || ''))
+          this.defs.splice(nf, 1);
     var host = $('setItems');
     host.innerHTML = '';
     this.els = [];
@@ -6835,6 +6849,16 @@ var settings = {
     else if (k === '__clearSearches') {
       clearRecentSearches();
       toast(tx('searchesCleared'));
+    } else if (k === '__clearCache') {
+      xhrJson(
+        '/clearcache',
+        function (j) {
+          if (!j) toast(tx('diagUnavailable'));
+          else if (j.running) toast(tx('cacheInUse'));
+          else toast(j.mb ? tx('cacheCleared', j.mb) : tx('nothingToClear'));
+        },
+        8000
+      );
     } else if (k === '__clearCw') {
       if (!this.confirming(k)) return;
       var n = clearContinueWatching();

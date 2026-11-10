@@ -11,7 +11,7 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 var urlmod = require('url');
 var { DIR, ENGINE, PROFILE, SERVER_PORT } = require('./config');
-var { diskSpace } = require('./disk');
+var { diskSpace, usbFolders } = require('./disk');
 var { dbg } = require('./log');
 var { probeAddress, remoteAddress } = require('./server-address');
 
@@ -58,6 +58,8 @@ var engine = null;
 var torrents = {};
 var stats = null;
 var lastUse = 0;
+/* where the engine keeps its files while it runs: on the TV, or on a USB drive (placeFor) */
+var enginePlace = null;
 
 function engineFolder() {
   var candidates = [
@@ -359,12 +361,71 @@ function onceWithin(ms, waiters, cb) {
   waiters.push(answer);
 }
 
-function torrentFor(hash, trackers, cb) {
-  if (engine) return addTorrent(hash, trackers, cb);
+/* The TV's own storage, unless it has no room for torrents and a USB drive the app can write
+   on has: then the drive. cb({ folder, disk, usb }) where disk is null if df cannot be read. */
+function placeFor(cb) {
   var folder = engineFolder();
   diskSpace(folder, function (disk) {
-    if (!startEngine(folder, disk)) return cb('engine missing');
+    if (!disk || disk.freeMb >= NO_ROOM_MB) return cb({ folder: folder, disk: disk, usb: false });
+    usbFolders(function (drives) {
+      var drive = drives[0];
+      if (!drive || drive.freeMb < NO_ROOM_MB) return cb({ folder: folder, disk: disk, usb: false });
+      cb({ folder: path.join(drive.folder, 'torrents'), disk: drive, usb: true });
+    });
+  });
+}
+
+function torrentFor(hash, trackers, cb) {
+  if (engine) return addTorrent(hash, trackers, cb);
+  placeFor(function (place) {
+    if (engine) return addTorrent(hash, trackers, cb);
+    if (!startEngine(place.folder, place.disk)) return cb('engine missing');
+    enginePlace = place;
     addTorrent(hash, trackers, cb);
+  });
+}
+
+/* What the engine left on storage, for Settings: its folders on the TV and on USB drives. Running,
+   it is in use, so only a stopped engine's files can go. cb(MB) */
+function cacheFolders(cb) {
+  usbFolders(function (drives) {
+    cb(
+      [engineFolder()].concat(
+        drives.map(function (drive) {
+          return path.join(drive.folder, 'torrents');
+        })
+      )
+    );
+  });
+}
+function folderMb(folder) {
+  var bytes = 0;
+  function walk(p) {
+    var stat;
+    try {
+      stat = fs.lstatSync(p);
+    } catch (e) {
+      return;
+    }
+    if (!stat.isDirectory()) return (bytes += stat.size);
+    try {
+      fs.readdirSync(p).forEach(function (name) {
+        walk(path.join(p, name));
+      });
+    } catch (e) {}
+  }
+  walk(path.join(folder, 'cache'));
+  return Math.round(bytes / 1048576);
+}
+function clearTorrentCache(cb) {
+  if (engine) return cb({ cleared: false, running: true });
+  cacheFolders(function (folders) {
+    var mb = 0;
+    folders.forEach(function (folder) {
+      mb += folderMb(folder);
+      clearCache(folder);
+    });
+    cb({ cleared: true, mb: mb });
   });
 }
 
@@ -523,15 +584,22 @@ function engineStatus(cb) {
   if (remoteAddress()) return cb({ state: 'ready', remote: true });
   if (PROFILE.localTorrents === false) return cb({ state: 'needs-server' });
   if (!/\.js$/.test(ENGINE) && !fs.existsSync(ENGINE)) return cb({ state: 'failed' });
-  if (engine) return cb({ state: 'ready', running: true });
-  diskSpace(engineFolder(), function (disk) {
-    cb({ state: disk && disk.freeMb < NO_ROOM_MB ? 'no-room' : 'ready', running: false });
+  if (engine) {
+    var place = enginePlace || {},
+      used = stats && stats.diskUsed != null ? Math.round(stats.diskUsed / 1048576) : null,
+      cap = stats && stats.diskCap != null ? Math.round(stats.diskCap / 1048576) : null;
+    return cb({ state: 'ready', running: true, usb: !!place.usb, cacheMb: used, cacheCapMb: cap });
+  }
+  placeFor(function (place) {
+    var noRoom = place.disk && place.disk.freeMb < NO_ROOM_MB;
+    cb({ state: noRoom ? 'no-room' : 'ready', running: false, usb: place.usb });
   });
 }
 
 module.exports = {
   cacheLimitMiB: cacheLimitMiB,
   chooseFile: chooseFile,
+  clearTorrentCache: clearTorrentCache,
   engineStatus: engineStatus,
   opensubHash: opensubHash,
   portUp: portUp,

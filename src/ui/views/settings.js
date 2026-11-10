@@ -44,7 +44,9 @@ function diagStreamingState(j) {
     return j.serverAddress + '  ·  ' + tx(j.streamingServer ? 'diagRunning' : 'diagStopped');
   if (f.state === 'failed') return tx('diagStreamFailed', 'sc-engine');
   if (f.state === 'no-room') return tx('torrentsNoRoom');
-  return tx(f.running ? 'diagRunning' : 'diagEngineReady');
+  var where = f.usb ? '  ·  ' + tx('diagOnUsb') : '',
+    cache = f.cacheMb != null && f.cacheCapMb ? '  ·  ' + tx('diagCache', f.cacheMb, f.cacheCapMb) : '';
+  return tx(f.running ? 'diagRunning' : 'diagEngineReady') + where + cache;
 }
 var settings = {
   idx: 0,
@@ -234,6 +236,7 @@ var settings = {
       },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
+      { k: '__clearCache', lb: tx('clearTorrentCache'), action: true },
       { head: tx('serverGroup') },
       { k: '__server', lb: tx('serverAddress'), action: true, info: true },
       { head: tx('addonsGroup') },
@@ -247,7 +250,8 @@ var settings = {
     /* these depend on FFmpeg or on memory only the LG packages can spare */
     if (!HAS_MEDIA_TOOLS)
       for (var nf = this.defs.length - 1; nf >= 0; nf--)
-        if (/^(scrubPreview|embSubsMode|bgTrailer)$/.test(this.defs[nf].k || '')) this.defs.splice(nf, 1);
+        if (/^(scrubPreview|embSubsMode|bgTrailer|__clearCache)$/.test(this.defs[nf].k || ''))
+          this.defs.splice(nf, 1);
     var host = $('setItems');
     host.innerHTML = '';
     this.els = [];
@@ -325,6 +329,16 @@ var settings = {
     else if (k === '__clearSearches') {
       clearRecentSearches();
       toast(tx('searchesCleared'));
+    } else if (k === '__clearCache') {
+      xhrJson(
+        '/clearcache',
+        function (j) {
+          if (!j) toast(tx('diagUnavailable'));
+          else if (j.running) toast(tx('cacheInUse'));
+          else toast(j.mb ? tx('cacheCleared', j.mb) : tx('nothingToClear'));
+        },
+        8000
+      );
     } else if (k === '__clearCw') {
       if (!this.confirming(k)) return;
       var n = clearContinueWatching();

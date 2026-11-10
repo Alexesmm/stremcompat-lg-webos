@@ -129,6 +129,17 @@ function mediaAndDiskTests() {
     's:1:2'
   );
   assert.deepStrictEqual(season, [{ id: 's:1:1', episode: 1, name: 'One' }, { id: 's:1:2', episode: 2, name: 'Two' }], 'the season list is not the aired episodes in order');
+  var usb = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-usb-'));
+  fs.mkdirSync(path.join(usb, 'sda', 'sda1'), { recursive: true });
+  fs.writeFileSync(path.join(usb, 'sda', 'not-a-partition'), 'x');
+  process.env.SC_USB_ROOT = usb;
+  disk.usbFolders(function (drives) {
+    delete process.env.SC_USB_ROOT;
+    var folders = drives.map(function (d) { return d.folder; });
+    /* df answers only on the TV: here the drive is found and written, and has no size */
+    assert.ok(fs.existsSync(path.join(usb, 'sda', 'sda1', 'StremCompat')), 'the app folder was not made on the USB drive');
+    assert.ok(folders.every(function (f) { return f.indexOf(path.join(usb, 'sda', 'sda1')) === 0; }), 'something that is not a partition was taken for a drive');
+  });
   var table = 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/mmcblk0p20 1024000 863232 160768 85% /media/developer\n';
   assert.deepStrictEqual(disk.parse(table), { totalMb: 1000, freeMb: 157 }, 'free space was not read from df');
   assert.strictEqual(disk.parse('df: unknown option -- P'), null, 'an error from df was taken for a size');
@@ -262,6 +273,8 @@ async function engineRoutesTests() {
   assert.strictEqual(refused.status, 503, 'a torrent the engine refuses was not reported');
   var listed = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/torrentfiles?u=' + encodeURIComponent('http://127.0.0.1:11470/' + hash + '/1') })).text).files;
   assert.deepStrictEqual(listed, [{ index: 1, name: 'movie.mkv', size: 200000, playing: true }, { index: 2, name: 'sample.mkv', size: 5000, playing: false }], 'the video files of a torrent were not listed for the player');
+  var busy = JSON.parse((await request({ hostname: '127.0.0.1', port: appPort, path: '/clearcache' })).text);
+  assert.strictEqual(busy.running, true, 'the cache of a torrent that is playing was cleared');
   var file = await ask('/streamfile');
   assert.strictEqual(file.status, 404, 'the torrent address answers the interface routes');
   console.log('OK: torrent address, redirect to the engine, file choice, OpenSubtitles hash, refused torrent.');
