@@ -162,6 +162,7 @@
   "torrentsUnavailable": "Die Torrent-Engine ist auf diesem Fernseher nicht verfügbar. Debrid- und Direktquellen funktionieren weiterhin.",
   "diagEngineReady": "Bereit, startet mit dem ersten Torrent",
   "torrentsNoRoom": "Nicht genug freier Speicher auf dem Fernseher für Torrents. Debrid- und Direktquellen funktionieren weiterhin.",
+  "assStyle": "ASS-Untertitelstil (Position, kursiv, Farbe)",
   "diagOnUsb": "auf dem USB-Stick",
   "diagCache": "Cache {0} von {1} MB",
   "clearTorrentCache": "Torrent-Cache leeren",

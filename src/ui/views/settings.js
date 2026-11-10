@@ -177,6 +177,15 @@ var settings = {
         d: '0'
       },
       {
+        k: 'assStyle',
+        lb: tx('assStyle'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: 'false'
+      },
+      {
         k: 'embSubsMode',
         lb: tx('embeddedSubtitles'),
         opts: [

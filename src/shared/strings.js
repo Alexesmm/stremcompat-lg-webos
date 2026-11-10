@@ -177,6 +177,7 @@ var UI_TEXT = {
       'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
     torrentsNoRoom: 'Not enough free space on the TV for torrents. Debrid and direct sources still work.',
+    assStyle: 'ASS subtitle styling (position, italic, colour)',
     diagOnUsb: 'on the USB drive',
     diagCache: 'cache {0} of {1} MB',
     clearTorrentCache: 'Clear torrent cache',
@@ -534,6 +535,7 @@ var UI_TEXT = {
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     torrentsNoRoom:
       'Não há espaço livre suficiente na TV para torrents. Fontes debrid e diretas continuam funcionando.',
+    assStyle: 'Estilo das legendas ASS (posição, itálico, cor)',
     diagOnUsb: 'no pendrive',
     diagCache: 'cache {0} de {1} MB',
     clearTorrentCache: 'Limpar cache de torrents',

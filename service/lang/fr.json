@@ -162,6 +162,7 @@
   "torrentsUnavailable": "Le moteur de torrents n'est pas disponible sur ce téléviseur. Les sources debrid et directes fonctionnent toujours.",
   "diagEngineReady": "Prêt, démarre avec le premier torrent",
   "torrentsNoRoom": "Pas assez d'espace libre sur le téléviseur pour les torrents. Les sources debrid et directes fonctionnent toujours.",
+  "assStyle": "Style des sous-titres ASS (position, italique, couleur)",
   "diagOnUsb": "sur la clé USB",
   "diagCache": "cache {0} sur {1} Mo",
   "clearTorrentCache": "Vider le cache des torrents",

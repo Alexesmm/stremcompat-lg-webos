@@ -99,25 +99,77 @@ function parseSrt(source) {
   return cues;
 }
 
+/* An ASS colour, &HBBGGRR or &HAABBGGRR, as #rrggbb; '' when it is not one. */
+function assColour(value) {
+  var m = /&H([0-9a-f]{2})?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(String(value || ''));
+  return m ? ('#' + m[4] + m[3] + m[2]).toLowerCase() : '';
+}
+
+/* The look a line keeps when the player is asked to show ASS styling (off by default): where it
+   sits (numpad 1 to 9, 2 is bottom centre), italic, bold and colour, from its style and the
+   overrides at the start of the line. Fonts, sizes and effects are left out: the TV's browser is
+   too slow for them. Absent fields mean "as the player draws any subtitle". */
+function assLook(style, overrides) {
+  var look = {};
+  var align = /\\an([1-9])/.exec(overrides),
+    italic = /\\i([01])/.exec(overrides),
+    bold = /\\b([01])/.exec(overrides),
+    colour = /\\1?c(&H[0-9a-f]+&?)/i.exec(overrides);
+  var a = align ? Number(align[1]) : style ? style.align : 2;
+  if (a && a !== 2) look.a = a;
+  if (italic ? italic[1] === '1' : style && style.italic) look.i = 1;
+  if (bold ? bold[1] === '1' : style && style.bold) look.b = 1;
+  var c = colour ? assColour(colour[1]) : style ? style.colour : '';
+  if (c && c !== '#ffffff') look.c = c;
+  return look;
+}
+
 /* ASS and SSA: "Dialogue: layer,0:00:01.50,0:00:03.00,style,name,0,0,0,,text" */
 function parseAss(source) {
-  var cues = [];
+  var cues = [],
+    styles = {},
+    format = null;
   source
     .replace(/\r/g, '')
     .split('\n')
     .forEach(function (line) {
-      var m = /^Dialogue:\s*[^,]*,(\d+):(\d+):(\d+)\.(\d+),(\d+):(\d+):(\d+)\.(\d+),(?:[^,]*,){6}(.*)$/.exec(
-        line
-      );
-      if (!m) return;
-      var text = plainText(m[9].replace(/\\[Nn]/g, '\n').replace(/\\h/g, ' '));
-      /* hundredths of a second */
-      if (text)
-        cues.push({
-          s: seconds(m[1], m[2], m[3], m[4] + '0'),
-          e: seconds(m[5], m[6], m[7], m[8] + '0'),
-          t: text
+      var f = /^Format:\s*(.*)$/.exec(line);
+      if (f && /Fontname/i.test(f[1]))
+        format = f[1].split(',').map(function (x) {
+          return x.trim().toLowerCase();
         });
+      var st = /^Style:\s*(.*)$/.exec(line);
+      if (st && format) {
+        var parts = st[1].split(','),
+          field = function (name) {
+            var at = format.indexOf(name);
+            return at >= 0 ? String(parts[at] || '').trim() : '';
+          };
+        /* SSA numbers its positions differently; only the bottom and top rows are read from it */
+        var align = parseInt(field('alignment'), 10) || 2;
+        styles[field('name')] = {
+          align: align,
+          italic: field('italic') === '-1' || field('italic') === '1',
+          bold: field('bold') === '-1' || field('bold') === '1',
+          colour: assColour(field('primarycolour'))
+        };
+      }
+      var m =
+        /^Dialogue:\s*[^,]*,(\d+):(\d+):(\d+)\.(\d+),(\d+):(\d+):(\d+)\.(\d+),([^,]*),(?:[^,]*,){5}(.*)$/.exec(
+          line
+        );
+      if (!m) return;
+      var text = plainText(m[10].replace(/\\[Nn]/g, '\n').replace(/\\h/g, ' '));
+      /* hundredths of a second */
+      if (!text) return;
+      var cue = {
+        s: seconds(m[1], m[2], m[3], m[4] + '0'),
+        e: seconds(m[5], m[6], m[7], m[8] + '0'),
+        t: text
+      };
+      var look = assLook(styles[m[9].trim()], (/^(\{[^}]*\})+/.exec(m[10]) || [''])[0]);
+      if (Object.keys(look).length) cue.l = look;
+      cues.push(cue);
     });
   return cues.sort(function (a, b) {
     return a.s - b.s;

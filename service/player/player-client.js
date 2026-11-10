@@ -225,6 +225,7 @@ var UI_TEXT = {
       'The torrent engine is not available on this TV. Debrid and direct sources still work.',
     diagEngineReady: 'Ready, starts with the first torrent',
     torrentsNoRoom: 'Not enough free space on the TV for torrents. Debrid and direct sources still work.',
+    assStyle: 'ASS subtitle styling (position, italic, colour)',
     diagOnUsb: 'on the USB drive',
     diagCache: 'cache {0} of {1} MB',
     clearTorrentCache: 'Clear torrent cache',
@@ -582,6 +583,7 @@ var UI_TEXT = {
     diagEngineReady: 'Pronto, inicia com o primeiro torrent',
     torrentsNoRoom:
       'Não há espaço livre suficiente na TV para torrents. Fontes debrid e diretas continuam funcionando.',
+    assStyle: 'Estilo das legendas ASS (posição, itálico, cor)',
     diagOnUsb: 'no pendrive',
     diagCache: 'cache {0} de {1} MB',
     clearTorrentCache: 'Limpar cache de torrents',
@@ -2139,11 +2141,12 @@ function subStyle() {
    so the first matching cue is found by a full scan. The scan also records when the
    set of active cues next changes, and the result is reused until then: one scan per
    subtitle boundary instead of one per timeupdate. */
-var cueMemo = { list: null, len: 0, from: 0, until: -1, txt: '' };
+var cueMemo = { list: null, len: 0, from: 0, until: -1, txt: '', look: null };
 function cueText(t) {
   var m = cueMemo;
   if (m.list === cues && m.len === cues.length && t >= m.from && t < m.until) return m.txt;
   var txt = '',
+    look = null,
     found = false,
     until = Infinity;
   for (var i = 0; i < cues.length; i++) {
@@ -2152,6 +2155,7 @@ function cueText(t) {
       if (!found) {
         found = true;
         txt = c.t;
+        look = c.l || null;
       }
       if (c.e < until) until = c.e;
     } else if (c.s > t && c.s < until) until = c.s;
@@ -2161,7 +2165,26 @@ function cueText(t) {
   m.from = t;
   m.until = until;
   m.txt = txt;
+  m.look = look;
   return txt;
+}
+/* ASS styling, when Settings asks for it: where the line sits, italic, bold and colour */
+var ASS_STYLE = lsGet('assStyle', 'false') === 'true';
+function lookStyle(look) {
+  if (!ASS_STYLE || !look) return '';
+  return (
+    (look.i ? 'font-style:italic;' : '') +
+    (look.b ? 'font-weight:700;' : '') +
+    (look.c ? 'color:' + look.c + ';' : '')
+  );
+}
+/* 7, 8 and 9 are the top row of the numpad, 4, 5 and 6 the middle; 1 and 7 lean left, 3 and 9 right */
+function placeSub(look) {
+  var a = (ASS_STYLE && look && look.a) || 2,
+    row = a >= 7 ? 'top' : a >= 4 ? 'middle' : 'bottom';
+  subEl.style.top = row === 'top' ? '6%' : row === 'middle' ? '45%' : '';
+  subEl.style.bottom = row === 'bottom' ? subBottom + '%' : 'auto';
+  subEl.style.textAlign = a % 3 === 1 ? 'left' : a % 3 === 0 ? 'right' : 'center';
 }
 function renderSub() {
   if (curSub === 'off') return;
@@ -2170,9 +2193,11 @@ function renderSub() {
   if (subEl._t !== txt) {
     subEl._t = txt;
     subEl.textContent = '';
+    var look = txt ? cueMemo.look : null;
+    if (ASS_STYLE) placeSub(look);
     if (txt) {
       var sp = document.createElement('span');
-      sp.style.cssText = subStyle() + 'white-space:pre-line;';
+      sp.style.cssText = subStyle() + 'white-space:pre-line;' + lookStyle(look);
       sp.textContent = txt;
       subEl.appendChild(sp);
     }

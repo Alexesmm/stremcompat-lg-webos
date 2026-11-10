@@ -25,7 +25,10 @@ var directCues = subtitleLib.parseSrt(subtitleLib.subtitleText(Buffer.concat([
 ])));
 assert.strictEqual(directCues.length && directCues[0].t, 'Coração', 'a Windows-1252 subtitle read directly lost its accents or kept a line break');
 var assCues = subtitleLib.parseCues('[Script Info]\nTitle: x\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:05.50,0:00:07.00,Default,,0,0,0,,{\\i1}Second, with a comma\\Nline{\\i0}\nDialogue: 0,0:00:01.25,0:00:02.00,Default,,0,0,0,,First\n');
-assert.deepStrictEqual(assCues, [{ s: 1.25, e: 2, t: 'First' }, { s: 5.5, e: 7, t: 'Second, with a comma\nline' }], 'an ASS subtitle was not read');
+assert.deepStrictEqual(assCues, [{ s: 1.25, e: 2, t: 'First' }, { s: 5.5, e: 7, t: 'Second, with a comma\nline', l: { i: 1 } }], 'an ASS subtitle was not read');
+var styledCues = subtitleLib.parseCues('[Script Info]\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Sign,Arial,40,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,8,10,10,10,1\nStyle: Default,Arial,40,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:01.00,0:00:02.00,Sign,,0,0,0,,A sign\nDialogue: 0,0:00:03.00,0:00:04.00,Default,,0,0,0,,{\\an7\\c&H0000FF&}Red, top left\nDialogue: 0,0:00:05.00,0:00:06.00,Default,,0,0,0,,Plain\n');
+assert.deepStrictEqual(styledCues.map(function (c) { return c.l || null; }), [{ a: 8, b: 1, c: '#ffff00' }, { a: 7, c: '#ff0000' }, null], 'the ASS style of a line was not read');
+
 var vttCues = subtitleLib.parseSrt('WEBVTT\n\n01:02.500 --> 01:04.000 align:start\n<i>Olá</i>');
 assert.strictEqual(vttCues.length && vttCues[0].s + ':' + vttCues[0].t, '62.5:Olá', 'a WebVTT cue without hours was not read');
 var showVideos = [
