@@ -33,6 +33,13 @@ on(
       else serverPanel.key(k);
       return;
     }
+    if (languagePanel.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isBackKey(k)) languagePanel.close();
+      else languagePanel.key(k);
+      return;
+    }
     if (profilePanel.open) {
       e.preventDefault();
       e.stopPropagation();

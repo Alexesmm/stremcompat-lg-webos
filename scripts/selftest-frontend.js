@@ -77,7 +77,7 @@ function run(storage, expectedScreen, missingIds, expectedLanguage) {
   assert.strictEqual(get('lgQrTitle').textContent, expectedLanguage === 'pt-BR' ? 'Entrar pelo celular' : 'Sign in with your phone');
   var passElement = get('lgPass');
   if (passElement) assert.strictEqual(passElement.getAttribute('placeholder'), expectedLanguage === 'pt-BR' ? 'Senha' : 'Password');
-  assert.ok(get('lgLang').textContent.indexOf(expectedLanguage === 'pt-BR' ? 'Português (Brasil)' : 'English') >= 0, 'language picker label was not localized');
+  assert.ok(get('lgLang').innerHTML.indexOf(expectedLanguage === 'pt-BR' ? 'Português (Brasil)' : 'English') >= 0, 'language picker label was not localized');
   assert.ok(/\bon\b/.test(get(expectedScreen).className), expectedScreen + ' was not shown');
   assert.strictEqual(get('boot').style.display, 'none');
   if (expectedScreen === 'scrLogin') {

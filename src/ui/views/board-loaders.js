@@ -106,11 +106,22 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           /* shown by Settings > Diagnostics */
           if (!waiting && board === home) window.__SC_HOME_LOAD_MS__ = Date.now() - started;
         }
+        if (def.skip)
+          items = items.filter(function (x) {
+            return x.id !== def.skip;
+          });
         row.items = items.slice(0);
         row.cardsEl.innerHTML = '';
         row.cardEls = [];
         for (var i = 0; i < items.length; i++) {
           var cd = makeCard(items[i], false, false, false);
+          /* the most popular catalog shows its first ten as a ranking */
+          if (def.ranked && i < 10) {
+            var rank = document.createElement('div');
+            rank.className = 'rank';
+            rank.textContent = String(i + 1);
+            cd.appendChild(rank);
+          }
           row.cardsEl.appendChild(cd);
           row.cardEls.push(cd);
         }
@@ -145,12 +156,35 @@ function addSeeAll(row, def) {
   row.cardsEl.appendChild(cd);
   row.cardEls.push(cd);
 }
+/* "Because you watched X": the popular titles of the genre of what was watched last, from
+   Cinemeta. Only when that title's details are already on the TV, so Home never waits for it. */
+function becauseYouWatchedDef() {
+  var last = cwItems(1)[0];
+  if (!last || !last.id) return null;
+  var kept = lsJson('beta_meta_' + last.type + '_' + last.id),
+    meta = kept && kept.meta,
+    genre = meta && meta.genres && meta.genres[0];
+  if (!genre) return null;
+  return {
+    title: tx('becauseYouWatched', meta.name || last.name || ''),
+    type: last.type,
+    url: CIN + '/catalog/' + last.type + '/top/genre=' + encodeURIComponent(genre) + '.json',
+    key: 'byw_' + last.type + '_' + genre,
+    skip: last.id
+  };
+}
 /* HOME rows = YOUR addon catalogs (in order); Cinemeta defaults if none configured */
 function homeDefs() {
   var cats = homeCatalogs();
   if (!cats.length)
     cats = [
-      { title: tx('popularMovies'), type: 'movie', url: CIN + '/catalog/movie/top.json', key: 'cin_m_top' },
+      {
+        title: tx('popularMovies'),
+        type: 'movie',
+        url: CIN + '/catalog/movie/top.json',
+        key: 'cin_m_top',
+        ranked: true
+      },
       { title: tx('popularSeries'), type: 'series', url: CIN + '/catalog/series/top.json', key: 'cin_s_top' },
       { title: tx('topMovies'), type: 'movie', url: CIN + '/catalog/movie/imdbRating.json', key: 'cin_m_ir' },
       {
@@ -160,6 +194,12 @@ function homeDefs() {
         key: 'cin_s_ir'
       }
     ];
+  /* an addon's own "popular" catalog ranks its first ten too */
+  for (var i = 0; i < cats.length; i++)
+    if (/\/catalog\/[^\/]+\/top\.json$/.test(cats[i].url || '')) {
+      cats[i].ranked = true;
+      break;
+    }
   return cats;
 }
 /* DISCOVER rows = trending + top + a spread of genres */

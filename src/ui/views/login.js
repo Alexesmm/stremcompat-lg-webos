@@ -22,7 +22,20 @@ var login = {
         lang,
         'click',
         function () {
-          self.toggleLanguage();
+          self.chooseLanguage();
+        },
+        false
+      );
+    }
+    var prov = $('lgProv');
+    if (prov && !prov._wired) {
+      prov._wired = true;
+      on(
+        prov,
+        'click',
+        function (e) {
+          var spans = prov.getElementsByTagName('span');
+          self.setProvider(e && e.target === spans[1] ? 'nuvio' : 'stremio');
         },
         false
       );
@@ -72,11 +85,14 @@ var login = {
           : '';
     }
   },
-  toggleLanguage: function () {
-    var codes = Object.keys(UI_LANGUAGES);
-    setUILanguage(codes[(codes.indexOf(UI_LANG) + 1) % codes.length]);
-    this.setStatus(this.statusKey);
-    this.paint();
+  /* the list of languages; the screen is drawn again in the one chosen */
+  chooseLanguage: function () {
+    var self = this;
+    languagePanel.show(function () {
+      self.setStatus(self.statusKey);
+      $('lgAccount').textContent = tx(self.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
+      self.paint();
+    });
   },
   startQr: function () {
     if (this.qrCode) {
@@ -162,8 +178,9 @@ var login = {
     this.pollGen++;
   },
   /* Nuvio has no sign-in by phone code: its accounts use the email form only */
-  toggleProvider: function () {
-    this.provider = this.provider === 'nuvio' ? 'stremio' : 'nuvio';
+  setProvider: function (provider) {
+    if (provider === this.provider) return;
+    this.provider = provider;
     var scr = $('scrLogin');
     if (this.provider === 'nuvio') {
       this.stopQr();
@@ -233,9 +250,14 @@ var login = {
     var prov = $('lgProv');
     if (prov) {
       prov.className = this.zone === 'prov' ? 'f' : '';
-      prov.textContent =
-        tx('accountProvider', this.provider === 'nuvio' ? tx('providerNuvio') : 'Stremio') +
-        '  \u2039 \u203a';
+      prov.innerHTML =
+        '<span class="' +
+        (this.provider === 'stremio' ? 'on' : '') +
+        '">Stremio</span><span class="' +
+        (this.provider === 'nuvio' ? 'on' : '') +
+        '">' +
+        esc(tx('providerNuvio')) +
+        '</span>';
     }
     if (email) email.className = 'lgin' + (this.zone === 'email' ? ' f' : '');
     if (pass) pass.className = 'lgin' + (this.zone === 'pass' ? ' f' : '');
@@ -243,7 +265,7 @@ var login = {
   },
   key: function (k) {
     if (this.zone === 'lang') {
-      if (k === 37 || k === 39 || k === 13) this.toggleLanguage();
+      if (k === 13) this.chooseLanguage();
       else if (k === 40) {
         this.zone = 'prov';
         this.paint();
@@ -251,7 +273,9 @@ var login = {
       return true;
     }
     if (this.zone === 'prov') {
-      if (k === 37 || k === 39 || k === 13) this.toggleProvider();
+      if (k === 37) this.setProvider('stremio');
+      else if (k === 39) this.setProvider('nuvio');
+      else if (k === 13) this.setProvider(this.provider === 'nuvio' ? 'stremio' : 'nuvio');
       else if (k === 40 || k === 38) {
         this.zone = k === 40 ? 'email' : 'lang';
         this.paint();

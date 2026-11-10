@@ -430,7 +430,6 @@ var UI_TEXT = {
     setupHint: 'You can change this later in Settings.',
     uiModeLabel: 'How the app is used',
     uiLookLabel: 'Look',
-    accountProvider: 'Account: {0}',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Who is watching?',
     profileNumber: 'Profile {0}',
@@ -438,6 +437,7 @@ var UI_TEXT = {
     nuvioProfile: 'Nuvio profile',
     profilesUnavailable: 'Could not read the Nuvio profiles',
     nuvioAccountNote: 'Sign in with your Nuvio account. Experimental: Nuvio\'s account service is not made for other apps and may change.',
+    becauseYouWatched: 'Because you watched {0}',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -457,7 +457,6 @@ var UI_TEXT = {
     interfaceLanguage: 'Interface language',
     english: 'English',
     portugueseBrazil: 'Português (Brasil)',
-    languagePicker: 'Language: {0}  ‹ ›',
     maintenanceGroup: 'Recovery',
     reloadApp: 'Reload StremCompat',
     diagnostics: 'Diagnostics',
@@ -817,7 +816,6 @@ var UI_TEXT = {
     setupHint: 'Dá para mudar depois em Configurações.',
     uiModeLabel: 'Modo de uso',
     uiLookLabel: 'Visual',
-    accountProvider: 'Conta: {0}',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Quem está assistindo?',
     profileNumber: 'Perfil {0}',
@@ -825,6 +823,7 @@ var UI_TEXT = {
     nuvioProfile: 'Perfil do Nuvio',
     profilesUnavailable: 'Não foi possível ler os perfis do Nuvio',
     nuvioAccountNote: 'Entre com sua conta Nuvio. Experimental: o serviço de contas do Nuvio não é feito para outros apps e pode mudar.',
+    becauseYouWatched: 'Porque você assistiu {0}',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -844,7 +843,6 @@ var UI_TEXT = {
     interfaceLanguage: 'Idioma da interface',
     english: 'English',
     portugueseBrazil: 'Português (Brasil)',
-    languagePicker: 'Idioma: {0}  ‹ ›',
     maintenanceGroup: 'Recuperação',
     reloadApp: 'Recarregar StremCompat',
     diagnostics: 'Diagnóstico',
@@ -1473,6 +1471,9 @@ function applyTextSize() {
   if (lsRaw('uiTextSize', 'normal') === 'large') bodyAdd('bigtext');
   else bodyRemove('bigtext');
 }
+/* drawn before the icon set (artwork.js) is loaded */
+var GLOBE_ICON =
+  '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.9 6h-2.9a15.7 15.7 0 00-1.4-3.6A8 8 0 0118.9 8zM12 4c.8 1.2 1.5 2.5 1.9 4h-3.8c.4-1.5 1.1-2.8 1.9-4zM4.3 14a8.2 8.2 0 010-4h3.4a16.5 16.5 0 000 4H4.3zm.8 2h2.9c.3 1.3.8 2.5 1.4 3.6A8 8 0 015.1 16zM8 8H5.1a8 8 0 014.3-3.6C8.8 5.5 8.4 6.7 8 8zm4 12c-.8-1.2-1.5-2.5-1.9-4h3.8c-.4 1.5-1.1 2.8-1.9 4zm2.3-6H9.7a14.7 14.7 0 010-4h4.6a14.7 14.7 0 010 4zm.3 5.6c.6-1.1 1.1-2.3 1.4-3.6h2.9a8 8 0 01-4.3 3.6zm1.7-5.6a16.5 16.5 0 000-4h3.4a8.2 8.2 0 010 4h-3.4z"/></svg>';
 function uiLanguageLabel(code) {
   return UI_LANGUAGES[code];
 }
@@ -1510,7 +1511,7 @@ function applyStaticLanguage() {
   if ($('sBox')) $('sBox').setAttribute('placeholder', tx('searchPlaceholder'));
   if ($('lgEmail')) $('lgEmail').setAttribute('placeholder', tx('email'));
   if ($('lgPass')) $('lgPass').setAttribute('placeholder', tx('password'));
-  if ($('lgLang')) $('lgLang').textContent = tx('languagePicker', uiLanguageLabel(UI_LANG));
+  if ($('lgLang')) $('lgLang').innerHTML = GLOBE_ICON + '<span>' + esc(uiLanguageLabel(UI_LANG)) + '</span>';
 }
 function setUILanguage(value) {
   var next = normalizeUILanguage(value);
@@ -3391,7 +3392,10 @@ function makeBoard(loader) {
 }
 // Home, Discover and Library screens.
 var home = makeBoard(function (b, keep) {
-  loadCatalogRows(b, homeDefs(), true, keep);
+  var defs = homeDefs(),
+    because = becauseYouWatchedDef();
+  if (because) defs.splice(Math.min(1, defs.length), 0, because);
+  loadCatalogRows(b, defs, true, keep);
 });
 /* Discover intentionally differs from Home: three compact filters feed one virtualized
    poster grid. This keeps the DOM small while making the section useful on a TV remote. */
@@ -4055,11 +4059,22 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
           /* shown by Settings > Diagnostics */
           if (!waiting && board === home) window.__SC_HOME_LOAD_MS__ = Date.now() - started;
         }
+        if (def.skip)
+          items = items.filter(function (x) {
+            return x.id !== def.skip;
+          });
         row.items = items.slice(0);
         row.cardsEl.innerHTML = '';
         row.cardEls = [];
         for (var i = 0; i < items.length; i++) {
           var cd = makeCard(items[i], false, false, false);
+          /* the most popular catalog shows its first ten as a ranking */
+          if (def.ranked && i < 10) {
+            var rank = document.createElement('div');
+            rank.className = 'rank';
+            rank.textContent = String(i + 1);
+            cd.appendChild(rank);
+          }
           row.cardsEl.appendChild(cd);
           row.cardEls.push(cd);
         }
@@ -4094,12 +4109,35 @@ function addSeeAll(row, def) {
   row.cardsEl.appendChild(cd);
   row.cardEls.push(cd);
 }
+/* "Because you watched X": the popular titles of the genre of what was watched last, from
+   Cinemeta. Only when that title's details are already on the TV, so Home never waits for it. */
+function becauseYouWatchedDef() {
+  var last = cwItems(1)[0];
+  if (!last || !last.id) return null;
+  var kept = lsJson('beta_meta_' + last.type + '_' + last.id),
+    meta = kept && kept.meta,
+    genre = meta && meta.genres && meta.genres[0];
+  if (!genre) return null;
+  return {
+    title: tx('becauseYouWatched', meta.name || last.name || ''),
+    type: last.type,
+    url: CIN + '/catalog/' + last.type + '/top/genre=' + encodeURIComponent(genre) + '.json',
+    key: 'byw_' + last.type + '_' + genre,
+    skip: last.id
+  };
+}
 /* HOME rows = YOUR addon catalogs (in order); Cinemeta defaults if none configured */
 function homeDefs() {
   var cats = homeCatalogs();
   if (!cats.length)
     cats = [
-      { title: tx('popularMovies'), type: 'movie', url: CIN + '/catalog/movie/top.json', key: 'cin_m_top' },
+      {
+        title: tx('popularMovies'),
+        type: 'movie',
+        url: CIN + '/catalog/movie/top.json',
+        key: 'cin_m_top',
+        ranked: true
+      },
       { title: tx('popularSeries'), type: 'series', url: CIN + '/catalog/series/top.json', key: 'cin_s_top' },
       { title: tx('topMovies'), type: 'movie', url: CIN + '/catalog/movie/imdbRating.json', key: 'cin_m_ir' },
       {
@@ -4109,6 +4147,12 @@ function homeDefs() {
         key: 'cin_s_ir'
       }
     ];
+  /* an addon's own "popular" catalog ranks its first ten too */
+  for (var i = 0; i < cats.length; i++)
+    if (/\/catalog\/[^\/]+\/top\.json$/.test(cats[i].url || '')) {
+      cats[i].ranked = true;
+      break;
+    }
   return cats;
 }
 /* DISCOVER rows = trending + top + a spread of genres */
@@ -5735,6 +5779,65 @@ function applyLook() {
   if (light) bodyAdd('lite');
   else bodyRemove('lite');
 }
+/* Draws the panel shared by the first-start questions, the Nuvio profiles and the interface
+   languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
+function drawChoices(title, rows, hint) {
+  var host = $('suOptions'),
+    els = [];
+  $('setupPanel').style.display = 'block';
+  $('suTitle').textContent = title;
+  $('suHint').textContent = hint || '';
+  host.innerHTML = '';
+  for (var i = 0; i < rows.length; i++) {
+    var b = document.createElement('div'),
+      name = document.createElement('div');
+    b.className = 'suopt' + (rows[i].cls ? ' ' + rows[i].cls : '');
+    name.className = 'suname';
+    name.textContent = rows[i].name;
+    b.appendChild(name);
+    if (rows[i].help) {
+      var help = document.createElement('div');
+      help.className = 'suhelp';
+      help.textContent = rows[i].help;
+      b.appendChild(help);
+    }
+    host.appendChild(b);
+    els.push(b);
+  }
+  return els;
+}
+var languagePanel = {
+  open: false,
+  idx: 0,
+  els: [],
+  codes: [],
+  done: null,
+  show: function (done) {
+    var rows = [];
+    this.codes = Object.keys(UI_LANGUAGES);
+    this.done = done;
+    this.idx = Math.max(0, this.codes.indexOf(UI_LANG));
+    for (var i = 0; i < this.codes.length; i++) rows.push({ name: UI_LANGUAGES[this.codes[i]] });
+    this.els = drawChoices(tx('interfaceLanguage'), rows);
+    this.open = true;
+    setF(this.els, this.idx);
+  },
+  choose: function (i) {
+    setUILanguage(this.codes[i]);
+    this.close();
+    if (this.done) this.done();
+  },
+  close: function () {
+    this.open = false;
+    $('setupPanel').style.display = 'none';
+  },
+  key: function (k) {
+    if (k === 38) this.idx = Math.max(0, this.idx - 1);
+    else if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
+    else if (k === 13) return this.choose(this.idx);
+    setF(this.els, this.idx);
+  }
+};
 var setupPanel = {
   open: false,
   step: 0,
@@ -5745,7 +5848,6 @@ var setupPanel = {
     if (lsRaw('setupDone', '') || !user() || profilePanel.open) return;
     this.open = true;
     this.step = 0;
-    $('setupPanel').style.display = 'block';
     this.build();
   },
   questions: function () {
@@ -5772,32 +5874,14 @@ var setupPanel = {
   },
   build: function () {
     var q = this.questions()[this.step],
-      host = $('suOptions');
-    $('suTitle').textContent = q.title;
-    $('suHint').textContent = tx('setupHint');
-    host.innerHTML = '';
-    this.els = [];
+      rows = [];
     this.idx = 0;
     for (var i = 0; i < q.options.length; i++) {
-      var b = document.createElement('div'),
-        name = document.createElement('div'),
-        hint = document.createElement('div');
-      b.className = 'suopt';
-      name.className = 'suname';
-      name.textContent = q.options[i][1];
-      hint.className = 'suhelp';
-      hint.textContent = q.options[i][2];
-      b.appendChild(name);
-      b.appendChild(hint);
-      host.appendChild(b);
-      this.els.push(b);
+      rows.push({ name: q.options[i][1], help: q.options[i][2] });
       if (q.options[i][0] === q.current) this.idx = i;
     }
-    var skip = document.createElement('div');
-    skip.className = 'suopt suskip';
-    skip.textContent = tx('setupSkip');
-    host.appendChild(skip);
-    this.els.push(skip);
+    rows.push({ name: tx('setupSkip'), cls: 'suskip' });
+    this.els = drawChoices(q.title, rows, tx('setupHint'));
     setF(this.els, this.idx);
   },
   /* an option of this question, or Skip, which closes with what is set now */
@@ -5855,32 +5939,19 @@ var profilePanel = {
     );
   },
   build: function () {
-    var host = $('suOptions');
-    this.open = true;
-    $('setupPanel').style.display = 'block';
-    $('suTitle').textContent = tx('whoIsWatching');
-    $('suHint').textContent = '';
-    host.innerHTML = '';
-    this.els = [];
+    var rows = [];
     this.idx = 0;
     for (var i = 0; i < this.list.length; i++) {
-      var p = this.list[i],
-        b = document.createElement('div'),
-        name = document.createElement('div');
-      b.className = 'suopt' + (p.locked ? ' locked' : '');
-      name.className = 'suname';
-      name.textContent = p.name || tx('profileNumber', p.index);
-      b.appendChild(name);
-      if (p.locked) {
-        var hint = document.createElement('div');
-        hint.className = 'suhelp';
-        hint.textContent = tx('profileLocked');
-        b.appendChild(hint);
-      }
-      host.appendChild(b);
-      this.els.push(b);
+      var p = this.list[i];
+      rows.push({
+        name: p.name || tx('profileNumber', p.index),
+        help: p.locked ? tx('profileLocked') : '',
+        cls: p.locked ? 'locked' : ''
+      });
       if (p.current) this.idx = i;
     }
+    this.els = drawChoices(tx('whoIsWatching'), rows);
+    this.open = true;
     setF(this.els, this.idx);
   },
   choose: function (i) {
@@ -7706,7 +7777,20 @@ var login = {
         lang,
         'click',
         function () {
-          self.toggleLanguage();
+          self.chooseLanguage();
+        },
+        false
+      );
+    }
+    var prov = $('lgProv');
+    if (prov && !prov._wired) {
+      prov._wired = true;
+      on(
+        prov,
+        'click',
+        function (e) {
+          var spans = prov.getElementsByTagName('span');
+          self.setProvider(e && e.target === spans[1] ? 'nuvio' : 'stremio');
         },
         false
       );
@@ -7756,11 +7840,14 @@ var login = {
           : '';
     }
   },
-  toggleLanguage: function () {
-    var codes = Object.keys(UI_LANGUAGES);
-    setUILanguage(codes[(codes.indexOf(UI_LANG) + 1) % codes.length]);
-    this.setStatus(this.statusKey);
-    this.paint();
+  /* the list of languages; the screen is drawn again in the one chosen */
+  chooseLanguage: function () {
+    var self = this;
+    languagePanel.show(function () {
+      self.setStatus(self.statusKey);
+      $('lgAccount').textContent = tx(self.provider === 'nuvio' ? 'nuvioAccountNote' : 'accountNote');
+      self.paint();
+    });
   },
   startQr: function () {
     if (this.qrCode) {
@@ -7846,8 +7933,9 @@ var login = {
     this.pollGen++;
   },
   /* Nuvio has no sign-in by phone code: its accounts use the email form only */
-  toggleProvider: function () {
-    this.provider = this.provider === 'nuvio' ? 'stremio' : 'nuvio';
+  setProvider: function (provider) {
+    if (provider === this.provider) return;
+    this.provider = provider;
     var scr = $('scrLogin');
     if (this.provider === 'nuvio') {
       this.stopQr();
@@ -7917,9 +8005,14 @@ var login = {
     var prov = $('lgProv');
     if (prov) {
       prov.className = this.zone === 'prov' ? 'f' : '';
-      prov.textContent =
-        tx('accountProvider', this.provider === 'nuvio' ? tx('providerNuvio') : 'Stremio') +
-        '  \u2039 \u203a';
+      prov.innerHTML =
+        '<span class="' +
+        (this.provider === 'stremio' ? 'on' : '') +
+        '">Stremio</span><span class="' +
+        (this.provider === 'nuvio' ? 'on' : '') +
+        '">' +
+        esc(tx('providerNuvio')) +
+        '</span>';
     }
     if (email) email.className = 'lgin' + (this.zone === 'email' ? ' f' : '');
     if (pass) pass.className = 'lgin' + (this.zone === 'pass' ? ' f' : '');
@@ -7927,7 +8020,7 @@ var login = {
   },
   key: function (k) {
     if (this.zone === 'lang') {
-      if (k === 37 || k === 39 || k === 13) this.toggleLanguage();
+      if (k === 13) this.chooseLanguage();
       else if (k === 40) {
         this.zone = 'prov';
         this.paint();
@@ -7935,7 +8028,9 @@ var login = {
       return true;
     }
     if (this.zone === 'prov') {
-      if (k === 37 || k === 39 || k === 13) this.toggleProvider();
+      if (k === 37) this.setProvider('stremio');
+      else if (k === 39) this.setProvider('nuvio');
+      else if (k === 13) this.setProvider(this.provider === 'nuvio' ? 'stremio' : 'nuvio');
       else if (k === 40 || k === 38) {
         this.zone = k === 40 ? 'email' : 'lang';
         this.paint();
@@ -8001,6 +8096,15 @@ function pointerUI(target, activate) {
       serverPanel.idx = i;
       serverPanel.paint();
       if (activate) serverPanel.press(i);
+    }
+    return true;
+  }
+  if (languagePanel.open) {
+    i = pointerIndex(target, languagePanel.els);
+    if (i >= 0) {
+      languagePanel.idx = i;
+      setF(languagePanel.els, i);
+      if (activate) languagePanel.choose(i);
     }
     return true;
   }
@@ -8305,7 +8409,7 @@ function idleMeta(cb) {
 }
 function startIdleTrailer() {
   if (bgv) return;
-  if (!HAS_MEDIA_TOOLS || lsRaw('bgTrailer', 'false') !== 'true')
+  if (!HAS_MEDIA_TOOLS || lsRaw('bgTrailer', 'false') !== 'true' || uiLook() === 'light')
     return; /* Off by default on the low-memory 2019 TV */
   idleMeta(function (m) {
     if (!m) return;
@@ -8396,6 +8500,13 @@ on(
       e.stopPropagation();
       if (isBackKey(k)) serverPanel.close();
       else serverPanel.key(k);
+      return;
+    }
+    if (languagePanel.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isBackKey(k)) languagePanel.close();
+      else languagePanel.key(k);
       return;
     }
     if (profilePanel.open) {

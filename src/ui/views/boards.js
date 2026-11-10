@@ -1,6 +1,9 @@
 // Home, Discover and Library screens.
 var home = makeBoard(function (b, keep) {
-  loadCatalogRows(b, homeDefs(), true, keep);
+  var defs = homeDefs(),
+    because = becauseYouWatchedDef();
+  if (because) defs.splice(Math.min(1, defs.length), 0, because);
+  loadCatalogRows(b, defs, true, keep);
 });
 /* Discover intentionally differs from Home: three compact filters feed one virtualized
    poster grid. This keeps the DOM small while making the section useful on a TV remote. */

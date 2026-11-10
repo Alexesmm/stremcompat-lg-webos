@@ -148,7 +148,6 @@
   "interfaceLanguage": "Langue de l'interface",
   "english": "Anglais",
   "portugueseBrazil": "Portugais (Brésil)",
-  "languagePicker": "Langue : {0}  ‹ ›",
   "maintenanceGroup": "Récupération",
   "reloadApp": "Recharger StremCompat",
   "diagnostics": "Diagnostic",
@@ -371,12 +370,12 @@
   "setupHint": "Tu peux le changer plus tard dans les Réglages.",
   "uiModeLabel": "Mode d’utilisation",
   "uiLookLabel": "Style",
-  "accountProvider": "Compte : {0}",
   "providerNuvio": "Nuvio (expérimental)",
   "whoIsWatching": "Qui regarde ?",
   "profileNumber": "Profil {0}",
   "profileLocked": "Protégé par un code, pas encore disponible dans StremCompat",
   "nuvioProfile": "Profil Nuvio",
   "profilesUnavailable": "Impossible de lire les profils Nuvio",
-  "nuvioAccountNote": "Connecte-toi avec ton compte Nuvio. Expérimental : le service de comptes de Nuvio n’est pas fait pour d’autres apps et peut changer."
+  "nuvioAccountNote": "Connecte-toi avec ton compte Nuvio. Expérimental : le service de comptes de Nuvio n’est pas fait pour d’autres apps et peut changer.",
+  "becauseYouWatched": "Parce que tu as regardé {0}"
 }

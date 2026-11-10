@@ -31,32 +31,19 @@ var profilePanel = {
     );
   },
   build: function () {
-    var host = $('suOptions');
-    this.open = true;
-    $('setupPanel').style.display = 'block';
-    $('suTitle').textContent = tx('whoIsWatching');
-    $('suHint').textContent = '';
-    host.innerHTML = '';
-    this.els = [];
+    var rows = [];
     this.idx = 0;
     for (var i = 0; i < this.list.length; i++) {
-      var p = this.list[i],
-        b = document.createElement('div'),
-        name = document.createElement('div');
-      b.className = 'suopt' + (p.locked ? ' locked' : '');
-      name.className = 'suname';
-      name.textContent = p.name || tx('profileNumber', p.index);
-      b.appendChild(name);
-      if (p.locked) {
-        var hint = document.createElement('div');
-        hint.className = 'suhelp';
-        hint.textContent = tx('profileLocked');
-        b.appendChild(hint);
-      }
-      host.appendChild(b);
-      this.els.push(b);
+      var p = this.list[i];
+      rows.push({
+        name: p.name || tx('profileNumber', p.index),
+        help: p.locked ? tx('profileLocked') : '',
+        cls: p.locked ? 'locked' : ''
+      });
       if (p.current) this.idx = i;
     }
+    this.els = drawChoices(tx('whoIsWatching'), rows);
+    this.open = true;
     setF(this.els, this.idx);
   },
   choose: function (i) {

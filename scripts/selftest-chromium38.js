@@ -192,7 +192,7 @@ async function main() {
     assert.ok(/\bon\b/.test(state.login), 'login screen is not active');
     assert.strictEqual(state.boot, 'none', 'boot overlay is still visible');
     assert.strictEqual(state.language, 'en-US', 'first-run interface language is not English');
-    assert.ok(/^Language: English/.test(state.languagePicker), 'login language selector is not in English');
+    assert.ok(/^English$/.test(state.languagePicker), 'login language selector is not in English');
     assert.strictEqual(protocol.exceptions.length, 0, 'Chromium 38 reported an exception.');
 
     var languageEval = await protocol.call('Runtime.evaluate', {
@@ -203,10 +203,7 @@ async function main() {
     var language = JSON.parse(languageEval.result.value);
     assert.strictEqual(language.language, 'pt-BR', 'Portuguese interface selection was not applied');
     assert.strictEqual(language.stored, 'pt-BR', 'interface language was not persisted locally');
-    assert.ok(
-      /^Idioma: Português/.test(language.languagePicker),
-      'login language selector was not translated'
-    );
+    assert.ok(/^Português/.test(language.languagePicker), 'login language selector was not translated');
     assert.strictEqual(language.emailTitle, 'Ou use seu e-mail', 'login copy was not translated');
     await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('en-US')" });
 

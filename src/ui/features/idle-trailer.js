@@ -35,7 +35,7 @@ function idleMeta(cb) {
 }
 function startIdleTrailer() {
   if (bgv) return;
-  if (!HAS_MEDIA_TOOLS || lsRaw('bgTrailer', 'false') !== 'true')
+  if (!HAS_MEDIA_TOOLS || lsRaw('bgTrailer', 'false') !== 'true' || uiLook() === 'light')
     return; /* Off by default on the low-memory 2019 TV */
   idleMeta(function (m) {
     if (!m) return;

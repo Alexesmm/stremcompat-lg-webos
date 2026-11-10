@@ -11,6 +11,7 @@
 #heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:16px;font-weight:800;line-height:22px;vertical-align:2px}
 /* two lines ending in an ellipsis instead of a sentence cut in half */
 #heroDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-height:73px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.card .rank{position:absolute;left:10px;top:4px;font-size:72px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.85),0 0 2px #000;pointer-events:none}
 #heroDesc.roll{display:block;-webkit-line-clamp:none}
 
 /* ---------- rows ---------- */

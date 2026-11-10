@@ -17,6 +17,65 @@ function applyLook() {
   if (light) bodyAdd('lite');
   else bodyRemove('lite');
 }
+/* Draws the panel shared by the first-start questions, the Nuvio profiles and the interface
+   languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
+function drawChoices(title, rows, hint) {
+  var host = $('suOptions'),
+    els = [];
+  $('setupPanel').style.display = 'block';
+  $('suTitle').textContent = title;
+  $('suHint').textContent = hint || '';
+  host.innerHTML = '';
+  for (var i = 0; i < rows.length; i++) {
+    var b = document.createElement('div'),
+      name = document.createElement('div');
+    b.className = 'suopt' + (rows[i].cls ? ' ' + rows[i].cls : '');
+    name.className = 'suname';
+    name.textContent = rows[i].name;
+    b.appendChild(name);
+    if (rows[i].help) {
+      var help = document.createElement('div');
+      help.className = 'suhelp';
+      help.textContent = rows[i].help;
+      b.appendChild(help);
+    }
+    host.appendChild(b);
+    els.push(b);
+  }
+  return els;
+}
+var languagePanel = {
+  open: false,
+  idx: 0,
+  els: [],
+  codes: [],
+  done: null,
+  show: function (done) {
+    var rows = [];
+    this.codes = Object.keys(UI_LANGUAGES);
+    this.done = done;
+    this.idx = Math.max(0, this.codes.indexOf(UI_LANG));
+    for (var i = 0; i < this.codes.length; i++) rows.push({ name: UI_LANGUAGES[this.codes[i]] });
+    this.els = drawChoices(tx('interfaceLanguage'), rows);
+    this.open = true;
+    setF(this.els, this.idx);
+  },
+  choose: function (i) {
+    setUILanguage(this.codes[i]);
+    this.close();
+    if (this.done) this.done();
+  },
+  close: function () {
+    this.open = false;
+    $('setupPanel').style.display = 'none';
+  },
+  key: function (k) {
+    if (k === 38) this.idx = Math.max(0, this.idx - 1);
+    else if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
+    else if (k === 13) return this.choose(this.idx);
+    setF(this.els, this.idx);
+  }
+};
 var setupPanel = {
   open: false,
   step: 0,
@@ -27,7 +86,6 @@ var setupPanel = {
     if (lsRaw('setupDone', '') || !user() || profilePanel.open) return;
     this.open = true;
     this.step = 0;
-    $('setupPanel').style.display = 'block';
     this.build();
   },
   questions: function () {
@@ -54,32 +112,14 @@ var setupPanel = {
   },
   build: function () {
     var q = this.questions()[this.step],
-      host = $('suOptions');
-    $('suTitle').textContent = q.title;
-    $('suHint').textContent = tx('setupHint');
-    host.innerHTML = '';
-    this.els = [];
+      rows = [];
     this.idx = 0;
     for (var i = 0; i < q.options.length; i++) {
-      var b = document.createElement('div'),
-        name = document.createElement('div'),
-        hint = document.createElement('div');
-      b.className = 'suopt';
-      name.className = 'suname';
-      name.textContent = q.options[i][1];
-      hint.className = 'suhelp';
-      hint.textContent = q.options[i][2];
-      b.appendChild(name);
-      b.appendChild(hint);
-      host.appendChild(b);
-      this.els.push(b);
+      rows.push({ name: q.options[i][1], help: q.options[i][2] });
       if (q.options[i][0] === q.current) this.idx = i;
     }
-    var skip = document.createElement('div');
-    skip.className = 'suopt suskip';
-    skip.textContent = tx('setupSkip');
-    host.appendChild(skip);
-    this.els.push(skip);
+    rows.push({ name: tx('setupSkip'), cls: 'suskip' });
+    this.els = drawChoices(q.title, rows, tx('setupHint'));
     setF(this.els, this.idx);
   },
   /* an option of this question, or Skip, which closes with what is set now */

@@ -42,6 +42,15 @@ function pointerUI(target, activate) {
     }
     return true;
   }
+  if (languagePanel.open) {
+    i = pointerIndex(target, languagePanel.els);
+    if (i >= 0) {
+      languagePanel.idx = i;
+      setF(languagePanel.els, i);
+      if (activate) languagePanel.choose(i);
+    }
+    return true;
+  }
   if (profilePanel.open) {
     i = pointerIndex(target, profilePanel.els);
     if (i >= 0) {
