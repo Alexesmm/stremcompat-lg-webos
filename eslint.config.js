@@ -50,7 +50,7 @@ module.exports = [
       parserOptions: { ecmaFeatures: { globalReturn: true } },
       globals: Object.assign({}, globals.browser, {
         PalmServiceBridge: 'readonly', tizen: 'readonly',
-        URL: 'readonly', ADDON: 'readonly', QUALITY: 'readonly', TITLE: 'readonly', TYPE: 'readonly',
+        URL: 'readonly', ADDON: 'readonly', ADDONBASE: 'readonly', QUALITY: 'readonly', TITLE: 'readonly', TYPE: 'readonly',
         ID: 'readonly', VID: 'readonly', LOGO: 'readonly', BG: 'readonly', POSTER: 'readonly',
         SEASON: 'readonly', EPISODE: 'readonly', EPTITLE: 'readonly', NEXTVID: 'readonly', NEXTHREF: 'readonly', BACK: 'readonly',
         NEXTTITLE: 'readonly', NEXTTHUMB: 'readonly', SNAME: 'readonly', CERT: 'readonly',

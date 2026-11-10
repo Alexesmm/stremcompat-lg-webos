@@ -9,7 +9,7 @@ var { nextEpisodeId } = require('./episodes');
 var { fetchJson } = require('./http-util');
 var { waitForServer } = require('./streaming-server');
 var { safeScriptJson } = require('./text');
-var { rememberVideos } = require('./watched');
+var { rememberVideos, rememberedVideos } = require('./watched');
 
 var TORRENT_ADDRESS = /^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i;
 var ARTWORK_WAIT_MS = 2500;
@@ -93,7 +93,8 @@ function playerContext(stream, query, done) {
     streamRef: query.ref || '',
     meta: null
   };
-  var artworkSettled = false;
+  var artworkSettled = false,
+    isEpisode = context.vid.indexOf(':') >= 0;
   function ready() {
     if (!TORRENT_ADDRESS.test(stream.url || '')) return done(context);
     waitForServer(function (up) {
@@ -102,9 +103,12 @@ function playerContext(stream, query, done) {
     });
   }
   if (!context.type || !context.id) return ready();
+  /* Without an answer in time the next episode still comes from the list kept from an earlier
+     play of this series, or is the next number: the player cannot learn it afterwards. */
   function settled() {
     if (artworkSettled) return;
     artworkSettled = true;
+    if (isEpisode && !context.meta) addEpisodeDetails(context, rememberedVideos(context.id));
     ready();
   }
   var address =
@@ -114,8 +118,8 @@ function playerContext(stream, query, done) {
     encodeURIComponent(context.id) +
     '.json';
   fetchJson(address, function (answer) {
-    if (artworkSettled) return;
     var meta = (answer && answer.meta) || {};
+    if (artworkSettled) return rememberVideos(context.id, meta.videos);
     context.meta = {
       name: meta.name || '',
       logo: meta.logo || '',
@@ -123,7 +127,7 @@ function playerContext(stream, query, done) {
       poster: meta.poster || '',
       cert: meta.certification || ''
     };
-    if (context.vid.indexOf(':') >= 0) addEpisodeDetails(context, meta.videos);
+    if (isEpisode) addEpisodeDetails(context, meta.videos);
     settled();
   });
   setTimeout(settled, ARTWORK_WAIT_MS);
@@ -153,6 +157,7 @@ function playerConstants(stream, context) {
   return {
     URL: playableAddress(stream, ctx),
     ADDON: stream.addon || '',
+    ADDONBASE: stream.addonBase || '',
     QUALITY: stream.quality || '',
     TITLE: meta.name || titleFromStream(stream),
     TYPE: ctx.type || '',

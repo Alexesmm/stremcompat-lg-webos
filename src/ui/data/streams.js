@@ -233,7 +233,7 @@ function fetchStreams(type, vid, onPart, onDone) {
             var st = (j && j.streams) || [];
             var out = [];
             for (var k = 0; k < st.length; k++) {
-              var item = sourceItem(st[k], ad.name);
+              var item = sourceItem(st[k], ad.name, ad.base);
               if (item) out.push(item);
             }
             total += out.length;

@@ -82,6 +82,9 @@ function rememberVideos(id, videos) {
   videoCache[id] = videos;
   while (videoCacheKeys.length > 4) delete videoCache[videoCacheKeys.shift()];
 }
+function rememberedVideos(id) {
+  return videoCache[id] || null;
+}
 function seriesVideos(id, cb) {
   if (videoCache[id]) return cb(videoCache[id]);
   fetchJson('https://v3-cinemeta.strem.io/meta/series/' + encodeURIComponent(id) + '.json', function (j) {
@@ -95,6 +98,7 @@ module.exports = {
   decodeField: decodeField,
   orderedIds: orderedIds,
   rememberVideos: rememberVideos,
+  rememberedVideos: rememberedVideos,
   seriesVideos: seriesVideos,
   setWatched: setWatched
 };

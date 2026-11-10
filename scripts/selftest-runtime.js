@@ -67,6 +67,36 @@ function waitForHealth(attempt) {
 }
 
 
+/* Cinemeta answering too late must not leave the player without a next episode. */
+function lateMetaTests() {
+  var util = require(path.join(root, 'service', 'server', 'http-util.js'));
+  var realFetch = util.fetchJson;
+  var pagePath = path.join(root, 'service', 'server', 'player-page.js');
+  util.fetchJson = function () {};
+  delete require.cache[require.resolve(pagePath)];
+  var page = require(pagePath);
+  var watched = require(path.join(root, 'service', 'server', 'watched.js'));
+  watched.rememberVideos('tt900', [
+    { id: 'tt900:1:9', season: 1, episode: 9 },
+    { id: 'tt900:2:1', season: 2, episode: 1, name: 'Opening' }
+  ]);
+  return new Promise(function (resolve) {
+    var left = 2;
+    function done() { if (!--left) { util.fetchJson = realFetch; delete require.cache[require.resolve(pagePath)]; resolve(); } }
+    page.playerContext({ url: 'http://x/a.mp4' }, { type: 'series', id: 'tt900', vid: 'tt900:1:9' }, function (context) {
+      var constants = page.playerConstants({ url: 'http://x/a.mp4', addonBase: 'https://a.example' }, context);
+      assert.strictEqual(constants.NEXTVID, 'tt900:2:1', 'a late answer left the player without the next episode it already knew');
+      assert.strictEqual(constants.NEXTTITLE, 'Opening', 'the remembered episode list lost its titles');
+      assert.strictEqual(constants.ADDONBASE, 'https://a.example', 'the player was not told which installation gave the source');
+      done();
+    });
+    page.playerContext({ url: 'http://x/a.mp4' }, { type: 'series', id: 'tt901', vid: 'tt901:3:4' }, function (context) {
+      assert.strictEqual(context.nextVid, 'tt901:3:5', 'with no list at all the next number was not assumed');
+      done();
+    });
+  });
+}
+
 /* The paused screen's resolution, and free space read from df even when a long name wraps. */
 function mediaAndDiskTests() {
   var media = require(path.join(root, 'service', 'server', 'media.js'));
@@ -341,6 +371,7 @@ async function main() {
     assert.strictEqual(healthJson.version, appVersion);
     assert.ok(healthJson.memory.rssMiB > 0 && healthJson.memory.heapMiB > 0, 'health memory diagnostics missing');
     mediaAndDiskTests();
+    await lateMetaTests();
     await engineRoutesTests();
     await proxyTests();
     var noUpdate = await request({ hostname: '127.0.0.1', port: appPort, path: '/update' });

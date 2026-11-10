@@ -1237,13 +1237,16 @@ function torrentTrackers(s) {
   return out.length ? '?' + out.join('&') : '';
 }
 /* the addon's stream as the interface and the player use it; null when it cannot be played */
-function sourceItem(s, addonName) {
+/* addonBase tells apart two installations of an addon with the same name */
+function sourceItem(s, addonName, addonBase) {
   var url = s.url,
     h = s.behaviorHints || {};
-  if (!url && s.infoHash) url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0) + torrentTrackers(s);
+  if (!url && s.infoHash)
+    url = 'http://127.0.0.1:11470/' + s.infoHash + '/' + (s.fileIdx || 0) + torrentTrackers(s);
   if (!url) return null;
   var item = {
     addon: addonName,
+    addonBase: addonBase || '',
     name: s.name || '',
     title: s.title || s.description || '',
     url: url,
@@ -1266,6 +1269,7 @@ function streamRefBody(s) {
   return {
     url: s.url,
     addon: s.addon || '',
+    addonBase: s.addonBase || '',
     name: s.name || '',
     title: s.title || '',
     filename: s.filename || '',
@@ -2295,7 +2299,7 @@ function fetchStreams(type, vid, onPart, onDone) {
             var st = (j && j.streams) || [];
             var out = [];
             for (var k = 0; k < st.length; k++) {
-              var item = sourceItem(st[k], ad.name);
+              var item = sourceItem(st[k], ad.name, ad.base);
               if (item) out.push(item);
             }
             total += out.length;

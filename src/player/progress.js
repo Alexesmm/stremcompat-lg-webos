@@ -301,9 +301,28 @@ function finishSession(toNext) {
   } catch (e) {}
 }
 // binge: when the episode ends, count down to the next one (up-next.js)
-v.addEventListener('ended', function () {
+var endHandled = false;
+function onVideoEnd() {
+  if (endHandled) return;
+  endHandled = true;
   finishSession(false);
   pushLib(true);
   var binge = lsGet('bingeWatch', 'true') !== 'false' && lsGet('enableNextVideo', 'true') !== 'false';
   if (binge && NEXTHREF && !npDismissed) startAutoNext();
-});
+}
+v.addEventListener('ended', onVideoEnd);
+/* Some streams stop a moment before their stated length and the TV never reports the end:
+   a video that stays still in its last second and a half has ended. */
+var END_STALL_MS = 4000,
+  endStillAt = -1,
+  endStillSince = 0;
+setInterval(function () {
+  var left = v.duration ? v.duration - v.currentTime : Infinity;
+  if (left > 5) endHandled = false;
+  if (left > 1.5 || v.paused || v.currentTime !== endStillAt) {
+    endStillAt = v.currentTime;
+    endStillSince = Date.now();
+    return;
+  }
+  if (Date.now() - endStillSince >= END_STALL_MS) onVideoEnd();
+}, 1000);

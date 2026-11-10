@@ -40,6 +40,7 @@ function storeStreamRef(raw) {
   streamRefs[ref] = {
     url: streamingUrl(streamUrl),
     addon: safeText(raw.addon, 160),
+    addonBase: safeText(raw.addonBase, 2048),
     name: safeText(raw.name, 300),
     title: safeText(raw.title, 700),
     description: safeText(raw.description, 700),

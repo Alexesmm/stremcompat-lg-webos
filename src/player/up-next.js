@@ -70,15 +70,33 @@ function checkNp() {
   }
 }
 v.addEventListener('timeupdate', checkNp);
-/* While the next-episode panel is up, ask the addons for that episode's sources so the
-   local server has them cached (server/addon-cache.js) when the title page opens. */
-var nextPrefetched = false;
+/* While the next-episode panel is up, ask the addons for that episode's sources: the answers
+   are kept here for openNextDirect, and the local server has them cached
+   (server/addon-cache.js) when the title page opens. */
+var nextPrefetched = false,
+  nextAnswers = {};
+/* cb(json) once, now if the answer is already here; a failed request is asked again next time */
+function nextSources(ad, cb) {
+  var u = streamUrl(ad, TYPE || 'series', NEXTVID),
+    entry = nextAnswers[u];
+  if (entry && entry.done) return cb(entry.json);
+  if (entry) return entry.waiting.push(cb);
+  entry = nextAnswers[u] = { done: false, json: null, waiting: [cb] };
+  xhr('/addon?u=' + encodeURIComponent(u), function (j) {
+    if (j && j.streams) {
+      entry.done = true;
+      entry.json = j;
+    } else delete nextAnswers[u];
+    entry.waiting.splice(0).forEach(function (fn) {
+      fn(j);
+    });
+  });
+}
 function prefetchNext() {
   if (nextPrefetched || !isNextEp || !NEXTVID) return;
   nextPrefetched = true;
   var ads = nextEpisodeAddons();
-  for (var i = 0; i < ads.length; i++)
-    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[i], TYPE || 'series', NEXTVID)), function () {});
+  for (var i = 0; i < ads.length; i++) nextSources(ads[i], function () {});
 }
 /* the addons that answer for the next episode, without the local streaming server's own */
 function nextEpisodeAddons() {
@@ -89,13 +107,14 @@ function nextEpisodeAddons() {
   } catch (e) {}
   var ads = streamAddonsIn(list, TYPE || 'series');
   for (var i = 0; i < ads.length; i++)
-    if (!/^https?:\/\/(?:127\.0\.0\.1|localhost):11470\//i.test(ads[i].base)) out.push(ads[i]);
+    if (!/^https?:\/\/(?:127\.0\.0\.1|localhost):11470(?:\/|$)/i.test(ads[i].base)) out.push(ads[i]);
   return out;
 }
 /* The next episode starts from here, with the source that matches this one: no title page,
    no list. Anything that goes wrong (no answer in time, no matching source) falls back to
-   the title page, which still holds the preference and offers the list. */
-var NEXT_DIRECT_LIMIT_MS = 12000;
+   the title page, which still holds the preference and offers the list. Addons that search
+   several sites take up to half a minute, and the title page would wait for them just the same. */
+var NEXT_DIRECT_LIMIT_MS = 30000;
 function coverForNext() {
   try {
     v.pause();
@@ -147,17 +166,18 @@ function openNextDirect() {
     });
   }
   /* only the addon that gave this source can give its match */
-  for (var i = 0; i < all.length; i++) if (all[i].name === ADDON) ads.push(all[i]);
+  for (var i = 0; i < all.length; i++)
+    if (ADDONBASE ? all[i].base === ADDONBASE : all[i].name === ADDON) ads.push(all[i]);
   if (!ads.length) return giveUp();
   coverForNext();
   limit = setTimeout(giveUp, NEXT_DIRECT_LIMIT_MS);
   var pending = ads.length,
     pref = nextSourcePref();
   for (var a = 0; a < ads.length; a++)
-    xhr('/addon?u=' + encodeURIComponent(streamUrl(ads[a], TYPE, NEXTVID)), function (j) {
+    nextSources(ads[a], function (j) {
       var st = (j && j.streams) || [];
       for (var k = 0; k < st.length; k++) {
-        var item = sourceItem(st[k], ADDON);
+        var item = sourceItem(st[k], ADDON, ADDONBASE);
         if (item) items.push(item);
       }
       pending--;

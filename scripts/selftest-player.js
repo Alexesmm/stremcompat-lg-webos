@@ -67,12 +67,12 @@ function nextDirect(streams, opts) {
   var addons = [
     { transportUrl: 'http://127.0.0.1:11470/manifest.json', manifest: { name: 'Local', types: ['series'], resources: ['stream'] } },
     { transportUrl: 'https://torrentio.example/manifest.json', manifest: { name: 'Torrentio', types: ['series'], resources: ['stream'] } }
-  ];
-  var asked = [];
+  ].concat(opts.moreAddons || []);
+  var asked = [], held = [];
   var ctx = {
     SEASON: '1', EPISODE: '2', EPTITLE: '', BACK: 'beta#detail/series/tt1/tt1:1:2', TYPE: 'series', ID: 'tt1',
     NEXTHREF: '/beta#detail/series/tt1/tt1:1:3', NEXTTITLE: '', NEXTVID: 'tt1:1:3', NEXTTHUMB: '',
-    ADDON: 'Torrentio', QUALITY: '1080p', COMPAT: '', SNAME: opts.sname || 'Torrentio 1080p Show.S01E02.1080p 🇧🇷', BINGE: opts.binge || '',
+    ADDON: 'Torrentio', ADDONBASE: opts.base || '', QUALITY: '1080p', COMPAT: '', SNAME: opts.sname || 'Torrentio 1080p Show.S01E02.1080p 🇧🇷', BINGE: opts.binge || '',
     exited: false, startupWatch: null, mode: 'video', menu: {}, bar: {}, load: { style: { display: 'none' } }, subEl: {},
     localStorage: memoryStorage({ uiLanguage: 'pt-BR', addons: JSON.stringify(addons) }),
     document: { getElementById: function (id) { return els[id] || (els[id] = element(id)); } },
@@ -85,7 +85,8 @@ function nextDirect(streams, opts) {
     nextSourcePref: null,
     xhr: function (u, cb) {
       asked.push(u);
-      if (!opts.silent) cb(streams ? { streams: streams } : null);
+      if (opts.late) held.push(cb);
+      else if (!opts.silent) cb(streams ? { streams: streams } : null);
     },
     XMLHttpRequest: function () {
       var x = this;
@@ -102,10 +103,12 @@ function nextDirect(streams, opts) {
   vm.runInNewContext(
     src('platform/lg/common.js') + src('shared/strings.js') + src('shared/stream-addons.js') + src('shared/source-info.js') + src('player/strings.js') + src('player/up-next.js') +
     ';function nextSourcePref(){return{addon:ADDON,quality:QUALITY,compat:COMPAT,text:SNAME,binge:BINGE,langs:subtitleLanguagesOnly({name:SNAME})?[]:streamLanguages({name:SNAME})};}' +
-    ';openNextDirect();',
+    (opts.ahead ? ';prefetchNext();' : '') + ';openNextDirect();',
     ctx
   );
   if (opts.timeout) while (timers.length) timers.shift()();
+  /* the addon answers after the player already asked for the next episode */
+  held.forEach(function (cb) { cb({ streams: streams }); });
   return { went: went, posted: posted, removed: removed, asked: asked, ctx: ctx };
 }
 var directPt = { name: 'Torrentio 1080p', title: 'Show.S01E03.1080p 🇧🇷', infoHash: 'a'.repeat(40) };
@@ -132,6 +135,16 @@ assert.strictEqual(otherLang.posted.length, 0, 'a source in another language was
 assert.deepStrictEqual(nextDirect(null).went, ['/beta#detail/series/tt1/tt1:1:3'], 'an addon that failed did not fall back to the title page');
 assert.deepStrictEqual(nextDirect([directPt], { noRef: true }).went, ['/beta#detail/series/tt1/tt1:1:3'], 'a failed source preparation did not fall back');
 assert.deepStrictEqual(nextDirect([], { silent: true, timeout: true }).went, ['/beta#detail/series/tt1/tt1:1:3'], 'a slow addon held the viewer past the limit');
+var ahead = nextDirect([directPt], { ahead: true });
+assert.strictEqual(ahead.asked.length, 1, 'the sources asked for while the panel was up were asked for again');
+assert.strictEqual(ahead.posted.length, 1, 'the answer that came in advance was not used');
+var slowAddon = nextDirect([directPt], { ahead: true, late: true });
+assert.strictEqual(slowAddon.asked.length, 1, 'a request still on its way was sent a second time');
+assert.strictEqual(slowAddon.posted.length, 1, 'an addon that answered after the episode ended did not start the next one');
+var twin = { transportUrl: 'https://other.example/manifest.json', manifest: { name: 'Torrentio', types: ['series'], resources: ['stream'] } };
+var twins = nextDirect([directPt], { moreAddons: [twin], base: 'https://other.example' });
+assert.deepStrictEqual(twins.asked, ['/addon?u=' + encodeURIComponent('https://other.example/stream/series/tt1%3A1%3A3.json')], 'two installations with one name were not told apart');
+assert.strictEqual(twins.posted[0].addonBase, 'https://other.example', 'the source did not keep which installation gave it');
 
 // ---- per-title audio, subtitles and delay (subtitles.js) ----
 function subtitlePrefs(stored) {
@@ -498,6 +511,7 @@ function playSession(opts) {
   ctx.fire = fire;
   ctx.lib = function () { return JSON.parse(storage.getItem('lib_abcd_tt7')); };
   ctx.sent = sent;
+  ctx.intervals = intervals;
   ctx.storage = storage;
   ctx.posts = posts;
   return ctx;
@@ -520,6 +534,39 @@ assert.strictEqual(st.timeOffset, 1, 'the next episode pointer is not at the sta
 assert.strictEqual(st.flaggedWatched, 0, 'the next episode inherited the watched flag');
 vm.runInNewContext('saveProgress()', ep);
 assert.strictEqual(ep.lib().state.video_id, 'tt7:1:2', 'saving after the end moved the item back');
+
+/* a stream that stops short of its length and never reports the end */
+(function () {
+  function keepDefault(k, d) { return d; }
+  var stuck = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2' }), now = 1000, RealDate = Date, started = 0;
+  function FakeDate() { return new RealDate(now); }
+  FakeDate.now = function () { return now; };
+  stuck.Date = FakeDate;
+  stuck.lsGet = keepDefault;
+  stuck.NEXTHREF = '/beta#detail/series/tt7/tt7:1:2';
+  stuck.startAutoNext = function () { started++; };
+  stuck.play(990);
+  stuck.intervals[1]();
+  assert.strictEqual(started, 0, 'the countdown began ten seconds before the end');
+  stuck.v.currentTime = 999.2;
+  for (var tick = 0; tick < 3; tick++) { stuck.intervals[1](); now += 1000; }
+  assert.strictEqual(started, 0, 'three seconds without moving already counted as the end');
+  now += 2000;
+  stuck.intervals[1]();
+  assert.strictEqual(started, 1, 'a video stopped in its last second never counted as ended');
+  assert.strictEqual(stuck.lib().state.video_id, 'tt7:1:2', 'the stalled end did not move on to the next episode');
+  stuck.fire('ended');
+  assert.strictEqual(started, 1, 'the end was handled twice');
+  var paused = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2' });
+  paused.Date = FakeDate;
+  paused.lsGet = keepDefault;
+  paused.startAutoNext = function () { started++; };
+  paused.NEXTHREF = 'x';
+  paused.v.currentTime = 999.2;
+  paused.v.paused = true;
+  for (tick = 0; tick < 8; tick++) { paused.intervals[1](); now += 1000; }
+  assert.strictEqual(started, 1, 'a viewer who paused near the end was sent to the next episode');
+})();
 
 var skim = playSession({ vid: 'tt7:1:1', next: 'tt7:1:2' });
 skim.play(100);

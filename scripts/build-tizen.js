@@ -20,7 +20,7 @@ var profileModule = require(path.join(root, 'service', 'profile.js'));
 
 /* the names player-page.js playerConstants() answers with; selftest-tizen.js keeps them equal */
 var PLAYER_CONSTANTS = [
-  'URL', 'ADDON', 'QUALITY', 'TITLE', 'TYPE', 'ID', 'VID', 'LOGO', 'BG', 'POSTER', 'SEASON', 'EPISODE',
+  'URL', 'ADDON', 'ADDONBASE', 'QUALITY', 'TITLE', 'TYPE', 'ID', 'VID', 'LOGO', 'BG', 'POSTER', 'SEASON', 'EPISODE',
   'EPTITLE', 'NEXTVID', 'NEXTHREF', 'BACK', 'NEXTTITLE', 'NEXTTHUMB', 'SNAME', 'CERT', 'COMPAT', 'BINGE',
   'SERVICE_ID', 'APP_PORT'
 ];
