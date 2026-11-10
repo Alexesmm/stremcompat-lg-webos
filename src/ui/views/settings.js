@@ -216,6 +216,24 @@ var settings = {
         d: UI_LANG
       },
       {
+        k: 'uiMode',
+        lb: tx('uiModeLabel'),
+        opts: [
+          ['full', tx('modeFull')],
+          ['simple', tx('modeSimple')]
+        ],
+        d: 'full'
+      },
+      {
+        k: 'uiLook',
+        lb: tx('uiLookLabel'),
+        opts: [
+          ['modern', tx('lookModern')],
+          ['light', tx('lookLight')]
+        ],
+        d: uiLook()
+      },
+      {
         k: 'uiTextSize',
         lb: tx('interfaceTextSize'),
         opts: [
@@ -257,6 +275,18 @@ var settings = {
       { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
+    /* Simple keeps what most people change: languages, subtitle size, the look and the account */
+    if (simpleMode()) {
+      var essential =
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__logout|__diag|__reload)$/;
+      this.defs = this.defs.filter(function (d) {
+        return d.head || essential.test(d.k || '');
+      });
+      /* a heading with nothing under it goes too */
+      this.defs = this.defs.filter(function (d, i, all) {
+        return !d.head || (all[i + 1] && !all[i + 1].head);
+      });
+    }
     /* these depend on FFmpeg or on memory only the LG packages can spare */
     if (!HAS_MEDIA_TOOLS)
       for (var nf = this.defs.length - 1; nf >= 0; nf--)
@@ -451,6 +481,14 @@ var settings = {
     ci = (ci + dir + def.opts.length) % def.opts.length;
     lsRawSet(def.k, def.opts[ci][0]);
     if (def.k === 'uiTextSize') applyTextSize();
+    if (def.k === 'uiLook') applyLook();
+    if (def.k === 'uiMode') {
+      var keepMode = this.idx;
+      this.enter(true);
+      this.idx = Math.min(keepMode, this.els.length - 1);
+      this.paint();
+      return true;
+    }
     if (def.k === UI_LANG_KEY) {
       var keep = this.idx;
       setUILanguage(def.opts[ci][0]);

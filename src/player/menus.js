@@ -34,11 +34,11 @@ function openMenu(view) {
       html += '<div class=mi>' + P.chapters + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'chapters' });
     }
-    if (torrentFileList && torrentFileList.length > 1) {
+    if (!SIMPLE && torrentFileList && torrentFileList.length > 1) {
       html += '<div class=mi>' + P.files + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'files' });
     }
-    if (IS_VIDEO_ELEMENT) {
+    if (!SIMPLE && IS_VIDEO_ELEMENT) {
       html +=
         '<div class=mi>' +
         P.picture +
@@ -47,7 +47,7 @@ function openMenu(view) {
         '</div>';
       menuItems.push({ k: 'picture' });
     }
-    if (canChangeSpeed()) {
+    if (!SIMPLE && canChangeSpeed()) {
       html += '<div class=mi>' + P.speed + ': ' + speedLabel(v.playbackRate) + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'speed' });
     }

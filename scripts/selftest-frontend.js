@@ -119,6 +119,47 @@ function accountStorage() {
 }
 
 var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
+/* the first start of 4.0: two questions, and skipping keeps what the TV had */
+(function () {
+  function setup(stored, lowMemory) {
+    var data = Object.assign({}, stored), els = {}, body = { className: '' };
+    var ctx = {
+      TV_PROFILE: { lowMemory: !!lowMemory },
+      lsRaw: function (k, d) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : d; },
+      lsRawSet: function (k, v) { data[k] = String(v); },
+      user: function () { return { _id: 'u' }; },
+      tx: function (k) { return k; },
+      $: function (id) { return els[id] || (els[id] = { style: {}, innerHTML: '', textContent: '', appendChild: function () {} }); },
+      document: { createElement: function () { return { appendChild: function () {}, style: {} }; }, body: body },
+      setF: function () {},
+      bodyAdd: function (n) { if ((' ' + body.className + ' ').indexOf(' ' + n + ' ') < 0) body.className = (body.className + ' ' + n).trim(); },
+      bodyRemove: function (n) { body.className = (' ' + body.className + ' ').replace(' ' + n + ' ', ' ').trim(); }
+    };
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'ui', 'views', 'setup.js'), 'utf8'), ctx);
+    ctx.data = data;
+    ctx.body = body;
+    return ctx;
+  }
+  var fresh = setup({});
+  fresh.setupPanel.maybeShow();
+  assert.strictEqual(fresh.setupPanel.open, true, 'the first start of 4.0 did not ask anything');
+  fresh.setupPanel.choose(0);
+  fresh.setupPanel.choose(1);
+  assert.strictEqual(fresh.data.uiMode, 'simple', 'Simple was not kept');
+  assert.strictEqual(fresh.data.uiLook, 'light', 'Light was not kept');
+  assert.strictEqual(fresh.setupPanel.open, false, 'the questions did not close after the second answer');
+  assert.ok(/\blite\b/.test(fresh.body.className) && fresh.TV_PROFILE.lowMemory, 'Light did not take effect at once');
+  var again = setup({ setupDone: '1' });
+  again.setupPanel.maybeShow();
+  assert.strictEqual(again.setupPanel.open, false, 'the questions came back after being answered');
+  var skipped = setup({}, true);
+  skipped.setupPanel.maybeShow();
+  skipped.setupPanel.choose(2);
+  assert.strictEqual(skipped.data.uiMode, undefined, 'skipping changed how the app is used');
+  assert.strictEqual(skipped.uiLook(), 'light', 'a small TV that skipped lost its light look');
+  assert.strictEqual(skipped.simpleMode(), false, 'skipping did not keep the complete mode');
+  assert.strictEqual(skipped.data.setupDone, '1', 'skipping did not count as answered');
+})();
 /* going back to a season returns to the episode it was left on */
 (function () {
   var ctx = { detail: {} };

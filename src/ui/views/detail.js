@@ -138,6 +138,8 @@ var detail = {
         self.openStreams(av);
       });
     }
+    var bestFirst = simpleMode() && !primary && this.type !== 'series';
+    if (bestFirst) this.addBestBtn(this.id, m.name);
     if (this.type !== 'series')
       this.addBtn(
         tx('watch'),
@@ -148,16 +150,7 @@ var detail = {
       );
     /* straight to the best source, without the list */
     var bestVid = this.type === 'series' ? av : this.id;
-    if (bestVid)
-      this.addBtn(
-        tx('playBest'),
-        function () {
-          cwMenu.withPreferredQuality(function (quality) {
-            streamsUI.show(self.type, self.id, bestVid, m.name, quality);
-          });
-        },
-        ICON.bolt
-      );
+    if (bestVid && !bestFirst) this.addBestBtn(bestVid, m.name);
     var hasTr = (m.trailers && m.trailers.length) || (m.trailerStreams && m.trailerStreams.length);
     if (hasTr)
       this.addBtn(
@@ -240,6 +233,19 @@ var detail = {
   },
   /* With an icon it is a round button that shows its label while it has the focus; without
      one it is the main action, which always shows its label. */
+  /* straight to the best source of `vid`, without the list */
+  addBestBtn: function (vid, name) {
+    var self = this;
+    this.addBtn(
+      tx('playBest'),
+      function () {
+        cwMenu.withPreferredQuality(function (quality) {
+          streamsUI.show(self.type, self.id, vid, name, quality);
+        });
+      },
+      ICON.bolt
+    );
+  },
   addBtn: function (label, act, icon) {
     var b = document.createElement('div');
     b.className = icon ? 'btn ico' : 'btn main';

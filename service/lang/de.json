@@ -356,5 +356,19 @@
   "playingBest": "Beste Quelle wird abgespielt: {0}",
   "updateAvailable": "StremCompat {0} ist verfügbar. Aktualisiere es im Homebrew Channel.",
   "whatsNew": "Auf StremCompat {0} aktualisiert. Neu in den Player-Einstellungen: Folgen, Kapitel, Bildgröße und Geschwindigkeit.",
-  "lastStartStopped": "Beim letzten Mal hat StremCompat beim Start angehalten (Schritt {0}). Wenn es wieder passiert, nenne diesen Schritt in deiner Meldung."
+  "lastStartStopped": "Beim letzten Mal hat StremCompat beim Start angehalten (Schritt {0}). Wenn es wieder passiert, nenne diesen Schritt in deiner Meldung.",
+  "setupUseQuestion": "Wie möchtest du StremCompat nutzen?",
+  "modeSimple": "Einfach",
+  "modeSimpleHint": "Nur das Wichtigste in den Einstellungen und im Player. Die beste Quelle mit einem Druck.",
+  "modeFull": "Vollständig",
+  "modeFullHint": "Alle Optionen, wie bisher.",
+  "setupLookQuestion": "Welches Aussehen?",
+  "lookModern": "Modern",
+  "lookModernHint": "Animationen und Effekte.",
+  "lookLight": "Leicht",
+  "lookLightHint": "Ohne Effekte, schneller auf älteren Fernsehern.",
+  "setupSkip": "Überspringen",
+  "setupHint": "Du kannst das später in den Einstellungen ändern.",
+  "uiModeLabel": "Nutzung",
+  "uiLookLabel": "Aussehen"
 }

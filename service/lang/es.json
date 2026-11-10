@@ -356,5 +356,19 @@
   "playingBest": "Reproduciendo la mejor fuente: {0}",
   "updateAvailable": "StremCompat {0} está disponible. Actualízalo en Homebrew Channel.",
   "whatsNew": "Actualizado a StremCompat {0}. Nuevo en los ajustes del reproductor: episodios, capítulos, tamaño de imagen y velocidad.",
-  "lastStartStopped": "La última vez, StremCompat se detuvo al abrirse (paso {0}). Si vuelve a pasar, menciona este paso en tu reporte."
+  "lastStartStopped": "La última vez, StremCompat se detuvo al abrirse (paso {0}). Si vuelve a pasar, menciona este paso en tu reporte.",
+  "setupUseQuestion": "¿Cómo quieres usar StremCompat?",
+  "modeSimple": "Sencillo",
+  "modeSimpleHint": "Solo lo esencial en los ajustes y en el reproductor. La mejor fuente con un botón.",
+  "modeFull": "Completo",
+  "modeFullHint": "Todas las opciones, como hasta ahora.",
+  "setupLookQuestion": "¿Qué aspecto?",
+  "lookModern": "Moderno",
+  "lookModernHint": "Animaciones y efectos.",
+  "lookLight": "Ligero",
+  "lookLightHint": "Sin efectos, más rápido en televisores antiguos.",
+  "setupSkip": "Omitir",
+  "setupHint": "Puedes cambiarlo después en Ajustes.",
+  "uiModeLabel": "Modo de uso",
+  "uiLookLabel": "Aspecto"
 }

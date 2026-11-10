@@ -391,6 +391,20 @@ var UI_TEXT = {
       "Updated to StremCompat {0}. New in the player's settings: episodes, chapters, picture size and speed.",
     lastStartStopped:
       'The last time, StremCompat stopped while starting (step {0}). If it happens again, mention this step in your report.',
+    setupUseQuestion: 'How do you want to use StremCompat?',
+    modeSimple: 'Simple',
+    modeSimpleHint: 'Only the essentials in Settings and in the player. The best source in one press.',
+    modeFull: 'Complete',
+    modeFullHint: 'Every option, as before.',
+    setupLookQuestion: 'Which look?',
+    lookModern: 'Modern',
+    lookModernHint: 'Animations and effects.',
+    lookLight: 'Light',
+    lookLightHint: 'No effects, faster on older TVs.',
+    setupSkip: 'Skip',
+    setupHint: 'You can change this later in Settings.',
+    uiModeLabel: 'How the app is used',
+    uiLookLabel: 'Look',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -756,6 +770,20 @@ var UI_TEXT = {
       'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
     lastStartStopped:
       'Da última vez, o StremCompat parou enquanto abria (etapa {0}). Se acontecer de novo, cite essa etapa no seu relato.',
+    setupUseQuestion: 'Como você quer usar o StremCompat?',
+    modeSimple: 'Simples',
+    modeSimpleHint: 'Só o essencial nas configurações e no player. A melhor fonte em um botão.',
+    modeFull: 'Completo',
+    modeFullHint: 'Todas as opções, como até agora.',
+    setupLookQuestion: 'Qual visual?',
+    lookModern: 'Moderno',
+    lookModernHint: 'Animações e efeitos.',
+    lookLight: 'Leve',
+    lookLightHint: 'Sem efeitos, mais rápido em TVs antigas.',
+    setupSkip: 'Pular',
+    setupHint: 'Dá para mudar depois em Configurações.',
+    uiModeLabel: 'Modo de uso',
+    uiLookLabel: 'Visual',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -4949,6 +4977,8 @@ var detail = {
         self.openStreams(av);
       });
     }
+    var bestFirst = simpleMode() && !primary && this.type !== 'series';
+    if (bestFirst) this.addBestBtn(this.id, m.name);
     if (this.type !== 'series')
       this.addBtn(
         tx('watch'),
@@ -4959,16 +4989,7 @@ var detail = {
       );
     /* straight to the best source, without the list */
     var bestVid = this.type === 'series' ? av : this.id;
-    if (bestVid)
-      this.addBtn(
-        tx('playBest'),
-        function () {
-          cwMenu.withPreferredQuality(function (quality) {
-            streamsUI.show(self.type, self.id, bestVid, m.name, quality);
-          });
-        },
-        ICON.bolt
-      );
+    if (bestVid && !bestFirst) this.addBestBtn(bestVid, m.name);
     var hasTr = (m.trailers && m.trailers.length) || (m.trailerStreams && m.trailerStreams.length);
     if (hasTr)
       this.addBtn(
@@ -5051,6 +5072,19 @@ var detail = {
   },
   /* With an icon it is a round button that shows its label while it has the focus; without
      one it is the main action, which always shows its label. */
+  /* straight to the best source of `vid`, without the list */
+  addBestBtn: function (vid, name) {
+    var self = this;
+    this.addBtn(
+      tx('playBest'),
+      function () {
+        cwMenu.withPreferredQuality(function (quality) {
+          streamsUI.show(self.type, self.id, vid, name, quality);
+        });
+      },
+      ICON.bolt
+    );
+  },
   addBtn: function (label, act, icon) {
     var b = document.createElement('div');
     b.className = icon ? 'btn ico' : 'btn main';
@@ -5637,6 +5671,112 @@ var episodeJump = {
   }
 };
 window.__SC_EPISODE_JUMP__ = episodeJump;
+// The first start of 4.0: how the app is used (simple or complete) and how it looks (modern or
+// light). Both stay in Settings; skipping keeps everything as it was.
+/* the look this TV had before anyone chose: light on the TVs the profile already treats as small */
+var PROFILE_LOW_MEMORY = !!TV_PROFILE.lowMemory;
+function uiLook() {
+  return lsRaw('uiLook', PROFILE_LOW_MEMORY ? 'light' : 'modern');
+}
+function simpleMode() {
+  return lsRaw('uiMode', 'full') === 'simple';
+}
+/* Light: no animations or effects, and the smaller caches of the small-TV profile */
+function applyLook() {
+  var light = uiLook() === 'light';
+  TV_PROFILE.lowMemory = light || PROFILE_LOW_MEMORY;
+  if (light) bodyAdd('lowmem');
+  else if (!PROFILE_LOW_MEMORY) bodyRemove('lowmem');
+  if (light) bodyAdd('lite');
+  else bodyRemove('lite');
+}
+var setupPanel = {
+  open: false,
+  step: 0,
+  idx: 0,
+  els: [],
+  /* once, after the first start of this version with an account; Back or Skip keep the defaults */
+  maybeShow: function () {
+    if (lsRaw('setupDone', '') || !user()) return;
+    this.open = true;
+    this.step = 0;
+    $('setupPanel').style.display = 'block';
+    this.build();
+  },
+  questions: function () {
+    return [
+      {
+        key: 'uiMode',
+        title: tx('setupUseQuestion'),
+        options: [
+          ['simple', tx('modeSimple'), tx('modeSimpleHint')],
+          ['full', tx('modeFull'), tx('modeFullHint')]
+        ],
+        current: simpleMode() ? 'simple' : 'full'
+      },
+      {
+        key: 'uiLook',
+        title: tx('setupLookQuestion'),
+        options: [
+          ['modern', tx('lookModern'), tx('lookModernHint')],
+          ['light', tx('lookLight'), tx('lookLightHint')]
+        ],
+        current: uiLook()
+      }
+    ];
+  },
+  build: function () {
+    var q = this.questions()[this.step],
+      host = $('suOptions');
+    $('suTitle').textContent = q.title;
+    $('suHint').textContent = tx('setupHint');
+    host.innerHTML = '';
+    this.els = [];
+    this.idx = 0;
+    for (var i = 0; i < q.options.length; i++) {
+      var b = document.createElement('div'),
+        name = document.createElement('div'),
+        hint = document.createElement('div');
+      b.className = 'suopt';
+      name.className = 'suname';
+      name.textContent = q.options[i][1];
+      hint.className = 'suhelp';
+      hint.textContent = q.options[i][2];
+      b.appendChild(name);
+      b.appendChild(hint);
+      host.appendChild(b);
+      this.els.push(b);
+      if (q.options[i][0] === q.current) this.idx = i;
+    }
+    var skip = document.createElement('div');
+    skip.className = 'suopt suskip';
+    skip.textContent = tx('setupSkip');
+    host.appendChild(skip);
+    this.els.push(skip);
+    setF(this.els, this.idx);
+  },
+  /* an option of this question, or Skip, which closes with what is set now */
+  choose: function (i) {
+    var q = this.questions()[this.step];
+    if (i >= q.options.length) return this.close();
+    lsRawSet(q.key, q.options[i][0]);
+    if (q.key === 'uiLook') applyLook();
+    this.step++;
+    if (this.step >= this.questions().length) return this.close();
+    this.build();
+  },
+  close: function () {
+    this.open = false;
+    lsRawSet('setupDone', '1');
+    $('setupPanel').style.display = 'none';
+  },
+  key: function (k) {
+    if (k === 38) this.idx = Math.max(0, this.idx - 1);
+    else if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
+    else if (k === 13) return this.choose(this.idx);
+    setF(this.els, this.idx);
+  }
+};
 // Source picker overlay.
 /* ================= STREAMS OVERLAY ================= */
 var streamsUI = {
@@ -6872,6 +7012,24 @@ var settings = {
         d: UI_LANG
       },
       {
+        k: 'uiMode',
+        lb: tx('uiModeLabel'),
+        opts: [
+          ['full', tx('modeFull')],
+          ['simple', tx('modeSimple')]
+        ],
+        d: 'full'
+      },
+      {
+        k: 'uiLook',
+        lb: tx('uiLookLabel'),
+        opts: [
+          ['modern', tx('lookModern')],
+          ['light', tx('lookLight')]
+        ],
+        d: uiLook()
+      },
+      {
         k: 'uiTextSize',
         lb: tx('interfaceTextSize'),
         opts: [
@@ -6913,6 +7071,18 @@ var settings = {
       { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true }
     ];
+    /* Simple keeps what most people change: languages, subtitle size, the look and the account */
+    if (simpleMode()) {
+      var essential =
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__logout|__diag|__reload)$/;
+      this.defs = this.defs.filter(function (d) {
+        return d.head || essential.test(d.k || '');
+      });
+      /* a heading with nothing under it goes too */
+      this.defs = this.defs.filter(function (d, i, all) {
+        return !d.head || (all[i + 1] && !all[i + 1].head);
+      });
+    }
     /* these depend on FFmpeg or on memory only the LG packages can spare */
     if (!HAS_MEDIA_TOOLS)
       for (var nf = this.defs.length - 1; nf >= 0; nf--)
@@ -7107,6 +7277,14 @@ var settings = {
     ci = (ci + dir + def.opts.length) % def.opts.length;
     lsRawSet(def.k, def.opts[ci][0]);
     if (def.k === 'uiTextSize') applyTextSize();
+    if (def.k === 'uiLook') applyLook();
+    if (def.k === 'uiMode') {
+      var keepMode = this.idx;
+      this.enter(true);
+      this.idx = Math.min(keepMode, this.els.length - 1);
+      this.paint();
+      return true;
+    }
     if (def.k === UI_LANG_KEY) {
       var keep = this.idx;
       setUILanguage(def.opts[ci][0]);
@@ -7628,6 +7806,15 @@ function pointerUI(target, activate) {
     }
     return true;
   }
+  if (setupPanel.open) {
+    i = pointerIndex(target, setupPanel.els);
+    if (i >= 0) {
+      setupPanel.idx = i;
+      setF(setupPanel.els, i);
+      if (activate) setupPanel.choose(i);
+    }
+    return true;
+  }
   if (episodeJump.open) {
     i = pointerIndex(target, episodeJump.els);
     if (i >= 0) {
@@ -8004,6 +8191,13 @@ on(
       else serverPanel.key(k);
       return;
     }
+    if (setupPanel.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isBackKey(k)) setupPanel.close();
+      else setupPanel.key(k);
+      return;
+    }
     if (episodeJump.open) {
       e.preventDefault();
       e.stopPropagation();
@@ -8136,6 +8330,7 @@ function boot() {
   try {
     window.__SC_PHASE__('B0');
     if (TV_PROFILE.lowMemory) bodyAdd('lowmem');
+    applyLook();
     applyTextSize();
     if (!user()) {
       window.__SC_PHASE__('L0');
@@ -8177,6 +8372,7 @@ function boot() {
       window.__SC_BOOT_DONE__ = true;
       window.__SC_PHASE__('READY');
       $('boot').style.display = 'none';
+      setupPanel.maybeShow();
       /* shown by Settings > Diagnostics: from opening this page to Home on screen */
       try {
         window.__SC_VISIBLE_MS__ = Date.now() - performance.timing.navigationStart;

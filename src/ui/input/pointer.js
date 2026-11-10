@@ -42,6 +42,15 @@ function pointerUI(target, activate) {
     }
     return true;
   }
+  if (setupPanel.open) {
+    i = pointerIndex(target, setupPanel.els);
+    if (i >= 0) {
+      setupPanel.idx = i;
+      setF(setupPanel.els, i);
+      if (activate) setupPanel.choose(i);
+    }
+    return true;
+  }
   if (episodeJump.open) {
     i = pointerIndex(target, episodeJump.els);
     if (i >= 0) {

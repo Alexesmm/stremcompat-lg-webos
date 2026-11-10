@@ -42,6 +42,8 @@ function wantedSubtitleLanguage(lang) {
 /* ---- picture: the whole image, or grown until it fills the screen ----
    The TV draws the video inside the element's box and keeps its shape, so a box larger than
    the screen crops the sides (or the top and bottom) of a film wider or narrower than it. */
+/* Simple (Settings) leaves the technical rows out of the player's menu */
+var SIMPLE = lsGet('uiMode', 'full') === 'simple';
 var IS_VIDEO_ELEMENT = v.tagName === 'VIDEO',
   pictureMode = IS_VIDEO_ELEMENT ? lsGet('pictureMode', 'fit') : 'fit';
 function applyPicture() {

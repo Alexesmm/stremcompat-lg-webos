@@ -356,5 +356,19 @@
   "playingBest": "Воспроизводится лучший источник: {0}",
   "updateAvailable": "Доступен StremCompat {0}. Обновите его в Homebrew Channel.",
   "whatsNew": "Обновлено до StremCompat {0}. Новое в настройках плеера: серии, главы, размер изображения и скорость.",
-  "lastStartStopped": "В прошлый раз StremCompat остановился при запуске (шаг {0}). Если это повторится, укажите этот шаг в отчёте."
+  "lastStartStopped": "В прошлый раз StremCompat остановился при запуске (шаг {0}). Если это повторится, укажите этот шаг в отчёте.",
+  "setupUseQuestion": "Как вы хотите пользоваться StremCompat?",
+  "modeSimple": "Простой",
+  "modeSimpleHint": "Только главное в настройках и плеере. Лучший источник одной кнопкой.",
+  "modeFull": "Полный",
+  "modeFullHint": "Все настройки, как раньше.",
+  "setupLookQuestion": "Какой вид?",
+  "lookModern": "Современный",
+  "lookModernHint": "Анимации и эффекты.",
+  "lookLight": "Лёгкий",
+  "lookLightHint": "Без эффектов, быстрее на старых телевизорах.",
+  "setupSkip": "Пропустить",
+  "setupHint": "Это можно изменить позже в настройках.",
+  "uiModeLabel": "Режим",
+  "uiLookLabel": "Вид"
 }

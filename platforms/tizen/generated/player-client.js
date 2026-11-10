@@ -572,6 +572,20 @@ var UI_TEXT = {
       "Updated to StremCompat {0}. New in the player's settings: episodes, chapters, picture size and speed.",
     lastStartStopped:
       'The last time, StremCompat stopped while starting (step {0}). If it happens again, mention this step in your report.',
+    setupUseQuestion: 'How do you want to use StremCompat?',
+    modeSimple: 'Simple',
+    modeSimpleHint: 'Only the essentials in Settings and in the player. The best source in one press.',
+    modeFull: 'Complete',
+    modeFullHint: 'Every option, as before.',
+    setupLookQuestion: 'Which look?',
+    lookModern: 'Modern',
+    lookModernHint: 'Animations and effects.',
+    lookLight: 'Light',
+    lookLightHint: 'No effects, faster on older TVs.',
+    setupSkip: 'Skip',
+    setupHint: 'You can change this later in Settings.',
+    uiModeLabel: 'How the app is used',
+    uiLookLabel: 'Look',
     recommendedSource: 'Likely the best choice',
     pressOkRetry: 'Press OK to try again',
     noConnection:
@@ -937,6 +951,20 @@ var UI_TEXT = {
       'Atualizado para o StremCompat {0}. Novo nas configurações do player: episódios, capítulos, tamanho da imagem e velocidade.',
     lastStartStopped:
       'Da última vez, o StremCompat parou enquanto abria (etapa {0}). Se acontecer de novo, cite essa etapa no seu relato.',
+    setupUseQuestion: 'Como você quer usar o StremCompat?',
+    modeSimple: 'Simples',
+    modeSimpleHint: 'Só o essencial nas configurações e no player. A melhor fonte em um botão.',
+    modeFull: 'Completo',
+    modeFullHint: 'Todas as opções, como até agora.',
+    setupLookQuestion: 'Qual visual?',
+    lookModern: 'Moderno',
+    lookModernHint: 'Animações e efeitos.',
+    lookLight: 'Leve',
+    lookLightHint: 'Sem efeitos, mais rápido em TVs antigas.',
+    setupSkip: 'Pular',
+    setupHint: 'Dá para mudar depois em Configurações.',
+    uiModeLabel: 'Modo de uso',
+    uiLookLabel: 'Visual',
     recommendedSource: 'Provável melhor opção',
     pressOkRetry: 'Pressione OK para tentar de novo',
     noConnection:
@@ -3190,6 +3218,8 @@ function wantedSubtitleLanguage(lang) {
 /* ---- picture: the whole image, or grown until it fills the screen ----
    The TV draws the video inside the element's box and keeps its shape, so a box larger than
    the screen crops the sides (or the top and bottom) of a film wider or narrower than it. */
+/* Simple (Settings) leaves the technical rows out of the player's menu */
+var SIMPLE = lsGet('uiMode', 'full') === 'simple';
 var IS_VIDEO_ELEMENT = v.tagName === 'VIDEO',
   pictureMode = IS_VIDEO_ELEMENT ? lsGet('pictureMode', 'fit') : 'fit';
 function applyPicture() {
@@ -3349,11 +3379,11 @@ function openMenu(view) {
       html += '<div class=mi>' + P.chapters + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'chapters' });
     }
-    if (torrentFileList && torrentFileList.length > 1) {
+    if (!SIMPLE && torrentFileList && torrentFileList.length > 1) {
       html += '<div class=mi>' + P.files + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'files' });
     }
-    if (IS_VIDEO_ELEMENT) {
+    if (!SIMPLE && IS_VIDEO_ELEMENT) {
       html +=
         '<div class=mi>' +
         P.picture +
@@ -3362,7 +3392,7 @@ function openMenu(view) {
         '</div>';
       menuItems.push({ k: 'picture' });
     }
-    if (canChangeSpeed()) {
+    if (!SIMPLE && canChangeSpeed()) {
       html += '<div class=mi>' + P.speed + ': ' + speedLabel(v.playbackRate) + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'speed' });
     }

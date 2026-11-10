@@ -54,6 +54,17 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .srvkey.f{background:#fff;color:#0c0b11}
 #srvStatus{min-height:32px;margin-top:16px;font-size:24px;color:rgba(255,255,255,.75)}
 @media(max-height:800px){#srvBox{width:648px;margin-top:7vh;padding:20px 28px 16px}#srvTitle{font-size:24px}#srvValue{height:46px;margin:12px 0 10px;padding:0 14px;font-size:25px;line-height:46px}.srvkey{width:52px;height:38px;margin:3px;line-height:38px;font-size:18px;border-radius:7px}.srvkey.srvact{width:139px;font-size:15px;margin-top:7px}#srvStatus{min-height:22px;margin-top:10px;font-size:17px}}
+#setupPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.9);z-index:95;text-align:center}
+#suBox{width:780px;margin:12vh auto 0;padding:40px 46px 30px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
+#suTitle{font-size:36px;font-weight:700;color:#fff;margin-bottom:26px}
+.suopt{margin:12px 0;padding:20px 26px;border-radius:14px;background:#27303a;text-align:left}
+.suopt.f{background:#fff;color:#0f766e}
+.suname{font-size:30px;font-weight:700}
+.suhelp{margin-top:6px;font-size:22px;opacity:.8}
+.suskip{text-align:center;font-size:24px;padding:14px 26px;background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
+#suHint{margin-top:18px;font-size:20px;color:#8b95a0}
+/* the light look: no transitions, animations or shadows */
+body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-animation:none!important;animation:none!important;box-shadow:none!important;text-shadow:none!important}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
 #ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
 #ejTitle{font-size:32px;font-weight:700;color:#fff}

@@ -33,6 +33,13 @@ on(
       else serverPanel.key(k);
       return;
     }
+    if (setupPanel.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isBackKey(k)) setupPanel.close();
+      else setupPanel.key(k);
+      return;
+    }
     if (episodeJump.open) {
       e.preventDefault();
       e.stopPropagation();

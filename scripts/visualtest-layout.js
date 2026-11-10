@@ -130,7 +130,7 @@ async function main() {
     assert.strictEqual(localizedState.loginTitle, 'Entrar pelo celular', 'Login text was not translated.');
     assert.strictEqual(localizedState.password, 'Senha', 'Login placeholder was not translated.');
     await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('en-US')" });
-    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
+    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('setupDone','1');localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
     await delay(1800);
     for (var catalogWait = 0; catalogWait < 25; catalogWait++) {
