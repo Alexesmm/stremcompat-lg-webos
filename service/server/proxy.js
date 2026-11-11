@@ -8,6 +8,7 @@ var https = require('https');
 var urlmod = require('url');
 var { APP_VERSION, PORT } = require('./config');
 var { getStreamRef } = require('./stream-refs');
+var mkvSeek = require('./mkv-seek');
 
 var MAX_HOPS = 6;
 var PLAYLIST_LIMIT = 2 * 1024 * 1024;
@@ -16,6 +17,10 @@ var LINK_REMEMBERED_MS = 120000;
 var MAX_LINKS_REMEMBERED = 80;
 var PASSED_ON = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified', 'etag'];
 var EXPIRED = { 403: true, 404: true, 410: true };
+var MAX_SEEK_FIXES = 80;
+
+/* what mkv-seek.js found for a stream, by the same key as remembered links: patches, or null */
+var seekFixes = Object.create(null);
 
 /* ---------- links inside a playlist, signed so they only work for that stream ---------- */
 var signingKey = crypto.randomBytes(32);
@@ -126,7 +131,7 @@ function sendPlaylist(transfer, address, upstream) {
   });
 }
 
-function sendBytes(transfer, upstream) {
+function sendBytes(transfer, upstream, address, custom) {
   var headers = passedOnHeaders(upstream);
   headers['accept-ranges'] = headers['accept-ranges'] || 'bytes';
   transfer.res.writeHead(upstream.statusCode, headers);
@@ -138,7 +143,145 @@ function sendBytes(transfer, upstream) {
     transfer.res.destroy();
   });
   transfer.upstream = upstream;
-  upstream.pipe(transfer.res);
+  var start = firstByteSent(upstream);
+  var cached = seekFixes[transfer.key];
+  if (transfer.method === 'HEAD' || start < 0 || start >= mkvSeek.HEAD_BYTES)
+    return upstream.pipe(transfer.res);
+  if (start > 0 || cached !== undefined) return pipePatched(transfer, upstream, start, cached);
+  findSeekFix(transfer, upstream, address, custom);
+}
+
+/* which byte of the file the answer starts at; -1 when it is not a whole file or a plain range */
+function firstByteSent(upstream) {
+  if (upstream.statusCode === 200) return 0;
+  var range = /^bytes (\d+)-/.exec(upstream.headers['content-range'] || '');
+  return upstream.statusCode === 206 && range ? parseInt(range[1], 10) : -1;
+}
+
+function pipePatched(transfer, upstream, start, patches) {
+  if (!patches) return upstream.pipe(transfer.res);
+  var offset = start;
+  upstream.on('data', function (chunk) {
+    if (offset < mkvSeek.HEAD_BYTES) mkvSeek.overlay(chunk, offset, patches);
+    offset += chunk.length;
+    if (!transfer.res.write(chunk)) {
+      upstream.pause();
+      transfer.res.once('drain', function () {
+        upstream.resume();
+      });
+    }
+  });
+  upstream.on('end', function () {
+    transfer.res.end();
+  });
+}
+
+/* the answer starts at the beginning of the file: look at it, hold it back until that is decided */
+function findSeekFix(transfer, upstream, address, custom) {
+  var held = [];
+  var size = 0;
+  var decided = false;
+  var ended = false; /* the end can come while the file is being looked at */
+  function decide() {
+    if (decided) return;
+    decided = true;
+    upstream.pause();
+    upstream.removeListener('data', collect);
+    var head = Buffer.concat(held);
+    mkvSeek.plan(
+      head,
+      function (from, length, cb) {
+        readRange(transfer, address, custom, from, length, cb);
+      },
+      function (patches) {
+        if (Object.keys(seekFixes).length >= MAX_SEEK_FIXES) seekFixes = Object.create(null);
+        seekFixes[transfer.key] = patches;
+        if (patches) mkvSeek.overlay(head, 0, patches);
+        if (transfer.res.destroyed) return;
+        transfer.res.write(head);
+        if (ended) return transfer.res.end();
+        upstream.on('data', function (chunk) {
+          if (!transfer.res.write(chunk)) {
+            upstream.pause();
+            transfer.res.once('drain', function () {
+              upstream.resume();
+            });
+          }
+        });
+        upstream.on('end', function () {
+          transfer.res.end();
+        });
+        upstream.resume();
+      }
+    );
+  }
+  function collect(chunk) {
+    held.push(chunk);
+    size += chunk.length;
+    if (size >= mkvSeek.HEAD_BYTES) decide();
+  }
+  upstream.on('data', collect);
+  /* a file shorter than the head cannot be one of these */
+  upstream.on('end', function () {
+    if (decided) {
+      ended = true;
+      return;
+    }
+    decided = true;
+    seekFixes[transfer.key] = null;
+    transfer.res.end(Buffer.concat(held));
+  });
+}
+
+/* other bytes of the same file, from the link the answer came from; cb(error, Buffer) */
+function readRange(transfer, address, custom, from, length, cb) {
+  var target = urlmod.parse(address);
+  var asked = { range: 'bytes=' + from + '-' + (from + length - 1) };
+  var done = false;
+  function finish(err, buf) {
+    if (done) return;
+    done = true;
+    cb(err, buf);
+  }
+  var request = (target.protocol === 'https:' ? https : http).request(
+    {
+      hostname: target.hostname,
+      port: target.port,
+      path: target.path,
+      method: 'GET',
+      headers: requestHeaders(asked, custom)
+    },
+    function (upstream) {
+      if (upstream.statusCode !== 206) {
+        upstream.resume();
+        return finish('HTTP ' + upstream.statusCode);
+      }
+      var parts = [];
+      var size = 0;
+      upstream.on('data', function (chunk) {
+        parts.push(chunk);
+        size += chunk.length;
+        if (size >= length) upstream.destroy();
+      });
+      upstream.on('close', function () {
+        finish(null, Buffer.concat(parts).slice(0, length));
+      });
+      upstream.on('error', function () {
+        finish('error');
+      });
+    }
+  );
+  request.on('error', function () {
+    finish('error');
+  });
+  request.setTimeout(IDLE_LIMIT_MS, function () {
+    finish('timeout');
+    request.destroy();
+  });
+  transfer.res.on('close', function () {
+    request.destroy();
+  });
+  request.end();
 }
 
 function requestHeaders(transfer, custom) {
@@ -186,7 +329,7 @@ function follow(transfer, address, custom, hops) {
       if (transfer.ref && transfer.method !== 'HEAD' && looksLikePlaylist(address, upstream)) {
         return sendPlaylist(transfer, address, upstream);
       }
-      sendBytes(transfer, upstream);
+      sendBytes(transfer, upstream, address, custom);
     }
   );
   request.on('error', function () {

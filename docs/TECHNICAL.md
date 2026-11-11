@@ -145,6 +145,7 @@ The application cannot expand the codecs or processing power available in the te
 - Addon availability, source metadata and seeder counts are controlled by external addon services.
 - Seeder sorting works only when the addon exposes a recognizable number.
 - Some HLS tags and multi-audio behavior are limited on webOS 3.x.
+- A Matroska file whose first index (SeekHead) only points at a second one near the end, where the Cues are listed, cannot be seeked by the webOS 4 player, which does not follow that chain. When such a file is played through `/proxy`, `service/server/mkv-seek.js` rewrites that first entry in place, same length, to point straight at the Cues, after checking the Cues are there. Everything else, other files and Range requests past the first 256 bytes pass through unchanged. A source the player opens directly, without `/proxy`, is not changed.
 - DRM playback remains subject to the firmware's MSE, EME, Widevine and PlayReady versions.
 
 ## Television requirements
