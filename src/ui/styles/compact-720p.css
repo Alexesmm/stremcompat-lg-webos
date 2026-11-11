@@ -68,6 +68,7 @@
   #setTitle{top:34px;font-size:33px}
   #setCats{top:100px;width:220px}
   .setcat{padding:9px 16px;margin-bottom:4px;border-radius:9px;font-size:18px}
+  .setcat.out{margin-top:18px}
   #setPane{top:100px;left:258px;right:40px}
   #discTitle{font-size:34px;margin-bottom:12px}
   #discFilters{height:47px}

@@ -77,7 +77,7 @@ var settings = {
     }
     var u = user() || {};
     $('setAcct').getElementsByClassName('em')[0].textContent = u.email || tx('connectedAccount');
-    var prem = tx('freeAccount');
+    var prem = tx(isNuvioAccount() ? 'nuvioAccountLabel' : 'freeAccount');
     if (u.premium_expire && String(u.premium_expire).indexOf('000') !== 0) {
       var d = new Date(u.premium_expire);
       if (d.getTime() > Date.now()) prem = tx('premiumUntil', d.toLocaleDateString());
