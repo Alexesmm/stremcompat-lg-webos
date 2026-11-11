@@ -44,6 +44,7 @@ document.addEventListener(
     if (mode !== 'menu' && !npFocus) {
       var colour = { 403: 'subsroot', 404: 'audio', 406: 'root' }[k];
       if (colour) {
+        menuAtLeft = false;
         openMenu(colour);
         e.preventDefault();
         return;
@@ -122,7 +123,7 @@ document.addEventListener(
         paintNp();
       } else {
         mode = 'controls';
-        if (bIdx < 0) bIdx = 1;
+        if (bIdx < 0) bIdx = playButtonIndex();
         paintBtns();
       }
       e.preventDefault();
@@ -156,7 +157,7 @@ window.__tv = {
       subtitle: subtitleName(),
       audio: audioName(),
       mode: mode,
-      bIdx: bIdx,
+      button: btns[bIdx] && btns[bIdx].id,
       embN: embN,
       cues: cues ? cues.length : null,
       cf: cues && cues[0] ? cues[0].s : null,

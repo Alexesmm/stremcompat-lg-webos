@@ -107,6 +107,7 @@ function currentChapter() {
 var CAN_LIST_EPISODES = TYPE === 'series' && !!ID && VID.indexOf(':') > 0 && BACK.indexOf('beta') === 0,
   seasonList = null,
   seasonListAsked = false;
+if (!CAN_LIST_EPISODES) dropButton('b_ep');
 function ensureSeasonList() {
   if (seasonListAsked) return;
   seasonListAsked = true;

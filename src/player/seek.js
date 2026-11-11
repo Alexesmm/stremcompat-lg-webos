@@ -78,11 +78,15 @@ function seekTo(t) {
 }
 function activateButton() {
   var id = btns[bIdx] && btns[bIdx].id;
+  menuAtLeft = !!btns[bIdx] && btns[bIdx].parentNode.id === 'lft';
   if (id === 'b_rw') seek(-SEEKSTEP);
   else if (id === 'b_pp') tog();
   else if (id === 'b_ff') seek(SEEKSTEP);
   else if (id === 'b_next') nextEp();
   else if (id === 'b_set') openMenu('root');
+  else if (id === 'b_media') openMenu('media');
+  else if (id === 'b_ep') openMenu('episodes');
+  else if (id === 'b_src') openMenu('sources');
 }
 var exited = false;
 function exit() {

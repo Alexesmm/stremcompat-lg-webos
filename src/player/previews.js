@@ -142,7 +142,7 @@ document.addEventListener('click', function (e) {
   }
   if (e.target === v) {
     mode = 'controls';
-    bIdx = 1;
+    bIdx = playButtonIndex();
     paintBtns();
     showBar();
     e.preventDefault();

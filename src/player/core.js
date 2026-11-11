@@ -13,6 +13,14 @@ document.getElementById('npL').textContent = P.nextEpisode;
 document.getElementById('npB').textContent = P.playNext;
 document.getElementById('npH').textContent = P.dismissHint;
 document.getElementById('b_next').textContent = P.nextEpisode;
+[
+  ['b_media', P.audioSubs],
+  ['b_ep', P.episodes],
+  ['b_src', P.sources],
+  ['b_set', P.settings]
+].forEach(function (b) {
+  document.getElementById(b[0]).getElementsByTagName('span')[0].textContent = b[1];
+});
 function xhr(u, cb) {
   try {
     var x = new XMLHttpRequest();

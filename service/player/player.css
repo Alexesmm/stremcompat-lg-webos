@@ -36,6 +36,13 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 #ctr>*+*{margin-left:40px}
 #rgt{position:absolute;right:0;top:8px;display:flex;align-items:center}
 #rgt>*+*{margin-left:24px}
+/* audio and subtitles, episodes and sources on the left; what each is shows above it with the focus */
+#lft{position:absolute;left:0;top:8px;display:flex;align-items:center}
+#lft>*+*{margin-left:24px}
+.pbtn{position:relative}
+.pbtn .bl{display:none;position:absolute;bottom:100%;left:0;margin-bottom:14px;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,.75);color:#fff;font-size:22px;font-weight:700;white-space:nowrap}
+#rgt .pbtn .bl{left:auto;right:0}
+.pbtn.f .bl{display:block}
 .pbtn{width:86px;height:86px;border-radius:50%;background:rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center;font-size:34px}
 .pbtn svg{fill:currentColor;display:block}
 .pbtn i{display:inline-block}
@@ -79,6 +86,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 #spvT{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:28px;font-weight:800;padding:12px 0;background:linear-gradient(transparent,rgba(0,0,0,.75));text-shadow:0 2px 8px #000}
 #menu{position:fixed;right:52px;bottom:190px;min-width:360px;max-height:64%;overflow:auto;background:rgba(20,20,22,.97);border-radius:14px;padding:12px;display:none;z-index:6}
 #menu.show{display:block}
+#menu.atleft{right:auto;left:52px}
 .mi{padding:16px 22px;font-size:25px;border-radius:8px;max-width:820px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .mi.f{background:#fff;color:#0a0a0b}
 .mi.on{color:#fff;font-weight:700}
@@ -97,4 +105,3 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 /* the paused screen already shows the title: no second copy in the bar or the corner */
 #pv.show~#bar #title,#pv.show~#bar #tse{visibility:hidden}
 #pv.show~#tlogo{opacity:0}
-@media (max-height:800px){

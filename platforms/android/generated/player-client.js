@@ -631,6 +631,7 @@ var UI_TEXT = {
       picture: 'Picture',
       pictureFit: 'Whole picture',
       pictureZoom: 'Fill the screen',
+      audioSubs: 'Audio and subtitles',
       sources: 'Sources',
       speed: 'Speed',
       speedRefused: 'This TV does not change the speed of this video',
@@ -1043,6 +1044,7 @@ var UI_TEXT = {
       picture: 'Imagem',
       pictureFit: 'Imagem inteira',
       pictureZoom: 'Preencher a tela',
+      audioSubs: 'Áudio e legendas',
       sources: 'Fontes',
       speed: 'Velocidade',
       speedRefused: 'Esta TV não muda a velocidade deste vídeo',
@@ -1537,6 +1539,14 @@ document.getElementById('npL').textContent = P.nextEpisode;
 document.getElementById('npB').textContent = P.playNext;
 document.getElementById('npH').textContent = P.dismissHint;
 document.getElementById('b_next').textContent = P.nextEpisode;
+[
+  ['b_media', P.audioSubs],
+  ['b_ep', P.episodes],
+  ['b_src', P.sources],
+  ['b_set', P.settings]
+].forEach(function (b) {
+  document.getElementById(b[0]).getElementsByTagName('span')[0].textContent = b[1];
+});
 function xhr(u, cb) {
   try {
     var x = new XMLHttpRequest();
@@ -2543,7 +2553,7 @@ if (NEXTVID) {
 }
 var btns = [];
 (function () {
-  var ids = ['b_rw', 'b_pp', 'b_ff', 'b_next', 'b_set'];
+  var ids = ['b_media', 'b_ep', 'b_src', 'b_rw', 'b_pp', 'b_ff', 'b_next', 'b_set'];
   for (var i = 0; i < ids.length; i++) {
     var el = document.getElementById(ids[i]);
     if (el && el.style.display !== 'none') {
@@ -2552,6 +2562,19 @@ var btns = [];
     }
   }
 })();
+/* a button this video has no use for (the episodes of a film) leaves the bar */
+function dropButton(id) {
+  var el = document.getElementById(id),
+    at = btns.indexOf(el);
+  el.style.display = 'none';
+  if (at < 0) return;
+  btns.splice(at, 1);
+  if (bIdx > at) bIdx--;
+}
+/* the button the focus starts on and comes back to: play and pause */
+function playButtonIndex() {
+  return btns.indexOf(document.getElementById('b_pp'));
+}
 /* what the next episode's source should match (matchingNextSource) */
 function nextSourcePref() {
   return {
@@ -2590,7 +2613,7 @@ function nextEp() {
   }
 }
 var mode = 'video',
-  bIdx = 1,
+  bIdx = playButtonIndex(),
   mIdx = 0,
   menuItems = [],
   hideT = null;
@@ -2994,11 +3017,15 @@ function seekTo(t) {
 }
 function activateButton() {
   var id = btns[bIdx] && btns[bIdx].id;
+  menuAtLeft = !!btns[bIdx] && btns[bIdx].parentNode.id === 'lft';
   if (id === 'b_rw') seek(-SEEKSTEP);
   else if (id === 'b_pp') tog();
   else if (id === 'b_ff') seek(SEEKSTEP);
   else if (id === 'b_next') nextEp();
   else if (id === 'b_set') openMenu('root');
+  else if (id === 'b_media') openMenu('media');
+  else if (id === 'b_ep') openMenu('episodes');
+  else if (id === 'b_src') openMenu('sources');
 }
 var exited = false;
 function exit() {
@@ -3186,6 +3213,7 @@ function currentChapter() {
 var CAN_LIST_EPISODES = TYPE === 'series' && !!ID && VID.indexOf(':') > 0 && BACK.indexOf('beta') === 0,
   seasonList = null,
   seasonListAsked = false;
+if (!CAN_LIST_EPISODES) dropButton('b_ep');
 function ensureSeasonList() {
   if (seasonListAsked) return;
   seasonListAsked = true;
@@ -3302,6 +3330,8 @@ function onPop() {
 }
 window.addEventListener('popstate', onPop);
 // ---- menus (subtitles = Off + external English-first + embedded; audio = embedded) ----
+/* the lists of the buttons on the left open on the left, next to them */
+var menuAtLeft = false;
 function choiceRow(label, on, tail) {
   return '<div class="mi' + (on ? ' on' : '') + '">' + eh(selectedLabel(label, on)) + (tail || '') + '</div>';
 }
@@ -3310,26 +3340,24 @@ function openMenu(view) {
   menuItems = [];
   var html = '';
   if (view === 'subsroot' || view === 'embedded') ensureEmbTracks();
-  if (view === 'root' || view === 'audio') ensureTechProbe();
+  if (view === 'root' || view === 'media' || view === 'audio') ensureTechProbe();
   if (view === 'root') ensureTorrentFiles();
   if (view === 'episodes') ensureSeasonList();
   if (view === 'sources') ensureSources();
-  if (view === 'root') {
-    html += '<div class=mh>' + P.settings + '</div>';
+  /* each button of the bar opens its own list: audio and subtitles, episodes, sources, and the
+     settings with what is left */
+  if (view === 'media') {
+    html += '<div class=mh>' + P.audioSubs + '</div>';
     html += '<div class=mi>' + P.audio + ': ' + eh(audioName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'audio' });
     html += '<div class=mi>' + P.subtitles + ': ' + eh(subtitleName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'subsroot' });
-    if (CAN_LIST_EPISODES) {
-      html += '<div class=mi>' + P.episodes + ' \u203a</div>';
-      menuItems.push({ k: 'go', to: 'episodes' });
-    }
+  } else if (view === 'root') {
+    html += '<div class=mh>' + P.settings + '</div>';
     if (mediaInfo && mediaInfo.chapters) {
       html += '<div class=mi>' + P.chapters + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'chapters' });
     }
-    html += '<div class=mi>' + P.sources + ' \u203a</div>';
-    menuItems.push({ k: 'go', to: 'sources' });
     if (!SIMPLE && torrentFileList && torrentFileList.length > 1) {
       html += '<div class=mi>' + P.files + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'files' });
@@ -3347,6 +3375,7 @@ function openMenu(view) {
       html += '<div class=mi>' + P.speed + ': ' + speedLabel(v.playbackRate) + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'speed' });
     }
+    if (!menuItems.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
   } else if (view === 'episodes') {
     html += '<div class=mh>' + P.episodes + '</div>';
     if (!seasonList) html += '<div class=mi style="opacity:.5">' + P.readingTracks + '</div>';
@@ -3530,7 +3559,7 @@ function openMenu(view) {
     menuItems.push({ k: 'd0' });
   }
   menu.innerHTML = html;
-  menu.className = 'show';
+  menu.className = menuAtLeft ? 'show atleft' : 'show';
   mode = 'menu';
   /* the list opens on what is in use, not on its first row */
   mIdx = 0;
@@ -3553,15 +3582,8 @@ function menuBack() {
   if (subView === 'embedded' || subView === 'external' || subView === 'style' || subView === 'delay')
     openMenu('subsroot');
   else if (subView === 'extlang' || subView === 'extmore') openMenu('external');
-  else if (
-    subView === 'audio' ||
-    subView === 'subsroot' ||
-    subView === 'episodes' ||
-    subView === 'chapters' ||
-    subView === 'files' ||
-    subView === 'speed'
-  )
-    openMenu('root');
+  else if (subView === 'audio' || subView === 'subsroot') openMenu('media');
+  else if (subView === 'chapters' || subView === 'files' || subView === 'speed') openMenu('root');
   else {
     menu.className = '';
     mode = 'controls';
@@ -4215,7 +4237,7 @@ document.addEventListener('click', function (e) {
   }
   if (e.target === v) {
     mode = 'controls';
-    bIdx = 1;
+    bIdx = playButtonIndex();
     paintBtns();
     showBar();
     e.preventDefault();
@@ -4267,6 +4289,7 @@ document.addEventListener(
     if (mode !== 'menu' && !npFocus) {
       var colour = { 403: 'subsroot', 404: 'audio', 406: 'root' }[k];
       if (colour) {
+        menuAtLeft = false;
         openMenu(colour);
         e.preventDefault();
         return;
@@ -4345,7 +4368,7 @@ document.addEventListener(
         paintNp();
       } else {
         mode = 'controls';
-        if (bIdx < 0) bIdx = 1;
+        if (bIdx < 0) bIdx = playButtonIndex();
         paintBtns();
       }
       e.preventDefault();
@@ -4379,7 +4402,7 @@ window.__tv = {
       subtitle: subtitleName(),
       audio: audioName(),
       mode: mode,
-      bIdx: bIdx,
+      button: btns[bIdx] && btns[bIdx].id,
       embN: embN,
       cues: cues ? cues.length : null,
       cf: cues && cues[0] ? cues[0].s : null,

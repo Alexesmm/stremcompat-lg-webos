@@ -9,6 +9,8 @@ function onPop() {
 }
 window.addEventListener('popstate', onPop);
 // ---- menus (subtitles = Off + external English-first + embedded; audio = embedded) ----
+/* the lists of the buttons on the left open on the left, next to them */
+var menuAtLeft = false;
 function choiceRow(label, on, tail) {
   return '<div class="mi' + (on ? ' on' : '') + '">' + eh(selectedLabel(label, on)) + (tail || '') + '</div>';
 }
@@ -17,26 +19,24 @@ function openMenu(view) {
   menuItems = [];
   var html = '';
   if (view === 'subsroot' || view === 'embedded') ensureEmbTracks();
-  if (view === 'root' || view === 'audio') ensureTechProbe();
+  if (view === 'root' || view === 'media' || view === 'audio') ensureTechProbe();
   if (view === 'root') ensureTorrentFiles();
   if (view === 'episodes') ensureSeasonList();
   if (view === 'sources') ensureSources();
-  if (view === 'root') {
-    html += '<div class=mh>' + P.settings + '</div>';
+  /* each button of the bar opens its own list: audio and subtitles, episodes, sources, and the
+     settings with what is left */
+  if (view === 'media') {
+    html += '<div class=mh>' + P.audioSubs + '</div>';
     html += '<div class=mi>' + P.audio + ': ' + eh(audioName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'audio' });
     html += '<div class=mi>' + P.subtitles + ': ' + eh(subtitleName()) + ' \u203a</div>';
     menuItems.push({ k: 'go', to: 'subsroot' });
-    if (CAN_LIST_EPISODES) {
-      html += '<div class=mi>' + P.episodes + ' \u203a</div>';
-      menuItems.push({ k: 'go', to: 'episodes' });
-    }
+  } else if (view === 'root') {
+    html += '<div class=mh>' + P.settings + '</div>';
     if (mediaInfo && mediaInfo.chapters) {
       html += '<div class=mi>' + P.chapters + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'chapters' });
     }
-    html += '<div class=mi>' + P.sources + ' \u203a</div>';
-    menuItems.push({ k: 'go', to: 'sources' });
     if (!SIMPLE && torrentFileList && torrentFileList.length > 1) {
       html += '<div class=mi>' + P.files + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'files' });
@@ -54,6 +54,7 @@ function openMenu(view) {
       html += '<div class=mi>' + P.speed + ': ' + speedLabel(v.playbackRate) + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'speed' });
     }
+    if (!menuItems.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
   } else if (view === 'episodes') {
     html += '<div class=mh>' + P.episodes + '</div>';
     if (!seasonList) html += '<div class=mi style="opacity:.5">' + P.readingTracks + '</div>';
@@ -237,7 +238,7 @@ function openMenu(view) {
     menuItems.push({ k: 'd0' });
   }
   menu.innerHTML = html;
-  menu.className = 'show';
+  menu.className = menuAtLeft ? 'show atleft' : 'show';
   mode = 'menu';
   /* the list opens on what is in use, not on its first row */
   mIdx = 0;
@@ -260,15 +261,8 @@ function menuBack() {
   if (subView === 'embedded' || subView === 'external' || subView === 'style' || subView === 'delay')
     openMenu('subsroot');
   else if (subView === 'extlang' || subView === 'extmore') openMenu('external');
-  else if (
-    subView === 'audio' ||
-    subView === 'subsroot' ||
-    subView === 'episodes' ||
-    subView === 'chapters' ||
-    subView === 'files' ||
-    subView === 'speed'
-  )
-    openMenu('root');
+  else if (subView === 'audio' || subView === 'subsroot') openMenu('media');
+  else if (subView === 'chapters' || subView === 'files' || subView === 'speed') openMenu('root');
   else {
     menu.className = '';
     mode = 'controls';

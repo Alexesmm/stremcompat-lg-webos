@@ -10,7 +10,7 @@ if (NEXTVID) {
 }
 var btns = [];
 (function () {
-  var ids = ['b_rw', 'b_pp', 'b_ff', 'b_next', 'b_set'];
+  var ids = ['b_media', 'b_ep', 'b_src', 'b_rw', 'b_pp', 'b_ff', 'b_next', 'b_set'];
   for (var i = 0; i < ids.length; i++) {
     var el = document.getElementById(ids[i]);
     if (el && el.style.display !== 'none') {
@@ -19,6 +19,19 @@ var btns = [];
     }
   }
 })();
+/* a button this video has no use for (the episodes of a film) leaves the bar */
+function dropButton(id) {
+  var el = document.getElementById(id),
+    at = btns.indexOf(el);
+  el.style.display = 'none';
+  if (at < 0) return;
+  btns.splice(at, 1);
+  if (bIdx > at) bIdx--;
+}
+/* the button the focus starts on and comes back to: play and pause */
+function playButtonIndex() {
+  return btns.indexOf(document.getElementById('b_pp'));
+}
 /* what the next episode's source should match (matchingNextSource) */
 function nextSourcePref() {
   return {
@@ -57,7 +70,7 @@ function nextEp() {
   }
 }
 var mode = 'video',
-  bIdx = 1,
+  bIdx = playButtonIndex(),
   mIdx = 0,
   menuItems = [],
   hideT = null;

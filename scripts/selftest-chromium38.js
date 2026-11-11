@@ -428,7 +428,7 @@ async function main() {
       ).result.value
     );
     assert.strictEqual(playerControls.mode, 'controls', 'Up did not focus the player buttons');
-    assert.strictEqual(playerControls.bIdx, 1, 'Play/Pause was not the default focused button');
+    assert.strictEqual(playerControls.button, 'b_pp', 'Play/Pause was not the default focused button');
     await protocol.call('Input.dispatchKeyEvent', {
       type: 'rawKeyDown',
       windowsVirtualKeyCode: 38,
@@ -455,7 +455,7 @@ async function main() {
       key: 'ArrowDown'
     });
     await protocol.call('Runtime.evaluate', {
-      expression: "document.getElementById('b_pp').click();document.getElementById('b_set').click()"
+      expression: "document.getElementById('b_pp').click();document.getElementById('b_media').click()"
     });
     await delay(80);
     var playerMenu = await protocol.call('Runtime.evaluate', {
@@ -463,7 +463,7 @@ async function main() {
       returnByValue: true
     });
     var playerMenuState = JSON.parse(playerMenu.result.value);
-    assert.strictEqual(playerMenuState.state.mode, 'menu', 'Magic Remote click did not open player settings');
+    assert.strictEqual(playerMenuState.state.mode, 'menu', 'Magic Remote click did not open Audio and subtitles');
     assert.ok(
       playerMenuState.text.indexOf('Audio:') >= 0 && playerMenuState.text.indexOf('Subtitles:') >= 0,
       'active audio/subtitle labels are missing'

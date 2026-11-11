@@ -24,7 +24,9 @@ function memoryStorage(initial) {
   };
 }
 function element(id) {
-  return { id: id, textContent: '', className: '', style: {}, addEventListener: function () {}, appendChild: function () {} };
+  var el = { id: id, textContent: '', className: '', style: {}, addEventListener: function () {}, appendChild: function () {} };
+  el.getElementsByTagName = function () { return [el]; };
+  return el;
 }
 
 // ---- next-episode countdown (up-next.js) ----
@@ -638,7 +640,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
         });
       }
     };
-    var names = ['settings', 'audio', 'subtitles', 'none', 'off', 'embedded', 'external', 'style', 'delay', 'language', 'selected', 'moreLanguages', 'episodes', 'chapters', 'files', 'sources', 'picture', 'pictureFit', 'pictureZoom', 'speed', 'higher', 'lower', 'opacity', 'later', 'earlier', 'reset', 'readingTracks'];
+    var names = ['settings', 'audioSubs', 'audio', 'subtitles', 'none', 'off', 'embedded', 'external', 'style', 'delay', 'language', 'selected', 'moreLanguages', 'episodes', 'chapters', 'files', 'sources', 'picture', 'pictureFit', 'pictureZoom', 'speed', 'higher', 'lower', 'opacity', 'later', 'earlier', 'reset', 'readingTracks'];
     var P = {};
     names.forEach(function (name) { P[name] = name; });
     var context = {
@@ -662,7 +664,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
       nextEpisodeAddons: function () { return [{ name: 'Addon', base: 'https://a.example' }]; },
       nextSources: function (ad, vid, cb) { calls.push('sources ' + vid); cb({ streams: more.sources || [] }); },
       sourceItem: function (s, name) { return { url: s.url, quality: s.quality, title: s.title, addon: name }; }, location: { replace: function (u) { calls.push('go ' + u); } },
-      appUrl: function (p) { return p; }, nextStarting: false, setTimeout: function () {}
+      appUrl: function (p) { return p; }, nextStarting: false, setTimeout: function () {}, dropButton: function () {}
     };
     vm.runInNewContext(label + src('player/options.js') + src('player/menus.js') + ';var menuItems,mIdx,subView,mode;this.menuRows=function(){return menu.querySelectorAll()};this.focus=function(){return mIdx};this.setFocus=function(i){mIdx=i;paintMenu()};this.texts=function(){return menu.querySelectorAll().map(function(r){return r.text})};this.press=function(i){mIdx=i;chooseMenu()};this.set=function(k,v){if(k==="mediaInfo")mediaInfo=v;};this.get=function(){return{bottom:subBottom,opacity:subOpacity,delay:subDelay,view:subView}};', context);
     context.calls = calls;
@@ -713,15 +715,20 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   /* the main menu offers only what this video has */
   var film = player('off', [], [], { video: { tagName: 'VIDEO', videoWidth: 1920, videoHeight: 800 } });
   film.openMenu('root');
-  assert.deepStrictEqual(film.texts().slice(2), ['sources \u203a', 'picture: pictureFit', 'speed: 1\u00d7 \u203a'], 'a film offered episodes, chapters or files it does not have');
-  film.press(3);
+  assert.deepStrictEqual(film.texts(), ['picture: pictureFit', 'speed: 1\u00d7 \u203a'], 'the settings offered chapters or files a film does not have, or what has its own button');
+  film.openMenu('media');
+  assert.deepStrictEqual(film.texts(), ['audio:  \u203a', 'subtitles:  \u203a'], 'Audio and subtitles does not lead to both');
+  film.press(1);
+  assert.strictEqual(film.get().view, 'subsroot', 'the subtitles row did not open them');
+  film.openMenu('root');
+  film.press(0);
   assert.strictEqual(film.v.style.objectFit, 'cover', 'Fill the screen did not crop the picture to the screen');
   assert.strictEqual(film.stored.pictureMode, 'zoom', 'the picture choice was not kept');
-  film.press(3);
+  film.press(0);
   assert.strictEqual(film.v.style.objectFit, 'contain', 'the whole picture did not come back');
   var samsung = player('off', [], []);
   samsung.openMenu('root');
-  assert.strictEqual(samsung.texts().length, 3, 'picture and speed were offered where the video is not an element of the page');
+  assert.deepStrictEqual(samsung.texts(), ['none'], 'picture and speed were offered where the video is not an element of the page');
 
   /* chapters */
   var chaptered = player('off', [], [], { video: { currentTime: 700 } });
@@ -735,9 +742,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
 
   /* the season's episodes, opened with the matching source */
   var series = player('off', [], [], { type: 'series', vid: 'tt5:2:1', answers: { '/episodes': { episodes: [{ id: 'tt5:2:1', episode: 1, name: 'One' }, { id: 'tt5:2:2', episode: 2, name: '' }] } } });
-  series.openMenu('root');
-  assert.strictEqual(series.texts()[2], 'episodes \u203a', 'a series does not offer its episodes');
-  series.press(2);
+  series.openMenu('episodes');
   assert.deepStrictEqual(series.texts(), ['episode 1  ·  One — selected', 'episode 2'], 'the episode list is wrong');
   series.press(0);
   assert.strictEqual(series.calls.length, 1, 'choosing the episode being watched left the player');
@@ -749,15 +754,14 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   var hash = 'c'.repeat(40);
   var pack = player('off', [], [], { torrent: true, url: 'http://127.0.0.1:11470/' + hash + '/1?tr=x', answers: { '/torrentfiles': { files: [{ index: 1, name: 'a.mkv', size: 2147483648, playing: true }, { index: 4, name: 'b.mkv', size: 734003200, playing: false }] } } });
   pack.openMenu('root');
-  assert.strictEqual(pack.texts()[2], 'sources \u203a', 'the other sources are not offered first');
-  assert.strictEqual(pack.texts()[3], 'files \u203a', 'a torrent with two films does not offer them');
-  pack.press(3);
+  assert.strictEqual(pack.texts()[0], 'files \u203a', 'a torrent with two films does not offer them');
+  pack.press(0);
   assert.deepStrictEqual(pack.texts(), ['a.mkv  ·  2.0 GB — selected', 'b.mkv  ·  700 MB'], 'the file list is wrong');
   pack.press(1);
   assert.deepStrictEqual(pack.calls.slice(1), ['ref http://127.0.0.1:11470/' + hash + '/4?tr=x', 'go /play?ref=R9&type=movie&id=tt5&vid=&back=' + encodeURIComponent('beta#detail/x')], 'another file of the torrent did not open');
   var single = player('off', [], [], { torrent: true, answers: { '/torrentfiles': { files: [{ index: 0, name: 'a.mkv', size: 1, playing: true }] } } });
   single.openMenu('root');
-  assert.strictEqual(single.texts().length, 3, 'a torrent with one film offered a file list');
+  assert.ok(single.texts().indexOf('files \u203a') < 0, 'a torrent with one film offered a file list');
 
   /* another source of the same film, from the player */
   var switching = player('off', [], [], { url: 'http://x/a.mp4', sources: [{ url: 'http://x/a.mp4', quality: '1080p', title: 'Film.A' }, { url: 'http://x/b.mkv', quality: '720p', title: 'Film.B' + String.fromCharCode(10) + 'seeds' }] });
