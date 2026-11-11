@@ -31,7 +31,7 @@ This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronic
 - **New side menu and Settings:** your profile at the top, Settings in two columns, Sign out and Leave the app easy to find.
 - **More in the player:** episodes, chapters, picture size, speed, and better subtitles and audio.
 - **You sign in again once** after updating to 4.0 from 3.x. See the [release notes](docs/releases/v4.0.0.md).
-- **4.1:** Best source picks the language too, Simple mode goes straight to it, and the player can change source. See the [4.1.0 notes](docs/releases/v4.1.0.md).
+- **4.1:** a black-and-white look with featured titles at the top of Home, Best source picks the audio language too, Simple mode goes straight to it, and the player has its own buttons for audio and subtitles, episodes and sources. See the [4.1.0 notes](docs/releases/v4.1.0.md).
 
 ## Features
 
