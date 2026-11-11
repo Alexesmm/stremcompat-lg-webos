@@ -97,7 +97,7 @@ function request(options, body) {
       });
       res.on('end', function () {
         var text = Buffer.concat(chunks).toString('utf8');
-        resolve({ status: res.statusCode, text: text, headers: res.headers });
+        resolve({ status: res.statusCode, text: text, headers: res.headers, body: Buffer.concat(chunks) });
       });
     });
     req.setTimeout(5000, function () {
@@ -1000,6 +1000,61 @@ async function engineRoutesTests() {
   );
 }
 
+/* Two small files laid out like Matroska ones: the Cues are listed in the first SeekHead, or only in a
+   second SeekHead at the end that the first one points to (the layout the TV's player cannot seek). */
+function ebmlElement(idHex, payload) {
+  var size = payload.length;
+  var lengthBytes = size < 127 ? [0x80 | size] : [0x40 | (size >> 8), size & 255];
+  return Buffer.concat([Buffer.from(idHex, 'hex'), Buffer.from(lengthBytes), payload]);
+}
+function seekEntry(idHex, position) {
+  var pos = Buffer.alloc(5);
+  pos.writeUIntBE(position, 0, 5);
+  return ebmlElement(
+    '4dbb',
+    Buffer.concat([ebmlElement('53ab', Buffer.from(idHex, 'hex')), ebmlElement('53ac', pos)])
+  );
+}
+function matroskaFile(chained) {
+  var ebmlHeader = ebmlElement('1a45dfa3', Buffer.from('4282847765626d', 'hex'));
+  var tracks = ebmlElement('1654ae6b', Buffer.alloc(40, 7));
+  var body = Buffer.alloc(3000, 9); /* stands in for the clusters */
+  var cues = ebmlElement('1c53bb6b', Buffer.alloc(30, 5));
+  var segmentHeader = Buffer.from('18538067' + '01' + '00000000000000', 'hex'); /* id and an 8 byte size */
+  /* a first SeekHead is 4 + 1 + 18 bytes with one entry, 4 + 1 + 3 * 18 with the three below */
+  var firstSize = chained ? 23 : 4 + 1 + 18 * 3;
+  var secondAt = firstSize + tracks.length + body.length; /* from the start of the Segment data */
+  var second;
+  var cuesAt;
+  if (chained) {
+    cuesAt = secondAt + 23; /* the second SeekHead is 23 bytes too */
+    second = ebmlElement('114d9b74', seekEntry('1c53bb6b', cuesAt));
+  } else {
+    second = Buffer.alloc(0);
+    cuesAt = secondAt;
+  }
+  var first = chained
+    ? ebmlElement('114d9b74', seekEntry('114d9b74', secondAt))
+    : ebmlElement(
+        '114d9b74',
+        Buffer.concat([
+          seekEntry('1654ae6b', firstSize),
+          seekEntry('1c53bb6b', cuesAt),
+          seekEntry('1549a966', 0)
+        ])
+      );
+  var segmentData = Buffer.concat([first, tracks, body, second, cues]);
+  segmentHeader.writeUIntBE(segmentData.length, 6, 6);
+  segmentHeader[4] = 0x01;
+  return {
+    file: Buffer.concat([ebmlHeader, segmentHeader, segmentData]),
+    segmentStart: ebmlHeader.length + 12,
+    cuesAt: cuesAt
+  };
+}
+var chainedMkv = matroskaFile(true);
+var plainMkv = matroskaFile(false);
+
 var proxyHits = { debrid: 0, cdn: [] };
 
 /* /proxy, as the player and FFmpeg use it */
@@ -1015,6 +1070,26 @@ async function proxyTests() {
         options || {}
       )
     );
+  }
+  async function viaProxyBytes(target, options) {
+    var got = await request(
+      Object.assign(
+        {
+          hostname: '127.0.0.1',
+          port: appPort,
+          path: '/proxy?u=' + encodeURIComponent('http://127.0.0.1:9191' + target)
+        },
+        options || {}
+      )
+    );
+    return got.body;
+  }
+  function mkvSeekHead(file, segmentStart) {
+    return require('../service/server/mkv-seek')
+      .parseSeekHead(file, segmentStart)
+      .map(function (e) {
+        return { id: e.id, pos: e.pos };
+      });
   }
   async function reference(url, headers) {
     var payload = JSON.stringify({ url: url, headers: headers });
@@ -1043,6 +1118,50 @@ async function proxyTests() {
   assert.strictEqual(part.status, 206, 'a Range request lost its status');
   assert.strictEqual(part.text, '234', 'a Range request returned the wrong bytes');
   assert.strictEqual(part.headers['content-range'], 'bytes 2-4/10', 'Content-Range was lost');
+  /* a Matroska file whose first index only chains to a second one is pointed at its Cues */
+  var chainedWhole = await viaProxyBytes('/chained.mkv');
+  assert.strictEqual(chainedWhole.length, chainedMkv.file.length, 'a patched file changed length');
+  var changed = [];
+  chainedMkv.file.forEach(function (b, i) {
+    if (b !== chainedWhole[i]) changed.push(i);
+  });
+  assert.ok(changed.length > 0 && changed.length <= 9, 'the first index was not rewritten, or too much was');
+  assert.ok(
+    changed[changed.length - 1] < chainedMkv.segmentStart + 40,
+    'bytes beyond the first index changed'
+  );
+  var patchedHead = mkvSeekHead(chainedWhole, chainedMkv.segmentStart);
+  assert.deepStrictEqual(
+    patchedHead,
+    [{ id: '1c53bb6b', pos: chainedMkv.cuesAt }],
+    'the first index does not point straight at the Cues'
+  );
+  assert.strictEqual(
+    chainedWhole
+      .slice(chainedMkv.segmentStart + chainedMkv.cuesAt, chainedMkv.segmentStart + chainedMkv.cuesAt + 4)
+      .toString('hex'),
+    '1c53bb6b',
+    'the Cues are not where the first index now says'
+  );
+  var chainedRange = await viaProxyBytes('/chained.mkv', { headers: { Range: 'bytes=0-299' } });
+  assert.ok(
+    chainedRange.equals(chainedWhole.slice(0, 300)),
+    'a Range from the start is not patched the same way'
+  );
+  var chainedLater = await viaProxyBytes('/chained.mkv', { headers: { Range: 'bytes=20-299' } });
+  assert.ok(chainedLater.equals(chainedWhole.slice(20, 300)), 'a Range inside the head is not patched');
+  var chainedFar = await viaProxyBytes('/chained.mkv', { headers: { Range: 'bytes=1000-1999' } });
+  assert.ok(chainedFar.equals(chainedMkv.file.slice(1000, 2000)), 'a Range past the head changed');
+  assert.ok(
+    (await viaProxyBytes('/plain.mkv')).equals(plainMkv.file),
+    'a file that lists its Cues was changed'
+  );
+  assert.strictEqual(
+    (await viaProxy('/ranged')).text,
+    '0123456789',
+    'a file that is not Matroska was changed'
+  );
+  console.log('OK: Matroska first index pointed at the Cues, other files and ranges untouched.');
   var head = await viaProxy('/echo-headers', { method: 'HEAD' });
   assert.strictEqual(head.status, 200, 'HEAD failed');
   assert.strictEqual((await viaProxy('/moved-loop')).status, 502, 'endless redirects were not stopped');
@@ -1195,6 +1314,29 @@ async function main() {
       }
       res.setHeader('Content-Type', 'video/mp4');
       res.end('from ' + req.url);
+      return;
+    }
+    if (req.url === '/chained.mkv' || req.url === '/plain.mkv') {
+      var served = (req.url === '/chained.mkv' ? chainedMkv : plainMkv).file;
+      var wantedRange = /bytes=(\d+)-(\d*)/.exec(req.headers.range || '');
+      if (!wantedRange) {
+        res.writeHead(200, {
+          'Content-Type': 'video/x-matroska',
+          'Content-Length': served.length,
+          'Accept-Ranges': 'bytes'
+        });
+        res.end(served);
+        return;
+      }
+      var from = +wantedRange[1];
+      var to = Math.min(served.length - 1, wantedRange[2] ? +wantedRange[2] : served.length - 1);
+      res.writeHead(206, {
+        'Content-Type': 'video/x-matroska',
+        'Content-Range': 'bytes ' + from + '-' + to + '/' + served.length,
+        'Content-Length': to - from + 1,
+        'Accept-Ranges': 'bytes'
+      });
+      res.end(served.slice(from, to + 1));
       return;
     }
     if (req.url === '/ranged') {
