@@ -282,6 +282,15 @@ var settings = {
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
       { k: '__showNew', lb: tx('showHiddenNewEpisodes'), action: true },
+      {
+        k: 'torrentsOnUsb',
+        lb: tx('torrentsOnUsb'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: 'false'
+      },
       { k: '__clearCache', lb: tx('clearTorrentCache'), action: true },
       { head: tx('maintenanceGroup'), id: 'maintenance' },
       { k: '__server', lb: tx('serverAddress'), action: true, info: true },
@@ -311,7 +320,7 @@ var settings = {
     /* these depend on FFmpeg or on memory only the LG packages can spare */
     if (!HAS_MEDIA_TOOLS)
       for (var nf = this.defs.length - 1; nf >= 0; nf--)
-        if (/^(scrubPreview|embSubsMode|bgTrailer|__clearCache)$/.test(this.defs[nf].k || ''))
+        if (/^(scrubPreview|embSubsMode|bgTrailer|torrentsOnUsb|__clearCache)$/.test(this.defs[nf].k || ''))
           this.defs.splice(nf, 1);
     var oldCats = this.cats;
     this.cats = [];
@@ -584,6 +593,9 @@ var settings = {
       return true;
     }
     if (def.k === 'bingeWatch') lsRawSet('enableNextVideo', def.opts[ci][0]);
+    /* the server chooses where torrents go */
+    if (def.k === 'torrentsOnUsb')
+      xhrJson('/torrentplace?usb=' + (def.opts[ci][0] === 'true' ? '1' : '0'), function () {}, 5000);
     return false;
   },
   startEdit: function () {

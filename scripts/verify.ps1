@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 
 $appInfo = Get-Content -LiteralPath (Join-Path $projectRoot 'app\appinfo.json') -Raw | ConvertFrom-Json
-if ($appInfo.id -ne 'io.github.alexesmm.legacytv' -or $appInfo.version -ne '4.0.0') { throw 'Manifesto do aplicativo inesperado.' }
+if ($appInfo.id -ne 'io.github.alexesmm.legacytv' -or $appInfo.version -ne '4.0.1') { throw 'Manifesto do aplicativo inesperado.' }
 if ($appInfo.type -ne 'web' -or $appInfo.main -ne 'index.html') { throw 'appinfo.json invalido.' }
 $serviceInfo = Get-Content -LiteralPath (Join-Path $projectRoot 'service\package.json') -Raw | ConvertFrom-Json
 if ($serviceInfo.name -ne 'io.github.alexesmm.legacytv.server' -or $serviceInfo.version -ne $appInfo.version) { throw 'Versoes do app e servico nao coincidem.' }

@@ -30,7 +30,8 @@ This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronic
 - **Nuvio accounts:** choose who is watching at every start, and add or edit profiles on the TV.
 - **New side menu and Settings:** your profile at the top, Settings in two columns, Sign out and Leave the app easy to find.
 - **More in the player:** episodes, chapters, picture size, speed, and better subtitles and audio.
-- **You sign in again once** after updating to 4.0. See the [release notes](docs/releases/v4.0.0.md).
+- **You sign in again once** after updating to 4.0 from 3.x. See the [release notes](docs/releases/v4.0.0.md).
+- **4.0.1** adds an option to always keep torrents on a USB drive. See its [notes](docs/releases/v4.0.1.md).
 
 ## Features
 
@@ -55,12 +56,16 @@ Captured from the real interface at 1920x1080, on a computer, with a demo librar
 
 <table>
   <tr>
+    <td><img src="docs/assets/screens/profiles.jpg" alt="Who is watching: the profiles of a Nuvio account" width="100%"></td>
+    <td><img src="docs/assets/screens/home.jpg" alt="Home with Continue watching" width="100%"></td>
+  </tr>
+  <tr>
     <td><img src="docs/assets/screens/discover.jpg" alt="Discover grid with filters" width="100%"></td>
     <td><img src="docs/assets/screens/series.jpg" alt="Series page with episodes" width="100%"></td>
   </tr>
   <tr>
     <td><img src="docs/assets/screens/sources.jpg" alt="Source list with quality and language tags" width="100%"></td>
-    <td><img src="docs/assets/screens/settings.jpg" alt="Settings screen" width="100%"></td>
+    <td><img src="docs/assets/screens/settings.jpg" alt="Settings in two columns" width="100%"></td>
   </tr>
 </table>
 
@@ -83,7 +88,7 @@ There are two packages, and the video looks the same in both:
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v4.0.0-1080p.ipk` or `StremCompat-v4.0.0-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v4.0.1-1080p.ipk` or `StremCompat-v4.0.1-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 
@@ -152,14 +157,14 @@ Download the package from the [test release](https://github.com/Alexesmm/stremco
 
 ## Android TV (test version)
 
-> **This is a test version**, tested so far on the Google TV emulator. Expect problems, and please report them.
+> **This is a test version.** Expect problems, and please report them.
 
 It runs the same interface and local server inside an Android app, and plays video with Android's own player (ExoPlayer), so MKV, HEVC and surround sound play like in the official apps.
 
-- **Torrents** need a streaming server on another computer: **Settings > Streaming server > Address**. Debrid and direct links work without one.
+- **Torrents** play on the TV itself, through a torrent engine inside the app (WebTorrent). Debrid and direct links work too.
 - **Requirements:** Android TV or Google TV 7.0 or newer, on an ARM device.
 
-Download `StremCompat-AndroidTV-test-1.apk` from the [test release](https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/android-tv-beta-1) and install it with the **Downloader** app, or with `adb install` from a computer.
+Download `StremCompat-AndroidTV-test-2.apk` from the [test release](https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/android-tv-beta-2) and install it with the **Downloader** app, or with `adb install` from a computer.
 
 ## Troubleshooting
 
