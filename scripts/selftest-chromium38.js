@@ -230,7 +230,7 @@ async function main() {
     await delay(1800);
     var homeEval = await protocol.call('Runtime.evaluate', {
       expression:
-        "(function(){var rows=document.querySelectorAll('#rows>.row'),visible=0,focused=-1;for(var i=0;i<rows.length;i++){if(getComputedStyle(rows[i]).display!=='none')visible++;if(rows[i].querySelector('.card.f'))focused=i;}return JSON.stringify({done:!!window.__SC_BOOT_DONE__,failed:!!window.__SC_BOOT_FAILED__,phase:window.__SC_BOOT_PHASE__,board:document.getElementById('scrBoard').className,boot:document.getElementById('boot').style.display,total:rows.length,visible:visible,focused:focused});})()",
+        "(function(){var rows=document.querySelectorAll('#rows>.row'),visible=0,focused=-1;for(var i=0;i<rows.length;i++){if(getComputedStyle(rows[i]).display!=='none')visible++;if(rows[i].querySelector('.card.f'))focused=i;}return JSON.stringify({done:!!window.__SC_BOOT_DONE__,failed:!!window.__SC_BOOT_FAILED__,phase:window.__SC_BOOT_PHASE__,board:document.getElementById('scrBoard').className,boot:document.getElementById('boot').style.display,total:rows.length,visible:visible,focused:focused,featured:(' '+document.body.className+' ').indexOf(' featured ')>=0});})()",
       returnByValue: true
     });
     var home = JSON.parse(homeEval.result.value);
@@ -240,7 +240,26 @@ async function main() {
     assert.strictEqual(home.boot, 'none', 'stored-account boot overlay is still visible');
     assert.strictEqual(home.total, 14, 'Chromium 38 discarded addon catalogs before the profile limit');
     assert.strictEqual(home.visible, 12, 'Chromium 38 did not isolate failed catalog rows');
-    assert.strictEqual(home.focused, 1, 'Chromium 38 focus did not settle on the first successful catalog');
+    /* Home opens on the featured titles, and Down goes to the first row that has titles */
+    assert.strictEqual(home.featured, true, 'Chromium 38 Home did not open on the featured titles');
+    assert.strictEqual(home.focused, -1, 'a card had the focus while the featured titles had it');
+    await protocol.call('Input.dispatchKeyEvent', {
+      type: 'rawKeyDown',
+      windowsVirtualKeyCode: 40,
+      nativeVirtualKeyCode: 40,
+      key: 'ArrowDown'
+    });
+    await delay(400);
+    var rowEval = await protocol.call('Runtime.evaluate', {
+      expression:
+        "(function(){var rows=document.querySelectorAll('#rows>.row');for(var i=0;i<rows.length;i++)if(rows[i].querySelector('.card.f'))return i;return -1;})()",
+      returnByValue: true
+    });
+    assert.strictEqual(
+      rowEval.result.value,
+      1,
+      'Chromium 38 focus did not settle on the first successful catalog'
+    );
     var orderEval = await protocol.call('Runtime.evaluate', {
       expression:
         "(function(){var v=[];for(var i=0;i<40;i++)v.push({id:'o:1:x'+i,season:1});var m=window.__SC_EPISODE_MODEL__(v),bad=0;for(var j=0;j<m.linear.length;j++)if(m.linear[j].id!=='o:1:x'+j)bad++;return bad;})()",

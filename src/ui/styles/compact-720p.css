@@ -19,7 +19,11 @@
   #heroMeta span{margin-right:16px}
   #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
   #heroDesc{margin-top:7px;font-size:17px;line-height:1.4;max-height:48px}
-  #heroDots{margin-top:10px;height:8px}#heroDots span{width:8px;height:8px;margin-right:6px}#heroDots span.on{width:22px}
+  body.featured #hero{-webkit-transform:translateY(220px);transform:translateY(220px)}
+  body.featured #rowsClip{-webkit-transform:translateY(290px);transform:translateY(290px)}
+  body.featured #heroGenres{margin-top:8px;height:20px;line-height:20px;font-size:15px}
+  body.featured #heroBtn{margin-top:14px;padding:0 20px;height:38px;line-height:38px;border-radius:19px;font-size:15px}
+  body.featured #heroDots{left:1000px;bottom:15px;height:8px}#heroDots span{width:8px;height:8px;margin-right:6px}#heroDots span.on{width:22px}
   #rowsClip{top:250px;left:86px}
   #boardMsg{top:270px;left:112px;font-size:20px}
   .row{padding:9px 0 18px 26px;transform:translateY(10px)}

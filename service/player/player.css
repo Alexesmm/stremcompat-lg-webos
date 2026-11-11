@@ -23,7 +23,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 #toast{position:fixed;left:50%;top:8%;transform:translateX(-50%);background:rgba(20,20,22,.86);color:#fff;font-size:24px;font-weight:600;padding:12px 26px;border-radius:30px;opacity:0;transition:opacity .25s;z-index:9;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 #seekrow{display:flex;align-items:center}
 #seek{position:relative;flex:1;height:8px;background:rgba(255,255,255,.22);border-radius:3px}
-#fill{position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,#14B8A6,#22D3EE);border-radius:3px;transition:width .18s ease}
+#fill{position:absolute;left:0;top:0;height:100%;width:0;background:#fff;border-radius:3px;transition:width .18s ease}
 #seek .cmark{position:absolute;top:0;width:3px;height:100%;margin-left:-1px;background:rgba(10,10,11,.85)}
 #knob{position:absolute;top:50%;left:0;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.6),0 0 0 4px rgba(255,255,255,.22);transition:left .18s ease,width .15s ease,height .15s ease,margin .15s ease}
 #seek.f{height:12px;box-shadow:0 0 0 3px rgba(255,255,255,.34)}

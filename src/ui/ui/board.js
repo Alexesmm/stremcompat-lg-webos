@@ -44,6 +44,10 @@ function heroMetaHtml(m) {
   return html;
 }
 window.__SC_HERO_META__ = heroMetaHtml;
+/* Action • Crime • Drama, shown with the featured titles */
+function heroGenres(genres) {
+  return (genres || []).slice(0, 3).join('  •  ');
+}
 /* a title in progress starts with where the viewer stopped */
 function heroMetaOf(it) {
   var where = it.cw ? cwSubtitle(it) : '';
@@ -54,6 +58,8 @@ function makeBoard(loader) {
   return {
     rows: [],
     rowIdx: 0,
+    /* Home's focus on the featured titles above the rows (spotlight.js) */
+    top: true,
     built: false,
     heroT: null,
     loader: loader,
@@ -130,7 +136,9 @@ function makeBoard(loader) {
     paint: function (all) {
       /* O(2 rows) per move — full repaint only when asked */
       if (this.rowIdx >= this.rows.length) this.rowIdx = Math.max(0, this.rows.length - 1);
-      var focusOn = curBoard() === this && !topNav.active;
+      var atFeatured = this === home && featuredShown();
+      paintFeatured();
+      var focusOn = curBoard() === this && !topNav.active && !atFeatured;
       var settled = this.settleRow();
       var act = focusOn && settled >= 0 ? this.rowIdx : -1;
       if (all || this._act == null) {
@@ -144,7 +152,7 @@ function makeBoard(loader) {
          focused row's offsetTop equals the height of the rows above it */
       var cur = this.rows[this.rowIdx];
       /* the sidebar taking the focus keeps the rows where they are */
-      var t = curBoard() === this && cur ? cur.el.offsetTop : 0;
+      var t = curBoard() === this && cur && !atFeatured ? cur.el.offsetTop : 0;
       $('rows').style.transform = 'translateY(-' + t + 'px)';
       $('rows').style.webkitTransform = 'translateY(-' + t + 'px)';
       virtualizeBoard(this, this.rowIdx, true);
@@ -182,7 +190,8 @@ function makeBoard(loader) {
       var self = this;
       if (this.heroT) clearTimeout(this.heroT);
       this.heroT = setTimeout(function () {
-        self.heroApply();
+        if (self === home && featuredShown()) showFeatured();
+        else self.heroApply();
       }, 260);
       prewarmNeighbors(this.rows[this.rowIdx]);
     },
@@ -225,6 +234,7 @@ function makeBoard(loader) {
         lg.style.display = 'none';
       }
       $('heroMeta').innerHTML = heroMetaOf(it);
+      $('heroGenres').textContent = heroGenres(it.genres);
       setHeroDesc(it.description);
       $('heroCast').textContent = it.cast || '';
       setBg(bgMid(it));
@@ -234,20 +244,25 @@ function makeBoard(loader) {
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
           it.cast = (m.cast || []).slice(0, 3).join(', ');
+          if (m.genres && m.genres.length) it.genres = m.genres;
           if (self.heroItem === it) {
             setHeroDesc(it.description);
             $('heroMeta').innerHTML = heroMetaOf(it);
+            $('heroGenres').textContent = heroGenres(it.genres);
             $('heroCast').textContent = it.cast;
           }
         });
       }
     },
     focusedItem: function () {
+      if (this === home && featuredShown()) return featuredItem();
       if (this.settleRow() < 0) return null;
       var row = this.rows[this.rowIdx];
       return row.items[row.col] || null;
     },
     key: function (k) {
+      if (this === home && featuredShown()) return featuredKey(k);
+      this.top = false;
       if (this.settleRow() < 0) {
         if (k === 37) topNav.focus();
         else if (k === 13 && this.empty) refreshCurBoard();
@@ -267,8 +282,10 @@ function makeBoard(loader) {
         }
       } else if (k === 38) {
         var prev = this.findRow(this.rowIdx - 1, -1);
-        if (prev >= 0) {
-          this.rowIdx = prev;
+        /* Up from the first row goes back to the featured titles */
+        if (prev >= 0) this.rowIdx = prev;
+        else this.top = this === home;
+        if (prev >= 0 || featuredShown()) {
           this.paint();
           this.hero();
         }

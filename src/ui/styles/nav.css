@@ -22,8 +22,11 @@ body.navopen #topnav:before{opacity:1}
 body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
 .chip.cur .navlabel{color:#fff}
 .chip.f .navlabel{color:#fff}
-.chip.cur{color:#fff}
-.chip.f{background:#fff;color:#12101a}
+/* the section on screen is a white square, as on the big streaming apps; while the menu has
+   the focus the white goes to the item under it */
+.chip.cur{background:#fff;color:#0a0a0b}
+body.navopen .chip.cur{background:rgba(255,255,255,.14);color:#fff}
+.chip.f,body.navopen .chip.f{background:#fff;color:#0a0a0b}
 
 /* ---------- screens ---------- */
 .scr{position:fixed;top:0;left:0;right:0;bottom:0;display:none}

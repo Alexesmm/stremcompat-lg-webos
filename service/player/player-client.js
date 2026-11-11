@@ -191,6 +191,7 @@ var UI_TEXT = {
     directedBy: 'Directed by {0}',
     sourceLanguageRow: 'Language: {0}',
     sourcesButton: 'All sources',
+    seeDetails: 'See details',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     whatsNew:
@@ -596,6 +597,7 @@ var UI_TEXT = {
     directedBy: 'Direção: {0}',
     sourceLanguageRow: 'Idioma: {0}',
     sourcesButton: 'Todas as fontes',
+    seeDetails: 'Ver detalhes',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     whatsNew:

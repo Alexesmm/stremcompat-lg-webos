@@ -417,6 +417,7 @@ var UI_TEXT = {
     directedBy: 'Directed by {0}',
     sourceLanguageRow: 'Language: {0}',
     sourcesButton: 'All sources',
+    seeDetails: 'See details',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     whatsNew:
@@ -822,6 +823,7 @@ var UI_TEXT = {
     directedBy: 'Direção: {0}',
     sourceLanguageRow: 'Idioma: {0}',
     sourcesButton: 'Todas as fontes',
+    seeDetails: 'Ver detalhes',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     whatsNew:
@@ -2966,6 +2968,7 @@ function showScr(name) {
   /* the side menu follows the section on screen, also when Back returns to it */
   var section = chipTarget.indexOf(name);
   if (section >= 0) topNav.idx = section;
+  if (name !== 'home') bodyRemove('featured');
   if (name === 'login') bodyAdd('login');
   else bodyRemove('login');
   paintChips();
@@ -3120,6 +3123,7 @@ function curBoard() {
 }
 function resetBoardPosition(board) {
   board.rowIdx = 0;
+  board.top = true;
   for (var i = 0; i < board.rows.length; i++) board.rows[i].col = 0;
   board._act = null;
 }
@@ -3279,6 +3283,10 @@ function heroMetaHtml(m) {
   return html;
 }
 window.__SC_HERO_META__ = heroMetaHtml;
+/* Action • Crime • Drama, shown with the featured titles */
+function heroGenres(genres) {
+  return (genres || []).slice(0, 3).join('  •  ');
+}
 /* a title in progress starts with where the viewer stopped */
 function heroMetaOf(it) {
   var where = it.cw ? cwSubtitle(it) : '';
@@ -3289,6 +3297,8 @@ function makeBoard(loader) {
   return {
     rows: [],
     rowIdx: 0,
+    /* Home's focus on the featured titles above the rows (spotlight.js) */
+    top: true,
     built: false,
     heroT: null,
     loader: loader,
@@ -3365,7 +3375,9 @@ function makeBoard(loader) {
     paint: function (all) {
       /* O(2 rows) per move — full repaint only when asked */
       if (this.rowIdx >= this.rows.length) this.rowIdx = Math.max(0, this.rows.length - 1);
-      var focusOn = curBoard() === this && !topNav.active;
+      var atFeatured = this === home && featuredShown();
+      paintFeatured();
+      var focusOn = curBoard() === this && !topNav.active && !atFeatured;
       var settled = this.settleRow();
       var act = focusOn && settled >= 0 ? this.rowIdx : -1;
       if (all || this._act == null) {
@@ -3379,7 +3391,7 @@ function makeBoard(loader) {
          focused row's offsetTop equals the height of the rows above it */
       var cur = this.rows[this.rowIdx];
       /* the sidebar taking the focus keeps the rows where they are */
-      var t = curBoard() === this && cur ? cur.el.offsetTop : 0;
+      var t = curBoard() === this && cur && !atFeatured ? cur.el.offsetTop : 0;
       $('rows').style.transform = 'translateY(-' + t + 'px)';
       $('rows').style.webkitTransform = 'translateY(-' + t + 'px)';
       virtualizeBoard(this, this.rowIdx, true);
@@ -3417,7 +3429,8 @@ function makeBoard(loader) {
       var self = this;
       if (this.heroT) clearTimeout(this.heroT);
       this.heroT = setTimeout(function () {
-        self.heroApply();
+        if (self === home && featuredShown()) showFeatured();
+        else self.heroApply();
       }, 260);
       prewarmNeighbors(this.rows[this.rowIdx]);
     },
@@ -3460,6 +3473,7 @@ function makeBoard(loader) {
         lg.style.display = 'none';
       }
       $('heroMeta').innerHTML = heroMetaOf(it);
+      $('heroGenres').textContent = heroGenres(it.genres);
       setHeroDesc(it.description);
       $('heroCast').textContent = it.cast || '';
       setBg(bgMid(it));
@@ -3469,20 +3483,25 @@ function makeBoard(loader) {
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
           it.cast = (m.cast || []).slice(0, 3).join(', ');
+          if (m.genres && m.genres.length) it.genres = m.genres;
           if (self.heroItem === it) {
             setHeroDesc(it.description);
             $('heroMeta').innerHTML = heroMetaOf(it);
+            $('heroGenres').textContent = heroGenres(it.genres);
             $('heroCast').textContent = it.cast;
           }
         });
       }
     },
     focusedItem: function () {
+      if (this === home && featuredShown()) return featuredItem();
       if (this.settleRow() < 0) return null;
       var row = this.rows[this.rowIdx];
       return row.items[row.col] || null;
     },
     key: function (k) {
+      if (this === home && featuredShown()) return featuredKey(k);
+      this.top = false;
       if (this.settleRow() < 0) {
         if (k === 37) topNav.focus();
         else if (k === 13 && this.empty) refreshCurBoard();
@@ -3502,8 +3521,10 @@ function makeBoard(loader) {
         }
       } else if (k === 38) {
         var prev = this.findRow(this.rowIdx - 1, -1);
-        if (prev >= 0) {
-          this.rowIdx = prev;
+        /* Up from the first row goes back to the featured titles */
+        if (prev >= 0) this.rowIdx = prev;
+        else this.top = this === home;
+        if (prev >= 0 || featuredShown()) {
           this.paint();
           this.hero();
         }
@@ -4166,6 +4187,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
   for (var d = 0; d < defs.length; d++)
     (function (def, di) {
       var row = buildRow(def.title, [], false);
+      row.catalog = def;
       board.rows.push(row);
       /* only the rows that start on screen get placeholders; a rebuild keeps its rows */
       if (!keepFocus && di < 3) placeholderCards(row);
@@ -8694,7 +8716,6 @@ function idleTouch() {
     bodyRemove('idle');
     bodyRemove('trailer');
     stopIdleTrailer();
-    stopSpotlight();
   }
 }
 function pointerIndex(target, list) {
@@ -8710,6 +8731,7 @@ function pointerBoard(target, board, activate) {
       i = pointerIndex(target, row.cardEls || []);
     if (i < 0) continue;
     board.rowIdx = r;
+    board.top = false;
     row.col = i;
     topNav.active = false;
     board.paint();
@@ -9099,75 +9121,119 @@ setInterval(function () {
   if (idle && !has) {
     bodyAdd('idle');
     startIdleTrailer();
-    startSpotlight();
   } else if (!idle && has) {
     bodyRemove('idle');
     bodyRemove('trailer');
     stopIdleTrailer();
-    stopSpotlight();
   }
 }, 1000);
 /* the item under the cursor on whatever screen is showing (null if none) */
-// Featured titles pass through the Home hero while the remote is left alone, as on the big
-// streaming apps: the titles of the first catalog row, one every 8 s, with dots saying which.
-// Only the hero's picture and text change, so the rows stay where they are; any key brings back
-// the title under the focus (idleTouch). Off in the light look and on the TVs the profile
-// treats as small, where the extra pictures would cost too much.
-var SPOTLIGHT_EVERY_MS = 8000,
-  SPOTLIGHT_MAX = 8,
-  spotlight = { items: null, at: 0, timer: null };
-function spotlightItems() {
-  for (var r = 0; r < home.rows.length; r++) {
+// The featured titles at the top of Home, as on the big streaming apps: Home opens on them, a
+// large hero with the title, its genres, the synopsis, a "See details" button and dots saying
+// which one is shown. They are the first titles of Home's first catalog; one passes every 8 s
+// while the remote is left alone, Left and Right change it, OK opens it, Down goes to the rows.
+// Nothing new is drawn: the hero and the background are the ones the rows already use, and the
+// rows only slide down. Off in the light look; on the TVs the profile treats as small the
+// titles change only by hand.
+var FEATURED_EVERY_MS = 8000,
+  FEATURED_MAX = 8,
+  featured = { items: null, gen: -1, at: 0, shownAt: 0 };
+function featuredItems() {
+  if (featured.gen === home._loadGen && featured.items) return featured.items;
+  /* the first catalog that has titles, in Home's order: Continue watching and My list are not
+     featured, and a catalog still loading is waited for until Home is filled (board-loaders.js) */
+  var found = [];
+  for (var r = 0; r < home.rows.length && !found.length; r++) {
     var row = home.rows[r];
-    if (row.wide || !row.items) continue;
+    if (!row.catalog || row.wide) continue;
+    if (!row.answered) {
+      if (!homeFilled) break;
+      continue;
+    }
     var titles = row.items.filter(function (it) {
       return it.id && !it.more;
     });
-    if (titles.length > 2) return titles.slice(0, SPOTLIGHT_MAX);
+    if (titles.length > 2) found = titles.slice(0, FEATURED_MAX);
   }
-  return [];
+  /* kept once found, so the titles do not change under the viewer when more rows arrive */
+  if (found.length) {
+    featured.items = found;
+    featured.gen = home._loadGen;
+    if (featured.at >= found.length) featured.at = 0;
+  }
+  return found;
 }
-function paintSpotlightDots() {
+/* whether the focus is on the featured titles: Home's top, outside the light look, with titles */
+function featuredShown() {
+  return home.top && SCR === 'home' && uiLook() !== 'light' && featuredItems().length > 2;
+}
+function featuredItem() {
+  return featuredItems()[featured.at] || null;
+}
+function paintFeatured() {
+  var on = featuredShown();
+  if (on) bodyAdd('featured');
+  else bodyRemove('featured');
   var host = $('heroDots');
   host.innerHTML = '';
-  for (var i = 0; spotlight.items && i < spotlight.items.length; i++) {
+  if (!on) return;
+  $('heroBtn').textContent = tx('seeDetails');
+  var items = featuredItems();
+  for (var i = 0; i < items.length; i++) {
     var dot = document.createElement('span');
-    if (i === spotlight.at) dot.className = 'on';
+    if (i === featured.at) dot.className = 'on';
     host.appendChild(dot);
   }
 }
-function nextSpotlight() {
-  if (!spotlight.items || curBoard() !== home) return stopSpotlight();
-  spotlight.at = (spotlight.at + 1) % spotlight.items.length;
-  home.heroApply(spotlight.items[spotlight.at]);
-  paintSpotlightDots();
+/* the hero shows the featured title, and the one after it is fetched meanwhile */
+function showFeatured() {
+  featured.shownAt = Date.now();
+  paintFeatured();
+  home.heroApply(featuredItem());
+  var items = featuredItems(),
+    next = items[(featured.at + 1) % items.length];
+  if (next) {
+    prewarm(bgMid(next));
+    if (isImdb(next.id)) prewarm('https://images.metahub.space/logo/medium/' + next.id + '/img');
+  }
 }
-function startSpotlight() {
+function moveFeatured(dir) {
+  var n = featuredItems().length;
+  featured.at = (featured.at + dir + n) % n;
+  showFeatured();
+}
+/* keys while the focus is on the featured titles */
+function featuredKey(k) {
+  if (k === 39) moveFeatured(1);
+  else if (k === 37) {
+    if (featured.at === 0) topNav.focus();
+    else moveFeatured(-1);
+  } else if (k === 40) {
+    home.top = false;
+    home.paint();
+    home.hero();
+  } else if (k === 13) {
+    var it = featuredItem();
+    if (it) openItem(it);
+  }
+  return true;
+}
+setInterval(function () {
   if (
-    spotlight.items ||
-    SCR !== 'home' ||
+    !featuredShown() ||
     topNav.active ||
     bgv ||
-    uiLook() === 'light' ||
-    TV_PROFILE.lowMemory
+    TV_PROFILE.lowMemory ||
+    streamsUI.open ||
+    cwMenu.open ||
+    Date.now() - Math.max(lastIn, featured.shownAt) < FEATURED_EVERY_MS
   )
     return;
-  var items = spotlightItems();
-  if (items.length < 3) return;
-  spotlight.items = items;
-  spotlight.at = -1;
-  bodyAdd('spotlight');
-  nextSpotlight();
-  spotlight.timer = setInterval(nextSpotlight, SPOTLIGHT_EVERY_MS);
-}
-function stopSpotlight() {
-  if (!spotlight.items) return;
-  clearInterval(spotlight.timer);
-  spotlight.items = null;
-  bodyRemove('spotlight');
-  $('heroDots').innerHTML = '';
-  if (curBoard() === home) home.heroApply();
-}
+  moveFeatured(1);
+}, 1000);
+on($('heroBtn'), 'click', function () {
+  if (featuredShown()) featuredKey(13);
+});
 // Remote key dispatch, long-press OK and the Back button.
 function currentFocusedItem() {
   if (topNav.active) return null;

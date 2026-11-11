@@ -31,9 +31,9 @@ body.detail #bgshade{background:linear-gradient(to bottom,rgba(10,10,11,.04) 0%,
 /* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
    available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same
    vignette + smooth edges, so it reads as the cover art coming to life. */
-#topnav,#hero,#rowsClip,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc{transition:opacity .9s ease}
+#topnav,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc{transition:opacity .9s ease}
 body.idle #topnav,body.idle #hero,body.idle #rowsClip,body.idle #dWrap{opacity:.82}
-body.idle.spotlight #hero{opacity:1}
+body.idle.featured #hero{opacity:1}
 body.trailer #bg.on,body.trailer #bg2.on{opacity:0}
 /* trailer playing: everything on the upper half melts to near-nothing; only the title
    cover-art/logo stays (~.78). Smooth .9s fades. */
@@ -71,8 +71,11 @@ body.navopen #topnav:before{opacity:1}
 body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
 .chip.cur .navlabel{color:#fff}
 .chip.f .navlabel{color:#fff}
-.chip.cur{color:#fff}
-.chip.f{background:#fff;color:#12101a}
+/* the section on screen is a white square, as on the big streaming apps; while the menu has
+   the focus the white goes to the item under it */
+.chip.cur{background:#fff;color:#0a0a0b}
+body.navopen .chip.cur{background:rgba(255,255,255,.14);color:#fff}
+.chip.f,body.navopen .chip.f{background:#fff;color:#0a0a0b}
 
 /* ---------- screens ---------- */
 .scr{position:fixed;top:0;left:0;right:0;bottom:0;display:none}
@@ -90,15 +93,22 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 #heroTitle.long{font-size:44px}
 #heroMeta{margin-top:16px;height:32px;line-height:32px;font-size:24px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden}
 #heroMeta span{margin-right:24px}
-#heroMeta .where{color:#5EEAD4;font-weight:700}
+#heroMeta .where{color:#fff;font-weight:700}
 #heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:16px;font-weight:800;line-height:22px;vertical-align:2px}
 /* two lines ending in an ellipsis instead of a sentence cut in half */
 #heroDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-height:73px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .card .rank{position:absolute;left:10px;top:4px;font-size:72px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.85),0 0 2px #000;pointer-events:none}
 #heroCast{display:none}
-/* which featured title the hero shows while Home is left alone (spotlight.js) */
-#heroDots{display:none;margin-top:18px;height:10px}
-body.spotlight #heroDots{display:block}
+/* Home's featured titles (spotlight.js): the same hero, larger and lower, with the rows below
+   it. Only transforms move, so the TV slides the layers without drawing them again. */
+#hero,#rowsClip{transition:opacity .9s ease,transform .3s cubic-bezier(.2,.8,.2,1)}
+body.featured #hero{width:50%;-webkit-transform:translateY(330px);transform:translateY(330px)}
+body.featured #rowsClip{-webkit-transform:translateY(440px);transform:translateY(440px)}
+#heroGenres,#heroBtn,#heroDots{display:none}
+body.featured #heroGenres{display:block;margin-top:14px;height:30px;line-height:30px;font-size:22px;font-weight:600;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden}
+body.featured #heroBtn{display:inline-block;margin-top:26px;padding:0 30px;height:56px;line-height:56px;border-radius:28px;background:#fff;color:#0a0a0b;font-size:22px;font-weight:700}
+body.featured.navopen #heroBtn{background:rgba(255,255,255,.16);color:#fff}
+body.featured #heroDots{display:block;position:absolute;left:1500px;bottom:23px;height:10px;white-space:nowrap}
 #heroDots span{display:inline-block;vertical-align:top;width:10px;height:10px;margin-right:8px;border-radius:5px;background:rgba(255,255,255,.35)}
 #heroDots span.on{width:30px;background:#fff}
 #heroDesc.roll{display:block;-webkit-line-clamp:none}
@@ -128,11 +138,11 @@ body.spotlight #heroDots{display:block}
 .card.wide.noart .nm,.card.labeled.noart .nm{display:none !important}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:14px;right:14px;bottom:12px;height:6px;border-radius:3px;background:rgba(255,255,255,.28);overflow:hidden}
-.pbar div{height:100%;background:#2DD4BF}
+.pbar div{height:100%;background:#fff}
 .cwlabel .sub{margin-top:3px;font-size:21px;font-weight:400;color:rgba(255,255,255,.76);overflow:hidden;text-overflow:ellipsis}
-.cwlabel .sub.next{color:#99F6E4}
+.cwlabel .sub.next{color:#fff;font-weight:600}
 .cwlabel{position:absolute;left:0;right:0;bottom:0;padding:44px 16px 28px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.86));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wbadge{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:50%;background:rgba(15,118,110,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;z-index:3}
+.wbadge{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;z-index:3}
 .wbadge svg{width:26px;height:26px;fill:currentColor}
 .ep .th .wbadge{top:8px;right:8px;width:38px;height:38px}
 .ep .th .wbadge svg{width:23px;height:23px}
@@ -313,7 +323,8 @@ body.series-episode #dSeasons{margin-top:24px}
 /* on and off as a switch */
 .set .vl.sw{display:block;position:relative;width:66px;height:36px;padding:0;border-radius:18px;background:rgba(255,255,255,.24);box-sizing:border-box}
 .vl.sw:after{content:"";position:absolute;top:4px;left:4px;width:28px;height:28px;border-radius:50%;background:#fff;transition:left .12s ease}
-.set .vl.sw.on{background:#14B8A6}
+.set .vl.sw.on{background:#fff}
+.vl.sw.on:after{background:#0a0a0b}
 .vl.sw.on:after{left:34px}
 .setdiag{max-width:1100px;margin:0 0 12px;padding:14px 26px;border-radius:12px;background:rgba(255,255,255,.05);font-size:22px;line-height:1.6;color:rgba(255,255,255,.75)}
 .sethint{margin:18px 0 0 6px;font-size:22px;color:rgba(255,255,255,.68)}
@@ -361,7 +372,11 @@ body.series-episode #dSeasons{margin-top:24px}
   #heroMeta span{margin-right:16px}
   #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
   #heroDesc{margin-top:7px;font-size:17px;line-height:1.4;max-height:48px}
-  #heroDots{margin-top:10px;height:8px}#heroDots span{width:8px;height:8px;margin-right:6px}#heroDots span.on{width:22px}
+  body.featured #hero{-webkit-transform:translateY(220px);transform:translateY(220px)}
+  body.featured #rowsClip{-webkit-transform:translateY(290px);transform:translateY(290px)}
+  body.featured #heroGenres{margin-top:8px;height:20px;line-height:20px;font-size:15px}
+  body.featured #heroBtn{margin-top:14px;padding:0 20px;height:38px;line-height:38px;border-radius:19px;font-size:15px}
+  body.featured #heroDots{left:1000px;bottom:15px;height:8px}#heroDots span{width:8px;height:8px;margin-right:6px}#heroDots span.on{width:22px}
   #rowsClip{top:250px;left:86px}
   #boardMsg{top:270px;left:112px;font-size:20px}
   .row{padding:9px 0 18px 26px;transform:translateY(10px)}
@@ -670,7 +685,7 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 
 <!-- Home and Library share the cinematic hero/rows layer. Discover has its own grid. -->
 <div class="scr" id="scrBoard">
-  <div id="hero"><img id="heroLogo"><div id="heroTitle"></div><div id="heroMeta"></div><div id="heroDesc"></div><div id="heroCast"></div><div id="heroDots"></div></div>
+  <div id="hero"><img id="heroLogo"><div id="heroTitle"></div><div id="heroGenres"></div><div id="heroMeta"></div><div id="heroDesc"></div><div id="heroCast"></div><div id="heroBtn"></div><div id="heroDots"></div></div>
   <div id="rowsClip"><div id="rows"></div></div>
   <div id="boardMsg"></div>
 </div>

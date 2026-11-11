@@ -147,6 +147,18 @@ async function main() {
     assert.ok(!/\blogin\b/.test(authenticatedState.bodyClass), 'Login body state leaked after authentication.');
     assert.notStrictEqual(authenticatedState.topnavDisplay, 'none', 'Top navigation stayed hidden after authentication.');
     assert.ok(/\bon\b/.test(authenticatedState.home), 'Home screen is not active after authentication.');
+    /* Home opens on the featured titles: the button and the dots inside the screen, the first row
+       below them, then Down goes to the rows */
+    var featuredEval = await protocol.call('Runtime.evaluate', { expression: "(function(){function box(id){var e=document.getElementById(id);if(!e)return null;var r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right};}var rs=document.querySelectorAll('#rows>.row'),t=null;for(var i=0;i<rs.length&&!t;i++)if(getComputedStyle(rs[i]).display!=='none')t=rs[i].querySelector('.rowtitle');return JSON.stringify({on:(' '+document.body.className+' ').indexOf(' featured ')>=0,button:box('heroBtn'),dots:box('heroDots'),row:t?t.getBoundingClientRect().top:null});})()", returnByValue: true });
+    var featuredState = JSON.parse(featuredEval.result.value);
+    assert.strictEqual(featuredState.on, true, 'Home did not open on the featured titles.');
+    assert.ok(featuredState.button.bottom <= height && featuredState.button.top > 0, 'The featured button is outside the screen at ' + width + 'x' + height + ': ' + JSON.stringify(featuredState));
+    assert.ok(featuredState.dots.right <= width, 'The featured dots are outside the screen at ' + width + 'x' + height + '.');
+    assert.ok(featuredState.row > featuredState.button.bottom && featuredState.row < height, 'The first row is not below the featured titles at ' + width + 'x' + height + ': ' + JSON.stringify(featuredState));
+    var featuredShot = await protocol.call('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
+    fs.writeFileSync(output.replace(/\.png$/i, '-featured.png'), Buffer.from(featuredShot.data, 'base64'));
+    await protocol.call('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, nativeVirtualKeyCode: 40, key: 'ArrowDown' });
+    await delay(400);
     var boardExpression = "(function(){var rows=document.querySelectorAll('#rows>.row'),visible=0,focused=-1,card=null;for(var i=0;i<rows.length;i++){if(getComputedStyle(rows[i]).display!=='none')visible++;var f=rows[i].querySelector('.card.f');if(f){focused=i;card=f;}}var cr=card&&card.getBoundingClientRect(),clip=document.getElementById('rowsClip').getBoundingClientRect();return JSON.stringify({total:rows.length,visible:visible,focused:focused,transform:document.getElementById('rows').style.transform,card:cr?{top:cr.top,bottom:cr.bottom,left:cr.left,right:cr.right}:null,clip:{top:clip.top,bottom:clip.bottom}});})()";
     var boardEval = await protocol.call('Runtime.evaluate', { expression: boardExpression, returnByValue: true });
     var boardState = JSON.parse(boardEval.result.value);

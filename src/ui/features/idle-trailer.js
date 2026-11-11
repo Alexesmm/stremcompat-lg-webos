@@ -86,12 +86,10 @@ setInterval(function () {
   if (idle && !has) {
     bodyAdd('idle');
     startIdleTrailer();
-    startSpotlight();
   } else if (!idle && has) {
     bodyRemove('idle');
     bodyRemove('trailer');
     stopIdleTrailer();
-    stopSpotlight();
   }
 }, 1000);
 /* the item under the cursor on whatever screen is showing (null if none) */

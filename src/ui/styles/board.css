@@ -7,15 +7,22 @@
 #heroTitle.long{font-size:44px}
 #heroMeta{margin-top:16px;height:32px;line-height:32px;font-size:24px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden}
 #heroMeta span{margin-right:24px}
-#heroMeta .where{color:#5EEAD4;font-weight:700}
+#heroMeta .where{color:#fff;font-weight:700}
 #heroMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:16px;font-weight:800;line-height:22px;vertical-align:2px}
 /* two lines ending in an ellipsis instead of a sentence cut in half */
 #heroDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-height:73px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .card .rank{position:absolute;left:10px;top:4px;font-size:72px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.85),0 0 2px #000;pointer-events:none}
 #heroCast{display:none}
-/* which featured title the hero shows while Home is left alone (spotlight.js) */
-#heroDots{display:none;margin-top:18px;height:10px}
-body.spotlight #heroDots{display:block}
+/* Home's featured titles (spotlight.js): the same hero, larger and lower, with the rows below
+   it. Only transforms move, so the TV slides the layers without drawing them again. */
+#hero,#rowsClip{transition:opacity .9s ease,transform .3s cubic-bezier(.2,.8,.2,1)}
+body.featured #hero{width:50%;-webkit-transform:translateY(330px);transform:translateY(330px)}
+body.featured #rowsClip{-webkit-transform:translateY(440px);transform:translateY(440px)}
+#heroGenres,#heroBtn,#heroDots{display:none}
+body.featured #heroGenres{display:block;margin-top:14px;height:30px;line-height:30px;font-size:22px;font-weight:600;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden}
+body.featured #heroBtn{display:inline-block;margin-top:26px;padding:0 30px;height:56px;line-height:56px;border-radius:28px;background:#fff;color:#0a0a0b;font-size:22px;font-weight:700}
+body.featured.navopen #heroBtn{background:rgba(255,255,255,.16);color:#fff}
+body.featured #heroDots{display:block;position:absolute;left:1500px;bottom:23px;height:10px;white-space:nowrap}
 #heroDots span{display:inline-block;vertical-align:top;width:10px;height:10px;margin-right:8px;border-radius:5px;background:rgba(255,255,255,.35)}
 #heroDots span.on{width:30px;background:#fff}
 #heroDesc.roll{display:block;-webkit-line-clamp:none}
@@ -45,11 +52,11 @@ body.spotlight #heroDots{display:block}
 .card.wide.noart .nm,.card.labeled.noart .nm{display:none !important}
 .card.ph{background:rgba(255,255,255,.055)}
 .pbar{position:absolute;left:14px;right:14px;bottom:12px;height:6px;border-radius:3px;background:rgba(255,255,255,.28);overflow:hidden}
-.pbar div{height:100%;background:#2DD4BF}
+.pbar div{height:100%;background:#fff}
 .cwlabel .sub{margin-top:3px;font-size:21px;font-weight:400;color:rgba(255,255,255,.76);overflow:hidden;text-overflow:ellipsis}
-.cwlabel .sub.next{color:#99F6E4}
+.cwlabel .sub.next{color:#fff;font-weight:600}
 .cwlabel{position:absolute;left:0;right:0;bottom:0;padding:44px 16px 28px;font-size:25px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.86));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wbadge{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:50%;background:rgba(15,118,110,.96);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;z-index:3}
+.wbadge{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;z-index:3}
 .wbadge svg{width:26px;height:26px;fill:currentColor}
 .ep .th .wbadge{top:8px;right:8px;width:38px;height:38px}
 .ep .th .wbadge svg{width:23px;height:23px}

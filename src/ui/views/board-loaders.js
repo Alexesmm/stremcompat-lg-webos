@@ -88,6 +88,7 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
   for (var d = 0; d < defs.length; d++)
     (function (def, di) {
       var row = buildRow(def.title, [], false);
+      row.catalog = def;
       board.rows.push(row);
       /* only the rows that start on screen get placeholders; a rebuild keeps its rows */
       if (!keepFocus && di < 3) placeholderCards(row);

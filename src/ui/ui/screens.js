@@ -25,6 +25,7 @@ function showScr(name) {
   /* the side menu follows the section on screen, also when Back returns to it */
   var section = chipTarget.indexOf(name);
   if (section >= 0) topNav.idx = section;
+  if (name !== 'home') bodyRemove('featured');
   if (name === 'login') bodyAdd('login');
   else bodyRemove('login');
   paintChips();

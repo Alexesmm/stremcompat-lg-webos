@@ -7,7 +7,6 @@ function idleTouch() {
     bodyRemove('idle');
     bodyRemove('trailer');
     stopIdleTrailer();
-    stopSpotlight();
   }
 }
 function pointerIndex(target, list) {
@@ -23,6 +22,7 @@ function pointerBoard(target, board, activate) {
       i = pointerIndex(target, row.cardEls || []);
     if (i < 0) continue;
     board.rowIdx = r;
+    board.top = false;
     row.col = i;
     topNav.active = false;
     board.paint();

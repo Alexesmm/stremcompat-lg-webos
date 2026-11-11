@@ -357,6 +357,7 @@
   "directedBy": "Réalisé par {0}",
   "sourceLanguageRow": "Langue : {0}",
   "sourcesButton": "Toutes les sources",
+  "seeDetails": "Voir les détails",
   "playingBest": "Lecture de la meilleure source : {0}",
   "updateAvailable": "StremCompat {0} est disponible. Mettez-le à jour dans Homebrew Channel.",
   "whatsNew": "Mis à jour vers StremCompat {0} : profils Nuvio, nouveau menu latéral et nouveaux Réglages, et épisodes, chapitres et vitesse dans le lecteur.",

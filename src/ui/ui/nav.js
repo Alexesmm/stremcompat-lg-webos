@@ -5,6 +5,7 @@ function curBoard() {
 }
 function resetBoardPosition(board) {
   board.rowIdx = 0;
+  board.top = true;
   for (var i = 0; i < board.rows.length; i++) board.rows[i].col = 0;
   board._act = null;
 }
