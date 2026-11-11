@@ -17,7 +17,7 @@
 
 ## About
 
-StremCompat is an independent, unofficial client for older LG TVs that cannot install the official Stremio app. It works with your own Stremio or Nuvio account and addons, with an interface made for the TV remote. It needs no root and no computer, not even for torrents, and the whole package is about 6 MB.
+StremCompat is an independent, unofficial client that brings your **Stremio or Nuvio** account and addons to older LG TVs (webOS 3 and 4), where the official apps cannot be installed. Sign in with either one; the interface is made for the TV remote. It needs no root and no computer, not even for torrents, and the whole package is about 6 MB.
 
 **Install and update from the Homebrew Channel, with no PC, if your TV already has it.** See [Installation](#installation).
 
@@ -34,8 +34,8 @@ This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronic
 
 ## Features
 
-- **Your Stremio account:** sign in with a QR code or email. Library, progress, watched state and addons stay in sync with your other Stremio apps.
-- **Or your Nuvio account (experimental):** sign in by email or QR code and choose who is watching; profiles can be added and changed on the TV, and their addons, library and progress come along.
+- **Stremio or Nuvio account:** sign in with a QR code or email. Library, progress, watched state and addons stay in sync with your other Stremio or Nuvio apps.
+- **Nuvio profiles (experimental):** choose who is watching at every start, and add profiles or change their name, colour and avatar on the TV. Each profile keeps its own addons, library and progress.
 - **Your way:** on the first start choose **Simple** or **Complete**, and a **Standard** or **Light** look (for webOS 3 and TVs with little memory). Both can be changed in Settings.
 - **Browsing:** Home, Discover, Search and Library from your addons, with Continue Watching and the minutes left.
 - **Best source:** one press goes straight to the video. It asks which quality you want, or uses the one set in Settings.
@@ -95,9 +95,9 @@ The app uses about 13 MB once installed, plus up to 768 MB of free storage while
 
 StremCompat has no accounts or sources of its own.
 
-1. Create a free account at [stremio.com/register](https://www.stremio.com/register), if you do not have one.
-2. Install your addons in the Stremio app or website. Without an addon that provides sources, titles open but have nothing to play.
-3. On the TV, sign in with the QR code or with your email and password.
+1. Create a free account at [stremio.com/register](https://www.stremio.com/register) or [nuvio.tv](https://nuvio.tv), if you do not have one.
+2. Install your addons in the Stremio or Nuvio app or website. Without an addon that provides sources, titles open but have nothing to play.
+3. On the TV, choose **Stremio** or **Nuvio** and sign in with the QR code or with your email and password.
 
 ## Compatibility
 
@@ -173,6 +173,6 @@ StremCompat is free and made in my spare time. If it has been useful to you, you
 
 - **[StremioBrew](https://github.com/simussu9-wq/stremiobrew)**: StremCompat started from its 1.0.0 package and has since been rewritten. See [NOTICE.md](NOTICE.md).
 - **[kieranbrown/stremio-webos](https://github.com/kieranbrown/stremio-webos)**: StremCompat started as a fork of this project, whose earlier interface came from [NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv). The launcher and interface have since been rewritten.
-- [Nuvio Engine](https://github.com/NuvioMedia/nuvio-engine) and libtorrent power the torrent engine. FFmpeg, the Inter typeface and LG webOS tooling are also used. Stremio is a trademark of its owner.
+- [Nuvio Engine](https://github.com/NuvioMedia/nuvio-engine) and libtorrent power the torrent engine. FFmpeg, the Inter typeface and LG webOS tooling are also used. Stremio and Nuvio are trademarks of their owners.
 
-StremCompat is licensed under [GPL-3.0](LICENSE). The license does not cover other third-party components, or the names and logos of StremCompat, Stremio, LG and Samsung. See [NOTICE.md](NOTICE.md) and [THIRD_PARTY.md](THIRD_PARTY.md) for project lineage, component provenance and open items.
+StremCompat is licensed under [GPL-3.0](LICENSE). The license does not cover other third-party components, or the names and logos of StremCompat, Stremio, Nuvio, LG and Samsung. See [NOTICE.md](NOTICE.md) and [THIRD_PARTY.md](THIRD_PARTY.md) for project lineage, component provenance and open items.
