@@ -31,7 +31,7 @@ This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronic
 - **New side menu and Settings:** your profile at the top, Settings in two columns, Sign out and Leave the app easy to find.
 - **More in the player:** episodes, chapters, picture size, speed, and better subtitles and audio.
 - **You sign in again once** after updating to 4.0 from 3.x. See the [release notes](docs/releases/v4.0.0.md).
-- **4.0.1** adds an option to always keep torrents on a USB drive. See its [notes](docs/releases/v4.0.1.md).
+- **4.0.1** adds an option to always keep torrents on a USB drive, and **4.0.2** lets large MKV files with a chained index seek. See the [4.0.1](docs/releases/v4.0.1.md) and [4.0.2](docs/releases/v4.0.2.md) notes.
 
 ## Features
 
@@ -88,7 +88,7 @@ There are two packages, and the video looks the same in both:
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v4.0.1-1080p.ipk` or `StremCompat-v4.0.1-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v4.0.2-1080p.ipk` or `StremCompat-v4.0.2-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 
@@ -153,7 +153,7 @@ It differs from the LG version in a few ways:
 - **Torrents** need a streaming server on another computer: **Settings > Streaming server > Address**. Debrid and direct links work without one.
 - **Not available:** seek previews, technical badges on the paused screen and background trailers, which depend on FFmpeg.
 
-Download the package from the [test release](https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/tizen-beta-3), which has the installation steps. Please report how it went with your TV model and Tizen version in [Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions).
+Download the package from the [test release](https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/tizen-beta-4), which has the installation steps. Please report how it went with your TV model and Tizen version in [Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions).
 
 ## Android TV (test version)
 
