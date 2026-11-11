@@ -18,6 +18,8 @@ var MAX_LINKS_REMEMBERED = 80;
 var PASSED_ON = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified', 'etag'];
 var EXPIRED = { 403: true, 404: true, 410: true };
 var MAX_SEEK_FIXES = 80;
+/* the start of a film waits for these reads: past this, it goes on unchanged */
+var SEEK_READ_LIMIT_MS = 5000;
 
 /* what mkv-seek.js found for a stream, by the same key as remembered links: patches, or null */
 var seekFixes = Object.create(null);
@@ -233,15 +235,26 @@ function findSeekFix(transfer, upstream, address, custom) {
   });
 }
 
-/* other bytes of the same file, from the link the answer came from; cb(error, Buffer) */
+/* Other bytes of the same file, from the link the answer came from; cb(error, Buffer). It answers
+   on the end of the reply as well as on its close: the TVs' own Node (0.12, 4.4) sends no close
+   after a reply that ends or is cut, and the start of the film waits for this answer. */
 function readRange(transfer, address, custom, from, length, cb) {
   var target = urlmod.parse(address);
   var asked = { range: 'bytes=' + from + '-' + (from + length - 1) };
   var done = false;
+  var parts = [];
+  var limit = setTimeout(function () {
+    finish('timeout');
+    request.destroy();
+  }, SEEK_READ_LIMIT_MS);
   function finish(err, buf) {
     if (done) return;
     done = true;
+    clearTimeout(limit);
     cb(err, buf);
+  }
+  function received() {
+    finish(null, Buffer.concat(parts).slice(0, length));
   }
   var request = (target.protocol === 'https:' ? https : http).request(
     {
@@ -256,16 +269,16 @@ function readRange(transfer, address, custom, from, length, cb) {
         upstream.resume();
         return finish('HTTP ' + upstream.statusCode);
       }
-      var parts = [];
       var size = 0;
       upstream.on('data', function (chunk) {
         parts.push(chunk);
         size += chunk.length;
-        if (size >= length) upstream.destroy();
+        if (size < length) return;
+        received();
+        request.destroy();
       });
-      upstream.on('close', function () {
-        finish(null, Buffer.concat(parts).slice(0, length));
-      });
+      upstream.on('end', received);
+      upstream.on('close', received);
       upstream.on('error', function () {
         finish('error');
       });
@@ -273,10 +286,6 @@ function readRange(transfer, address, custom, from, length, cb) {
   );
   request.on('error', function () {
     finish('error');
-  });
-  request.setTimeout(IDLE_LIMIT_MS, function () {
-    finish('timeout');
-    request.destroy();
   });
   transfer.res.on('close', function () {
     request.destroy();

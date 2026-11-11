@@ -32,16 +32,21 @@ if (!http.ClientRequest.prototype.destroy)
     this.abort();
   };
 
-/* Node 4.4 has a Buffer.from, but the one every typed array inherits: it does not take encodings */
+/* Node 4.4 has a Buffer.from, but the one every typed array inherits: it does not take encodings.
+   It is read-only there, so a plain assignment is ignored: it has to be defined. */
 if (!Buffer.alloc) {
   Buffer.alloc = function (size) {
     var b = new Buffer(size);
     b.fill(0);
     return b;
   };
-  Buffer.from = function (value, encoding) {
-    return new Buffer(value, encoding);
-  };
+  Object.defineProperty(Buffer, 'from', {
+    value: function (value, encoding) {
+      return new Buffer(value, encoding);
+    },
+    writable: true,
+    configurable: true
+  });
 }
 
 if (!Object.assign)
