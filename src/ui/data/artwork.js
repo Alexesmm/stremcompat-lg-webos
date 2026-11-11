@@ -34,12 +34,13 @@ function bgSmall(it) {
 function bgWidth() {
   return uiLook() === 'light' ? 640 : 0;
 }
-function bgMid(it) {
+/* sharp: the featured titles' wider background, 1280 px, except on small TVs and in the light look */
+function bgMid(it, sharp) {
   var u = String(bgOf(it) || '');
   if (!u) return u;
   /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
   if (!HAS_MEDIA_TOOLS) return bgSmall(it);
-  var width = bgWidth(),
+  var width = sharp && !TV_PROFILE.lowMemory && uiLook() !== 'light' ? 1280 : bgWidth(),
     size = width >= 1280 ? 'large' : 'medium';
   return (
     '/artwork?u=' +

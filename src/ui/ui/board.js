@@ -17,6 +17,8 @@ function setHeroDesc(text) {
   el.textContent = text || '';
   if (!text) return;
   heroRoll.wait = setTimeout(function () {
+    /* the featured titles pass by themselves: two lines and an ellipsis, without rolling */
+    if (bodyHas('featured')) return;
     el.className = 'roll';
     var end = el.scrollHeight - el.clientHeight;
     if (end <= 2) {
@@ -237,7 +239,7 @@ function makeBoard(loader) {
       $('heroGenres').textContent = heroGenres(it.genres);
       setHeroDesc(it.description);
       $('heroCast').textContent = it.cast || '';
-      setBg(bgMid(it));
+      setBg(bgMid(it, this === home && featuredShown()));
       if ((!it.description || it.cast === undefined) && it.id) {
         getMeta(it.type, it.id, function (m) {
           if (!m) return;

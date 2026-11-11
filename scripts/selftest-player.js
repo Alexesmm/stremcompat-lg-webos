@@ -256,12 +256,20 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   ctx.menu.key(40);
   ctx.menu.key(13);
   assert.deepStrictEqual(chosen, ['720p/Auto'], 'the answer was not used, or the focus did not start on the qualities');
-  /* the language row changes on OK and is kept for the next time */
+  /* the language row opens the list of languages; Left goes back, a language chosen comes back
+     to the qualities and is kept for the next time */
   ctx.menu.withBestChoice(go);
   ctx.menu.key(38);
   ctx.menu.key(13);
-  assert.strictEqual(ctx.menu.open, true, 'changing the language started a source');
+  assert.strictEqual(ctx.menu.els.length, 3, 'the language row did not open the list of languages');
+  ctx.menu.key(37);
+  assert.strictEqual(ctx.menu.open, true, 'Left in the languages closed Best source');
+  assert.strictEqual(ctx.menu.els.length, 5, 'Left in the languages did not go back to the qualities');
+  ctx.menu.key(38);
+  ctx.menu.key(13);
   ctx.menu.key(40);
+  ctx.menu.key(13);
+  assert.strictEqual(ctx.menu.open, true, 'changing the language started a source');
   ctx.menu.key(13);
   assert.deepStrictEqual(chosen, ['720p/Auto', '1080p/pt'], 'the language chosen did not go with the quality');
   assert.strictEqual(stored.bestLanguage, 'pt', 'the language chosen was not kept');

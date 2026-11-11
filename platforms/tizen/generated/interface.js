@@ -415,7 +415,12 @@ var UI_TEXT = {
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     playBest: 'Best source',
     directedBy: 'Directed by {0}',
-    sourceLanguageRow: 'Language: {0}',
+    sourceLanguageRow: 'Audio: {0}',
+    bestAudioHint: 'Sources with {0} audio first. Subtitles are chosen later, in the player.',
+    bestAudioAny: 'Any audio language. Subtitles are chosen later, in the player.',
+    audioLanguageTitle: 'Audio language',
+    audioLanguageSub: 'Sources dubbed in this language come first. Subtitles are chosen later, in the player.',
+    anyAudioLanguage: 'Any language',
     sourcesButton: 'All sources',
     seeDetails: 'See details',
     playingBest: 'Playing the best source: {0}',
@@ -521,9 +526,9 @@ var UI_TEXT = {
     preferredQuality: 'Preferred quality',
     qualityAsk: 'Ask',
     whichQuality: 'Which quality?',
-    preferredLanguage: 'Preferred source language',
+    preferredLanguage: 'Audio language of sources',
     anyLanguage: 'Any',
-    langFilter: 'Language: {0}',
+    langFilter: 'Audio: {0}',
     langAll: 'All',
     langOther: 'Other',
     subsTag: 'SUBS',
@@ -821,7 +826,12 @@ var UI_TEXT = {
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     playBest: 'Melhor fonte',
     directedBy: 'Direção: {0}',
-    sourceLanguageRow: 'Idioma: {0}',
+    sourceLanguageRow: 'Áudio: {0}',
+    bestAudioHint: 'Fontes com áudio em {0} primeiro. A legenda você escolhe depois, no player.',
+    bestAudioAny: 'Qualquer idioma de áudio. A legenda você escolhe depois, no player.',
+    audioLanguageTitle: 'Idioma do áudio',
+    audioLanguageSub: 'Fontes dubladas nesse idioma vêm primeiro. A legenda você escolhe depois, no player.',
+    anyAudioLanguage: 'Qualquer idioma',
     sourcesButton: 'Todas as fontes',
     seeDetails: 'Ver detalhes',
     playingBest: 'Tocando a melhor fonte: {0}',
@@ -928,9 +938,9 @@ var UI_TEXT = {
     preferredQuality: 'Qualidade preferida',
     qualityAsk: 'Perguntar',
     whichQuality: 'Qual qualidade?',
-    preferredLanguage: 'Idioma preferido das fontes',
+    preferredLanguage: 'Idioma do áudio das fontes',
     anyLanguage: 'Qualquer',
-    langFilter: 'Idioma: {0}',
+    langFilter: 'Áudio: {0}',
     langAll: 'Todos',
     langOther: 'Outros',
     subsTag: 'LEG',
@@ -1847,12 +1857,13 @@ function bgSmall(it) {
 function bgWidth() {
   return uiLook() === 'light' ? 640 : 0;
 }
-function bgMid(it) {
+/* sharp: the featured titles' wider background, 1280 px, except on small TVs and in the light look */
+function bgMid(it, sharp) {
   var u = String(bgOf(it) || '');
   if (!u) return u;
   /* reducing the image takes FFmpeg: without it, the smaller version from the artwork server */
   if (!HAS_MEDIA_TOOLS) return bgSmall(it);
-  var width = bgWidth(),
+  var width = sharp && !TV_PROFILE.lowMemory && uiLook() !== 'light' ? 1280 : bgWidth(),
     size = width >= 1280 ? 'large' : 'medium';
   return (
     '/artwork?u=' +
@@ -2363,9 +2374,11 @@ function preferredSourceLanguage() {
   var set = lsRaw('preferredSourceLanguage', 'Ask');
   return set === 'Ask' ? lsRaw('bestLanguage', 'Auto') : set;
 }
-/* 0 when the source has the preferred language, 1 for multi audio, 2 otherwise */
+/* 0 when the source has the preferred audio language, 1 for multi audio, 2 otherwise; a source
+   whose flags name only its subtitles ("Multi Subs") counts as otherwise */
 function langRank(s, pref) {
   if (!pref || pref === 'Auto') return 0;
+  if (s.subLangsOnly) return 2;
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }
@@ -3046,7 +3059,7 @@ function goScr(name, params, noStack) {
 }
 function goBackScr() {
   if (cwMenu.open) {
-    cwMenu.close();
+    cwMenu.back();
     return;
   }
   if (SCR === 'login') {
@@ -3256,6 +3269,8 @@ function setHeroDesc(text) {
   el.textContent = text || '';
   if (!text) return;
   heroRoll.wait = setTimeout(function () {
+    /* the featured titles pass by themselves: two lines and an ellipsis, without rolling */
+    if (bodyHas('featured')) return;
     el.className = 'roll';
     var end = el.scrollHeight - el.clientHeight;
     if (end <= 2) {
@@ -3476,7 +3491,7 @@ function makeBoard(loader) {
       $('heroGenres').textContent = heroGenres(it.genres);
       setHeroDesc(it.description);
       $('heroCast').textContent = it.cast || '';
-      setBg(bgMid(it));
+      setBg(bgMid(it, this === home && featuredShown()));
       if ((!it.description || it.cast === undefined) && it.id) {
         getMeta(it.type, it.id, function (m) {
           if (!m) return;
@@ -4548,6 +4563,7 @@ var cwMenu = {
   begin: function (title, sub) {
     this.open = true;
     this.idx = 0;
+    this.onBack = null;
     $('cwmItems').innerHTML = '';
     this.els = [];
     this.acts = [];
@@ -4578,51 +4594,75 @@ var cwMenu = {
     $('cwm').style.display = 'block';
     this.paint();
   },
-  /* Best source asks the quality and the language, unless Settings names them: one menu, whose
-     first row changes the language on OK (kept for the next time) and whose other rows start the
-     film. then(quality, language) */
+  /* Left or Back: a list opened from another one goes back to it, anything else closes */
+  back: function () {
+    if (this.onBack) this.onBack();
+    else this.close();
+  },
+  /* Best source asks the quality and the audio language, unless Settings names them. The first
+     row, "Audio: Português ›", opens the list of languages (the choice is kept for the next
+     time); the other rows start the film. then(quality, language) */
   withBestChoice: function (then) {
     var quality = lsRaw('preferredSourceQuality', 'Ask'),
       askLanguage = lsRaw('preferredSourceLanguage', 'Ask') === 'Ask',
-      language = preferredSourceLanguage();
+      language = preferredSourceLanguage(),
+      self = this;
     if (quality !== 'Ask' && !askLanguage) return then(quality, language);
-    var self = this,
-      choices = ['Auto'],
-      ui = langBase(UI_LANG);
-    SOURCE_LANGUAGES.forEach(function (l) {
-      if (l[0] === ui || l[0] === 'en') choices.push(l[0]);
-    });
-    if (choices.indexOf(language) < 0) choices.push(language);
-    this.it = null;
-    this.begin(tx(quality === 'Ask' ? 'whichQuality' : 'playBest'), '');
-    function languageLabel() {
-      return tx('sourceLanguageRow', sourceLanguageName(language));
+    function languageName(code) {
+      return code === 'Auto' ? tx('anyAudioLanguage') : sourceLanguageName(code);
     }
-    if (askLanguage)
-      this.add(GLOBE_ICON, languageLabel(), function () {
-        language = choices[(choices.indexOf(language) + 1) % choices.length];
-        lsRawSet('bestLanguage', language);
-        self.els[0].getElementsByTagName('span')[0].textContent = languageLabel();
+    function qualities() {
+      self.begin(
+        tx(quality === 'Ask' ? 'whichQuality' : 'playBest'),
+        language === 'Auto' ? tx('bestAudioAny') : tx('bestAudioHint', sourceLanguageName(language))
+      );
+      if (askLanguage)
+        self.add(GLOBE_ICON, tx('sourceLanguageRow', languageName(language)) + '  \u203a', languages);
+      var options =
+        quality === 'Ask'
+          ? [
+              ['1080p', '1080p'],
+              ['720p', '720p'],
+              ['4K', '4K'],
+              ['Auto', tx('automatic')]
+            ]
+          : [[quality, tx('playBest')]];
+      options.forEach(function (option) {
+        self.add(ICON.bolt, option[1], function () {
+          self.close();
+          then(option[0], language);
+        });
       });
-    var qualities =
-      quality === 'Ask'
-        ? [
-            ['1080p', '1080p'],
-            ['720p', '720p'],
-            ['4K', '4K'],
-            ['Auto', tx('automatic')]
-          ]
-        : [[quality, tx('playBest')]];
-    qualities.forEach(function (option) {
-      self.add(ICON.bolt, option[1], function () {
-        self.close();
-        then(option[0], language);
-      });
-    });
+      /* the focus starts on the first quality, the language row stays one step up */
+      self.idx = askLanguage ? 1 : 0;
+      self.paint();
+    }
+    function languages() {
+      self.begin(tx('audioLanguageTitle'), tx('audioLanguageSub'));
+      self.onBack = qualities;
+      ['Auto']
+        .concat(
+          SOURCE_LANGUAGES.map(function (l) {
+            return l[0];
+          })
+        )
+        .forEach(function (code, i) {
+          if (code === language) self.idx = i;
+          self.add(
+            code === language ? ICON.check : '<svg viewBox="0 0 24 24"></svg>',
+            languageName(code),
+            function () {
+              language = code;
+              lsRawSet('bestLanguage', code);
+              qualities();
+            }
+          );
+        });
+      self.paint();
+    }
+    this.it = null;
     $('cwm').style.display = 'block';
-    /* the focus starts on the first quality, the language row stays one step up */
-    this.idx = askLanguage ? 1 : 0;
-    this.paint();
+    qualities();
   },
   show: function (it) {
     this.it = it;
@@ -4700,7 +4740,7 @@ var cwMenu = {
       if (a) a();
       return true;
     } else if (k === 37) {
-      this.close();
+      this.back();
       return true;
     }
     this.paint();
@@ -9185,17 +9225,21 @@ function paintFeatured() {
     host.appendChild(dot);
   }
 }
-/* the hero shows the featured title, and the one after it is fetched meanwhile */
+/* the hero shows the featured title, and the ones on each side are fetched meanwhile, so Left,
+   Right and the next one by itself find their picture ready (the local server keeps them) */
+function warmFeatured(it) {
+  if (!it) return;
+  prewarm(bgMid(it, true));
+  if (isImdb(it.id)) prewarm('https://images.metahub.space/logo/medium/' + it.id + '/img');
+}
 function showFeatured() {
   featured.shownAt = Date.now();
   paintFeatured();
   home.heroApply(featuredItem());
   var items = featuredItems(),
-    next = items[(featured.at + 1) % items.length];
-  if (next) {
-    prewarm(bgMid(next));
-    if (isImdb(next.id)) prewarm('https://images.metahub.space/logo/medium/' + next.id + '/img');
-  }
+    n = items.length;
+  warmFeatured(items[(featured.at + 1) % n]);
+  warmFeatured(items[(featured.at + n - 1) % n]);
 }
 function moveFeatured(dir) {
   var n = featuredItems().length;

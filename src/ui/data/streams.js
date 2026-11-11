@@ -82,9 +82,11 @@ function preferredSourceLanguage() {
   var set = lsRaw('preferredSourceLanguage', 'Ask');
   return set === 'Ask' ? lsRaw('bestLanguage', 'Auto') : set;
 }
-/* 0 when the source has the preferred language, 1 for multi audio, 2 otherwise */
+/* 0 when the source has the preferred audio language, 1 for multi audio, 2 otherwise; a source
+   whose flags name only its subtitles ("Multi Subs") counts as otherwise */
 function langRank(s, pref) {
   if (!pref || pref === 'Auto') return 0;
+  if (s.subLangsOnly) return 2;
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }

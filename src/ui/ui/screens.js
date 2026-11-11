@@ -103,7 +103,7 @@ function goScr(name, params, noStack) {
 }
 function goBackScr() {
   if (cwMenu.open) {
-    cwMenu.close();
+    cwMenu.back();
     return;
   }
   if (SCR === 'login') {

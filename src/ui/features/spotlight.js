@@ -55,17 +55,21 @@ function paintFeatured() {
     host.appendChild(dot);
   }
 }
-/* the hero shows the featured title, and the one after it is fetched meanwhile */
+/* the hero shows the featured title, and the ones on each side are fetched meanwhile, so Left,
+   Right and the next one by itself find their picture ready (the local server keeps them) */
+function warmFeatured(it) {
+  if (!it) return;
+  prewarm(bgMid(it, true));
+  if (isImdb(it.id)) prewarm('https://images.metahub.space/logo/medium/' + it.id + '/img');
+}
 function showFeatured() {
   featured.shownAt = Date.now();
   paintFeatured();
   home.heroApply(featuredItem());
   var items = featuredItems(),
-    next = items[(featured.at + 1) % items.length];
-  if (next) {
-    prewarm(bgMid(next));
-    if (isImdb(next.id)) prewarm('https://images.metahub.space/logo/medium/' + next.id + '/img');
-  }
+    n = items.length;
+  warmFeatured(items[(featured.at + 1) % n]);
+  warmFeatured(items[(featured.at + n - 1) % n]);
 }
 function moveFeatured(dir) {
   var n = featuredItems().length;

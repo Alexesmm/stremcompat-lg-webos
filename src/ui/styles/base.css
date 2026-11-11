@@ -18,6 +18,9 @@ img{border:0}
 #bg.on,#bg2.on{opacity:.86}
 #bgshade{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,rgba(10,10,11,0) 26%,rgba(10,10,11,.25) 38%,rgba(10,10,11,.6) 49%,rgba(10,10,11,.88) 57%,#0a0a0b 61%),linear-gradient(to right,#0a0a0b 38%,rgba(10,10,11,.9) 44%,rgba(10,10,11,.66) 51%,rgba(10,10,11,.36) 59%,rgba(10,10,11,.14) 67%,rgba(10,10,11,0) 76%);transition:opacity .5s ease}
 /* Details use the same split composition, but allow the art to reach lower behind episodes. */
+body.featured #bg,body.featured #bg2{left:18%;height:86%}
+body.featured #bg.on,body.featured #bg2.on{opacity:.92}
+body.featured #bgshade{background:linear-gradient(to bottom,rgba(10,10,11,0) 40%,rgba(10,10,11,.35) 58%,rgba(10,10,11,.85) 76%,#0a0a0b 86%),linear-gradient(to right,#0a0a0b 18%,rgba(10,10,11,.86) 26%,rgba(10,10,11,.55) 38%,rgba(10,10,11,.2) 52%,rgba(10,10,11,0) 64%)}
 body.detail #bg,body.detail #bg2{left:34%;height:100%;background-position:center top}
 body.detail #bg.on,body.detail #bg2.on{opacity:.88}
 body.detail #bgshade{background:linear-gradient(to bottom,rgba(10,10,11,.04) 0%,rgba(10,10,11,.04) 46%,rgba(10,10,11,.72) 76%,#0a0a0b 96%),linear-gradient(to right,#0a0a0b 34%,rgba(10,10,11,.92) 41%,rgba(10,10,11,.7) 49%,rgba(10,10,11,.42) 58%,rgba(10,10,11,.16) 69%,rgba(10,10,11,0) 80%)}

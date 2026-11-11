@@ -16,13 +16,19 @@
 /* Home's featured titles (spotlight.js): the same hero, larger and lower, with the rows below
    it. Only transforms move, so the TV slides the layers without drawing them again. */
 #hero,#rowsClip{transition:opacity .9s ease,transform .3s cubic-bezier(.2,.8,.2,1)}
-body.featured #hero{width:50%;-webkit-transform:translateY(330px);transform:translateY(330px)}
+body.featured #hero{width:52%;-webkit-transform:translateY(270px);transform:translateY(270px)}
+body.featured #heroLogo{width:560px;height:160px}
+body.featured #heroTitle{height:160px;font-size:76px}
+body.featured #heroTitle.long{font-size:56px}
+body.featured #heroMeta{height:38px;line-height:38px;font-size:28px}
+body.featured #heroDesc{font-size:30px;max-height:87px}
+body.featured #heroTitle,body.featured #heroMeta,body.featured #heroDesc,body.featured #heroGenres{text-shadow:0 2px 12px rgba(0,0,0,.6)}
 body.featured #rowsClip{-webkit-transform:translateY(440px);transform:translateY(440px)}
 #heroGenres,#heroBtn,#heroDots{display:none}
-body.featured #heroGenres{display:block;margin-top:14px;height:30px;line-height:30px;font-size:22px;font-weight:600;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden}
-body.featured #heroBtn{display:inline-block;margin-top:26px;padding:0 30px;height:56px;line-height:56px;border-radius:28px;background:#fff;color:#0a0a0b;font-size:22px;font-weight:700}
+body.featured #heroGenres{display:block;margin-top:14px;height:34px;line-height:34px;font-size:26px;font-weight:600;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden}
+body.featured #heroBtn{display:inline-block;margin-top:28px;padding:0 36px;height:64px;line-height:64px;border-radius:32px;background:#fff;color:#0a0a0b;font-size:26px;font-weight:700}
 body.featured.navopen #heroBtn{background:rgba(255,255,255,.16);color:#fff}
-body.featured #heroDots{display:block;position:absolute;left:1500px;bottom:23px;height:10px;white-space:nowrap}
+body.featured #heroDots{display:block;position:absolute;left:1500px;bottom:27px;height:10px;white-space:nowrap}
 #heroDots span{display:inline-block;vertical-align:top;width:10px;height:10px;margin-right:8px;border-radius:5px;background:rgba(255,255,255,.35)}
 #heroDots span.on{width:30px;background:#fff}
 #heroDesc.roll{display:block;-webkit-line-clamp:none}
