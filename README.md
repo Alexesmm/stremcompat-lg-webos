@@ -21,7 +21,7 @@ StremCompat is an independent, unofficial client that brings your **Stremio or N
 
 **Install and update from the Homebrew Channel, with no PC, if your TV already has it.** See [Installation](#installation).
 
-**The stable version is the one for LG.** There is also a [test version for older Samsung TVs](#samsung-tvs-test-version).
+**The stable version is the one for LG.** There are also test versions for [older Samsung TVs](#samsung-tvs-test-version) and for [Android TV](#android-tv-test-version).
 
 This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronics or Samsung. Use only addons and media sources that you are authorized to access.
 
@@ -149,6 +149,17 @@ It differs from the LG version in a few ways:
 - **Not available:** seek previews, technical badges on the paused screen and background trailers, which depend on FFmpeg.
 
 Download the package from the [test release](https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/tizen-beta-3), which has the installation steps. Please report how it went with your TV model and Tizen version in [Discussions](https://github.com/Alexesmm/stremcompat-lg-webos/discussions).
+
+## Android TV (test version)
+
+> **This is a test version**, tested so far on the Google TV emulator. Expect problems, and please report them.
+
+It runs the same interface and local server inside an Android app, and plays video with Android's own player (ExoPlayer), so MKV, HEVC and surround sound play like in the official apps.
+
+- **Torrents** need a streaming server on another computer: **Settings > Streaming server > Address**. Debrid and direct links work without one.
+- **Requirements:** Android TV or Google TV 7.0 or newer, on an ARM device.
+
+Download `StremCompat-AndroidTV-test-1.apk` from the [test release](https://github.com/Alexesmm/stremcompat-lg-webos/releases/tag/android-tv-beta-1) and install it with the **Downloader** app, or with `adb install` from a computer.
 
 ## Troubleshooting
 

@@ -1,0 +1,73 @@
+// The Android TV app: a WebView over ExoPlayer, and the local server on an embedded Node.
+// scripts/package-android.js stages what the app carries into ../../.build/android-tv-app:
+//   assets/service  the local server and the pages, as for LG (build-stage.js, profile android-tv)
+//   jniLibs/<abi>   libnode.so (nodejs-mobile) and the FFmpeg, FFprobe and torrent programs
+//   node            nodejs-mobile's headers, for the small native part that starts Node
+plugins {
+    id 'com.android.application'
+}
+
+def staged = new File(rootDir, '../.build/android-tv-app').canonicalFile
+def profile = new groovy.json.JsonSlurper().parse(new File(rootDir, '../profiles/android-tv.json'))
+def signing = new Properties()
+def signingFile = file(System.getenv('STREMCOMPAT_SIGNING') ?: "${System.getProperty('user.home')}/Android/stremcompat-signing.properties")
+if (signingFile.exists()) signingFile.withInputStream { signing.load(it) }
+
+android {
+    namespace 'io.github.alexesmm.stremcompat'
+    compileSdk 35
+    ndkVersion '27.2.12479018'
+
+    defaultConfig {
+        applicationId profile.appId
+        minSdk 24
+        targetSdk 35
+        versionName profile.version
+        def v = profile.version.tokenize('.').collect { it as int }
+        versionCode v[0] * 10000 + v[1] * 100 + v[2]
+        buildConfigField 'int', 'SERVER_PORT', "${profile.port}"
+        ndk { abiFilters 'armeabi-v7a', 'arm64-v8a' }
+        externalNativeBuild {
+            cmake { arguments "-DNODE_DIR=${staged}/node", '-DANDROID_STL=c++_shared' }
+        }
+    }
+
+    signingConfigs {
+        release {
+            if (signing.storeFile) {
+                storeFile file(signing.storeFile)
+                storePassword signing.storePassword
+                keyAlias signing.keyAlias
+                keyPassword signing.keyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (signing.storeFile) signingConfig signingConfigs.release
+        }
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    externalNativeBuild {
+        cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' }
+    }
+    sourceSets {
+        main {
+            assets.srcDirs = ["${staged}/assets"]
+            jniLibs.srcDirs = ["${staged}/jniLibs"]
+        }
+    }
+    /* the programs are run from the folder the libraries are unpacked to */
+    packagingOptions { jniLibs { useLegacyPackaging true } }
+}
+
+dependencies {
+    def media3 = '1.5.1'
+    implementation "androidx.media3:media3-exoplayer:${media3}"
+    implementation "androidx.media3:media3-exoplayer-hls:${media3}"
+}

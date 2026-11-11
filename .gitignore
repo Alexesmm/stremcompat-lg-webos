@@ -9,3 +9,8 @@ node_modules/
 service/*.log
 service/profile.json
 *.log
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties

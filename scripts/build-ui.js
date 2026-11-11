@@ -6,6 +6,7 @@
 //   src/player/*.js  -> service/player/player-client.js (order: src/player/modules.json)
 //   src/ui/index.html + src/ui/styles/*.css -> service/interface.html (order: src/ui/styles/styles.json)
 //   the same scripts with src/platform/tizen -> platforms/tizen/generated/ (see build-tizen.js)
+//   and with src/platform/android -> platforms/android/generated/ (see build-stage.js)
 //
 // Scripts are plain fragments concatenated in order. In the interface, _prelude.js
 // opens the single strict-mode IIFE and _epilogue.js closes it; the player is
@@ -21,34 +22,86 @@ var path = require('path');
 
 var root = path.resolve(__dirname, '..');
 
-function lf(text) { return text.replace(/\r\n/g, '\n'); }
-function read(file) { return lf(fs.readFileSync(file, 'utf8')); }
-function list(dir, manifest) { return JSON.parse(read(path.join(dir, manifest))); }
+function lf(text) {
+  return text.replace(/\r\n/g, '\n');
+}
+function read(file) {
+  return lf(fs.readFileSync(file, 'utf8'));
+}
+function list(dir, manifest) {
+  return JSON.parse(read(path.join(dir, manifest)));
+}
 
 function scripts(dir, platform) {
-  return list(dir, 'modules.json').map(function (name) {
-    var text = read(path.join(dir, platform ? name.replace('platform/lg/', 'platform/' + platform + '/') : name));
-    return text.endsWith('\n') ? text : text + '\n';
-  }).join('');
+  return list(dir, 'modules.json')
+    .map(function (name) {
+      var text = read(
+        path.join(dir, platform ? name.replace('platform/lg/', 'platform/' + platform + '/') : name)
+      );
+      return text.endsWith('\n') ? text : text + '\n';
+    })
+    .join('');
 }
 
 // Style modules are separated by one blank line, as they were inside <style>.
 function page(dir) {
   var styleDir = path.join(dir, 'styles');
-  var css = list(styleDir, 'styles.json').map(function (name) {
-    return read(path.join(styleDir, name)).replace(/\s+$/, '');
-  }).join('\n\n');
+  var css = list(styleDir, 'styles.json')
+    .map(function (name) {
+      return read(path.join(styleDir, name)).replace(/\s+$/, '');
+    })
+    .join('\n\n');
   var template = read(path.join(dir, 'index.html'));
-  if (template.split('/*@styles*/').length !== 2) throw new Error('src/ui/index.html must contain /*@styles*/ once');
-  return template.replace('/*@styles*/', function () { return css; });
+  if (template.split('/*@styles*/').length !== 2)
+    throw new Error('src/ui/index.html must contain /*@styles*/ once');
+  return template.replace('/*@styles*/', function () {
+    return css;
+  });
 }
 
 var targets = [
-  { out: 'service/interface.js', build: function () { return scripts(path.join(root, 'src', 'ui')); } },
-  { out: 'service/player/player-client.js', build: function () { return scripts(path.join(root, 'src', 'player')); } },
-  { out: 'service/interface.html', build: function () { return page(path.join(root, 'src', 'ui')); } },
-  { out: 'platforms/tizen/generated/interface.js', build: function () { return scripts(path.join(root, 'src', 'ui'), 'tizen'); } },
-  { out: 'platforms/tizen/generated/player-client.js', build: function () { return scripts(path.join(root, 'src', 'player'), 'tizen'); } }
+  {
+    out: 'service/interface.js',
+    build: function () {
+      return scripts(path.join(root, 'src', 'ui'));
+    }
+  },
+  {
+    out: 'service/player/player-client.js',
+    build: function () {
+      return scripts(path.join(root, 'src', 'player'));
+    }
+  },
+  {
+    out: 'service/interface.html',
+    build: function () {
+      return page(path.join(root, 'src', 'ui'));
+    }
+  },
+  {
+    out: 'platforms/tizen/generated/interface.js',
+    build: function () {
+      return scripts(path.join(root, 'src', 'ui'), 'tizen');
+    }
+  },
+  {
+    out: 'platforms/tizen/generated/player-client.js',
+    build: function () {
+      return scripts(path.join(root, 'src', 'player'), 'tizen');
+    }
+  },
+  {
+    out: 'platforms/android/generated/interface.js',
+    build: function () {
+      return scripts(path.join(root, 'src', 'ui'), 'android');
+    }
+  },
+  {
+    out: 'platforms/android/generated/player-client.js',
+    build: function () {
+      return scripts(path.join(root, 'src', 'player'), 'android');
+    }
+  }
 ];
 
 var check = process.argv.indexOf('--check') >= 0,
