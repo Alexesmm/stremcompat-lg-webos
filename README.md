@@ -1,4 +1,4 @@
-# StremCompat: Stremio and Nuvio client for older LG TVs (webOS 3 and 4)
+# Stremio and Nuvio client for older LG TVs (webOS 3 and 4)
 
 <p align="center">
   <img src="docs/assets/stremcompat-hero-en.png" alt="StremCompat home interface running on LG webOS" width="1200">
