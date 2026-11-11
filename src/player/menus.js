@@ -20,6 +20,7 @@ function openMenu(view) {
   if (view === 'root' || view === 'audio') ensureTechProbe();
   if (view === 'root') ensureTorrentFiles();
   if (view === 'episodes') ensureSeasonList();
+  if (view === 'sources') ensureSources();
   if (view === 'root') {
     html += '<div class=mh>' + P.settings + '</div>';
     html += '<div class=mi>' + P.audio + ': ' + eh(audioName()) + ' \u203a</div>';
@@ -34,6 +35,8 @@ function openMenu(view) {
       html += '<div class=mi>' + P.chapters + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'chapters' });
     }
+    html += '<div class=mi>' + P.sources + ' \u203a</div>';
+    menuItems.push({ k: 'go', to: 'sources' });
     if (!SIMPLE && torrentFileList && torrentFileList.length > 1) {
       html += '<div class=mi>' + P.files + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'files' });
@@ -70,6 +73,15 @@ function openMenu(view) {
       var mark = mediaInfo.chapters[ch];
       html += choiceRow(fmt(mark.t) + (mark.name ? '  ·  ' + mark.name : ''), ch === nowIn);
       menuItems.push({ k: 'chapter', t: mark.t, on: ch === nowIn });
+    }
+  } else if (view === 'sources') {
+    html += '<div class=mh>' + P.sources + '</div>';
+    if (!sourceList) html += '<div class=mi style="opacity:.5">' + P.readingTracks + '</div>';
+    else if (!sourceList.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
+    for (var so = 0; sourceList && so < sourceList.length; so++) {
+      var here = sourceList[so].url === URL;
+      html += choiceRow(sourceRowText(sourceList[so]), here);
+      menuItems.push({ k: 'source', at: so, on: here });
     }
   } else if (view === 'files') {
     html += '<div class=mh>' + P.files + '</div>';
@@ -343,6 +355,11 @@ function chooseMenu() {
   if (it.k === 'chapter') {
     closeMenu();
     seekTo(it.t);
+    return;
+  }
+  if (it.k === 'source') {
+    closeMenu();
+    if (!it.on) playOtherSource(sourceList[it.at]);
     return;
   }
   if (it.k === 'episode' || it.k === 'file') {

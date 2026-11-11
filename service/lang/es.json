@@ -307,6 +307,7 @@
     "picture": "Imagen",
     "pictureFit": "Imagen completa",
     "pictureZoom": "Llenar la pantalla",
+    "sources": "Fuentes",
     "speed": "Velocidad",
     "speedRefused": "Este televisor no cambia la velocidad de este video",
     "subtitlesReady": "Subtítulos listos",
@@ -353,6 +354,9 @@
     "language": "idioma"
   },
   "playBest": "Mejor fuente",
+  "directedBy": "Dirección: {0}",
+  "sourceLanguageRow": "Idioma: {0}",
+  "sourcesButton": "Todas las fuentes",
   "playingBest": "Reproduciendo la mejor fuente: {0}",
   "updateAvailable": "StremCompat {0} está disponible. Actualízalo en Homebrew Channel.",
   "whatsNew": "Actualizado a StremCompat {0}: perfiles de Nuvio, nuevo menú lateral y Ajustes, y episodios, capítulos y velocidad en el reproductor.",

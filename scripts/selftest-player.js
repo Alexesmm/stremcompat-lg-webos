@@ -169,7 +169,7 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   function node() { return { style: {}, appendChild: function () {}, innerHTML: '', offsetTop: 0 }; }
   var ctx = {
     document: { createElement: node }, $: node, tx: function () { return ''; }, lsRaw: function (k, d) { return d; },
-    langRank: function () { return 0; }, langGroups: function () { return []; }, sourceTags: function () { return []; },
+    langRank: function () { return 0; }, preferredSourceLanguage: function () { return 'Auto'; }, langGroups: function () { return []; }, sourceTags: function () { return []; },
     setF: function () {}, bestSource: function () { return null; }, sourceOrder: function (a, b) { return b.seeds - a.seeds; }, window: {}
   };
   vm.runInNewContext(src('ui/views/streams.js') + ';this.list=streamsUI;', ctx);
@@ -234,30 +234,41 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   assert.strictEqual(direct.fail.className, '', 'the failure message stayed over a film that started');
 })();
 
-// ---- Best source asks for the quality each time, unless Settings names one (ui/views/card-menu.js) ----
+// ---- Best source asks the quality and the language, unless Settings names them (ui/views/card-menu.js) ----
 (function () {
-  var stored = {}, node = function () { return { style: {}, appendChild: function () {} }; };
+  var stored = {}, node = function () { return { style: {}, appendChild: function () {}, getElementsByTagName: function () { return [{}]; } }; };
   var ctx = {
     lsRaw: function (k, d) { return stored[k] || d; },
-    tx: function (k) { return k; }, esc: function (s) { return s; }, ICON: {}, setF: function () {}, $: node,
-    document: { createElement: node }
+    lsRawSet: function (k, v) { stored[k] = v; },
+    tx: function (k) { return k; }, esc: function (s) { return s; }, ICON: {}, GLOBE_ICON: '', setF: function () {}, $: node,
+    document: { createElement: node }, UI_LANG: 'pt-BR', langBase: function (c) { return String(c).split('-')[0]; },
+    SOURCE_LANGUAGES: [['pt', 'Português'], ['en', 'English']],
+    sourceLanguageName: function (c) { return c; },
+    preferredSourceLanguage: function () { return stored.preferredSourceLanguage && stored.preferredSourceLanguage !== 'Ask' ? stored.preferredSourceLanguage : stored.bestLanguage || 'Auto'; }
   };
   vm.runInNewContext(src('ui/views/card-menu.js') + ';this.menu=cwMenu;', ctx);
-  var chosen = [], go = function (quality) { chosen.push(quality); };
-  ctx.menu.withPreferredQuality(go);
+  var chosen = [], go = function (quality, language) { chosen.push(quality + '/' + language); };
+  ctx.menu.withBestChoice(go);
   assert.strictEqual(chosen.length, 0, 'Best source started before the quality was answered');
   ctx.menu.key(37);
   assert.strictEqual(chosen.length, 0, 'Back started a source');
-  ctx.menu.withPreferredQuality(go);
+  ctx.menu.withBestChoice(go);
   ctx.menu.key(40);
   ctx.menu.key(13);
-  assert.deepStrictEqual(chosen, ['720p'], 'the answer was not used');
-  ctx.menu.withPreferredQuality(go);
-  assert.strictEqual(ctx.menu.open, true, 'the next press did not ask again');
-  ctx.menu.close();
+  assert.deepStrictEqual(chosen, ['720p/Auto'], 'the answer was not used, or the focus did not start on the qualities');
+  /* the language row changes on OK and is kept for the next time */
+  ctx.menu.withBestChoice(go);
+  ctx.menu.key(38);
+  ctx.menu.key(13);
+  assert.strictEqual(ctx.menu.open, true, 'changing the language started a source');
+  ctx.menu.key(40);
+  ctx.menu.key(13);
+  assert.deepStrictEqual(chosen, ['720p/Auto', '1080p/pt'], 'the language chosen did not go with the quality');
+  assert.strictEqual(stored.bestLanguage, 'pt', 'the language chosen was not kept');
   stored.preferredSourceQuality = '1080p';
-  ctx.menu.withPreferredQuality(go);
-  assert.deepStrictEqual(chosen, ['720p', '1080p'], 'a quality set in Settings still asked');
+  stored.preferredSourceLanguage = 'en';
+  ctx.menu.withBestChoice(go);
+  assert.deepStrictEqual(chosen.slice(-1), ['1080p/en'], 'a quality and language set in Settings still asked');
 })();
 
 // ---- a subtitle kept on storage loads once (subtitles.js) ----
@@ -619,7 +630,7 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
         });
       }
     };
-    var names = ['settings', 'audio', 'subtitles', 'none', 'off', 'embedded', 'external', 'style', 'delay', 'language', 'selected', 'moreLanguages', 'episodes', 'chapters', 'files', 'picture', 'pictureFit', 'pictureZoom', 'speed', 'higher', 'lower', 'opacity', 'later', 'earlier', 'reset', 'readingTracks'];
+    var names = ['settings', 'audio', 'subtitles', 'none', 'off', 'embedded', 'external', 'style', 'delay', 'language', 'selected', 'moreLanguages', 'episodes', 'chapters', 'files', 'sources', 'picture', 'pictureFit', 'pictureZoom', 'speed', 'higher', 'lower', 'opacity', 'later', 'earlier', 'reset', 'readingTracks'];
     var P = {};
     names.forEach(function (name) { P[name] = name; });
     var context = {
@@ -639,7 +650,10 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
       xhr: function (u, cb) { calls.push(u); cb(more.answers && more.answers[u.split('?')[0]]); },
       seekTo: function (t) { calls.push('seek ' + t); }, saveProgress: function () {}, pushLib: function () {},
       rememberNextSource: function (vid) { calls.push('remember ' + vid); }, openEpisodeDirect: function (vid, page) { calls.push('open ' + vid + ' ' + page); },
-      postStreamRef: function (source, cb) { calls.push('ref ' + source.url); cb('R9'); }, location: { replace: function (u) { calls.push('go ' + u); } },
+      postStreamRef: function (source, cb) { calls.push('ref ' + source.url); cb('R9'); },
+      nextEpisodeAddons: function () { return [{ name: 'Addon', base: 'https://a.example' }]; },
+      nextSources: function (ad, vid, cb) { calls.push('sources ' + vid); cb({ streams: more.sources || [] }); },
+      sourceItem: function (s, name) { return { url: s.url, quality: s.quality, title: s.title, addon: name }; }, location: { replace: function (u) { calls.push('go ' + u); } },
       appUrl: function (p) { return p; }, nextStarting: false, setTimeout: function () {}
     };
     vm.runInNewContext(label + src('player/options.js') + src('player/menus.js') + ';var menuItems,mIdx,subView,mode;this.menuRows=function(){return menu.querySelectorAll()};this.focus=function(){return mIdx};this.setFocus=function(i){mIdx=i;paintMenu()};this.texts=function(){return menu.querySelectorAll().map(function(r){return r.text})};this.press=function(i){mIdx=i;chooseMenu()};this.set=function(k,v){if(k==="mediaInfo")mediaInfo=v;};this.get=function(){return{bottom:subBottom,opacity:subOpacity,delay:subDelay,view:subView}};', context);
@@ -691,16 +705,15 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   /* the main menu offers only what this video has */
   var film = player('off', [], [], { video: { tagName: 'VIDEO', videoWidth: 1920, videoHeight: 800 } });
   film.openMenu('root');
-  assert.deepStrictEqual(film.texts().slice(2), ['picture: pictureFit', 'speed: 1\u00d7 \u203a'], 'a film offered episodes, chapters or files it does not have');
-  film.press(2);
-  assert.strictEqual(film.v.style.width, '135%', 'a film wider than the screen was not grown to fill it');
-  assert.strictEqual(film.v.style.left, '-17.5%', 'the grown picture is not centred');
+  assert.deepStrictEqual(film.texts().slice(2), ['sources \u203a', 'picture: pictureFit', 'speed: 1\u00d7 \u203a'], 'a film offered episodes, chapters or files it does not have');
+  film.press(3);
+  assert.strictEqual(film.v.style.objectFit, 'cover', 'Fill the screen did not crop the picture to the screen');
   assert.strictEqual(film.stored.pictureMode, 'zoom', 'the picture choice was not kept');
-  film.press(2);
-  assert.strictEqual(film.v.style.width, '100%', 'the whole picture did not come back');
+  film.press(3);
+  assert.strictEqual(film.v.style.objectFit, 'contain', 'the whole picture did not come back');
   var samsung = player('off', [], []);
   samsung.openMenu('root');
-  assert.strictEqual(samsung.texts().length, 2, 'picture and speed were offered where the video is not an element of the page');
+  assert.strictEqual(samsung.texts().length, 3, 'picture and speed were offered where the video is not an element of the page');
 
   /* chapters */
   var chaptered = player('off', [], [], { video: { currentTime: 700 } });
@@ -728,14 +741,22 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   var hash = 'c'.repeat(40);
   var pack = player('off', [], [], { torrent: true, url: 'http://127.0.0.1:11470/' + hash + '/1?tr=x', answers: { '/torrentfiles': { files: [{ index: 1, name: 'a.mkv', size: 2147483648, playing: true }, { index: 4, name: 'b.mkv', size: 734003200, playing: false }] } } });
   pack.openMenu('root');
-  assert.strictEqual(pack.texts()[2], 'files \u203a', 'a torrent with two films does not offer them');
-  pack.press(2);
+  assert.strictEqual(pack.texts()[2], 'sources \u203a', 'the other sources are not offered first');
+  assert.strictEqual(pack.texts()[3], 'files \u203a', 'a torrent with two films does not offer them');
+  pack.press(3);
   assert.deepStrictEqual(pack.texts(), ['a.mkv  ·  2.0 GB — selected', 'b.mkv  ·  700 MB'], 'the file list is wrong');
   pack.press(1);
   assert.deepStrictEqual(pack.calls.slice(1), ['ref http://127.0.0.1:11470/' + hash + '/4?tr=x', 'go /play?ref=R9&type=movie&id=tt5&vid=&back=' + encodeURIComponent('beta#detail/x')], 'another file of the torrent did not open');
   var single = player('off', [], [], { torrent: true, answers: { '/torrentfiles': { files: [{ index: 0, name: 'a.mkv', size: 1, playing: true }] } } });
   single.openMenu('root');
-  assert.strictEqual(single.texts().length, 2, 'a torrent with one film offered a file list');
+  assert.strictEqual(single.texts().length, 3, 'a torrent with one film offered a file list');
+
+  /* another source of the same film, from the player */
+  var switching = player('off', [], [], { url: 'http://x/a.mp4', sources: [{ url: 'http://x/a.mp4', quality: '1080p', title: 'Film.A' }, { url: 'http://x/b.mkv', quality: '720p', title: 'Film.B' + String.fromCharCode(10) + 'seeds' }] });
+  switching.openMenu('sources');
+  assert.deepStrictEqual(switching.texts(), ['1080p  ·  Addon  ·  Film.A — selected', '720p  ·  Addon  ·  Film.B'], 'the sources of this film are not listed, or the one playing is not marked');
+  switching.press(1);
+  assert.deepStrictEqual(switching.calls.slice(-2), ['ref http://x/b.mkv', 'go /play?ref=R9&type=movie&id=tt5&vid=&back=' + encodeURIComponent('beta#detail/x')], 'another source did not open in the player');
 
   /* subtitles: position, opacity and a delay that speeds up when the key is held */
   var now = 0, clock = { now: function () { return now; } };

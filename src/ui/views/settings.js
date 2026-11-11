@@ -105,15 +105,10 @@ var settings = {
         k: 'preferredSourceLanguage',
         lb: tx('preferredLanguage'),
         opts: [
-          ['Auto', tx('anyLanguage')],
-          ['pt', 'Português'],
-          ['es', 'Español'],
-          ['en', 'English'],
-          ['fr', 'Français'],
-          ['it', 'Italiano'],
-          ['de', 'Deutsch']
-        ],
-        d: 'Auto'
+          ['Ask', tx('qualityAsk')],
+          ['Auto', tx('anyLanguage')]
+        ].concat(SOURCE_LANGUAGES),
+        d: 'Ask'
       },
       {
         k: 'bingeWatch',

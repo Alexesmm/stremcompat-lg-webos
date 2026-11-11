@@ -186,12 +186,14 @@ function makeBoard(loader) {
       }, 260);
       prewarmNeighbors(this.rows[this.rowIdx]);
     },
-    heroApply: function () {
+    /* the title under the focus, or another one given (spotlight.js) */
+    heroApply: function (item) {
       if (curBoard() !== this) return; /* a debounced hero must not paint after we left this board */
-      var it = this.focusedItem();
+      var it = item || this.focusedItem();
       if (!it) {
         return;
       }
+      this.heroItem = it;
       var lg = $('heroLogo'),
         tt = $('heroTitle');
       var self = this;
@@ -201,14 +203,14 @@ function makeBoard(loader) {
         var lu = 'https://images.metahub.space/logo/medium/' + it.id + '/img';
         var im = new Image();
         im.onload = function () {
-          if (self.focusedItem() === it) {
+          if (self.heroItem === it) {
             lg.src = lu;
             lg.style.display = 'block';
             tt.style.display = 'none';
           }
         };
         im.onerror = function () {
-          if (self.focusedItem() === it) {
+          if (self.heroItem === it) {
             tt.textContent = it.name || '';
             tt.className = heroTitleClass(it.name);
             tt.style.display = '';
@@ -232,7 +234,7 @@ function makeBoard(loader) {
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
           it.cast = (m.cast || []).slice(0, 3).join(', ');
-          if (self.focusedItem() === it) {
+          if (self.heroItem === it) {
             setHeroDesc(it.description);
             $('heroMeta').innerHTML = heroMetaOf(it);
             $('heroCast').textContent = it.cast;

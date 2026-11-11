@@ -47,6 +47,7 @@
   "views/login.js",
   "input/pointer.js",
   "features/idle-trailer.js",
+  "features/spotlight.js",
   "input/keys.js",
   "core/lifecycle.js",
   "boot.js",

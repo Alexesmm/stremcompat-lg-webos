@@ -63,16 +63,36 @@ function langGroups(s) {
   if (!out.length) out.push('none');
   return out;
 }
+/* the languages a source can be chosen in, by their own names (Settings, Best source) */
+var SOURCE_LANGUAGES = [
+  ['pt', 'Português'],
+  ['es', 'Español'],
+  ['en', 'English'],
+  ['fr', 'Français'],
+  ['it', 'Italiano'],
+  ['de', 'Deutsch']
+];
+function sourceLanguageName(code) {
+  for (var i = 0; i < SOURCE_LANGUAGES.length; i++)
+    if (SOURCE_LANGUAGES[i][0] === code) return SOURCE_LANGUAGES[i][1];
+  return tx('anyLanguage');
+}
+/* the language sources are ordered by: the one in Settings, or with Ask the last one chosen */
+function preferredSourceLanguage() {
+  var set = lsRaw('preferredSourceLanguage', 'Ask');
+  return set === 'Ask' ? lsRaw('bestLanguage', 'Auto') : set;
+}
 /* 0 when the source has the preferred language, 1 for multi audio, 2 otherwise */
 function langRank(s, pref) {
   if (!pref || pref === 'Auto') return 0;
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }
-/* What to play without choosing from the list, whose order already puts language, compatibility
-   and seeders first: the first without a warning in the quality asked for, or else in any known
-   quality, and a low or unknown quality only when nothing better has none. */
-function bestSource(items, quality) {
+/* What to play without choosing from the list, whose order already puts compatibility and seeders
+   first: in the language asked for when there is one, the first without a warning in the quality
+   asked for, or else in any known quality, and a low or unknown quality only when nothing better
+   has none. */
+function bestSource(items, quality, language) {
   var playable = items.filter(function (s) {
     return !s.stored && !(s.compatRank > 0) && !(s.compatLabels || []).length;
   });
@@ -80,6 +100,18 @@ function bestSource(items, quality) {
     playable = items.filter(function (s) {
       return !s.stored && s.compatRank < 4;
     });
+  /* the language asked for first, then multi-audio, keeping the list's order within each */
+  if (language && language !== 'Auto')
+    playable = playable
+      .map(function (s, i) {
+        return { s: s, i: i, r: langRank(s, language) };
+      })
+      .sort(function (a, b) {
+        return a.r - b.r || a.i - b.i;
+      })
+      .map(function (x) {
+        return x.s;
+      });
   var asked = playable.filter(function (s) {
     return s.quality === quality;
   });

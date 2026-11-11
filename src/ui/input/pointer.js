@@ -7,6 +7,7 @@ function idleTouch() {
     bodyRemove('idle');
     bodyRemove('trailer');
     stopIdleTrailer();
+    stopSpotlight();
   }
 }
 function pointerIndex(target, list) {

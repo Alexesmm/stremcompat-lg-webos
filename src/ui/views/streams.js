@@ -24,7 +24,7 @@ var streamsUI = {
   failed: [],
   title: '',
   flushT: null,
-  show: function (type, id, vid, title, bestQuality) {
+  show: function (type, id, vid, title, bestQuality, bestLanguage) {
     var request = ++this.requestSeq;
     this.open = true;
     this.failed = [];
@@ -104,7 +104,7 @@ var streamsUI = {
         }
         self.flush();
         if (bestQuality) {
-          if (!self.startBest(bestQuality)) self.reveal();
+          if (!self.startBest(bestQuality, bestLanguage)) self.reveal();
           return;
         }
         if (self.retryPref) {
@@ -135,13 +135,13 @@ var streamsUI = {
   },
   chooseBest: function () {
     var self = this;
-    cwMenu.withPreferredQuality(function (quality) {
-      self.startBest(quality);
+    cwMenu.withBestChoice(function (quality, language) {
+      self.startBest(quality, language);
     });
   },
   /* the source list stays open underneath when nothing can be picked */
-  startBest: function (quality) {
-    var best = bestSource(this.items, quality);
+  startBest: function (quality, language) {
+    var best = bestSource(this.items, quality, language);
     if (!best) return false;
     toast(tx('playingBest', best.quality || best.addon || ''));
     playUrl(best, this.type, this.id, this.vid, this.backHash());
@@ -299,7 +299,7 @@ var streamsUI = {
       flat = this.all(),
       self = this,
       pref = lsRaw('preferredSourceQuality', 'Auto'),
-      langPref = lsRaw('preferredSourceLanguage', 'Auto'),
+      langPref = preferredSourceLanguage(),
       lf = this.langFilter;
     flat = flat.filter(function (s) {
       return (

@@ -57,6 +57,7 @@ function ensureTechProbe() {
     if (!j) return;
     mediaInfo = j;
     fillBadges(j);
+    markChapters();
     if (mode === 'menu' && (subView === 'root' || subView === 'audio')) reopen();
   });
 }

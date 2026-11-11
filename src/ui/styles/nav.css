@@ -1,7 +1,7 @@
 /* ---------- compact icon-only sidebar ----------
    A fixed rail never reflows or covers content. The remote focus is communicated by
    shape and colour, keeping paint work cheap on old Chromium. */
-#topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(9,11,18,.92),rgba(9,11,18,.6) 70%,rgba(9,11,18,0))}
+#topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(10,10,11,.92),rgba(10,10,11,.6) 70%,rgba(10,10,11,0))}
 /* the profile in use, at the top: OK switches profiles (Nuvio) or opens the account */
 #chipProfile{position:absolute;top:34px;left:34px;width:60px;height:60px;margin:0;border-radius:50%}
 #chipProfile.f{background:transparent}
@@ -17,12 +17,12 @@ body.login #topnav,body.login #logobg{display:none}
 .chip svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;-webkit-flex:none;flex:none}
 .navlabel{display:block;position:absolute;left:84px;top:50%;margin-top:-17px;line-height:34px;font-size:26px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap;pointer-events:none;opacity:0;-webkit-transform:translateX(-10px);transform:translateX(-10px);transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.2,.8,.2,1)}
 /* while the menu has focus the labels appear over a darker panel, without moving the page */
-#topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(9,11,18,.98) 62%,rgba(9,11,18,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
+#topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(10,10,11,.98) 62%,rgba(10,10,11,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
 body.navopen #topnav:before{opacity:1}
 body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
-.chip.cur .navlabel{color:#99F6E4}
+.chip.cur .navlabel{color:#fff}
 .chip.f .navlabel{color:#fff}
-.chip.cur{color:#5EEAD4}
+.chip.cur{color:#fff}
 .chip.f{background:#fff;color:#12101a}
 
 /* ---------- screens ---------- */

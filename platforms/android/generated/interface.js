@@ -362,6 +362,9 @@ var UI_TEXT = {
     noOtherSource: 'No other source to try',
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     playBest: 'Best source',
+    directedBy: 'Directed by {0}',
+    sourceLanguageRow: 'Language: {0}',
+    sourcesButton: 'All sources',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     whatsNew:
@@ -583,6 +586,7 @@ var UI_TEXT = {
       picture: 'Picture',
       pictureFit: 'Whole picture',
       pictureZoom: 'Fill the screen',
+      sources: 'Sources',
       speed: 'Speed',
       speedRefused: 'This TV does not change the speed of this video',
       subtitlesReady: 'Subtitles ready',
@@ -763,6 +767,9 @@ var UI_TEXT = {
     noOtherSource: 'Não há outra fonte para tentar',
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     playBest: 'Melhor fonte',
+    directedBy: 'Direção: {0}',
+    sourceLanguageRow: 'Idioma: {0}',
+    sourcesButton: 'Todas as fontes',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     whatsNew:
@@ -985,6 +992,7 @@ var UI_TEXT = {
       picture: 'Imagem',
       pictureFit: 'Imagem inteira',
       pictureZoom: 'Preencher a tela',
+      sources: 'Fontes',
       speed: 'Velocidade',
       speedRefused: 'Esta TV não muda a velocidade deste vídeo',
       subtitlesReady: 'Legendas prontas',
@@ -2282,16 +2290,36 @@ function langGroups(s) {
   if (!out.length) out.push('none');
   return out;
 }
+/* the languages a source can be chosen in, by their own names (Settings, Best source) */
+var SOURCE_LANGUAGES = [
+  ['pt', 'Português'],
+  ['es', 'Español'],
+  ['en', 'English'],
+  ['fr', 'Français'],
+  ['it', 'Italiano'],
+  ['de', 'Deutsch']
+];
+function sourceLanguageName(code) {
+  for (var i = 0; i < SOURCE_LANGUAGES.length; i++)
+    if (SOURCE_LANGUAGES[i][0] === code) return SOURCE_LANGUAGES[i][1];
+  return tx('anyLanguage');
+}
+/* the language sources are ordered by: the one in Settings, or with Ask the last one chosen */
+function preferredSourceLanguage() {
+  var set = lsRaw('preferredSourceLanguage', 'Ask');
+  return set === 'Ask' ? lsRaw('bestLanguage', 'Auto') : set;
+}
 /* 0 when the source has the preferred language, 1 for multi audio, 2 otherwise */
 function langRank(s, pref) {
   if (!pref || pref === 'Auto') return 0;
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }
-/* What to play without choosing from the list, whose order already puts language, compatibility
-   and seeders first: the first without a warning in the quality asked for, or else in any known
-   quality, and a low or unknown quality only when nothing better has none. */
-function bestSource(items, quality) {
+/* What to play without choosing from the list, whose order already puts compatibility and seeders
+   first: in the language asked for when there is one, the first without a warning in the quality
+   asked for, or else in any known quality, and a low or unknown quality only when nothing better
+   has none. */
+function bestSource(items, quality, language) {
   var playable = items.filter(function (s) {
     return !s.stored && !(s.compatRank > 0) && !(s.compatLabels || []).length;
   });
@@ -2299,6 +2327,18 @@ function bestSource(items, quality) {
     playable = items.filter(function (s) {
       return !s.stored && s.compatRank < 4;
     });
+  /* the language asked for first, then multi-audio, keeping the list's order within each */
+  if (language && language !== 'Auto')
+    playable = playable
+      .map(function (s, i) {
+        return { s: s, i: i, r: langRank(s, language) };
+      })
+      .sort(function (a, b) {
+        return a.r - b.r || a.i - b.i;
+      })
+      .map(function (x) {
+        return x.s;
+      });
   var asked = playable.filter(function (s) {
     return s.quality === quality;
   });
@@ -3329,12 +3369,14 @@ function makeBoard(loader) {
       }, 260);
       prewarmNeighbors(this.rows[this.rowIdx]);
     },
-    heroApply: function () {
+    /* the title under the focus, or another one given (spotlight.js) */
+    heroApply: function (item) {
       if (curBoard() !== this) return; /* a debounced hero must not paint after we left this board */
-      var it = this.focusedItem();
+      var it = item || this.focusedItem();
       if (!it) {
         return;
       }
+      this.heroItem = it;
       var lg = $('heroLogo'),
         tt = $('heroTitle');
       var self = this;
@@ -3344,14 +3386,14 @@ function makeBoard(loader) {
         var lu = 'https://images.metahub.space/logo/medium/' + it.id + '/img';
         var im = new Image();
         im.onload = function () {
-          if (self.focusedItem() === it) {
+          if (self.heroItem === it) {
             lg.src = lu;
             lg.style.display = 'block';
             tt.style.display = 'none';
           }
         };
         im.onerror = function () {
-          if (self.focusedItem() === it) {
+          if (self.heroItem === it) {
             tt.textContent = it.name || '';
             tt.className = heroTitleClass(it.name);
             tt.style.display = '';
@@ -3375,7 +3417,7 @@ function makeBoard(loader) {
           it.description = m.description || '';
           it.metaHtml = heroMetaHtml(m);
           it.cast = (m.cast || []).slice(0, 3).join(', ');
-          if (self.focusedItem() === it) {
+          if (self.heroItem === it) {
             setHeroDesc(it.description);
             $('heroMeta').innerHTML = heroMetaOf(it);
             $('heroCast').textContent = it.cast;
@@ -4462,25 +4504,50 @@ var cwMenu = {
     $('cwm').style.display = 'block';
     this.paint();
   },
-  /* Best source asks each time, unless Settings names a quality */
-  withPreferredQuality: function (then) {
-    var preferred = lsRaw('preferredSourceQuality', 'Ask');
-    if (preferred !== 'Ask') return then(preferred);
-    var self = this;
+  /* Best source asks the quality and the language, unless Settings names them: one menu, whose
+     first row changes the language on OK (kept for the next time) and whose other rows start the
+     film. then(quality, language) */
+  withBestChoice: function (then) {
+    var quality = lsRaw('preferredSourceQuality', 'Ask'),
+      askLanguage = lsRaw('preferredSourceLanguage', 'Ask') === 'Ask',
+      language = preferredSourceLanguage();
+    if (quality !== 'Ask' && !askLanguage) return then(quality, language);
+    var self = this,
+      choices = ['Auto'],
+      ui = langBase(UI_LANG);
+    SOURCE_LANGUAGES.forEach(function (l) {
+      if (l[0] === ui || l[0] === 'en') choices.push(l[0]);
+    });
+    if (choices.indexOf(language) < 0) choices.push(language);
     this.it = null;
-    this.begin(tx('whichQuality'), '');
-    [
-      ['1080p', '1080p'],
-      ['720p', '720p'],
-      ['4K', '4K'],
-      ['Auto', tx('automatic')]
-    ].forEach(function (option) {
+    this.begin(tx(quality === 'Ask' ? 'whichQuality' : 'playBest'), '');
+    function languageLabel() {
+      return tx('sourceLanguageRow', sourceLanguageName(language));
+    }
+    if (askLanguage)
+      this.add(GLOBE_ICON, languageLabel(), function () {
+        language = choices[(choices.indexOf(language) + 1) % choices.length];
+        lsRawSet('bestLanguage', language);
+        self.els[0].getElementsByTagName('span')[0].textContent = languageLabel();
+      });
+    var qualities =
+      quality === 'Ask'
+        ? [
+            ['1080p', '1080p'],
+            ['720p', '720p'],
+            ['4K', '4K'],
+            ['Auto', tx('automatic')]
+          ]
+        : [[quality, tx('playBest')]];
+    qualities.forEach(function (option) {
       self.add(ICON.bolt, option[1], function () {
         self.close();
-        then(option[0]);
+        then(option[0], language);
       });
     });
     $('cwm').style.display = 'block';
+    /* the focus starts on the first quality, the language row stays one step up */
+    this.idx = askLanguage ? 1 : 0;
     this.paint();
   },
   show: function (it) {
@@ -4978,6 +5045,22 @@ function checkNewEpisodes(done) {
   next();
 }
 // Title detail screen: actions, seasons, episode ranges and episode list.
+/* The title's details on one line: who directed it (when the line above names the cast), the
+   country and the release date, as Cinemeta gives them. */
+function titleFacts(m, castShown) {
+  var parts = [];
+  if (castShown && m.director && m.director.length)
+    parts.push(tx('directedBy', m.director.slice(0, 2).join(', ')));
+  if (m.country) parts.push(String(m.country).split(',')[0]);
+  var released = m.released ? new Date(m.released) : null;
+  if (released && !isNaN(released.getTime()))
+    try {
+      parts.push(released.toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' }));
+    } catch (e) {
+      parts.push(String(released.getFullYear()));
+    }
+  return parts.join('  ·  ');
+}
 var detail = {
   meta: null,
   type: '',
@@ -5078,6 +5161,8 @@ var detail = {
       (m.genres && m.genres.length ? '<span>' + esc(m.genres.slice(0, 3).join(' · ')) + '</span>' : '');
     var people = m.cast && m.cast.length ? m.cast : m.director || [];
     var info = people.length ? '<div>' + esc(people.slice(0, 4).join(', ')) + '</div>' : '';
+    var facts = titleFacts(m, people === m.cast);
+    if (facts) info += '<div class="facts">' + esc(facts) + '</div>';
     if (m.awards) info += '<div class="awards">' + esc(m.awards) + '</div>';
     $('dInfo').innerHTML = info;
     $('dDesc').textContent = m.description || '';
@@ -5119,13 +5204,14 @@ var detail = {
     }
     var bestFirst = simpleMode() && !primary && this.type !== 'series';
     if (bestFirst) this.addBestBtn(this.id, m.name);
+    /* the whole source list; in Simple it is the one way to it */
     if (this.type !== 'series')
       this.addBtn(
-        tx('watch'),
+        tx(simpleMode() ? 'sourcesButton' : 'watch'),
         function () {
-          self.openStreams(self.id);
+          self.openSourceList(self.id);
         },
-        primary ? ICON.similar : ''
+        primary || simpleMode() ? ICON.similar : ''
       );
     /* straight to the best source, without the list */
     var bestVid = this.type === 'series' ? av : this.id;
@@ -5218,8 +5304,8 @@ var detail = {
     this.addBtn(
       tx('playBest'),
       function () {
-        cwMenu.withPreferredQuality(function (quality) {
-          streamsUI.show(self.type, self.id, vid, name, quality);
+        cwMenu.withBestChoice(function (quality, language) {
+          streamsUI.show(self.type, self.id, vid, name, quality, language);
         });
       },
       ICON.bolt
@@ -5352,7 +5438,15 @@ var detail = {
       if (this.meta) setBg(this.meta.background || bgOf({ id: this.id, poster: this.meta.poster }));
     }
   },
+  /* Simple (Settings) goes straight to the best source; the list stays one button away */
   openStreams: function (vid) {
+    if (!simpleMode()) return this.openSourceList(vid);
+    var self = this;
+    cwMenu.withBestChoice(function (quality, language) {
+      streamsUI.show(self.type, self.id, vid, self.meta && self.meta.name, quality, language);
+    });
+  },
+  openSourceList: function (vid) {
     streamsUI.show(this.type, this.id, vid, this.meta && this.meta.name);
   },
   key: function (k) {
@@ -6372,7 +6466,7 @@ var streamsUI = {
   failed: [],
   title: '',
   flushT: null,
-  show: function (type, id, vid, title, bestQuality) {
+  show: function (type, id, vid, title, bestQuality, bestLanguage) {
     var request = ++this.requestSeq;
     this.open = true;
     this.failed = [];
@@ -6452,7 +6546,7 @@ var streamsUI = {
         }
         self.flush();
         if (bestQuality) {
-          if (!self.startBest(bestQuality)) self.reveal();
+          if (!self.startBest(bestQuality, bestLanguage)) self.reveal();
           return;
         }
         if (self.retryPref) {
@@ -6483,13 +6577,13 @@ var streamsUI = {
   },
   chooseBest: function () {
     var self = this;
-    cwMenu.withPreferredQuality(function (quality) {
-      self.startBest(quality);
+    cwMenu.withBestChoice(function (quality, language) {
+      self.startBest(quality, language);
     });
   },
   /* the source list stays open underneath when nothing can be picked */
-  startBest: function (quality) {
-    var best = bestSource(this.items, quality);
+  startBest: function (quality, language) {
+    var best = bestSource(this.items, quality, language);
     if (!best) return false;
     toast(tx('playingBest', best.quality || best.addon || ''));
     playUrl(best, this.type, this.id, this.vid, this.backHash());
@@ -6647,7 +6741,7 @@ var streamsUI = {
       flat = this.all(),
       self = this,
       pref = lsRaw('preferredSourceQuality', 'Auto'),
-      langPref = lsRaw('preferredSourceLanguage', 'Auto'),
+      langPref = preferredSourceLanguage(),
       lf = this.langFilter;
     flat = flat.filter(function (s) {
       return (
@@ -7470,15 +7564,10 @@ var settings = {
         k: 'preferredSourceLanguage',
         lb: tx('preferredLanguage'),
         opts: [
-          ['Auto', tx('anyLanguage')],
-          ['pt', 'Português'],
-          ['es', 'Español'],
-          ['en', 'English'],
-          ['fr', 'Français'],
-          ['it', 'Italiano'],
-          ['de', 'Deutsch']
-        ],
-        d: 'Auto'
+          ['Ask', tx('qualityAsk')],
+          ['Auto', tx('anyLanguage')]
+        ].concat(SOURCE_LANGUAGES),
+        d: 'Ask'
       },
       {
         k: 'bingeWatch',
@@ -8553,6 +8642,7 @@ function idleTouch() {
     bodyRemove('idle');
     bodyRemove('trailer');
     stopIdleTrailer();
+    stopSpotlight();
   }
 }
 function pointerIndex(target, list) {
@@ -8957,13 +9047,75 @@ setInterval(function () {
   if (idle && !has) {
     bodyAdd('idle');
     startIdleTrailer();
+    startSpotlight();
   } else if (!idle && has) {
     bodyRemove('idle');
     bodyRemove('trailer');
     stopIdleTrailer();
+    stopSpotlight();
   }
 }, 1000);
 /* the item under the cursor on whatever screen is showing (null if none) */
+// Featured titles pass through the Home hero while the remote is left alone, as on the big
+// streaming apps: the titles of the first catalog row, one every 8 s, with dots saying which.
+// Only the hero's picture and text change, so the rows stay where they are; any key brings back
+// the title under the focus (idleTouch). Off in the light look and on the TVs the profile
+// treats as small, where the extra pictures would cost too much.
+var SPOTLIGHT_EVERY_MS = 8000,
+  SPOTLIGHT_MAX = 8,
+  spotlight = { items: null, at: 0, timer: null };
+function spotlightItems() {
+  for (var r = 0; r < home.rows.length; r++) {
+    var row = home.rows[r];
+    if (row.wide || !row.items) continue;
+    var titles = row.items.filter(function (it) {
+      return it.id && !it.more;
+    });
+    if (titles.length > 2) return titles.slice(0, SPOTLIGHT_MAX);
+  }
+  return [];
+}
+function paintSpotlightDots() {
+  var host = $('heroDots');
+  host.innerHTML = '';
+  for (var i = 0; spotlight.items && i < spotlight.items.length; i++) {
+    var dot = document.createElement('span');
+    if (i === spotlight.at) dot.className = 'on';
+    host.appendChild(dot);
+  }
+}
+function nextSpotlight() {
+  if (!spotlight.items || curBoard() !== home) return stopSpotlight();
+  spotlight.at = (spotlight.at + 1) % spotlight.items.length;
+  home.heroApply(spotlight.items[spotlight.at]);
+  paintSpotlightDots();
+}
+function startSpotlight() {
+  if (
+    spotlight.items ||
+    SCR !== 'home' ||
+    topNav.active ||
+    bgv ||
+    uiLook() === 'light' ||
+    TV_PROFILE.lowMemory
+  )
+    return;
+  var items = spotlightItems();
+  if (items.length < 3) return;
+  spotlight.items = items;
+  spotlight.at = -1;
+  bodyAdd('spotlight');
+  nextSpotlight();
+  spotlight.timer = setInterval(nextSpotlight, SPOTLIGHT_EVERY_MS);
+}
+function stopSpotlight() {
+  if (!spotlight.items) return;
+  clearInterval(spotlight.timer);
+  spotlight.items = null;
+  bodyRemove('spotlight');
+  $('heroDots').innerHTML = '';
+  if (curBoard() === home) home.heroApply();
+}
 // Remote key dispatch, long-press OK and the Back button.
 function currentFocusedItem() {
   if (topNav.active) return null;

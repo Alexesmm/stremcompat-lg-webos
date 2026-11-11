@@ -40,25 +40,50 @@ var cwMenu = {
     $('cwm').style.display = 'block';
     this.paint();
   },
-  /* Best source asks each time, unless Settings names a quality */
-  withPreferredQuality: function (then) {
-    var preferred = lsRaw('preferredSourceQuality', 'Ask');
-    if (preferred !== 'Ask') return then(preferred);
-    var self = this;
+  /* Best source asks the quality and the language, unless Settings names them: one menu, whose
+     first row changes the language on OK (kept for the next time) and whose other rows start the
+     film. then(quality, language) */
+  withBestChoice: function (then) {
+    var quality = lsRaw('preferredSourceQuality', 'Ask'),
+      askLanguage = lsRaw('preferredSourceLanguage', 'Ask') === 'Ask',
+      language = preferredSourceLanguage();
+    if (quality !== 'Ask' && !askLanguage) return then(quality, language);
+    var self = this,
+      choices = ['Auto'],
+      ui = langBase(UI_LANG);
+    SOURCE_LANGUAGES.forEach(function (l) {
+      if (l[0] === ui || l[0] === 'en') choices.push(l[0]);
+    });
+    if (choices.indexOf(language) < 0) choices.push(language);
     this.it = null;
-    this.begin(tx('whichQuality'), '');
-    [
-      ['1080p', '1080p'],
-      ['720p', '720p'],
-      ['4K', '4K'],
-      ['Auto', tx('automatic')]
-    ].forEach(function (option) {
+    this.begin(tx(quality === 'Ask' ? 'whichQuality' : 'playBest'), '');
+    function languageLabel() {
+      return tx('sourceLanguageRow', sourceLanguageName(language));
+    }
+    if (askLanguage)
+      this.add(GLOBE_ICON, languageLabel(), function () {
+        language = choices[(choices.indexOf(language) + 1) % choices.length];
+        lsRawSet('bestLanguage', language);
+        self.els[0].getElementsByTagName('span')[0].textContent = languageLabel();
+      });
+    var qualities =
+      quality === 'Ask'
+        ? [
+            ['1080p', '1080p'],
+            ['720p', '720p'],
+            ['4K', '4K'],
+            ['Auto', tx('automatic')]
+          ]
+        : [[quality, tx('playBest')]];
+    qualities.forEach(function (option) {
       self.add(ICON.bolt, option[1], function () {
         self.close();
-        then(option[0]);
+        then(option[0], language);
       });
     });
     $('cwm').style.display = 'block';
+    /* the focus starts on the first quality, the language row stays one step up */
+    this.idx = askLanguage ? 1 : 0;
     this.paint();
   },
   show: function (it) {

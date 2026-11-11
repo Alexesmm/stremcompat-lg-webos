@@ -14,7 +14,7 @@
    .3s, both cubic-bezier(.2,.8,.2,1); backdrop and idle fades are deliberately slower. */
 @font-face{font-family:Inter;src:url(/fonts/inter-latin-400.woff) format("woff");font-weight:400;font-style:normal}
 @font-face{font-family:Inter;src:url(/fonts/inter-latin-700.woff) format("woff");font-weight:700;font-style:normal}
-html,body{margin:0;padding:0;width:100%;height:100%;background:#090b12;color:#fff;font-family:Inter,Arial,"Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+html,body{margin:0;padding:0;width:100%;height:100%;background:#0a0a0b;color:#fff;font-family:Inter,Arial,"Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
 img{border:0}
 
 /* A single cropped hero region makes the deliberately downscaled TV artwork look sharper.
@@ -22,17 +22,18 @@ img{border:0}
    still decodes one texture. Static gradients blend the edge without GPU-heavy blur. */
 #bg,#bg2{position:fixed;top:0;left:38%;right:0;height:62%;background-size:cover;background-position:center top;opacity:0;transition:opacity .2s ease}
 #bg.on,#bg2.on{opacity:.86}
-#bgshade{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,rgba(9,11,18,0) 26%,rgba(9,11,18,.25) 38%,rgba(9,11,18,.6) 49%,rgba(9,11,18,.88) 57%,#090b12 61%),linear-gradient(to right,#090b12 38%,rgba(9,11,18,.9) 44%,rgba(9,11,18,.66) 51%,rgba(9,11,18,.36) 59%,rgba(9,11,18,.14) 67%,rgba(9,11,18,0) 76%);transition:opacity .5s ease}
+#bgshade{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,rgba(10,10,11,0) 26%,rgba(10,10,11,.25) 38%,rgba(10,10,11,.6) 49%,rgba(10,10,11,.88) 57%,#0a0a0b 61%),linear-gradient(to right,#0a0a0b 38%,rgba(10,10,11,.9) 44%,rgba(10,10,11,.66) 51%,rgba(10,10,11,.36) 59%,rgba(10,10,11,.14) 67%,rgba(10,10,11,0) 76%);transition:opacity .5s ease}
 /* Details use the same split composition, but allow the art to reach lower behind episodes. */
 body.detail #bg,body.detail #bg2{left:34%;height:100%;background-position:center top}
 body.detail #bg.on,body.detail #bg2.on{opacity:.88}
-body.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,.04) 0%,rgba(9,11,18,.04) 46%,rgba(9,11,18,.72) 76%,#090b12 96%),linear-gradient(to right,#090b12 34%,rgba(9,11,18,.92) 41%,rgba(9,11,18,.7) 49%,rgba(9,11,18,.42) 58%,rgba(9,11,18,.16) 69%,rgba(9,11,18,0) 80%)}
+body.detail #bgshade{background:linear-gradient(to bottom,rgba(10,10,11,.04) 0%,rgba(10,10,11,.04) 46%,rgba(10,10,11,.72) 76%,#0a0a0b 96%),linear-gradient(to right,#0a0a0b 34%,rgba(10,10,11,.92) 41%,rgba(10,10,11,.7) 49%,rgba(10,10,11,.42) 58%,rgba(10,10,11,.16) 69%,rgba(10,10,11,0) 80%)}
 
 /* idle: after a pause the UI just dims a little; nothing melts away. If a trailer is
    available it plays IN THE BACKDROP SLOT (replacing the poster art) with the exact same
    vignette + smooth edges, so it reads as the cover art coming to life. */
 #topnav,#hero,#rowsClip,#dWrap,#heroTitle,#heroLogo,#heroMeta,#heroDesc{transition:opacity .9s ease}
 body.idle #topnav,body.idle #hero,body.idle #rowsClip,body.idle #dWrap{opacity:.82}
+body.idle.spotlight #hero{opacity:1}
 body.trailer #bg.on,body.trailer #bg2.on{opacity:0}
 /* trailer playing: everything on the upper half melts to near-nothing; only the title
    cover-art/logo stays (~.78). Smooth .9s fades. */
@@ -49,7 +50,7 @@ body.trailer #dWrap{opacity:.14}
 /* ---------- compact icon-only sidebar ----------
    A fixed rail never reflows or covers content. The remote focus is communicated by
    shape and colour, keeping paint work cheap on old Chromium. */
-#topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(9,11,18,.92),rgba(9,11,18,.6) 70%,rgba(9,11,18,0))}
+#topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(10,10,11,.92),rgba(10,10,11,.6) 70%,rgba(10,10,11,0))}
 /* the profile in use, at the top: OK switches profiles (Nuvio) or opens the account */
 #chipProfile{position:absolute;top:34px;left:34px;width:60px;height:60px;margin:0;border-radius:50%}
 #chipProfile.f{background:transparent}
@@ -65,12 +66,12 @@ body.login #topnav,body.login #logobg{display:none}
 .chip svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;-webkit-flex:none;flex:none}
 .navlabel{display:block;position:absolute;left:84px;top:50%;margin-top:-17px;line-height:34px;font-size:26px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap;pointer-events:none;opacity:0;-webkit-transform:translateX(-10px);transform:translateX(-10px);transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .18s cubic-bezier(.2,.8,.2,1)}
 /* while the menu has focus the labels appear over a darker panel, without moving the page */
-#topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(9,11,18,.98) 62%,rgba(9,11,18,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
+#topnav:before{content:"";position:absolute;top:0;left:0;bottom:0;width:480px;z-index:-1;background:linear-gradient(to right,rgba(10,10,11,.98) 62%,rgba(10,10,11,0));opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,.8,.2,1)}
 body.navopen #topnav:before{opacity:1}
 body.navopen .navlabel{opacity:1;-webkit-transform:none;transform:none}
-.chip.cur .navlabel{color:#99F6E4}
+.chip.cur .navlabel{color:#fff}
 .chip.f .navlabel{color:#fff}
-.chip.cur{color:#5EEAD4}
+.chip.cur{color:#fff}
 .chip.f{background:#fff;color:#12101a}
 
 /* ---------- screens ---------- */
@@ -95,6 +96,11 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 #heroDesc{margin-top:12px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.78);max-height:73px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .card .rank{position:absolute;left:10px;top:4px;font-size:72px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.85),0 0 2px #000;pointer-events:none}
 #heroCast{display:none}
+/* which featured title the hero shows while Home is left alone (spotlight.js) */
+#heroDots{display:none;margin-top:18px;height:10px}
+body.spotlight #heroDots{display:block}
+#heroDots span{display:inline-block;vertical-align:top;width:10px;height:10px;margin-right:8px;border-radius:5px;background:rgba(255,255,255,.35)}
+#heroDots span.on{width:30px;background:#fff}
 #heroDesc.roll{display:block;-webkit-line-clamp:none}
 
 /* ---------- rows ---------- */
@@ -106,18 +112,18 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 .rowtitle{font-size:26px;font-weight:700;margin:0 0 14px 2px;color:rgba(255,255,255,.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80%}
 .cards{white-space:nowrap}
 .cards.snap{transition:none} /* while holding a direction: steps snap, no animation lag */
-.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:12px;background:#171d26;overflow:hidden;transition:none}
+.card{display:inline-block;vertical-align:top;position:relative;width:264px;height:396px;margin-right:24px;border-radius:12px;background:#1a1a1c;overflow:hidden;transition:none}
 .card img{width:100%;height:100%;border-radius:12px}
 .card .nm{position:absolute;top:0;left:0;right:0;bottom:0;padding:16px;font-size:28px;line-height:1.3;white-space:normal;color:rgba(255,255,255,.9)}
 .titlelabel{position:absolute;left:0;right:0;bottom:0;padding:34px 15px 13px;font-size:24px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.92));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card.f{box-shadow:0 0 0 3px #090b12,0 0 0 7px #fff !important;z-index:6;transform:translateY(-6px)}
+.card.f{box-shadow:0 0 0 3px #0a0a0b,0 0 0 7px #fff !important;z-index:6;transform:translateY(-6px)}
 .card.wide{width:430px;height:242px}
 /* Home and Library show more titles at once; the grids keep the larger cards */
 #rows .card{width:232px;height:348px;margin-right:20px}
 #rows .card.wide{width:400px;height:225px}
 .card.more{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
 .morelbl{position:absolute;top:50%;left:0;right:0;margin-top:-20px;text-align:center;font-size:30px;font-weight:700;color:rgba(255,255,255,.85)}
-.card.noart{background:linear-gradient(155deg,#1c2733 0%,#11161d 72%)}
+.card.noart{background:linear-gradient(155deg,#222225 0%,#11161d 72%)}
 .card.noart .nm{top:auto;padding:20px 18px;font-size:27px;font-weight:700;line-height:1.25;color:#fff}
 .card.wide.noart .nm,.card.labeled.noart .nm{display:none !important}
 .card.ph{background:rgba(255,255,255,.055)}
@@ -141,6 +147,7 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 #dMeta .imdb{display:inline-block;margin-left:8px;padding:0 5px;border-radius:4px;background:#f5c518;color:#111;font-size:17px;font-weight:800;line-height:23px;vertical-align:2px}
 #dInfo{margin-top:12px;font-size:24px;color:rgba(255,255,255,.72);max-width:62%}
 #dInfo div{margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dInfo .facts{font-size:22px;color:rgba(255,255,255,.6)}
 #dInfo .awards{font-size:23px;color:rgba(245,197,24,.86)}
 #dDesc{margin-top:12px;font-size:27px;line-height:1.45;color:rgba(255,255,255,.78);max-width:60%;max-height:118px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
 #dBtns{margin-top:32px}
@@ -164,17 +171,17 @@ body.lowmem .scr.on{-webkit-animation:none;animation:none}
 #dEps{margin-top:24px;margin-right:-64px;height:330px;overflow:hidden;display:none;white-space:nowrap;padding:7px 7px 0}
 #dEpsInner{transition:transform .18s cubic-bezier(.2,.8,.2,1);white-space:nowrap}
 .ep{display:inline-block;vertical-align:top;width:430px;height:286px;border-radius:12px;margin-right:24px;background:transparent;overflow:hidden;white-space:normal;transition:transform .12s ease,background .12s ease}
-.ep .th{width:430px;height:242px;border-radius:12px;background:#0a0a10;-webkit-flex:none;flex:none;overflow:hidden;position:relative}
+.ep .th{width:430px;height:242px;border-radius:12px;background:#0d0d0e;-webkit-flex:none;flex:none;overflow:hidden;position:relative}
 .ep .th img{width:100%;height:100%;border-radius:12px;object-fit:cover}
 .ep .th.fallback img{opacity:.52}
-.epbadge{position:absolute;left:10px;top:10px;z-index:2;padding:5px 11px;border-radius:7px;background:#0F766E;color:#fff;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.epbadge{position:absolute;left:10px;top:10px;z-index:2;padding:5px 11px;border-radius:7px;background:rgba(0,0,0,.72);color:#fff;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
 .ep .th .pbar{z-index:2}
 .ep .th:after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(transparent,rgba(0,0,0,.5));border-radius:0 0 10px 10px;pointer-events:none}
 .ep .bd{padding:10px 8px;min-width:0}
 .ep .t{font-size:23px;color:rgba(255,255,255,.86);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep.f{background:rgba(255,255,255,.1);box-shadow:0 0 0 4px #fff;transform:translateY(-4px)}
 .ep.f .t{color:#fff}
-.ep.w .t{color:#5EEAD4}
+.ep.w .t{color:rgba(255,255,255,.55)}
 body.series-episode #dLogo{width:420px;height:116px}
 body.series-episode #dTitle{font-size:54px}
 body.series-episode #dMeta{margin-top:14px;font-size:27px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -183,7 +190,7 @@ body.series-episode #dDesc{margin-top:10px;max-width:80%;height:72px;max-height:
 body.series-episode #dSeasons{margin-top:24px}
 
 /* ---------- streams overlay ---------- */
-#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(13,17,24,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
+#streams{position:fixed;top:100px;right:0;bottom:0;width:800px;background:rgba(17,17,19,.98);z-index:40;display:none;padding:30px 54px 30px 34px;box-sizing:border-box}
 /* the poster would stick out above the panel */
 #streams h3{display:inline-block;margin:0 0 8px;font-size:38px}
 #stBest{display:none;margin-left:20px;padding:7px 18px 7px 12px;border-radius:20px;font-size:20px;font-weight:600;vertical-align:6px;color:rgba(255,255,255,.9);background:rgba(255,255,255,.1);cursor:pointer}
@@ -192,10 +199,10 @@ body.series-episode #dSeasons{margin-top:24px}
 #stSub{font-size:26px;color:rgba(255,255,255,.72);margin-bottom:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stChips{position:relative;white-space:nowrap;overflow:hidden;margin-bottom:8px}
 .stchip{display:inline-block;padding:12px 28px;margin-right:12px;border-radius:28px;font-size:25px;font-weight:600;background:rgba(255,255,255,.10);color:rgba(255,255,255,.8)}
-.stchip.cur{background:rgba(20,184,166,.4);color:#fff}
+.stchip.cur{background:rgba(255,255,255,.22);color:#fff}
 .stchip.f{background:#fff;color:#0c0b11}
 #stLang{display:none;position:absolute;top:36px;right:54px;padding:7px 18px;border-radius:20px;font-size:20px;font-weight:600;color:rgba(255,255,255,.72);box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);cursor:pointer}
-#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(20,184,166,.8)}
+#stLang.cur{color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.8)}
 #stLang.f{background:#fff;color:#0c0b11;box-shadow:none}
 #stClip{position:absolute;top:224px;left:34px;right:54px;bottom:30px;overflow:hidden}
 #stInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
@@ -205,14 +212,14 @@ body.series-episode #dSeasons{margin-top:24px}
 .st.f .rec{color:#fff}
 .st .tags{margin-top:9px}
 .tg{display:inline-block;padding:4px 11px;margin:0 8px 6px 0;border-radius:6px;background:rgba(255,255,255,.1);font-size:20px;font-weight:700;color:rgba(255,255,255,.9)}
-.tg.q{background:#0F766E;color:#fff}
+.tg.q{background:rgba(255,255,255,.2);color:#fff}
 .tg.lang{background:rgba(142,227,173,.16);color:#bff0d0}
 .st.f .tg.lang{background:rgba(255,255,255,.24);color:#fff}
 .tg.sublang{background:transparent;color:rgba(255,255,255,.75);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg.sublang{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5)}
 .tg.size,.tg.seed{background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 .st.f .tg{background:rgba(255,255,255,.24);color:#fff}
-.st.f .tg.q{background:#fff;color:#0F766E}
+.st.f .tg.q{background:#fff;color:#0a0a0b}
 .st .compat{margin-top:7px;font-size:21px;font-weight:700;color:#ffbd7a}
 .st.f .a,.st.f .b{color:#fff}
 /* the file name takes one line, and two on the focused source */
@@ -223,7 +230,7 @@ body.series-episode #dSeasons{margin-top:24px}
 .chip,.card,.btn,.schip,.ep,.stchip,.st,.cwmi,.set,.addon,#aSync,#lgBtn,#lgLang,#lgProv span{cursor:pointer}
 
 /* ---------- continue-watching long-press menu ---------- */
-#cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(13,17,24,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
+#cwm{position:fixed;top:0;right:0;bottom:0;width:600px;background:rgba(17,17,19,.98);z-index:45;display:none;padding:56px 44px;box-sizing:border-box}
 #cwmTitle{font-size:40px;font-weight:800;margin-bottom:8px;max-height:110px;overflow:hidden}
 #cwmSub{font-size:24px;color:rgba(255,255,255,.72);margin-bottom:34px}
 .cwmi{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:23px 30px;border-radius:12px;font-size:30px;font-weight:600;margin-bottom:10px;background:rgba(255,255,255,.05);transition:background .12s ease}
@@ -249,11 +256,11 @@ body.series-episode #dSeasons{margin-top:24px}
 .fchip{display:inline-block;padding:13px 54px 13px 30px;margin-right:10px;border-radius:13px;font-size:25px;font-weight:600;background:rgba(255,255,255,.09);color:rgba(255,255,255,.82);position:relative}
 .fchip:after{content:"";position:absolute;right:23px;top:50%;margin-top:-3px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid currentColor;opacity:.72}
 .fchip.open:after{border-top:0;border-bottom:7px solid currentColor}
-.fchip.cur{background:rgba(20,184,166,.4);color:#fff}
+.fchip.cur{background:rgba(255,255,255,.22);color:#fff}
 .fchip.f{background:#fff;color:#0c0b11}
-.fmenu{position:absolute;left:0;top:58px;min-width:270px;max-height:420px;overflow:hidden;padding:8px;background:rgba(13,17,26,.99);border:1px solid rgba(94,234,212,.26);border-radius:13px;box-shadow:0 14px 38px rgba(0,0,0,.58);z-index:20;box-sizing:border-box}
+.fmenu{position:absolute;left:0;top:58px;min-width:270px;max-height:420px;overflow:hidden;padding:8px;background:rgba(20,20,22,.99);border:1px solid rgba(255,255,255,.12);border-radius:13px;box-shadow:0 14px 38px rgba(0,0,0,.58);z-index:20;box-sizing:border-box}
 .fopt{position:relative;padding:14px 40px 14px 18px;border-radius:9px;font-size:23px;color:rgba(255,255,255,.86)}
-.fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#22D3EE}
+.fopt.cur:after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#fff}
 .fopt.f{background:#fff;color:#0c0b11}
 #discGridClip{position:absolute;top:142px;left:-7px;right:0;bottom:0;overflow:hidden;padding:18px 7px 7px}
 #discGrid{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
@@ -276,7 +283,7 @@ body.series-episode #dSeasons{margin-top:24px}
 .sreclbl{margin:0 0 14px 2px;font-size:21px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.7)}
 #sPreview{position:absolute;top:0;right:0;width:720px;height:145px;padding:8px 18px 8px 32px;border-left:1px solid rgba(255,255,255,.10);box-sizing:border-box;display:none;overflow:hidden}
 #spTitle{font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#spMeta{margin-top:7px;font-size:20px;font-weight:600;color:#5EEAD4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#spMeta{margin-top:7px;font-size:20px;font-weight:600;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #spDesc{margin-top:9px;font-size:20px;line-height:1.35;color:rgba(255,255,255,.72);max-height:54px;overflow:hidden}
 #sRowsClip{position:absolute;top:156px;left:564px;right:0;bottom:0;overflow:hidden}
 #sRows{position:absolute;top:0;left:-36px;right:0;padding-top:26px}
@@ -299,8 +306,8 @@ body.series-episode #dSeasons{margin-top:24px}
 .set .vl{font-size:24px;color:rgba(255,255,255,.88);font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(255,255,255,.08)}
 .set .vl:empty{display:none}
 .set.f{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 3px #fff}
-.set.editing{background:rgba(20,184,166,.24);box-shadow:inset 0 0 0 3px #5EEAD4}
-.set.editing .vl{background:#0F766E;color:#fff}
+.set.editing{background:#fff;color:#0a0a0b;box-shadow:none}
+.set.editing .vl{background:#0a0a0b;color:#fff}
 .set.act .vl{color:#ff9a9a}
 .set.act.info .vl{color:rgba(255,255,255,.88)}
 /* on and off as a switch */
@@ -317,14 +324,14 @@ body.series-episode #dSeasons{margin-top:24px}
 .set.out .lb{color:#ffb4b4}
 .set.out.f{background:#e5484d;box-shadow:none}
 .set.out.f .lb{color:#fff}
-.setgrp{font-size:22px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#5EEAD4;margin:4px 0 14px 4px}
+.setgrp{font-size:22px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.5);margin:4px 0 14px 4px}
 
 /* ---------- addons ---------- */
 #aWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
 #aHead{height:112px;border-bottom:1px solid rgba(255,255,255,.10);position:relative;padding-right:260px;box-sizing:border-box}
 #aTitle{font-size:50px;font-weight:800;margin-bottom:8px}
 #aHelp{font-size:24px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(20,184,166,.32)}
+#aSync{position:absolute;right:0;top:10px;display:inline-block;padding:15px 30px;border-radius:13px;font-size:25px;font-weight:700;background:rgba(255,255,255,.14)}
 #aSync.f{background:#fff;color:#0c0b11}
 #aClip{position:absolute;top:128px;left:0;right:0;bottom:0;overflow:hidden}
 #aInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
@@ -354,6 +361,7 @@ body.series-episode #dSeasons{margin-top:24px}
   #heroMeta span{margin-right:16px}
   #heroMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
   #heroDesc{margin-top:7px;font-size:17px;line-height:1.4;max-height:48px}
+  #heroDots{margin-top:10px;height:8px}#heroDots span{width:8px;height:8px;margin-right:6px}#heroDots span.on{width:22px}
   #rowsClip{top:250px;left:86px}
   #boardMsg{top:270px;left:112px;font-size:20px}
   .row{padding:9px 0 18px 26px;transform:translateY(10px)}
@@ -362,7 +370,7 @@ body.series-episode #dSeasons{margin-top:24px}
   .card img{border-radius:8px}
   .card .nm{padding:10px;font-size:18px}
   .titlelabel{padding:23px 10px 9px;font-size:17px}
-  .card.f{box-shadow:0 0 0 2px #090b12,0 0 0 5px #fff !important;transform:translateY(-4px)}
+  .card.f{box-shadow:0 0 0 2px #0a0a0b,0 0 0 5px #fff !important;transform:translateY(-4px)}
   .card.wide{width:287px;height:161px}
   #rows .card{width:155px;height:232px;margin-right:14px}
   #rows .card.wide{width:267px;height:150px}
@@ -394,7 +402,7 @@ body.series-episode #dSeasons{margin-top:24px}
   #dMeta{margin-top:11px;font-size:17px}
   #dMeta span{margin-right:16px}
   #dMeta .imdb{margin-left:5px;padding:0 4px;font-size:12px;line-height:16px;vertical-align:1px}
-  #dInfo{margin-top:8px;font-size:16px}#dInfo div{margin-bottom:3px}#dInfo .awards{font-size:15px}
+  #dInfo{margin-top:8px;font-size:16px}#dInfo div{margin-bottom:3px}#dInfo .awards{font-size:15px}#dInfo .facts{font-size:15px}
   #dDesc{margin-top:8px;font-size:18px;line-height:1.4;max-height:76px}
   #dBtns{margin-top:16px}.btn{height:44px;margin-right:8px;border-radius:22px;font-size:18px}.btn svg{width:21px;height:21px}.btn .bl{margin-left:7px}.btn.main{padding:0 24px 0 18px}.btn.ico{width:44px}.btn.ico.f{padding:0 19px 0 13px}
   #dSeasons{margin-top:15px}.schip{padding:7px 16px;margin-right:7px;font-size:16px}
@@ -541,23 +549,23 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .emptyic svg{width:56px;height:56px;fill:currentColor}
 .emptyt{font-size:34px;font-weight:700;color:#fff}
 .emptyh{margin-top:10px;font-size:25px;line-height:1.45;color:rgba(255,255,255,.72)}
-#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,18,30,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none;white-space:nowrap}
+#toast{position:fixed;left:50%;top:7%;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(20,20,22,.9);font-size:28px;font-weight:600;padding:14px 32px;border-radius:30px;opacity:0;transition:opacity .3s cubic-bezier(.2,.8,.2,1);z-index:60;pointer-events:none;white-space:nowrap}
 @media (max-height:800px){#toast{top:5%;font-size:20px;padding:9px 22px}}
-#serverPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
-#srvBox{width:968px;margin:12vh auto 0;padding:32px 40px 26px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
+#serverPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(6,6,7,.82);z-index:90;text-align:center}
+#srvBox{width:968px;margin:12vh auto 0;padding:32px 40px 26px;background:#151517;border:1px solid rgba(255,255,255,.1);border-radius:22px;box-sizing:border-box}
 #srvTitle{font-size:32px;font-weight:700;color:#fff}
-#srvValue{height:68px;margin:20px 0 16px;padding:0 20px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:36px;line-height:68px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden}
+#srvValue{height:68px;margin:20px 0 16px;padding:0 20px;border-radius:12px;background:#000;color:#fff;font-size:36px;line-height:68px;font-weight:700;text-align:left;white-space:nowrap;overflow:hidden}
 #srvKeys{text-align:left}
-.srvkey{display:inline-block;vertical-align:top;width:80px;height:56px;margin:4px;text-align:center;line-height:56px;border-radius:10px;background:#27303a;color:#fff;font-size:26px;font-weight:600;box-sizing:border-box;cursor:pointer}
+.srvkey{display:inline-block;vertical-align:top;width:80px;height:56px;margin:4px;text-align:center;line-height:56px;border-radius:10px;background:#2a2a2d;color:#fff;font-size:26px;font-weight:600;box-sizing:border-box;cursor:pointer}
 .srvkey.srvact{width:212px;font-size:22px;margin-top:10px}
 .srvkey.f{background:#fff;color:#0c0b11}
 #srvStatus{min-height:32px;margin-top:16px;font-size:24px;color:rgba(255,255,255,.75)}
 @media(max-height:800px){#srvBox{width:648px;margin-top:7vh;padding:20px 28px 16px}#srvTitle{font-size:24px}#srvValue{height:46px;margin:12px 0 10px;padding:0 14px;font-size:25px;line-height:46px}.srvkey{width:52px;height:38px;margin:3px;line-height:38px;font-size:18px;border-radius:7px}.srvkey.srvact{width:139px;font-size:15px;margin-top:7px}#srvStatus{min-height:22px;margin-top:10px;font-size:17px}}
-#setupPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.9);z-index:95;text-align:center}
-#suBox{width:780px;margin:12vh auto 0;padding:40px 46px 30px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
+#setupPanel{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(6,6,7,.9);z-index:95;text-align:center}
+#suBox{width:780px;margin:12vh auto 0;padding:40px 46px 30px;background:#151517;border:1px solid rgba(255,255,255,.1);border-radius:22px;box-sizing:border-box}
 #suTitle{font-size:36px;font-weight:700;color:#fff;margin-bottom:26px}
-.suopt{margin:12px 0;padding:20px 26px;border-radius:14px;background:#27303a;text-align:left}
-.suopt.f{background:#fff;color:#0f766e}
+.suopt{margin:12px 0;padding:20px 26px;border-radius:14px;background:#2a2a2d;text-align:left}
+.suopt.f{background:#fff;color:#0a0a0b}
 .suname{font-size:30px;font-weight:700}
 .suhelp{margin-top:6px;font-size:22px;opacity:.8}
 .suopt.locked{opacity:.55}
@@ -565,21 +573,21 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 #suHint{margin-top:18px;font-size:20px;color:#8b95a0}
 /* the light look: no transitions, animations or shadows */
 body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-animation:none!important;animation:none!important;box-shadow:none!important;text-shadow:none!important}
-#episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
-#ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#131922;border:1px solid rgba(94,234,212,.42);border-radius:22px;box-sizing:border-box}
+#episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(6,6,7,.82);z-index:90;text-align:center}
+#ejBox{width:520px;margin:13vh auto 0;padding:34px 42px 28px;background:#151517;border:1px solid rgba(255,255,255,.1);border-radius:22px;box-sizing:border-box}
 #ejTitle{font-size:32px;font-weight:700;color:#fff}
-#ejValue{height:72px;margin:22px 0 18px;border-radius:12px;background:#0a0e14;color:#5EEAD4;font-size:48px;line-height:72px;font-weight:700}
+#ejValue{height:72px;margin:22px 0 18px;border-radius:12px;background:#000;color:#fff;font-size:48px;line-height:72px;font-weight:700}
 #ejKeys{text-align:left}
-.ejkey{display:inline-block;width:132px;height:62px;margin:6px 6px;text-align:center;line-height:62px;border-radius:10px;background:#27303a;color:#fff;font-size:27px;font-weight:600;box-sizing:border-box;cursor:pointer}
+.ejkey{display:inline-block;width:132px;height:62px;margin:6px 6px;text-align:center;line-height:62px;border-radius:10px;background:#2a2a2d;color:#fff;font-size:27px;font-weight:600;box-sizing:border-box;cursor:pointer}
 .ejkey.f{background:#fff;color:#0c0b11}
 #ejHint{margin-top:18px;color:#a3adb8;font-size:19px}
 @media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
 /* the profiles: a screen of their own, big faces in a row, as the streaming apps show them */
-#pfScreen{display:none;position:fixed;left:0;right:0;top:0;bottom:0;z-index:97;text-align:center;background:radial-gradient(ellipse at 50% 30%,#1a2130,#090b12 70%)}
+#pfScreen{display:none;position:fixed;left:0;right:0;top:0;bottom:0;z-index:97;text-align:center;background:radial-gradient(ellipse at 50% 30%,#1d1d20,#0a0a0b 70%)}
 #pfTitle{margin-top:15vh;font-size:64px;font-weight:800;letter-spacing:-.5px;color:#fff}
 #pfRow{margin-top:70px;white-space:nowrap}
 .pf{display:inline-block;vertical-align:top;width:250px;margin:0 22px;white-space:normal}
-.pfav{width:220px;height:220px;margin:0 auto;border-radius:50%;overflow:hidden;line-height:220px;font-size:92px;font-weight:800;color:#fff;background:#27303a;box-shadow:0 0 0 0 transparent;transition:transform .12s ease}
+.pfav{width:220px;height:220px;margin:0 auto;border-radius:50%;overflow:hidden;line-height:220px;font-size:92px;font-weight:800;color:#fff;background:#2a2a2d;box-shadow:0 0 0 0 transparent;transition:transform .12s ease}
 .pfav img{width:100%;height:100%;display:block}
 .pf.f .pfav{box-shadow:0 0 0 7px #fff;-webkit-transform:scale(1.06);transform:scale(1.06)}
 .pf.add .pfav{background:transparent;box-shadow:inset 0 0 0 4px rgba(255,255,255,.35);font-weight:300;color:rgba(255,255,255,.75)}
@@ -601,7 +609,7 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 .pfcolor.f{box-shadow:0 0 0 5px #fff}
 #pfEdClip{width:1000px;margin:30px auto 0;overflow:hidden;text-align:left;padding:8px 0}
 #pfEdAvatars{white-space:nowrap;padding-left:8px;transition:transform .15s ease}
-.pfpick{display:inline-block;vertical-align:top;width:96px;height:96px;margin-right:24px;border-radius:50%;overflow:hidden;background:#27303a;text-align:center;line-height:96px;font-size:40px;font-weight:800;color:#fff}
+.pfpick{display:inline-block;vertical-align:top;width:96px;height:96px;margin-right:24px;border-radius:50%;overflow:hidden;background:#2a2a2d;text-align:center;line-height:96px;font-size:40px;font-weight:800;color:#fff}
 .pfpick img{width:100%;height:100%;display:block}
 .pfpick.on{box-shadow:0 0 0 4px rgba(255,255,255,.55)}
 .pfpick.f{box-shadow:0 0 0 5px #fff}
@@ -628,7 +636,7 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
   #pfEdBtns{margin-top:24px}
   #pfEdBtns span{padding:9px 30px;font-size:18px}
 }
-#boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(20,184,166,.10),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
+#boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(20,184,166,.10),rgba(10,10,11,0) 38%),#0a0a0b;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #boot .bootbox{text-align:center;width:360px}
 #boot .lg{width:94px;height:94px;-webkit-animation:bb 1.8s ease-in-out infinite;animation:bb 1.8s ease-in-out infinite}
 #boot .bt{margin-top:18px;font-size:27px;font-weight:700;letter-spacing:.6px}
@@ -662,7 +670,7 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 
 <!-- Home and Library share the cinematic hero/rows layer. Discover has its own grid. -->
 <div class="scr" id="scrBoard">
-  <div id="hero"><img id="heroLogo"><div id="heroTitle"></div><div id="heroMeta"></div><div id="heroDesc"></div><div id="heroCast"></div></div>
+  <div id="hero"><img id="heroLogo"><div id="heroTitle"></div><div id="heroMeta"></div><div id="heroDesc"></div><div id="heroCast"></div><div id="heroDots"></div></div>
   <div id="rowsClip"><div id="rows"></div></div>
   <div id="boardMsg"></div>
 </div>
@@ -776,7 +784,7 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
     window.__SC_BOOT_MESSAGE__=String(message||'Unknown startup error');
     window.__SC_BOOT_LINE__=String(line||'');
     var b=document.getElementById('boot');if(!b)return;
-    b.style.background='#090b12';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
+    b.style.background='#0a0a0b';b.style.color='#fff';b.style.fontFamily='Arial,sans-serif';
     b.style.textAlign='center';b.style.paddingTop='28vh';b.style.boxSizing='border-box';
     b.innerHTML='<div style="font-size:42px;font-weight:bold;margin-bottom:20px">StremCompat could not finish loading</div>'+
       '<div style="font-size:23px;color:#c3cad2;margin:0 auto 26px;max-width:1100px">'+String(message||'Unknown startup error').replace(/</g,'&lt;')+'</div>'+

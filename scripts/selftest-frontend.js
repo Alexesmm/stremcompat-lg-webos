@@ -224,7 +224,7 @@ var seededOnly = mixedSources.slice(0, 90).concat(mixedSources.slice(0, 40).map(
 assert.ok(firstRun.context.__SC_COMPACT_SOURCES__(seededOnly, 60).items.every(function (item) { return item.addon === 'Torrents'; }), 'addons with seeders lost their ranking');
 assert.ok(!sourceHas(source, "location.assign('/play?u='"), 'beta player fallback leaked a source URL into browser history');
 assert.ok(!sourceHas(source, 'self.poll=setInterval'), 'QR polling still allows overlapping interval requests');
-assert.ok(sourceHas(source, "if(this.type!=='series')this.addBtn(tx('watch')"), 'movie details do not expose an explicit Watch action');
+assert.ok(sourceHas(source, "if(this.type!=='series')this.addBtn(tx(simpleMode()?'sourcesButton':'watch')"), 'movie details do not expose an explicit Watch action, or the whole list in Simple');
 assert.ok(sourceHas(source, 'detail.meta===m&&detail.id===mediaId'), 'late detail artwork can overwrite the current title');
 assert.ok(sourceHas(source, 'function queuePointerHover(target)'), 'Magic Remote hover navigation is not debounced');
 assert.ok(sourceHas(source, "def.k==='__reload'"), 'Settings recovery action is not wired');

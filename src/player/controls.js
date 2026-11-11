@@ -104,6 +104,9 @@ function paintProgress() {
   paintTime(v.currentTime);
 }
 function showBar() {
+  /* the file's details, chapters included, once the controls are brought up after the start,
+     so FFprobe never competes with the first seconds of the film */
+  if (v.currentTime > 15) ensureTechProbe();
   if (bar.className !== 'show') paintProgress();
   bar.className = 'show';
   if (hideT) clearTimeout(hideT);

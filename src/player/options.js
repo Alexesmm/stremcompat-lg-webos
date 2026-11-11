@@ -40,26 +40,16 @@ function wantedSubtitleLanguage(lang) {
 }
 
 /* ---- picture: the whole image, or grown until it fills the screen ----
-   The TV draws the video inside the element's box and keeps its shape, so a box larger than
-   the screen crops the sides (or the top and bottom) of a film wider or narrower than it. */
+   The video stays the size of the screen and the picture is cropped inside it (object-fit): many
+   LG TVs draw the video on a plane that never goes past the screen, so the earlier way, a box
+   larger than the screen, changed nothing on them. */
 /* Simple (Settings) leaves the technical rows out of the player's menu */
 var SIMPLE = lsGet('uiMode', 'full') === 'simple';
 var IS_VIDEO_ELEMENT = v.tagName === 'VIDEO',
   pictureMode = IS_VIDEO_ELEMENT ? lsGet('pictureMode', 'fit') : 'fit';
 function applyPicture() {
   if (!IS_VIDEO_ELEMENT) return;
-  var grow = 1;
-  if (pictureMode === 'zoom' && v.videoWidth && v.videoHeight) {
-    var screen = window.innerWidth / window.innerHeight,
-      video = v.videoWidth / v.videoHeight;
-    grow = Math.max(screen / video, video / screen);
-  }
-  var size = Math.round(grow * 1000) / 10 + '%',
-    offset = Math.round((1 - grow) * 500) / 10 + '%';
-  v.style.width = size;
-  v.style.height = size;
-  v.style.left = offset;
-  v.style.top = offset;
+  v.style.objectFit = pictureMode === 'zoom' ? 'cover' : 'contain';
 }
 function togglePicture() {
   pictureMode = pictureMode === 'zoom' ? 'fit' : 'zoom';
@@ -91,6 +81,21 @@ function setSpeed(rate) {
 }
 
 /* ---- chapters ---- */
+/* a thin mark on the time bar where each chapter starts */
+function markChapters() {
+  var seekBar = document.getElementById('seek'),
+    duration = v.duration;
+  if (!mediaInfo || !mediaInfo.chapters || !(duration > 0) || seekBar.getAttribute('data-marked')) return;
+  seekBar.setAttribute('data-marked', '1');
+  mediaInfo.chapters.forEach(function (mark) {
+    if (!(mark.t > 1) || mark.t >= duration) return;
+    var tick = document.createElement('div');
+    tick.className = 'cmark';
+    tick.style.left = (mark.t / duration) * 100 + '%';
+    seekBar.appendChild(tick);
+  });
+}
+v.addEventListener('loadedmetadata', markChapters);
 function currentChapter() {
   var list = (mediaInfo && mediaInfo.chapters) || [],
     at = -1;
@@ -141,15 +146,54 @@ function fileSize(bytes) {
   return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(1) + ' GB' : Math.round(bytes / 1048576) + ' MB';
 }
 function playTorrentFile(index) {
-  var source = {
+  playHere({
     url: URL.replace(/(:11470\/[0-9a-f]{40}\/)\d+/i, '$1' + index),
     addon: ADDON,
     addonBase: ADDONBASE,
     name: SNAME,
     quality: QUALITY,
-    compatLabels: COMPAT ? COMPAT.split(',') : [],
-    meta: { name: TITLE, logo: LOGO, background: BG, poster: POSTER }
-  };
+    compatLabels: COMPAT ? COMPAT.split(',') : []
+  });
+}
+
+/* ---- another source of the same film or episode, from the place it was left ----
+   The addons are asked as for the next episode (up-next.js); the new player resumes from the
+   progress saved here, like any film taken up again. */
+var sourceList = null,
+  sourcesAsked = false,
+  SOURCE_LIST_CAP = 40;
+function ensureSources() {
+  if (sourcesAsked) return;
+  sourcesAsked = true;
+  var ads = nextEpisodeAddons(),
+    pending = ads.length,
+    found = [];
+  if (!pending) sourceList = [];
+  ads.forEach(function (ad) {
+    nextSources(ad, VID || ID, function (j) {
+      var st = (j && j.streams) || [];
+      for (var k = 0; k < st.length && found.length < SOURCE_LIST_CAP; k++) {
+        var item = sourceItem(st[k], ad.name, ad.base);
+        if (item) found.push(item);
+      }
+      if (--pending > 0) return;
+      sourceList = found;
+      if (mode === 'menu' && subView === 'sources') reopen();
+    });
+  });
+}
+function sourceRowText(s) {
+  var name = String(s.title || s.name || '').split('\n')[0];
+  return [s.quality, s.addon, name].filter(Boolean).join('  ·  ');
+}
+function playOtherSource(s) {
+  saveProgress();
+  pushLib(true);
+  playHere(s);
+}
+/* this title's player again, with another source */
+function playHere(source) {
+  source.meta = { name: TITLE, logo: LOGO, background: BG, poster: POSTER };
   postStreamRef(source, function (ref) {
     if (!ref) return showToast(P.sourceFailed);
     location.replace(

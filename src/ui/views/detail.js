@@ -1,4 +1,20 @@
 // Title detail screen: actions, seasons, episode ranges and episode list.
+/* The title's details on one line: who directed it (when the line above names the cast), the
+   country and the release date, as Cinemeta gives them. */
+function titleFacts(m, castShown) {
+  var parts = [];
+  if (castShown && m.director && m.director.length)
+    parts.push(tx('directedBy', m.director.slice(0, 2).join(', ')));
+  if (m.country) parts.push(String(m.country).split(',')[0]);
+  var released = m.released ? new Date(m.released) : null;
+  if (released && !isNaN(released.getTime()))
+    try {
+      parts.push(released.toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' }));
+    } catch (e) {
+      parts.push(String(released.getFullYear()));
+    }
+  return parts.join('  ·  ');
+}
 var detail = {
   meta: null,
   type: '',
@@ -99,6 +115,8 @@ var detail = {
       (m.genres && m.genres.length ? '<span>' + esc(m.genres.slice(0, 3).join(' · ')) + '</span>' : '');
     var people = m.cast && m.cast.length ? m.cast : m.director || [];
     var info = people.length ? '<div>' + esc(people.slice(0, 4).join(', ')) + '</div>' : '';
+    var facts = titleFacts(m, people === m.cast);
+    if (facts) info += '<div class="facts">' + esc(facts) + '</div>';
     if (m.awards) info += '<div class="awards">' + esc(m.awards) + '</div>';
     $('dInfo').innerHTML = info;
     $('dDesc').textContent = m.description || '';
@@ -140,13 +158,14 @@ var detail = {
     }
     var bestFirst = simpleMode() && !primary && this.type !== 'series';
     if (bestFirst) this.addBestBtn(this.id, m.name);
+    /* the whole source list; in Simple it is the one way to it */
     if (this.type !== 'series')
       this.addBtn(
-        tx('watch'),
+        tx(simpleMode() ? 'sourcesButton' : 'watch'),
         function () {
-          self.openStreams(self.id);
+          self.openSourceList(self.id);
         },
-        primary ? ICON.similar : ''
+        primary || simpleMode() ? ICON.similar : ''
       );
     /* straight to the best source, without the list */
     var bestVid = this.type === 'series' ? av : this.id;
@@ -239,8 +258,8 @@ var detail = {
     this.addBtn(
       tx('playBest'),
       function () {
-        cwMenu.withPreferredQuality(function (quality) {
-          streamsUI.show(self.type, self.id, vid, name, quality);
+        cwMenu.withBestChoice(function (quality, language) {
+          streamsUI.show(self.type, self.id, vid, name, quality, language);
         });
       },
       ICON.bolt
@@ -373,7 +392,15 @@ var detail = {
       if (this.meta) setBg(this.meta.background || bgOf({ id: this.id, poster: this.meta.poster }));
     }
   },
+  /* Simple (Settings) goes straight to the best source; the list stays one button away */
   openStreams: function (vid) {
+    if (!simpleMode()) return this.openSourceList(vid);
+    var self = this;
+    cwMenu.withBestChoice(function (quality, language) {
+      streamsUI.show(self.type, self.id, vid, self.meta && self.meta.name, quality, language);
+    });
+  },
+  openSourceList: function (vid) {
     streamsUI.show(this.type, this.id, vid, this.meta && this.meta.name);
   },
   key: function (k) {

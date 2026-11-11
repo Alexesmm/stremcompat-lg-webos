@@ -401,6 +401,9 @@ var UI_TEXT = {
     noOtherSource: 'No other source to try',
     catalogsFailed: 'No catalog could be loaded. Check the connection and your addons.',
     playBest: 'Best source',
+    directedBy: 'Directed by {0}',
+    sourceLanguageRow: 'Language: {0}',
+    sourcesButton: 'All sources',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
     whatsNew:
@@ -622,6 +625,7 @@ var UI_TEXT = {
       picture: 'Picture',
       pictureFit: 'Whole picture',
       pictureZoom: 'Fill the screen',
+      sources: 'Sources',
       speed: 'Speed',
       speedRefused: 'This TV does not change the speed of this video',
       subtitlesReady: 'Subtitles ready',
@@ -802,6 +806,9 @@ var UI_TEXT = {
     noOtherSource: 'Não há outra fonte para tentar',
     catalogsFailed: 'Nenhum catálogo pôde ser carregado. Verifique a conexão e seus addons.',
     playBest: 'Melhor fonte',
+    directedBy: 'Direção: {0}',
+    sourceLanguageRow: 'Idioma: {0}',
+    sourcesButton: 'Todas as fontes',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
     whatsNew:
@@ -1024,6 +1031,7 @@ var UI_TEXT = {
       picture: 'Imagem',
       pictureFit: 'Imagem inteira',
       pictureZoom: 'Preencher a tela',
+      sources: 'Fontes',
       speed: 'Velocidade',
       speedRefused: 'Esta TV não muda a velocidade deste vídeo',
       subtitlesReady: 'Legendas prontas',
@@ -2617,6 +2625,9 @@ function paintProgress() {
   paintTime(v.currentTime);
 }
 function showBar() {
+  /* the file's details, chapters included, once the controls are brought up after the start,
+     so FFprobe never competes with the first seconds of the film */
+  if (v.currentTime > 15) ensureTechProbe();
   if (bar.className !== 'show') paintProgress();
   bar.className = 'show';
   if (hideT) clearTimeout(hideT);
@@ -3096,26 +3107,16 @@ function wantedSubtitleLanguage(lang) {
 }
 
 /* ---- picture: the whole image, or grown until it fills the screen ----
-   The TV draws the video inside the element's box and keeps its shape, so a box larger than
-   the screen crops the sides (or the top and bottom) of a film wider or narrower than it. */
+   The video stays the size of the screen and the picture is cropped inside it (object-fit): many
+   LG TVs draw the video on a plane that never goes past the screen, so the earlier way, a box
+   larger than the screen, changed nothing on them. */
 /* Simple (Settings) leaves the technical rows out of the player's menu */
 var SIMPLE = lsGet('uiMode', 'full') === 'simple';
 var IS_VIDEO_ELEMENT = v.tagName === 'VIDEO',
   pictureMode = IS_VIDEO_ELEMENT ? lsGet('pictureMode', 'fit') : 'fit';
 function applyPicture() {
   if (!IS_VIDEO_ELEMENT) return;
-  var grow = 1;
-  if (pictureMode === 'zoom' && v.videoWidth && v.videoHeight) {
-    var screen = window.innerWidth / window.innerHeight,
-      video = v.videoWidth / v.videoHeight;
-    grow = Math.max(screen / video, video / screen);
-  }
-  var size = Math.round(grow * 1000) / 10 + '%',
-    offset = Math.round((1 - grow) * 500) / 10 + '%';
-  v.style.width = size;
-  v.style.height = size;
-  v.style.left = offset;
-  v.style.top = offset;
+  v.style.objectFit = pictureMode === 'zoom' ? 'cover' : 'contain';
 }
 function togglePicture() {
   pictureMode = pictureMode === 'zoom' ? 'fit' : 'zoom';
@@ -3147,6 +3148,21 @@ function setSpeed(rate) {
 }
 
 /* ---- chapters ---- */
+/* a thin mark on the time bar where each chapter starts */
+function markChapters() {
+  var seekBar = document.getElementById('seek'),
+    duration = v.duration;
+  if (!mediaInfo || !mediaInfo.chapters || !(duration > 0) || seekBar.getAttribute('data-marked')) return;
+  seekBar.setAttribute('data-marked', '1');
+  mediaInfo.chapters.forEach(function (mark) {
+    if (!(mark.t > 1) || mark.t >= duration) return;
+    var tick = document.createElement('div');
+    tick.className = 'cmark';
+    tick.style.left = (mark.t / duration) * 100 + '%';
+    seekBar.appendChild(tick);
+  });
+}
+v.addEventListener('loadedmetadata', markChapters);
 function currentChapter() {
   var list = (mediaInfo && mediaInfo.chapters) || [],
     at = -1;
@@ -3197,15 +3213,54 @@ function fileSize(bytes) {
   return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(1) + ' GB' : Math.round(bytes / 1048576) + ' MB';
 }
 function playTorrentFile(index) {
-  var source = {
+  playHere({
     url: URL.replace(/(:11470\/[0-9a-f]{40}\/)\d+/i, '$1' + index),
     addon: ADDON,
     addonBase: ADDONBASE,
     name: SNAME,
     quality: QUALITY,
-    compatLabels: COMPAT ? COMPAT.split(',') : [],
-    meta: { name: TITLE, logo: LOGO, background: BG, poster: POSTER }
-  };
+    compatLabels: COMPAT ? COMPAT.split(',') : []
+  });
+}
+
+/* ---- another source of the same film or episode, from the place it was left ----
+   The addons are asked as for the next episode (up-next.js); the new player resumes from the
+   progress saved here, like any film taken up again. */
+var sourceList = null,
+  sourcesAsked = false,
+  SOURCE_LIST_CAP = 40;
+function ensureSources() {
+  if (sourcesAsked) return;
+  sourcesAsked = true;
+  var ads = nextEpisodeAddons(),
+    pending = ads.length,
+    found = [];
+  if (!pending) sourceList = [];
+  ads.forEach(function (ad) {
+    nextSources(ad, VID || ID, function (j) {
+      var st = (j && j.streams) || [];
+      for (var k = 0; k < st.length && found.length < SOURCE_LIST_CAP; k++) {
+        var item = sourceItem(st[k], ad.name, ad.base);
+        if (item) found.push(item);
+      }
+      if (--pending > 0) return;
+      sourceList = found;
+      if (mode === 'menu' && subView === 'sources') reopen();
+    });
+  });
+}
+function sourceRowText(s) {
+  var name = String(s.title || s.name || '').split('\n')[0];
+  return [s.quality, s.addon, name].filter(Boolean).join('  ·  ');
+}
+function playOtherSource(s) {
+  saveProgress();
+  pushLib(true);
+  playHere(s);
+}
+/* this title's player again, with another source */
+function playHere(source) {
+  source.meta = { name: TITLE, logo: LOGO, background: BG, poster: POSTER };
   postStreamRef(source, function (ref) {
     if (!ref) return showToast(P.sourceFailed);
     location.replace(
@@ -3246,6 +3301,7 @@ function openMenu(view) {
   if (view === 'root' || view === 'audio') ensureTechProbe();
   if (view === 'root') ensureTorrentFiles();
   if (view === 'episodes') ensureSeasonList();
+  if (view === 'sources') ensureSources();
   if (view === 'root') {
     html += '<div class=mh>' + P.settings + '</div>';
     html += '<div class=mi>' + P.audio + ': ' + eh(audioName()) + ' \u203a</div>';
@@ -3260,6 +3316,8 @@ function openMenu(view) {
       html += '<div class=mi>' + P.chapters + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'chapters' });
     }
+    html += '<div class=mi>' + P.sources + ' \u203a</div>';
+    menuItems.push({ k: 'go', to: 'sources' });
     if (!SIMPLE && torrentFileList && torrentFileList.length > 1) {
       html += '<div class=mi>' + P.files + ' \u203a</div>';
       menuItems.push({ k: 'go', to: 'files' });
@@ -3296,6 +3354,15 @@ function openMenu(view) {
       var mark = mediaInfo.chapters[ch];
       html += choiceRow(fmt(mark.t) + (mark.name ? '  ·  ' + mark.name : ''), ch === nowIn);
       menuItems.push({ k: 'chapter', t: mark.t, on: ch === nowIn });
+    }
+  } else if (view === 'sources') {
+    html += '<div class=mh>' + P.sources + '</div>';
+    if (!sourceList) html += '<div class=mi style="opacity:.5">' + P.readingTracks + '</div>';
+    else if (!sourceList.length) html += '<div class=mi style="opacity:.5">' + P.none + '</div>';
+    for (var so = 0; sourceList && so < sourceList.length; so++) {
+      var here = sourceList[so].url === URL;
+      html += choiceRow(sourceRowText(sourceList[so]), here);
+      menuItems.push({ k: 'source', at: so, on: here });
     }
   } else if (view === 'files') {
     html += '<div class=mh>' + P.files + '</div>';
@@ -3571,6 +3638,11 @@ function chooseMenu() {
     seekTo(it.t);
     return;
   }
+  if (it.k === 'source') {
+    closeMenu();
+    if (!it.on) playOtherSource(sourceList[it.at]);
+    return;
+  }
   if (it.k === 'episode' || it.k === 'file') {
     closeMenu();
     if (it.on) return;
@@ -3685,6 +3757,7 @@ function ensureTechProbe() {
     if (!j) return;
     mediaInfo = j;
     fillBadges(j);
+    markChapters();
     if (mode === 'menu' && (subView === 'root' || subView === 'audio')) reopen();
   });
 }
