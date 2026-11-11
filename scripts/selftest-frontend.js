@@ -409,6 +409,11 @@ assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',
   assert.strictEqual(best([hevc, fullHd]), fullHd, 'a source with a warning won over one without');
   assert.strictEqual(best([archive, hevc]), hevc, 'an archive was chosen over a source with a warning');
   assert.strictEqual(best([archive, stored]), null, 'something that cannot play was chosen');
+  var english = { addon: 'a', quality: '1080p', compatRank: 0, seeders: 1300, langs: ['en'] };
+  var weakDub = { addon: 'a', quality: '1080p', compatRank: 0, seeders: 3, langs: ['pt-BR'] };
+  var dub = { addon: 'a', quality: '1080p', compatRank: 0, seeders: 40, langs: ['pt-BR'] };
+  assert.strictEqual(best([english, weakDub], '1080p', 'pt'), english, 'a dub with almost no seeders won over a healthy source');
+  assert.strictEqual(best([english, weakDub, dub], '1080p', 'pt'), dub, 'a healthy dub did not win');
 })();
 (function languageFiles() {
   var english = {};

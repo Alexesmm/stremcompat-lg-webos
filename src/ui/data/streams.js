@@ -77,16 +77,24 @@ function sourceLanguageName(code) {
     if (SOURCE_LANGUAGES[i][0] === code) return SOURCE_LANGUAGES[i][1];
   return tx('anyLanguage');
 }
-/* the language sources are ordered by: the one in Settings, or with Ask the last one chosen */
+/* the language the source list is ordered by: only one fixed in Settings, so the one chosen in
+   Best source does not reorder the whole list */
+function fixedSourceLanguage() {
+  var set = lsRaw('preferredSourceLanguage', 'Ask');
+  return set === 'Ask' ? 'Auto' : set;
+}
+/* the language Best source looks for: the one in Settings, or with Ask the last one chosen */
 function preferredSourceLanguage() {
   var set = lsRaw('preferredSourceLanguage', 'Ask');
   return set === 'Ask' ? lsRaw('bestLanguage', 'Auto') : set;
 }
-/* 0 when the source has the preferred audio language, 1 for multi audio, 2 otherwise; a source
-   whose flags name only its subtitles ("Multi Subs") counts as otherwise */
+/* 0 when the source has the preferred audio language, 1 for multi audio, 2 otherwise. A source
+   whose flags name only its subtitles ("Multi Subs") counts as otherwise, and so does a torrent
+   with almost no seeders: the language does not put one that would hardly load above the rest. */
+var LANGUAGE_MIN_SEEDERS = 5;
 function langRank(s, pref) {
   if (!pref || pref === 'Auto') return 0;
-  if (s.subLangsOnly) return 2;
+  if (s.subLangsOnly || (s.seeders != null && s.seeders < LANGUAGE_MIN_SEEDERS)) return 2;
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }

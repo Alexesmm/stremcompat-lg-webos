@@ -299,7 +299,7 @@ var streamsUI = {
       flat = this.all(),
       self = this,
       pref = lsRaw('preferredSourceQuality', 'Auto'),
-      langPref = preferredSourceLanguage(),
+      langPref = fixedSourceLanguage(),
       lf = this.langFilter;
     flat = flat.filter(function (s) {
       return (
