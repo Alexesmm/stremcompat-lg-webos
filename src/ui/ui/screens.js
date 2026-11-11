@@ -6,7 +6,7 @@ var SCR = 'home';
 var backStack = [];
 var BACK_LIMIT = 20;
 var scrParams = null;
-var BOARD_SCR = { home: 1, lib: 1 };
+var BOARD_SCR = { home: 1, lib: 1, fold: 1 };
 function showScr(name) {
   var el = BOARD_SCR[name]
     ? 'scrBoard'
@@ -89,6 +89,10 @@ function goScr(name, params, noStack) {
   } else if (name === 'lib') {
     showScr('lib');
     lib.enter();
+  } else if (name === 'fold') {
+    showScr('fold');
+    fold.built = false;
+    fold.enter();
   } else if (name === 'addons') {
     showScr('addons');
     addonPanel.enter();

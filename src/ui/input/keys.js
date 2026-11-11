@@ -109,6 +109,7 @@ on(
     else if (SCR === 'disc') disc.key(k);
     else if (SCR === 'search') search.key(k);
     else if (SCR === 'lib') lib.key(k);
+    else if (SCR === 'fold') fold.key(k);
     else if (SCR === 'addons') addonPanel.key(k);
     else if (SCR === 'set') settings.key(k);
     else if (SCR === 'login') login.key(k);

@@ -783,6 +783,23 @@ function addonCollection(session, cb) {
   );
 }
 
+/* the profile's Collections (folders of catalogs built in Nuvio), as Nuvio stores them */
+function collections(session, cb) {
+  rpc(session, 'sync_pull_collections', { p_profile_id: session.profile }, function (rows, status) {
+    if (!rows) return cb({ error: { code: status || 0, message: 'collections' } });
+    var row = Array.isArray(rows) ? rows[0] : rows,
+      raw = (row && row.collections_json) || [];
+    if (typeof raw === 'string') {
+      try {
+        raw = JSON.parse(raw);
+      } catch (e) {
+        raw = [];
+      }
+    }
+    cb({ result: Array.isArray(raw) ? raw : [] });
+  });
+}
+
 /* ---------- the account API calls, answered as Stremio answers them ---------- */
 function expired() {
   return { error: { code: 1, message: 'Session expired. Sign in again.' } };
@@ -795,6 +812,7 @@ function nuvioApi(apiPath, body, cb) {
   if (!session) return cb(expired());
   if (apiPath === '/api/getUser') return cb({ result: userOf(session) });
   if (apiPath === '/api/addonCollectionGet') return addonCollection(session, cb);
+  if (apiPath === '/api/collectionsGet') return collections(session, cb);
   if (apiPath === '/api/datastorePut') return put(key, session, body.changes, cb);
   items(key, session, function (list, status) {
     if (!list)

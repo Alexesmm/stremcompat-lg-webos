@@ -16,6 +16,33 @@ function remoteAddons() {
       out.push(all[i]);
   return out;
 }
+/* Nuvio Collections of the profile (folders of catalogs), kept for the Home rows */
+function nuvioCollections() {
+  return isNuvioAccount() ? lsJson('nuvioCollections') || [] : [];
+}
+function syncCollections(cb) {
+  var ak = authKey();
+  if (!ak || !isNuvioAccount()) {
+    if (cb) cb(false);
+    return;
+  }
+  postJson(API + '/api/collectionsGet', { authKey: ak }, function (r) {
+    var got = r && r.result;
+    if (!got || typeof got.length !== 'number') {
+      if (cb) cb(false);
+      return;
+    }
+    var cur = '';
+    try {
+      cur = localStorage.getItem('nuvioCollections') || '';
+    } catch (e) {}
+    var next = JSON.stringify(got);
+    if (next !== cur) {
+      lsRawSet('nuvioCollections', next);
+      if (cb) cb(true);
+    } else if (cb) cb(false);
+  });
+}
 function syncAddons(cb) {
   var ak = authKey();
   if (!ak) {

@@ -70,6 +70,83 @@ function catalogCacheKey(addon, cat) {
   );
 }
 var CATALOG_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+/* Nuvio Collections of the profile, pinned ones first, in the order Nuvio keeps them */
+function orderedCollections() {
+  var cols = nuvioCollections(),
+    out = [],
+    i;
+  for (i = 0; i < cols.length; i++) if (cols[i] && cols[i].pinToTop) out.push(cols[i]);
+  for (i = 0; i < cols.length; i++) if (cols[i] && !cols[i].pinToTop) out.push(cols[i]);
+  return out;
+}
+/* The rows a Collections folder opens to: one per source that points at an installed addon
+   catalog. TMDB and Trakt sources need Nuvio's own feeds and are left out. */
+function folderRowDefs(folder) {
+  var a = remoteAddons(),
+    byId = {},
+    out = [],
+    i;
+  for (i = 0; i < a.length; i++) {
+    var man = a[i] && a[i].manifest;
+    if (man && man.id && !byId[man.id]) byId[man.id] = a[i];
+  }
+  var sources = folder.sources && folder.sources.length ? folder.sources : folder.catalogSources || [];
+  for (var s = 0; s < sources.length && out.length < (TV_PROFILE.catalogRowsCap || 16); s++) {
+    var src = sources[s] || {};
+    if (src.provider && src.provider !== 'addon') continue;
+    var addon = byId[src.addonId],
+      cats = (addon && addon.manifest.catalogs) || [],
+      cat = null;
+    for (var k = 0; k < cats.length; k++)
+      if (cats[k] && cats[k].type === src.type && String(cats[k].id) === String(src.catalogId)) cat = cats[k];
+    if (!cat) continue;
+    /* Nuvio stores "no genre" as the text None (or null) */
+    var genre = src.genre ? String(src.genre).trim() : '';
+    if (/^(none|null|undefined)$/i.test(genre)) genre = '';
+    out.push({
+      title:
+        (cat.name ? cat.name : folder.title || '') +
+        (genre ? ' · ' + genre : '') +
+        ' · ' +
+        typeLabel(cat.type),
+      type: cat.type,
+      url:
+        addonBase(addon) +
+        '/catalog/' +
+        cat.type +
+        '/' +
+        encodeURIComponent(cat.id) +
+        (genre ? '/genre=' + encodeURIComponent(genre) : '') +
+        '.json' +
+        addonQuery(addon),
+      key: catalogCacheKey(addon, cat) + (genre ? '_' + stableHash(genre) : '')
+    });
+  }
+  return out;
+}
+/* Home rows for the Collections: one row of folder tiles per collection (no requests until a
+   folder is opened), only folders that have something to show. */
+function collectionTileDefs() {
+  var cols = orderedCollections(),
+    out = [];
+  for (var c = 0; c < cols.length; c++) {
+    var tiles = [],
+      folders = cols[c].folders || [];
+    for (var f = 0; f < folders.length; f++) {
+      var folder = folders[f];
+      if (!folder || !folderRowDefs(folder).length) continue;
+      tiles.push({
+        folder: folder,
+        id: 'folder:' + (folder.id || cols[c].title + '/' + folder.title),
+        type: 'folder',
+        name: folder.hideTitle ? '' : folder.title || '',
+        background: folder.coverImageUrl || ''
+      });
+    }
+    if (tiles.length) out.push({ title: cols[c].title || '', tiles: tiles });
+  }
+  return out;
+}
 function homeCatalogs() {
   var out = [],
     a = remoteAddons(),

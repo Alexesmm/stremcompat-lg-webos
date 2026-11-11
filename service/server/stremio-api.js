@@ -12,7 +12,8 @@ function postStremioApi(apiPath, req, res) {
     '/api/datastoreMeta': true,
     '/api/datastoreGet': true,
     '/api/datastorePut': true,
-    '/api/addonCollectionGet': true
+    '/api/addonCollectionGet': true,
+    '/api/collectionsGet': true
   };
   if (!allowed[apiPath]) {
     res.writeHead(403, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });

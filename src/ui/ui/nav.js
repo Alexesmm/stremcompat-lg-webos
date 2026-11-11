@@ -1,7 +1,7 @@
 // Sidebar navigation.
 /* ================= top nav — centered; moving Left/Right auto-loads each page ================= */
 function curBoard() {
-  return SCR === 'home' ? home : SCR === 'lib' ? lib : null;
+  return SCR === 'home' ? home : SCR === 'lib' ? lib : SCR === 'fold' ? fold : null;
 }
 function resetBoardPosition(board) {
   board.rowIdx = 0;
