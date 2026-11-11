@@ -15,6 +15,13 @@ var { diskSpace, usbFolders } = require('./disk');
 var { dbg } = require('./log');
 var { probeAddress, remoteAddress } = require('./server-address');
 
+/* Android TV runs a WebTorrent engine inside this process (platforms/android/engine), which speaks
+   the same lines as bin/sc-engine: Android has no Node to start a program with. */
+var IN_PROCESS = PROFILE.torrentEngine ? path.join(DIR, 'engine', 'torrent-engine.js') : '';
+function engineInstalled() {
+  if (IN_PROCESS) return fs.existsSync(IN_PROCESS);
+  return /\.js$/.test(ENGINE) || fs.existsSync(ENGINE);
+}
 var METADATA_TIMEOUT_MS = 90000;
 var STREAM_TIMEOUT_MS = 30000;
 var IDLE_STOP_MS = 120000;
@@ -138,7 +145,7 @@ function clearCache(folder) {
 function startEngine(folder, disk) {
   if (engine) return true;
   var isScript = /\.js$/.test(ENGINE);
-  if (!isScript && !fs.existsSync(ENGINE)) return false;
+  if (!engineInstalled()) return false;
   if (disk && disk.freeMb < NO_ROOM_MB) {
     dbg('engine not started: ' + disk.freeMb + ' MB free');
     return false;
@@ -150,14 +157,16 @@ function startEngine(folder, disk) {
     limit = disk && cacheLimitMiB(disk.freeMb);
   if (limit) limits.push(String(limit));
   try {
-    child = spawn(
-      isScript ? process.execPath : ENGINE,
-      isScript ? [ENGINE, folder].concat(limits) : [folder].concat(limits),
-      {
-        cwd: DIR,
-        stdio: ['pipe', 'pipe', 'ignore']
-      }
-    );
+    if (IN_PROCESS) child = require(IN_PROCESS).spawn([folder].concat(limits));
+    else
+      child = spawn(
+        isScript ? process.execPath : ENGINE,
+        isScript ? [ENGINE, folder].concat(limits) : [folder].concat(limits),
+        {
+          cwd: DIR,
+          stdio: ['pipe', 'pipe', 'ignore']
+        }
+      );
   } catch (e) {
     dbg('engine did not start: ' + e.message);
     return false;
@@ -361,12 +370,36 @@ function onceWithin(ms, waiters, cb) {
   waiters.push(answer);
 }
 
-/* The TV's own storage, unless it has no room for torrents and a USB drive the app can write
-   on has: then the drive. cb({ folder, disk, usb }) where disk is null if df cannot be read. */
+/* Whether torrents always go to a USB drive (Settings), kept with the server's other settings so
+   it outlives updates: true spares the TV's own storage. */
+var PLACE_FILE = path.join(process.env.HOME || DIR, '.stremcompat', 'torrent-place.json');
+function readUsbFirst() {
+  try {
+    return JSON.parse(fs.readFileSync(PLACE_FILE, 'utf8')).usb === true;
+  } catch (e) {
+    return false;
+  }
+}
+var usbFirst = readUsbFirst();
+function setUsbFirst(on) {
+  usbFirst = !!on;
+  try {
+    fs.mkdirSync(path.dirname(PLACE_FILE), { recursive: true });
+    fs.writeFileSync(PLACE_FILE, JSON.stringify({ usb: usbFirst }));
+  } catch (e) {
+    dbg('torrent place not kept: ' + e.message);
+  }
+  return usbFirst;
+}
+
+/* The TV's own storage, unless a USB drive the app can write on has room and either Settings
+   asks for it or the TV has no room: then the drive. cb({ folder, disk, usb }) where disk is null
+   if df cannot be read. */
 function placeFor(cb) {
   var folder = engineFolder();
   diskSpace(folder, function (disk) {
-    if (!disk || disk.freeMb >= NO_ROOM_MB) return cb({ folder: folder, disk: disk, usb: false });
+    if (!usbFirst && (!disk || disk.freeMb >= NO_ROOM_MB))
+      return cb({ folder: folder, disk: disk, usb: false });
     usbFolders(function (drives) {
       var drive = drives[0];
       if (!drive || drive.freeMb < NO_ROOM_MB) return cb({ folder: folder, disk: disk, usb: false });
@@ -583,7 +616,7 @@ function waitForServer(cb) {
 function engineStatus(cb) {
   if (remoteAddress()) return cb({ state: 'ready', remote: true });
   if (PROFILE.localTorrents === false) return cb({ state: 'needs-server' });
-  if (!/\.js$/.test(ENGINE) && !fs.existsSync(ENGINE)) return cb({ state: 'failed' });
+  if (!engineInstalled()) return cb({ state: 'failed' });
   if (engine) {
     var place = enginePlace || {},
       used = stats && stats.diskUsed != null ? Math.round(stats.diskUsed / 1048576) : null,
@@ -598,6 +631,10 @@ function engineStatus(cb) {
 
 module.exports = {
   cacheLimitMiB: cacheLimitMiB,
+  setUsbFirst: setUsbFirst,
+  usbFirst: function () {
+    return usbFirst;
+  },
   chooseFile: chooseFile,
   clearTorrentCache: clearTorrentCache,
   engineStatus: engineStatus,

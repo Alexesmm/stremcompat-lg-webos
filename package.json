@@ -1,6 +1,6 @@
 {
   "name": "stremcompat-lg-webos",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "private": true,
   "license": "GPL-3.0-only",
   "description": "Stremio community compatibility ports for legacy LG webOS 3.x and 4.x televisions",
@@ -28,6 +28,7 @@
     "esbuild": "0.25.10",
     "eslint": "9.12.0",
     "globals": "15.11.0",
-    "prettier": "3.3.3"
+    "prettier": "3.3.3",
+    "webtorrent": "1.9.7"
   }
 }

@@ -31,6 +31,10 @@ The bundled FFmpeg binary identifies itself as configured with `--enable-gpl` an
 
 The Samsung test package contains no Node.js, FFmpeg or FFprobe binary, because it runs on the television's own service runtime. It carries the Inter font and a list of root certificates generated at build time from `tls.rootCertificates` in Node.js, which comes from the Mozilla CA store. It does not download Stremio's streaming server. Packaging uses [Samsung's Tizen CLI tools](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/installing-tv-sdk.html).
 
+## Android TV package
+
+The Android TV test package carries [nodejs-mobile](https://github.com/nodejs-mobile/nodejs-mobile) (Node.js for Android, MIT) to run the local server, [Media3 ExoPlayer](https://github.com/androidx/media) (Apache-2.0) for video, and [WebTorrent](https://github.com/webtorrent/webtorrent) (MIT) with its dependencies, bundled into one file, as the torrent engine. It also carries the same FFmpeg and FFprobe programs as the LG packages. It is built with the Android SDK and NDK.
+
 ## Downloaded by the television
 
 

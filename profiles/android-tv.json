@@ -4,7 +4,7 @@
   "appId": "io.github.alexesmm.stremcompat",
   "serviceId": "io.github.alexesmm.stremcompat.server",
   "title": "StremCompat",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "port": 8082,
   "graphicsResolution": "1920x1080",
   "ecmaTarget": "chrome38",
@@ -20,5 +20,6 @@
   "backdropWorkers": 2,
   "serverSemiSpaceMB": 2,
   "platform": "android",
-  "localTorrents": false
+  "localTorrents": true,
+  "torrentEngine": "webtorrent"
 }

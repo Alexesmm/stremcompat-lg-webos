@@ -26,8 +26,8 @@ var NODE_URL =
   'https://github.com/nodejs-mobile/nodejs-mobile/releases/download/' + NODE_VERSION + '/' + NODE_ZIP;
 var ABIS = ['armeabi-v7a', 'arm64-v8a'];
 /* FFmpeg and FFprobe are static 32-bit ARM programs, which arm64 TVs that still run 32-bit code
-   run too. The torrent engine is built for webOS's C library and does not run on Android: torrents
-   use a streaming server on another computer (profile android-tv, localTorrents false). */
+   run too. The webOS torrent engine is built for webOS's C library and does not run on Android:
+   torrents use WebTorrent inside the server instead (platforms/android/engine). */
 var PROGRAMS = { ffmpeg: 'libffmpeg.so', ffprobe: 'libffprobe.so' };
 
 var profile = JSON.parse(fs.readFileSync(path.join(root, 'profiles', PROFILE + '.json'), 'utf8'));
@@ -107,6 +107,20 @@ async function nodeMobile() {
       fs.copyFileSync(from, path.join(libs, PROGRAMS[name]));
     });
   });
+  /* the torrent engine, bundled with WebTorrent into one file (platforms/android/engine) */
+  run(process.execPath, [
+    path.join(root, 'node_modules', 'esbuild', 'bin', 'esbuild'),
+    path.join(root, 'platforms', 'android', 'engine', 'torrent-engine.js'),
+    '--bundle',
+    '--platform=node',
+    '--target=node18',
+    '--log-level=warning',
+    '--external:utp-native',
+    '--external:bufferutil',
+    '--external:utf-8-validate',
+    '--external:wrtc',
+    '--outfile=' + path.join(stage, 'assets', 'service', 'engine', 'torrent-engine.js')
+  ]);
   fs.cpSync(path.join(cache, 'include'), path.join(stage, 'node', 'include'), { recursive: true });
   fs.cpSync(path.join(cache, 'bin'), path.join(stage, 'node', 'bin'), { recursive: true });
 

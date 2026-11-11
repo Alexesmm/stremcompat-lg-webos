@@ -5,6 +5,7 @@ A small Android app around the same pages and local server as the LG packages:
 - `NodeRunner` copies the staged server out of the package and starts it on nodejs-mobile's Node (the C++ part in `src/main/cpp` only calls `node::Start`).
 - `MainActivity` shows the pages in a WebView laid out as a 1920x1080 screen, and turns the remote's Back, media and colour keys into the codes webOS sends.
 - `TvPlayer` is ExoPlayer, drawn under the transparent page; `src/platform/android/player.js` presents it to the player code as a `<video>` element.
+- Torrents use WebTorrent inside the server's own Node (`platforms/android/engine`), which speaks the same lines as the webOS engine; the package bundles it into one file.
 
 ## Building
 
