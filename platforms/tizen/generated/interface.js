@@ -6036,26 +6036,34 @@ function paintProfileChip() {
   drawFace($('navFace'), face);
   $('navName').textContent = face.name;
 }
-/* After choosing, the app starts again with that profile; the screen of profiles stays up until
-   then, and the new start does not ask again. */
-function reloadWithProfile() {
+/* The profile is asked once each time the app is opened. The interface page also loads again
+   when the player hands back to it, or after choosing another profile; sessionStorage lasts
+   while the app stays open, so those loads do not ask again. */
+function rememberProfileAsked() {
   try {
-    sessionStorage.setItem('profileChosen', '1');
+    sessionStorage.setItem('profileAsked', '1');
   } catch (e) {}
+}
+function profileAsked() {
+  try {
+    return sessionStorage.getItem('profileAsked') === '1';
+  } catch (e) {
+    return false;
+  }
+}
+/* after choosing, the app starts again with that profile; the screen stays up until then */
+function reloadWithProfile() {
+  rememberProfileAsked();
   location.reload();
 }
-/* At every start a Nuvio account asks who is watching, with the last profile chosen in focus,
-   before Home is built; one profile alone is used without asking. then() builds Home. */
+/* When the app is opened a Nuvio account asks who is watching, with the last profile chosen in
+   focus, before Home is built; one profile alone is used without asking. then() builds Home. */
 function startProfiles(then) {
-  var chosen = false;
-  try {
-    chosen = sessionStorage.getItem('profileChosen') === '1';
-    sessionStorage.removeItem('profileChosen');
-  } catch (e) {}
   paintProfileChip();
-  if (chosen) return then();
+  if (profileAsked()) return then();
   profilePanel.show(authKey(), function (changed) {
     if (changed) return reloadWithProfile();
+    rememberProfileAsked();
     /* the opening screen comes back while Home is built, as on any start */
     $('boot').style.display = '';
     profilePanel.close();

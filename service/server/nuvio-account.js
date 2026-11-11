@@ -9,7 +9,7 @@ var http = require('http');
 var https = require('https');
 var urlmod = require('url');
 var path = require('path');
-var { DIR } = require('./config');
+var { cinemeta, DIR } = require('./config');
 var { dbg } = require('./log');
 var { fetchAddonJson, fetchJson } = require('./http-util');
 var { seriesVideos, setWatched } = require('./watched');
@@ -17,7 +17,6 @@ var { qrSvg } = require('./qr');
 
 /* the tests point this at a stand-in server */
 var BASE = urlmod.parse(process.env.SC_NUVIO_URL || 'https://api.nuvio.tv');
-var CINEMETA = process.env.SC_CINEMETA_URL || 'https://v3-cinemeta.strem.io';
 /* published by Nuvio for public clients in its API documentation */
 var KEY = 'sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN';
 var PAGE = 500;
@@ -609,7 +608,7 @@ function fillNames(list, cb) {
       running++;
       (function (it) {
         var address =
-          CINEMETA + '/meta/' + encodeURIComponent(it.type) + '/' + encodeURIComponent(it._id) + '.json';
+          cinemeta() + '/meta/' + encodeURIComponent(it.type) + '/' + encodeURIComponent(it._id) + '.json';
         fetchJson(address, function (answer) {
           var m = answer && answer.meta;
           var meta = m
@@ -627,6 +626,7 @@ function fillNames(list, cb) {
   pump();
 }
 var titleCache = {};
+var TITLES_LIMIT_MS = 10000;
 /* the profile's items, read at most once a minute */
 function items(key, session, cb) {
   var hit = titleCache[key];
@@ -634,13 +634,20 @@ function items(key, session, cb) {
   pullTitles(session, function (titles, status) {
     if (!titles) return cb(null, status);
     var list = [],
-      waiting = 1;
+      waiting = 1,
+      answered = false;
+    function answer() {
+      if (answered) return;
+      answered = true;
+      clearTimeout(limit);
+      titleCache[key] = { at: Date.now(), items: list };
+      cb(list);
+    }
+    /* Cinemeta that does not answer must not keep Continue Watching from appearing */
+    var limit = setTimeout(answer, TITLES_LIMIT_MS);
     function settled() {
       if (--waiting) return;
-      fillNames(list, function () {
-        titleCache[key] = { at: Date.now(), items: list };
-        cb(list);
-      });
+      fillNames(list, answer);
     }
     Object.keys(titles).forEach(function (id) {
       var item = itemOf(titles[id]);

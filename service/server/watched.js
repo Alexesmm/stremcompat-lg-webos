@@ -1,6 +1,7 @@
 // Stremio's watched-episodes field (state.watched), read and written like stremio-core.
 
 var zlib = require('zlib');
+var { cinemeta } = require('./config');
 var { fetchJson } = require('./http-util');
 
 /* Format "<anchor video id>:<anchor length>:<base64 zlib bytes>". Bit i is
@@ -87,7 +88,7 @@ function rememberedVideos(id) {
 }
 function seriesVideos(id, cb) {
   if (videoCache[id]) return cb(videoCache[id]);
-  fetchJson('https://v3-cinemeta.strem.io/meta/series/' + encodeURIComponent(id) + '.json', function (j) {
+  fetchJson(cinemeta() + '/meta/series/' + encodeURIComponent(id) + '.json', function (j) {
     var videos = j && j.meta && j.meta.videos;
     rememberVideos(id, videos);
     cb(videos || null);

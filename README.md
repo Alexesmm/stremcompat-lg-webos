@@ -17,13 +17,20 @@
 
 ## About
 
-StremCompat is an independent, unofficial client for older LG TVs that cannot install the official Stremio app. It works with your own Stremio account and addons, with an interface made for the TV remote. It needs no root and no computer, not even for torrents, and the whole package is about 6 MB.
+StremCompat is an independent, unofficial client for older LG TVs that cannot install the official Stremio app. It works with your own Stremio or Nuvio account and addons, with an interface made for the TV remote. It needs no root and no computer, not even for torrents, and the whole package is about 6 MB.
 
 **Install and update from the Homebrew Channel, with no PC, if your TV already has it.** See [Installation](#installation).
 
 **The stable version is the one for LG.** There is also a [test version for older Samsung TVs](#samsung-tvs-test-version).
 
-This project is not affiliated with or endorsed by Stremio, LG Electronics or Samsung. Use only addons and media sources that you are authorized to access.
+This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronics or Samsung. Use only addons and media sources that you are authorized to access.
+
+## New in 4.0
+
+- **Nuvio accounts:** choose who is watching at every start, and add or edit profiles on the TV.
+- **New side menu and Settings:** your profile at the top, Settings in two columns, Sign out and Leave the app easy to find.
+- **More in the player:** episodes, chapters, picture size, speed, and better subtitles and audio.
+- **You sign in again once** after updating to 4.0. See the [release notes](docs/releases/v4.0.0.md).
 
 ## Features
 

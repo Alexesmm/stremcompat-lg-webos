@@ -30,8 +30,15 @@ var FFMPEG = process.env.TV_FFMPEG || path.join(DIR, 'bin', 'ffmpeg');
 // env override = offline testing on the Mac
 var FFPROBE = process.env.TV_FFPROBE || path.join(DIR, 'bin', 'ffprobe');
 
+/* Cinemeta's address; the self-tests point it at a stand-in server (read when used, as they set it
+   after this module is loaded) */
+function cinemeta() {
+  return process.env.SC_CINEMETA_URL || 'https://v3-cinemeta.strem.io';
+}
+
 module.exports = {
   APP_VERSION: APP_VERSION,
+  cinemeta: cinemeta,
   DIR: DIR,
   ENGINE: ENGINE,
   FFMPEG: FFMPEG,
