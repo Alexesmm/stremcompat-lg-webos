@@ -52,10 +52,11 @@ function pointerUI(target, activate) {
     return true;
   }
   if (profilePanel.open) {
-    i = pointerIndex(target, profilePanel.els);
+    i = profilePanel.mode === 'pick' ? pointerIndex(target, profilePanel.els) : -1;
     if (i >= 0) {
+      profilePanel.zone = 'row';
       profilePanel.idx = i;
-      setF(profilePanel.els, i);
+      profilePanel.paint();
       if (activate) profilePanel.choose(i);
     }
     return true;
@@ -249,24 +250,31 @@ function pointerUI(target, activate) {
       return true;
     }
   }
+  if (SCR === 'set' && !settings.editing) {
+    i = pointerIndex(target, settings.catEls);
+    if (i >= 0) {
+      if (i !== settings.catIdx) {
+        settings.catIdx = i;
+        settings.showCat();
+      }
+      settings.zone = 'cats';
+      settings.paint();
+      return true;
+    }
+  }
   if (SCR === 'set') {
     i = pointerIndex(target, settings.els);
     if (i >= 0) {
       if (!settings.editing || settings.idx === i) {
         settings.idx = i;
+        settings.zone = 'items';
         settings.paint();
       }
       if (activate) {
         def = settings.fdefs[i];
-        if (def.action) {
-          if (def.k === '__sync') settings.syncNow();
-          else if (def.k === '__reload') settings.reloadNow();
-          else settings.runAction(def.k);
-        } else if (!settings.editing) settings.startEdit();
+        if (!settings.editing) settings.activate();
         else if (settings.idx === i) {
-          var rerendered = settings.cycle(def, 1);
-          if (!rerendered)
-            settings.els[settings.idx].getElementsByClassName('vl')[0].textContent = settings.valLabel(def);
+          if (!settings.cycle(def, 1)) settings.paintValue(i);
           settings.paint();
         }
       }

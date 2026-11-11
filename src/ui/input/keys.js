@@ -24,7 +24,7 @@ on(
     idleTouch();
     noteKey();
     var a = document.activeElement;
-    if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass'))
+    if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass') || a === $('pfEdName'))
       return; /* typing: inputs manage themselves */
     if (serverPanel.open) {
       e.preventDefault();

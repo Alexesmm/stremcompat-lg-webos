@@ -48,10 +48,26 @@ function diagStreamingState(j) {
     cache = f.cacheMb != null && f.cacheCapMb ? '  ·  ' + tx('diagCache', f.cacheMb, f.cacheCapMb) : '';
   return tx(f.running ? 'diagRunning' : 'diagEngineReady') + where + cache;
 }
+/* an option that is only on or off is drawn as a switch, and OK flips it */
+function isSwitch(def) {
+  return (
+    !!def.opts &&
+    def.opts.length === 2 &&
+    /^(true|false)$/.test(def.opts[0][0]) &&
+    /^(true|false)$/.test(def.opts[1][0])
+  );
+}
+/* Settings in two columns, as the big streaming apps lay them out: the groups on the left and
+   the options of the chosen group on the right. Moving through the groups shows their options
+   at once; Right or OK goes into them and Left comes back. */
 var settings = {
   idx: 0,
   els: [],
   defs: [],
+  cats: [],
+  catEls: [],
+  catIdx: 0,
+  zone: 'cats',
   editing: false,
   editOriginal: null,
   enter: function (preserveEdit) {
@@ -71,7 +87,7 @@ var settings = {
       audioOpts = langOpts.slice(1),
       backupOpts = [['', tx('none')]].concat(audioOpts);
     this.defs = [
-      { head: tx('sourceGroup') },
+      { head: tx('playbackGroup'), id: 'playback' },
       {
         k: 'preferredSourceQuality',
         lb: tx('preferredQuality'),
@@ -99,7 +115,6 @@ var settings = {
         ],
         d: 'Auto'
       },
-      { head: tx('playbackGroup') },
       {
         k: 'bingeWatch',
         lb: tx('nextEpisode'),
@@ -130,7 +145,7 @@ var settings = {
         ],
         d: 'false'
       },
-      { head: tx('subtitlesGroup') },
+      { head: tx('subtitlesGroup'), id: 'subtitles' },
       { k: 'subsLang', lb: tx('defaultLanguage'), opts: langOpts, d: defaultMediaLanguage() },
       { k: 'subsLang2', lb: tx('backupLanguage'), opts: backupOpts, d: '' },
       {
@@ -194,7 +209,7 @@ var settings = {
         ],
         d: 'server'
       },
-      { head: tx('audioGroup') },
+      { head: tx('audioGroup'), id: 'audio' },
       {
         k: 'enableDefaultAudioTrack',
         lb: tx('autoAudio'),
@@ -206,7 +221,7 @@ var settings = {
       },
       { k: 'defaultAudioTrack', lb: tx('defaultAudio'), opts: audioOpts, d: defaultMediaLanguage() },
       { k: 'defaultAudioTrack2', lb: tx('backupLanguage'), opts: backupOpts, d: '' },
-      { head: tx('interfaceGroup') },
+      { head: tx('interfaceGroup'), id: 'interface' },
       {
         k: UI_LANG_KEY,
         lb: tx('interfaceLanguage'),
@@ -229,7 +244,6 @@ var settings = {
         lb: tx('uiLookLabel'),
         opts: [
           ['standard', tx('lookStandard')],
-          ['modern', tx('lookModern')],
           ['light', tx('lookLight')]
         ],
         d: uiLook()
@@ -252,7 +266,10 @@ var settings = {
         ],
         d: 'false'
       },
-      { head: tx('historyGroup') },
+      { head: tx('accountGroup'), id: 'account' },
+      { k: '__profile', lb: tx('nuvioProfile'), action: true },
+      { k: '__sync', lb: tx('syncAddons'), action: true },
+      { head: tx('historyGroup'), id: 'history' },
       {
         k: 'noHistory',
         lb: tx('noHistory'),
@@ -264,18 +281,15 @@ var settings = {
       },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
+      { k: '__showNew', lb: tx('showHiddenNewEpisodes'), action: true },
       { k: '__clearCache', lb: tx('clearTorrentCache'), action: true },
-      { head: tx('serverGroup') },
+      { head: tx('maintenanceGroup'), id: 'maintenance' },
       { k: '__server', lb: tx('serverAddress'), action: true, info: true },
-      { head: tx('addonsGroup') },
-      { k: '__sync', lb: tx('syncAddons'), action: true },
-      { head: tx('accountGroup') },
-      { k: '__profile', lb: tx('nuvioProfile'), action: true },
-      { k: '__logout', lb: tx('signOut'), action: true },
-      { head: tx('maintenanceGroup') },
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__speed', lb: tx('testConnection'), action: true },
-      { k: '__reload', lb: tx('reloadApp'), action: true }
+      { k: '__reload', lb: tx('reloadApp'), action: true },
+      { head: tx('signOut'), id: 'logout' },
+      { k: '__logout', lb: tx('signOut'), action: true }
     ];
     /* profiles exist only on Nuvio accounts */
     if (!isNuvioAccount())
@@ -285,7 +299,7 @@ var settings = {
     /* Simple keeps what most people change: languages, subtitle size, the look and the account */
     if (simpleMode()) {
       var essential =
-        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|preferredSourceQuality|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
       this.defs = this.defs.filter(function (d) {
         return d.head || essential.test(d.k || '');
       });
@@ -299,37 +313,106 @@ var settings = {
       for (var nf = this.defs.length - 1; nf >= 0; nf--)
         if (/^(scrubPreview|embSubsMode|bgTrailer|__clearCache)$/.test(this.defs[nf].k || ''))
           this.defs.splice(nf, 1);
-    var host = $('setItems');
+    var oldCats = this.cats;
+    this.cats = [];
+    for (var i = 0; i < this.defs.length; i++) {
+      var def = this.defs[i];
+      if (def.head) this.cats.push({ name: def.head, id: def.id || '', items: [] });
+      else if (this.cats.length) this.cats[this.cats.length - 1].items.push(def);
+    }
+    this.cats = this.cats.filter(function (c) {
+      return c.items.length;
+    });
+    var keepCat = preserveEdit && oldCats.length ? oldCats[this.catIdx].id : '',
+      keepKey = preserveEdit && this.fdefs && this.fdefs[this.idx] ? this.fdefs[this.idx].k : '';
+    var catHost = $('setCats');
+    catHost.innerHTML = '';
+    this.catEls = [];
+    for (var c = 0; c < this.cats.length; c++) {
+      var el = document.createElement('div');
+      el.className = 'setcat' + (this.cats[c].id === 'logout' ? ' out' : '');
+      el.textContent = this.cats[c].name;
+      if (this.cats[c].id === keepCat) this.catIdx = c;
+      catHost.appendChild(el);
+      this.catEls.push(el);
+    }
+    if (!preserveEdit) {
+      this.catIdx = 0;
+      this.zone = 'cats';
+    }
+    this.catIdx = Math.min(this.catIdx, this.cats.length - 1);
+    this.showCat();
+    for (var f = 0; f < this.fdefs.length; f++) if (this.fdefs[f].k === keepKey) this.idx = f;
+    this.paint();
+    this.showServerAddress();
+    animIn($('setWrap'));
+  },
+  /* the options of the chosen group, as cards; the account card heads the Account group */
+  showCat: function () {
+    var cat = this.cats[this.catIdx],
+      host = $('setItems');
     host.innerHTML = '';
     this.els = [];
     this.fdefs = [];
     this.idx = 0;
-    for (var i = 0; i < this.defs.length; i++) {
-      var def = this.defs[i];
-      if (def.head) {
-        var hd = document.createElement('div');
-        hd.className = 'setgrp';
-        hd.textContent = def.head;
-        host.appendChild(hd);
-        continue;
-      }
-      var d = document.createElement('div');
-      d.className = 'set' + (def.action ? ' act' : '') + (def.info ? ' info' : '');
-      var l = document.createElement('div');
+    $('setAcct').style.display = cat.id === 'account' || cat.id === 'logout' ? '' : 'none';
+    var hd = document.createElement('div');
+    hd.className = 'setgrp';
+    hd.textContent = cat.name;
+    host.appendChild(hd);
+    for (var i = 0; i < cat.items.length; i++) {
+      var def = cat.items[i],
+        d = document.createElement('div'),
+        l = document.createElement('div'),
+        v = document.createElement('div');
+      d.className =
+        'set' + (def.action ? ' act' : '') + (def.info ? ' info' : '') + (def.k === '__logout' ? ' out' : '');
       l.className = 'lb';
       l.textContent = def.lb;
       d.appendChild(l);
-      var v = document.createElement('div');
       v.className = 'vl';
-      v.textContent = def.action ? '' : this.valLabel(def);
       d.appendChild(v);
       host.appendChild(d);
       this.els.push(d);
       this.fdefs.push(def);
+      this.paintValue(i);
     }
-    this.showServerAddress();
+    this.paintServerAddress();
     this.paint();
-    animIn($('setWrap'));
+  },
+  /* a switch for on and off, otherwise the chosen value */
+  paintValue: function (i) {
+    var def = this.fdefs[i],
+      v = this.els[i] && this.els[i].getElementsByClassName('vl')[0];
+    if (!v || def.action) return;
+    if (isSwitch(def)) {
+      v.className = 'vl sw' + (lsRaw(def.k, def.d) === 'true' ? ' on' : '');
+      v.textContent = '';
+    } else v.textContent = this.valLabel(def);
+  },
+  /* Account from the profile item of the side menu */
+  openCategory: function (id) {
+    for (var c = 0; c < this.cats.length; c++)
+      if (this.cats[c].id === id) {
+        this.catIdx = c;
+        this.showCat();
+        this.zone = 'items';
+        topNav.active = false;
+        topNav.paint();
+        this.paint();
+      }
+  },
+  /* OK on an option: an action runs, a switch flips, anything else starts editing */
+  activate: function () {
+    var def = this.fdefs[this.idx];
+    if (!def) return;
+    if (def.action) {
+      if (def.k === '__sync') this.syncNow();
+      else if (def.k === '__reload') this.reloadNow();
+      else this.runAction(def.k);
+    } else if (isSwitch(def)) {
+      if (!this.cycle(def, 1)) this.paintValue(this.idx);
+    } else this.startEdit();
   },
   /* the value of the address row comes from the local server */
   serverAddress: '',
@@ -345,6 +428,7 @@ var settings = {
     );
   },
   paintServerAddress: function () {
+    if (!this.fdefs) return;
     for (var i = 0; i < this.fdefs.length; i++)
       if (this.fdefs[i].k === '__server')
         this.els[i].getElementsByClassName('vl')[0].textContent =
@@ -372,14 +456,7 @@ var settings = {
         self.paintServerAddress();
       });
     } else if (k === '__diag') this.showDiag();
-    else if (k === '__profile')
-      profilePanel.show(
-        authKey(),
-        function () {
-          location.reload();
-        },
-        function () {}
-      );
+    else if (k === '__profile') openProfile();
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
       clearRecentSearches();
@@ -406,6 +483,10 @@ var settings = {
         },
         8000
       );
+    } else if (k === '__showNew') {
+      var hiddenCount = hiddenNewEpisodes().length;
+      lsSet(NEW_EPISODES_HIDDEN, []);
+      toast(hiddenCount ? tx('newEpisodesShown', hiddenCount) : tx('nothingToClear'));
     } else if (k === '__clearCw') {
       if (!this.confirming(k)) return;
       var n = clearContinueWatching();
@@ -497,19 +578,9 @@ var settings = {
     lsRawSet(def.k, def.opts[ci][0]);
     if (def.k === 'uiTextSize') applyTextSize();
     if (def.k === 'uiLook') applyLook();
-    if (def.k === 'uiMode') {
-      var keepMode = this.idx;
+    if (def.k === 'uiMode' || def.k === UI_LANG_KEY) {
+      if (def.k === UI_LANG_KEY) setUILanguage(def.opts[ci][0]);
       this.enter(true);
-      this.idx = Math.min(keepMode, this.els.length - 1);
-      this.paint();
-      return true;
-    }
-    if (def.k === UI_LANG_KEY) {
-      var keep = this.idx;
-      setUILanguage(def.opts[ci][0]);
-      this.enter(true);
-      this.idx = Math.min(keep, this.els.length - 1);
-      this.paint();
       return true;
     }
     if (def.k === 'bingeWatch') lsRawSet('enableNextVideo', def.opts[ci][0]);
@@ -537,9 +608,8 @@ var settings = {
       lsRawSet(old.k, old.v);
       if (old.k === UI_LANG_KEY) {
         setUILanguage(old.v);
-        this.enter();
-        this.idx = Math.min(idx, this.els.length - 1);
-      }
+        this.enter(true);
+      } else this.paintValue(idx);
     }
     this.paint();
   },
@@ -553,6 +623,8 @@ var settings = {
       if (
         k === 'authKey' ||
         k === 'user' ||
+        k === 'profileFace' ||
+        k === 'newEpisodes' ||
         k === 'addons' ||
         k === 'addonsLastModified' ||
         k === 'blib_migrated' ||
@@ -576,11 +648,17 @@ var settings = {
   focusTop: function () {
     this.editing = false;
     this.editOriginal = null;
-    this.idx = 0;
+    this.zone = 'cats';
     this.paint();
   },
   paint: function () {
-    setF(this.els, topNav.active ? -1 : this.idx);
+    var onCats = !topNav.active && this.zone === 'cats';
+    for (var g = 0; g < this.catEls.length; g++)
+      this.catEls[g].className =
+        'setcat' +
+        (this.cats[g].id === 'logout' ? ' out' : '') +
+        (g === this.catIdx ? (onCats ? ' f' : ' cur') : '');
+    setF(this.els, topNav.active || this.zone !== 'items' ? -1 : this.idx);
     for (var c = 0; c < this.els.length; c++)
       this.els[c].className =
         this.els[c].className.replace(/ ?\bediting\b/, '') +
@@ -589,8 +667,8 @@ var settings = {
     var el = this.els[this.idx],
       y = 0,
       /* the focus stops at this height of the screen, whatever its resolution */
-      stop = Math.round($('setWrap').clientHeight * 0.63);
-    if (el && el.offsetTop > stop) y = el.offsetTop - stop;
+      stop = Math.round($('setPane').clientHeight * 0.63);
+    if (this.zone === 'items' && el && el.offsetTop > stop) y = el.offsetTop - stop;
     $('setInner').style.transform = 'translateY(-' + y + 'px)';
     $('setInner').style.webkitTransform = 'translateY(-' + y + 'px)';
   },
@@ -598,27 +676,31 @@ var settings = {
     var def = this.fdefs[this.idx];
     if (this.editing) {
       if ((k === 37 || k === 39) && def && !def.action) {
-        var changed = this.cycle(def, k === 39 ? 1 : -1);
-        if (!changed && this.els[this.idx])
-          this.els[this.idx].getElementsByClassName('vl')[0].textContent = this.valLabel(def);
+        if (!this.cycle(def, k === 39 ? 1 : -1)) this.paintValue(this.idx);
       } else if (k === 13) this.finishEdit();
+      this.paint();
+      return true;
+    }
+    if (this.zone === 'cats') {
+      if (k === 40 || k === 38) {
+        var next = Math.max(0, Math.min(this.cats.length - 1, this.catIdx + (k === 40 ? 1 : -1)));
+        if (next !== this.catIdx) {
+          this.catIdx = next;
+          this.showCat();
+        }
+      } else if (k === 37) {
+        topNav.focus();
+        return true;
+      } else if (k === 39 || k === 13) this.zone = 'items';
       this.paint();
       return true;
     }
     if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
     else if (k === 38) {
       if (this.idx > 0) this.idx--;
-    } else if (k === 37) {
-      topNav.focus();
-      return true;
-    } else if (k === 13 && def) {
-      if (def.action) {
-        if (def.k === '__sync') this.syncNow();
-        else if (def.k === '__reload') this.reloadNow();
-        else this.runAction(def.k);
-        return true;
-      }
-      this.startEdit();
+    } else if (k === 37) this.zone = 'cats';
+    else if (k === 13 && def) {
+      this.activate();
       return true;
     }
     this.paint();

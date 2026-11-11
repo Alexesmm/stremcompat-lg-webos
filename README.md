@@ -28,8 +28,8 @@ This project is not affiliated with or endorsed by Stremio, LG Electronics or Sa
 ## Features
 
 - **Your Stremio account:** sign in with a QR code or email. Library, progress, watched state and addons stay in sync with your other Stremio apps.
-- **Or your Nuvio account (experimental):** sign in by email and choose the profile; its addons, library and progress come along.
-- **Your way:** on the first start choose **Simple** or **Complete**, and a **Standard**, **Modern** (full-screen, sharper backgrounds; for faster TVs) or **Light** look (for webOS 3 and TVs with little memory). Both can be changed in Settings.
+- **Or your Nuvio account (experimental):** sign in by email or QR code and choose who is watching; profiles can be added and changed on the TV, and their addons, library and progress come along.
+- **Your way:** on the first start choose **Simple** or **Complete**, and a **Standard** or **Light** look (for webOS 3 and TVs with little memory). Both can be changed in Settings.
 - **Browsing:** Home, Discover, Search and Library from your addons, with Continue Watching and the minutes left.
 - **Best source:** one press goes straight to the video. It asks which quality you want, or uses the one set in Settings.
 - **Source list:** quality and language filters, compatibility warnings, and addons that fail are named.

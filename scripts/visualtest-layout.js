@@ -12,7 +12,7 @@ var appPort = parseInt(process.argv[3], 10);
 var width = parseInt(process.argv[4], 10);
 var height = parseInt(process.argv[5], 10);
 var output = path.resolve(process.argv[6] || '');
-/* the look to test: standard (default) or modern */
+/* the look to test: standard (default) or light */
 var look = process.argv[7] || 'standard';
 var chrome = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 if (!stage || !appPort || !width || !height || !output) throw new Error('Usage: node visualtest-layout.js <stage> <port> <width> <height> <output.png>');
@@ -132,7 +132,7 @@ async function main() {
     assert.strictEqual(localizedState.loginTitle, 'Entrar pelo celular', 'Login text was not translated.');
     assert.strictEqual(localizedState.password, 'Senha', 'Login placeholder was not translated.');
     await protocol.call('Runtime.evaluate', { expression: "window.__SC_SET_UI_LANGUAGE__('en-US')" });
-    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('setupDone','1');localStorage.setItem('uiLook','" + look + "');localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
+    await protocol.call('Runtime.evaluate', { expression: "localStorage.setItem('user',JSON.stringify({_id:'visual-user',email:'visual@example.com'}));localStorage.setItem('setupDone','1');localStorage.setItem('signedInFor40','1');localStorage.setItem('uiLook','" + look + "');localStorage.setItem('authKey',JSON.stringify('visual-test-key'));localStorage.setItem('addons'," + JSON.stringify(JSON.stringify(mockAddon)) + ");" });
     await protocol.call('Page.navigate', { url: 'http://127.0.0.1:' + appPort + '/beta?visualtest=authenticated' });
     await delay(1800);
     for (var catalogWait = 0; catalogWait < 25; catalogWait++) {
@@ -218,9 +218,11 @@ async function main() {
     fs.writeFileSync(output.replace(/\.png$/i, '-sources.png'), Buffer.from(sourcesShot.data, 'base64'));
     await protocol.call('Runtime.evaluate', { expression: "document.getElementById('streams').style.display='none';(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(37);key(40);key(40);key(40);key(40);key(39);})()" });
     await delay(150);
-    var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl'),language=-1;for(var i=0;i<labels.length;i++)if(labels[i].textContent==='Interface language')language=i;return JSON.stringify({screen:document.getElementById('scrSet').className,languageRow:language,languageValue:language>=0?values[language].textContent:''});})()", returnByValue: true });
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}for(var i=0;i<12;i++){var g=document.querySelector('#setCats .setcat.f');if(!g||g.textContent==='Interface')break;key(40);}key(39);})()" });
+    var settingsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var labels=document.querySelectorAll('#setItems .set .lb'),values=document.querySelectorAll('#setItems .set .vl'),language=-1;for(var i=0;i<labels.length;i++)if(labels[i].textContent==='Interface language')language=i;return JSON.stringify({screen:document.getElementById('scrSet').className,groups:document.querySelectorAll('#setCats .setcat').length,languageRow:language,languageValue:language>=0?values[language].textContent:''});})()", returnByValue: true });
     var settingsState = JSON.parse(settingsView.result.value);
     assert.ok(/\bon\b/.test(settingsState.screen), 'Remote navigation did not open Settings.');
+    assert.ok(settingsState.groups >= 5, 'Settings did not list its groups.');
     assert.ok(settingsState.languageRow >= 0, 'Interface language setting is missing.');
     assert.ok(settingsState.languageValue.indexOf('English') >= 0, 'Saved interface language is not shown in Settings.');
     var settingsCut = await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}var wrap=document.getElementById('setWrap'),bottom=wrap.getBoundingClientRect().bottom,rows=document.querySelectorAll('#setItems .set').length,cut=[],inner=document.getElementById('setInner');inner.style.transition='none';for(var i=0;i<rows-1;i++){key(40);var f=document.querySelector('#setItems .set.f');if(f.getBoundingClientRect().bottom>bottom)cut.push(f.textContent);}for(var j=0;j<rows-1;j++)key(38);inner.style.transition='';return JSON.stringify(cut);})()", returnByValue: true });
@@ -230,7 +232,7 @@ async function main() {
     var editingState = JSON.parse(editingView.result.value);
     assert.strictEqual(editingState.editing, true, 'Settings did not enter explicit edit mode after OK.');
     assert.ok(editingState.hint.indexOf('OK confirms') >= 0, 'Settings edit-mode guidance is missing.');
-    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(13);key(37);key(38);key(39);})()" });
+    await protocol.call('Runtime.evaluate', { expression: "(function(){function key(code){var e=document.createEvent('Event');e.initEvent('keydown',true,true);e.keyCode=code;document.dispatchEvent(e);}key(13);key(37);key(37);key(38);key(39);})()" });
     await delay(120);
     var addonsView = await protocol.call('Runtime.evaluate', { expression: "(function(){var h=document.getElementById('aHead').getBoundingClientRect(),c=document.getElementById('aClip').getBoundingClientRect(),s=document.getElementById('aSync').getBoundingClientRect();return JSON.stringify({screen:document.getElementById('scrAddons').className,headBottom:h.bottom,clipTop:c.top,syncBottom:s.bottom,watermark:getComputedStyle(document.getElementById('logobg')).opacity});})()", returnByValue: true });
     var addonsState = JSON.parse(addonsView.result.value);

@@ -116,10 +116,12 @@ function nuvioTests() {
       if (u === '/auth/v1/token?grant_type=refresh_token') return send(200, { access_token: 'A2', refresh_token: 'R2' });
       if (u.indexOf('/auth/v1/logout') === 0) return send(204, {});
       if (expireOnce && auth === 'Bearer A1' && u.indexOf('/rest/') === 0) { expireOnce = false; return send(401, {}); }
-      if (u === '/rest/v1/rpc/sync_pull_profiles') return send(200, [{ profile_index: 1, name: 'Ana', uses_primary_addons: true }, { profile_index: 2, name: 'Kids', uses_primary_addons: false }, { profile_index: 3, name: 'Private', pin_enabled: true }]);
+      if (u === '/rest/v1/rpc/get_avatar_catalog') return send(200, [{ id: 'av1', storage_path: 'set/fox.png' }]);
+      if (u === '/meta/series/tt0000003.json') return send(200, { meta: { name: 'Found Show', poster: 'found.jpg' } });
+      if (u === '/rest/v1/rpc/sync_pull_profiles') return send(200, [{ profile_index: 1, name: 'Ana', uses_primary_addons: true, avatar_color_hex: '#E53935', avatar_id: 'av1' }, { profile_index: 2, name: 'Kids', uses_primary_addons: false }, { profile_index: 3, name: 'Private', pin_enabled: true }]);
       if (u === '/rest/v1/rpc/sync_pull_library') return send(200, json.p_profile_id === 2 ? [{ content_id: 'tt0000001', content_type: 'movie', name: 'Film', poster: 'p.jpg', added_at: '2026-01-01T00:00:00Z' }] : []);
       if (u === '/rest/v1/rpc/sync_pull_watch_progress') return send(200, json.p_profile_id === 2 ? [{ content_id: 'tt0000001', content_type: 'movie', video_id: 'tt0000001', position: 600, duration: 6000, last_watched: Date.parse('2026-02-01T00:00:00Z') }, { content_id: 'kitsu:9', content_type: 'series', video_id: 'kitsu:9:1:4', position: 30000, duration: 1400000, season: 1, episode: 4, last_watched: Date.parse('2026-03-01T00:00:00Z') }] : []);
-      if (u === '/rest/v1/rpc/sync_pull_watched_items') return send(200, []);
+      if (u === '/rest/v1/rpc/sync_pull_watched_items') return send(200, json.p_profile_id === 2 ? [{ content_id: 'tt0000003', content_type: 'series', title: 'Found Show S04E01', season: 4, episode: 1, watched_at: Date.parse('2026-01-15T00:00:00Z') }] : []);
       if (u.indexOf('/rest/v1/addons?') === 0) return send(200, [{ url: base + '/addon', enabled: true, sort_order: 0 }, { url: base + '/off', enabled: false, sort_order: 1 }]);
       if (u.indexOf('/rest/v1/rpc/sync_push_') === 0) return send(200, null);
       send(404, {});
@@ -131,6 +133,7 @@ function nuvioTests() {
       var home = fs.mkdtempSync(path.join(os.tmpdir(), 'stremcompat-nuvio-')), realHome = process.env.HOME;
       process.env.HOME = home;
       process.env.SC_NUVIO_URL = base;
+      process.env.SC_CINEMETA_URL = base;
       var modulePath = path.join(root, 'service', 'server', 'nuvio-account.js');
       delete require.cache[require.resolve(modulePath)];
       var nuvio = require(modulePath);
@@ -144,12 +147,17 @@ function nuvioTests() {
         assert.strictEqual(signed.result.user._id, 'nv01user42', 'the first profile does not name its own library');
         var list = await new Promise(function (ok) { nuvio.profiles(key, ok); });
         assert.deepStrictEqual(list.map(function (p) { return p.name + (p.locked ? '!' : ''); }), ['Ana', 'Kids', 'Private!'], 'the profiles were not read');
+        assert.strictEqual(list[0].color, '#E53935', 'a profile lost its colour');
+        assert.strictEqual(list[0].avatar, 'https://127.0.0.1/storage/v1/object/public/avatars/set/fox.png', 'a profile lost its avatar');
+        assert.ok(list[1].color === '#1E88E5' && list[1].avatar === '', 'a profile without a colour or avatar got a wrong one');
         assert.ok(seen.some(function (r) { return r.url === '/auth/v1/token?grant_type=refresh_token'; }), 'an ended token was not renewed');
         assert.strictEqual(await new Promise(function (ok) { nuvio.chooseProfile(key, 3, ok); }), false, 'a PIN-protected profile was opened without its PIN');
         assert.strictEqual(await new Promise(function (ok) { nuvio.chooseProfile(key, 2, ok); }), true, 'a profile could not be chosen');
         assert.strictEqual((await api('/api/getUser', { authKey: key })).result._id, 'nv02user42', 'the second profile shares the first one\'s library');
         var meta = (await api('/api/datastoreMeta', { authKey: key, collection: 'libraryItem' })).result;
-        assert.deepStrictEqual(meta.map(function (m) { return m[0]; }).sort(), ['kitsu:9', 'tt0000001'], 'the profile\'s titles were not listed');
+        assert.deepStrictEqual(meta.map(function (m) { return m[0]; }).sort(), ['kitsu:9', 'tt0000001', 'tt0000003'], 'the profile\'s titles were not listed');
+        var found = (await api('/api/datastoreGet', { authKey: key, collection: 'libraryItem', ids: ['tt0000003'] })).result[0];
+        assert.ok(found.name === 'Found Show' && found.poster === 'found.jpg', 'a watched title showed its id or the episode in its name, or had no picture: ' + found.name);
         var items = (await api('/api/datastoreGet', { authKey: key, collection: 'libraryItem', ids: ['tt0000001', 'kitsu:9'] })).result;
         var film = items.filter(function (i) { return i._id === 'tt0000001'; })[0], show = items.filter(function (i) { return i._id === 'kitsu:9'; })[0];
         assert.strictEqual(film.removed, false, 'a title of the library was shown as removed');
@@ -171,6 +179,7 @@ function nuvioTests() {
         server.close();
         process.env.HOME = realHome;
         delete process.env.SC_NUVIO_URL;
+        delete process.env.SC_CINEMETA_URL;
         delete require.cache[require.resolve(modulePath)];
         resolve();
       })();

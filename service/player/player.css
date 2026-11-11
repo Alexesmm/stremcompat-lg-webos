@@ -96,11 +96,4 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 /* the paused screen already shows the title: no second copy in the bar or the corner */
 #pv.show~#bar #title,#pv.show~#bar #tse{visibility:hidden}
 #pv.show~#tlogo{opacity:0}
-body.modern #pvTitle{font-size:76px}
-body.modern #pvTitle img{max-width:760px;max-height:250px}
-body.modern #pvSe{font-size:32px}
-body.modern #np{width:430px;padding:18px;border-radius:16px}
-body.modern #npI{width:150px;height:84px}
-body.modern #npT{font-size:24px;max-height:60px}
-body.modern #npB{font-size:22px;padding:11px 14px}
-@media (max-height:800px){body.modern #np{width:360px;padding:12px}body.modern #npI{width:112px;height:63px}body.modern #npT{font-size:18px;max-height:46px}body.modern #npB{font-size:17px;padding:7px 10px}body.modern #pvTitle{font-size:52px}body.modern #pvTitle img{max-width:500px;max-height:170px}body.modern #pvSe{font-size:23px}}
+@media (max-height:800px){

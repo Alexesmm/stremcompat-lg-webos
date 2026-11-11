@@ -271,10 +271,7 @@ var login = {
     lsSet('authKey', ak);
     this.setStatus('accountConnected');
     /* a Nuvio account first asks whose profile this is */
-    if (isNuvioAccount())
-      return profilePanel.show(ak, function () {
-        location.reload();
-      });
+    if (isNuvioAccount()) return profilePanel.show(ak, reloadWithProfile);
     postJson(API + '/api/getUser', { authKey: ak }, function (j) {
       if (j && j.result) lsSet('user', j.result);
       syncAddons(function () {

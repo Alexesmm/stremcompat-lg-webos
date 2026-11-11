@@ -2,7 +2,14 @@
    A fixed rail never reflows or covers content. The remote focus is communicated by
    shape and colour, keeping paint work cheap on old Chromium. */
 #topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(9,11,18,.92),rgba(9,11,18,.6) 70%,rgba(9,11,18,0))}
-#brand{position:absolute;left:42px;top:38px;width:44px;height:44px;object-fit:contain;opacity:.9}
+/* the profile in use, at the top: OK switches profiles (Nuvio) or opens the account */
+#chipProfile{position:absolute;top:34px;left:34px;width:60px;height:60px;margin:0;border-radius:50%}
+#chipProfile.f{background:transparent}
+.face{width:52px;height:52px;border-radius:50%;overflow:hidden;text-align:center;line-height:52px;font-size:24px;font-weight:800;color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+.face img{width:100%;height:100%;display:block}
+#chipProfile.f .face{box-shadow:0 0 0 4px #fff}
+/* leaving the app, at the bottom (Back on Home asks the same) */
+#chipExit{position:absolute;bottom:34px;left:34px;margin:0}
 /* Login is intentionally standalone: navigation and the decorative watermark only
    become relevant after an account is connected. */
 body.login #topnav,body.login #logobg{display:none}

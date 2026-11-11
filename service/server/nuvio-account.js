@@ -11,12 +11,13 @@ var urlmod = require('url');
 var path = require('path');
 var { DIR } = require('./config');
 var { dbg } = require('./log');
-var { fetchAddonJson } = require('./http-util');
+var { fetchAddonJson, fetchJson } = require('./http-util');
 var { seriesVideos, setWatched } = require('./watched');
 var { qrSvg } = require('./qr');
 
 /* the tests point this at a stand-in server */
 var BASE = urlmod.parse(process.env.SC_NUVIO_URL || 'https://api.nuvio.tv');
+var CINEMETA = process.env.SC_CINEMETA_URL || 'https://v3-cinemeta.strem.io';
 /* published by Nuvio for public clients in its API documentation */
 var KEY = 'sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN';
 var PAGE = 500;
@@ -245,9 +246,44 @@ function qrPoll(id, cb) {
 function userOf(session) {
   return { _id: 'nv' + ('0' + session.profile).slice(-2) + session.uid, email: session.email };
 }
+/* Nuvio's avatars are pictures in its public storage, listed once by get_avatar_catalog */
+var avatarCatalog = null;
+function loadAvatars(session, cb) {
+  if (avatarCatalog && Date.now() - avatarCatalog.at < 3600000) return cb();
+  rpc(session, 'get_avatar_catalog', {}, function (rows) {
+    var paths = {},
+      list = [];
+    (rows || []).forEach(function (row) {
+      if (!row || !row.id || !row.storage_path) return;
+      paths[row.id] = String(row.storage_path).replace(/^\/+/, '');
+      list.push({ id: String(row.id), order: Number(row.sort_order) || 0 });
+    });
+    list.sort(function (a, b) {
+      return a.order - b.order;
+    });
+    avatarCatalog = {
+      at: Date.now(),
+      paths: paths,
+      ids: list.map(function (a) {
+        return a.id;
+      })
+    };
+    cb();
+  });
+}
+function avatarAddress(row) {
+  if (/^https:\/\//.test(row.avatar_url || '')) return row.avatar_url;
+  var p = row.avatar_id && avatarCatalog && avatarCatalog.paths[row.avatar_id];
+  return p ? 'https://' + BASE.hostname + '/storage/v1/object/public/avatars/' + p : '';
+}
 function profiles(key, cb) {
   var session = sessionOf(key);
   if (!session) return cb(null);
+  loadAvatars(session, function () {
+    profileRows(session, cb);
+  });
+}
+function profileRows(session, cb) {
   rpc(session, 'sync_pull_profiles', null, function (rows) {
     if (!rows) return cb(null);
     cb(
@@ -256,6 +292,8 @@ function profiles(key, cb) {
           return {
             index: Number(row.profile_index) || 1,
             name: String(row.name || ''),
+            color: /^#[0-9a-f]{6}$/i.test(row.avatar_color_hex || '') ? row.avatar_color_hex : '#1E88E5',
+            avatar: avatarAddress(row),
             primaryAddons: !!row.uses_primary_addons,
             /* the PIN is not checked here yet, so a protected profile cannot be opened */
             locked: !!row.pin_enabled,
@@ -282,6 +320,74 @@ function chooseProfile(key, index, cb) {
     delete titleCache[key];
     saveSessions();
     cb(true);
+  });
+}
+/* the avatars a profile can have, as { id, url } */
+function avatars(key, cb) {
+  var session = sessionOf(key);
+  if (!session) return cb(null);
+  loadAvatars(session, function () {
+    cb(
+      avatarCatalog.ids.map(function (id) {
+        return { id: id, url: avatarAddress({ avatar_id: id }) };
+      })
+    );
+  });
+}
+/* Creates a profile (no index) or changes one: its name, colour and avatar. Nuvio takes the
+   whole list at once, as its own apps send it, so every other field of every profile is sent
+   back as it came. Up to six profiles; a new one takes the first free number from 2. */
+var MAX_PROFILES = 6;
+function saveProfile(key, change, cb) {
+  var session = sessionOf(key);
+  if (!session) return cb(false);
+  rpc(session, 'sync_pull_profiles', null, function (rows) {
+    if (!rows) return cb(false);
+    var index = Number(change.index) || 0,
+      row = null;
+    rows.forEach(function (r) {
+      if (Number(r.profile_index) === index) row = r;
+    });
+    if (!row) {
+      if (index || rows.length >= MAX_PROFILES) return cb(false);
+      var used = rows.map(function (r) {
+        return Number(r.profile_index);
+      });
+      for (index = 2; used.indexOf(index) >= 0; index++);
+      row = { profile_index: index, uses_primary_addons: false, uses_primary_plugins: false };
+      rows.push(row);
+    }
+    var name = String(change.name || '')
+      .trim()
+      .slice(0, 40);
+    if (name) row.name = name;
+    if (!row.name) row.name = 'Profile ' + index;
+    if (/^#[0-9a-f]{6}$/i.test(change.color || '')) row.avatar_color_hex = change.color.toUpperCase();
+    if (change.avatar != null) {
+      row.avatar_id = change.avatar || null;
+      row.avatar_url = null;
+    }
+    var profilesOut = rows.map(function (r) {
+      return {
+        profile_index: Number(r.profile_index),
+        name: String(r.name || ''),
+        avatar_color_hex: r.avatar_color_hex || '#1E88E5',
+        uses_primary_addons: !!r.uses_primary_addons,
+        uses_primary_plugins: !!r.uses_primary_plugins,
+        avatar_id: r.avatar_url ? null : r.avatar_id || null,
+        avatar_url: r.avatar_url || null,
+        profile_background_id: r.profile_background_id || null,
+        profile_background_url: r.profile_background_url || null
+      };
+    });
+    rpc(
+      session,
+      'sync_push_profiles',
+      { p_client_max_profiles: MAX_PROFILES, p_profiles: profilesOut },
+      function (answer, status) {
+        cb(status >= 200 && status < 300 ? index : false);
+      }
+    );
   });
 }
 /* only this TV's session ends: other devices stay signed in */
@@ -374,7 +480,12 @@ function collect(got) {
         episodes: [],
         movieWatchedAt: 0
       };
-    if (!titles[id].name) titles[id].name = row.name || row.title || '';
+    /* a watched row names the episode too ("Mr. Robot S04E01"): only the series' name is kept */
+    if (!titles[id].name)
+      titles[id].name = String(row.name || row.title || '').replace(
+        /\s*[-–:·|]?\s*S\d{1,2}\s*E\d{1,4}\s*$/i,
+        ''
+      );
     return titles[id];
   }
   got.library.forEach(function (row) {
@@ -468,6 +579,53 @@ function fillWatched(item, t, cb) {
   });
 }
 
+/* Nuvio keeps a name and pictures only for titles in the library: one that is only in progress
+   or watched would show its id and no picture. Cinemeta has them for IMDb ids; at most four are
+   asked at a time, and what it answers is kept for an hour. */
+var namesFound = {};
+function fillNames(list, cb) {
+  var wanted = list.filter(function (item) {
+    return /^tt\d+$/.test(item._id) && (!item.name || item.name === item._id || !item.poster);
+  });
+  var next = 0,
+    running = 0;
+  function done() {
+    if (!running && next >= wanted.length) cb();
+  }
+  function apply(item, meta) {
+    if (!meta) return;
+    if (!item.name || item.name === item._id) item.name = meta.name || item.name;
+    item.poster = item.poster || meta.poster || '';
+    item.background = item.background || meta.background || '';
+  }
+  function pump() {
+    while (running < 4 && next < wanted.length) {
+      var item = wanted[next++],
+        hit = namesFound[item._id];
+      if (hit && Date.now() - hit.at < 3600000) {
+        apply(item, hit.meta);
+        continue;
+      }
+      running++;
+      (function (it) {
+        var address =
+          CINEMETA + '/meta/' + encodeURIComponent(it.type) + '/' + encodeURIComponent(it._id) + '.json';
+        fetchJson(address, function (answer) {
+          var m = answer && answer.meta;
+          var meta = m
+            ? { name: m.name || '', poster: m.poster || '', background: m.background || '' }
+            : null;
+          namesFound[it._id] = { at: Date.now(), meta: meta };
+          apply(it, meta);
+          running--;
+          pump();
+        });
+      })(item);
+    }
+    done();
+  }
+  pump();
+}
 var titleCache = {};
 /* the profile's items, read at most once a minute */
 function items(key, session, cb) {
@@ -479,8 +637,10 @@ function items(key, session, cb) {
       waiting = 1;
     function settled() {
       if (--waiting) return;
-      titleCache[key] = { at: Date.now(), items: list };
-      cb(list);
+      fillNames(list, function () {
+        titleCache[key] = { at: Date.now(), items: list };
+        cb(list);
+      });
     }
     Object.keys(titles).forEach(function (id) {
       var item = itemOf(titles[id]);
@@ -653,6 +813,7 @@ function nuvioApi(apiPath, body, cb) {
 }
 
 module.exports = {
+  avatars: avatars,
   chooseProfile: chooseProfile,
   isNuvioKey: function (key) {
     return /^nuvio:/.test(String(key || ''));
@@ -660,5 +821,6 @@ module.exports = {
   nuvioApi: nuvioApi,
   profiles: profiles,
   qrPoll: qrPoll,
-  qrStart: qrStart
+  qrStart: qrStart,
+  saveProfile: saveProfile
 };

@@ -50,7 +50,14 @@ body.trailer #dWrap{opacity:.14}
    A fixed rail never reflows or covers content. The remote focus is communicated by
    shape and colour, keeping paint work cheap on old Chromium. */
 #topnav{position:fixed;top:0;left:0;bottom:0;width:128px;z-index:20;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;background:linear-gradient(to right,rgba(9,11,18,.92),rgba(9,11,18,.6) 70%,rgba(9,11,18,0))}
-#brand{position:absolute;left:42px;top:38px;width:44px;height:44px;object-fit:contain;opacity:.9}
+/* the profile in use, at the top: OK switches profiles (Nuvio) or opens the account */
+#chipProfile{position:absolute;top:34px;left:34px;width:60px;height:60px;margin:0;border-radius:50%}
+#chipProfile.f{background:transparent}
+.face{width:52px;height:52px;border-radius:50%;overflow:hidden;text-align:center;line-height:52px;font-size:24px;font-weight:800;color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+.face img{width:100%;height:100%;display:block}
+#chipProfile.f .face{box-shadow:0 0 0 4px #fff}
+/* leaving the app, at the bottom (Back on Home asks the same) */
+#chipExit{position:absolute;bottom:34px;left:34px;margin:0}
 /* Login is intentionally standalone: navigation and the decorative watermark only
    become relevant after an account is connected. */
 body.login #topnav,body.login #logobg{display:none}
@@ -275,23 +282,35 @@ body.series-episode #dSeasons{margin-top:24px}
 #sRows{position:absolute;top:0;left:-36px;right:0;padding-top:26px}
 
 /* ---------- settings / account ---------- */
-#setWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
+/* Settings: the groups on the left, the chosen group's options as cards on the right */
+#setWrap{position:absolute;top:0;left:176px;right:0;bottom:0;overflow:hidden}
+#setTitle{position:absolute;top:56px;left:4px;font-size:50px;font-weight:800;letter-spacing:-.5px}
+#setCats{position:absolute;top:152px;left:0;width:330px}
+.setcat{padding:13px 24px;margin-bottom:6px;border-radius:12px;font-size:27px;font-weight:600;color:rgba(255,255,255,.66);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.setcat.cur{color:#fff;background:rgba(255,255,255,.1)}
+.setcat.f{background:#fff;color:#12101a}
+#setPane{position:absolute;top:152px;left:390px;right:64px;bottom:0;overflow:hidden}
 #setInner{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
-#setAcct{padding:20px 26px;border-radius:16px;background:rgba(255,255,255,.06);margin-bottom:26px;max-width:1100px}
+#setAcct{padding:20px 26px;border-radius:16px;background:rgba(255,255,255,.06);margin-bottom:18px;max-width:1100px}
 #setAcct .em{font-size:32px;font-weight:700}
 #setAcct .pl{margin-top:8px;font-size:24px;color:rgba(255,255,255,.72)}
-.set{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;max-width:1100px;padding:19px 26px;border-radius:14px;margin-bottom:8px;transition:background .12s ease}
-.set .lb{font-size:29px;font-weight:600;-webkit-flex:1;flex:1}
-.set .vl{font-size:26px;color:rgba(255,255,255,.88);font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(255,255,255,.08)}
-.set.f{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 3px #fff}
+.set{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;max-width:1100px;min-height:40px;padding:20px 28px;border-radius:14px;margin-bottom:10px;background:rgba(255,255,255,.07);transition:background .12s ease}
+.set .lb{font-size:27px;font-weight:600;-webkit-flex:1;flex:1}
+.set .vl{font-size:24px;color:rgba(255,255,255,.88);font-weight:700;padding:8px 17px;border-radius:18px;background:rgba(255,255,255,.08)}
+.set .vl:empty{display:none}
+.set.f{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 3px #fff}
 .set.editing{background:rgba(20,184,166,.24);box-shadow:inset 0 0 0 3px #5EEAD4}
 .set.editing .vl{background:#0F766E;color:#fff}
 .set.act .vl{color:#ff9a9a}
 .set.act.info .vl{color:rgba(255,255,255,.88)}
+/* on and off as a switch */
+.set .vl.sw{display:block;position:relative;width:66px;height:36px;padding:0;border-radius:18px;background:rgba(255,255,255,.24);box-sizing:border-box}
+.vl.sw:after{content:"";position:absolute;top:4px;left:4px;width:28px;height:28px;border-radius:50%;background:#fff;transition:left .12s ease}
+.set .vl.sw.on{background:#14B8A6}
+.vl.sw.on:after{left:34px}
 .setdiag{max-width:1100px;margin:0 0 12px;padding:14px 26px;border-radius:12px;background:rgba(255,255,255,.05);font-size:22px;line-height:1.6;color:rgba(255,255,255,.75)}
-.sethint{margin:18px 0 0 26px;font-size:22px;color:rgba(255,255,255,.68)}
-.setgrp{font-size:23px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:#5EEAD4;margin:30px 0 12px 26px}
-#setItems > .setgrp:first-child{margin-top:6px}
+.sethint{margin:18px 0 0 6px;font-size:22px;color:rgba(255,255,255,.68)}
+.setgrp{font-size:22px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#5EEAD4;margin:4px 0 14px 4px}
 
 /* ---------- addons ---------- */
 #aWrap{position:absolute;top:58px;left:176px;right:48px;bottom:40px;overflow:hidden}
@@ -312,7 +331,10 @@ body.series-episode #dSeasons{margin-top:24px}
    actual application surface so a focused catalog card never sits below the viewport. */
 @media (max-height:800px){
   #topnav{width:86px}
-  #brand{left:28px;top:24px;width:30px;height:30px}
+  #chipProfile{top:22px;left:21px;width:44px;height:44px}
+  .face{width:36px;height:36px;line-height:36px;font-size:17px}
+  #chipProfile.f .face{box-shadow:0 0 0 3px #fff}
+  #chipExit{bottom:22px;left:21px}
   .chip{width:44px;height:40px;margin:3px 0;border-radius:10px}
   .chip svg{width:20px;height:20px}
   .navlabel{left:58px;margin-top:-12px;line-height:24px;font-size:18px}
@@ -369,7 +391,12 @@ body.series-episode #dSeasons{margin-top:24px}
   #dDesc{margin-top:8px;font-size:18px;line-height:1.4;max-height:76px}
   #dBtns{margin-top:16px}.btn{height:44px;margin-right:8px;border-radius:22px;font-size:18px}.btn svg{width:21px;height:21px}.btn .bl{margin-left:7px}.btn.main{padding:0 24px 0 18px}.btn.ico{width:44px}.btn.ico.f{padding:0 19px 0 13px}
   #dSeasons{margin-top:15px}.schip{padding:7px 16px;margin-right:7px;font-size:16px}
-  #simWrap,#discWrap,#sWrap,#setWrap,#aWrap{top:30px;left:112px;right:30px}
+  #simWrap,#discWrap,#sWrap,#aWrap{top:30px;left:112px;right:30px}
+  #setWrap{left:112px}
+  #setTitle{top:34px;font-size:33px}
+  #setCats{top:100px;width:220px}
+  .setcat{padding:9px 16px;margin-bottom:4px;border-radius:9px;font-size:18px}
+  #setPane{top:100px;left:258px;right:40px}
   #discTitle{font-size:34px;margin-bottom:12px}
   #discFilters{height:47px}
   .frow{margin-right:8px}.fchip{padding:9px 38px 9px 18px;margin-right:7px;border-radius:9px;font-size:18px}.fchip:after{right:16px;border-left-width:5px;border-right-width:5px;border-top-width:6px}.fchip.open:after{border-top:0;border-bottom-width:6px}
@@ -391,11 +418,14 @@ body.series-episode #dSeasons{margin-top:24px}
   .suhelp{font-size:16px}
   .suskip{font-size:17px;padding:10px 18px}
   #suHint{font-size:15px}
-  .set{max-width:733px;padding:12px 17px;border-radius:9px;margin-bottom:4px}
+  .set{max-width:733px;min-height:26px;padding:13px 18px;border-radius:9px;margin-bottom:7px}
   .set .lb{font-size:18px}
   .set .vl{font-size:16px;padding:4px 11px;border-radius:12px}
-  .setgrp{font-size:16px;letter-spacing:1.2px;margin:20px 0 8px 17px}
-  .sethint{margin:12px 0 0 17px;font-size:16px}
+  .set .vl.sw{width:44px;height:24px;border-radius:12px}
+  .vl.sw:after{top:3px;left:3px;width:18px;height:18px}
+  .vl.sw.on:after{left:23px}
+  .setgrp{font-size:15px;letter-spacing:1.1px;margin:2px 0 9px 3px}
+  .sethint{margin:12px 0 0 4px;font-size:16px}
   .setdiag{max-width:733px;margin:0 0 8px;padding:9px 17px;font-size:16px}
   #cwm{width:400px;padding:37px 29px}
   #cwmTitle{font-size:27px;margin-bottom:5px;max-height:73px}
@@ -525,45 +555,6 @@ body.bigtext #sHint,body.bigtext .emptyh{font-size:28px}
 .suopt.locked{opacity:.55}
 .suskip{text-align:center;font-size:24px;padding:14px 26px;background:transparent;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
 #suHint{margin-top:18px;font-size:20px;color:#8b95a0}
-/* The modern look: a large billboard as in the big streaming apps. The background spans the
-   width of the screen and the upper two thirds, darkened by the fixed #bgshade layer, which is
-   painted once and never moves. Nothing animates on its own: only the background's opacity
-   changes, when the focus has settled. Panels are opaque, so no layers are blended. */
-body.modern #bg,body.modern #bg2{left:0;height:74%;-webkit-transition:opacity .4s ease;transition:opacity .4s ease}
-body.modern #bg.on,body.modern #bg2.on{opacity:1}
-body.modern #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,0) 40%,rgba(9,11,18,.55) 58%,#090b12 74%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.92) 22%,rgba(9,11,18,.55) 42%,rgba(9,11,18,.12) 62%,rgba(9,11,18,0) 75%)}
-body.modern.detail #bg,body.modern.detail #bg2{left:0;height:100%}
-body.modern.detail #bgshade{background:linear-gradient(to bottom,rgba(9,11,18,0) 45%,rgba(9,11,18,.75) 78%,#090b12 96%),linear-gradient(to right,#090b12 0%,rgba(9,11,18,.94) 26%,rgba(9,11,18,.6) 46%,rgba(9,11,18,.15) 66%,rgba(9,11,18,0) 80%)}
-body.modern #topnav{background:#11141b}
-body.modern #hero{top:96px;width:44%}
-body.modern #heroLogo{width:560px;height:170px}
-body.modern #heroTitle{height:170px;font-size:84px;letter-spacing:-2px}
-body.modern #heroTitle.long{font-size:60px}
-body.modern #heroMeta{margin-top:22px;font-size:27px;color:#fff}
-body.modern #heroDesc{margin-top:16px;font-size:27px;line-height:1.45;max-height:118px;-webkit-line-clamp:3;color:rgba(255,255,255,.86)}
-body.modern #heroCast{display:block;margin-top:14px;font-size:22px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.modern #rowsClip{top:590px}
-body.modern .rowtitle{font-size:32px;color:#fff;margin-bottom:18px}
-body.modern #rows .card{width:250px;height:375px;margin-right:26px}
-body.modern #rows .card.wide{width:430px;height:242px}
-body.modern .card.f{-webkit-transform:scale(1.05);transform:scale(1.05);-webkit-transform-origin:50% 30%;transform-origin:50% 30%;box-shadow:0 0 0 4px #fff !important}
-body.modern #setupPanel,body.modern #episodeJump{background:#090b12}
-body.modern #suBox,body.modern #ejBox{background:#151a23}
-/* the modern look on the 1280x720 package (after the rules above, so they win) */
-@media (max-height:800px){
-  body.modern #hero{top:60px;width:46%}
-  body.modern #heroLogo{width:370px;height:112px}
-  body.modern #heroTitle{height:112px;font-size:56px}
-  body.modern #heroTitle.long{font-size:40px}
-  body.modern #heroMeta{margin-top:14px;font-size:18px}
-  body.modern #heroDesc{margin-top:10px;font-size:18px;max-height:78px}
-  body.modern #heroCast{margin-top:9px;font-size:15px}
-  body.modern #rowsClip{top:392px}
-  body.modern .rowtitle{font-size:22px;margin-bottom:12px}
-  body.modern #rows .card{width:167px;height:250px;margin-right:17px}
-  body.modern #rows .card.wide{width:287px;height:161px}
-  body.modern .card.f{box-shadow:0 0 0 3px #fff !important}
-}
 /* the light look: no transitions, animations or shadows */
 body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-animation:none!important;animation:none!important;box-shadow:none!important;text-shadow:none!important}
 #episodeJump{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(5,4,10,.82);z-index:90;text-align:center}
@@ -575,6 +566,60 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 .ejkey.f{background:#fff;color:#0c0b11}
 #ejHint{margin-top:18px;color:#a3adb8;font-size:19px}
 @media(max-height:800px){#ejBox{width:420px;margin-top:7vh;padding:22px 28px 18px}#ejTitle{font-size:25px}#ejValue{height:54px;margin:14px 0 10px;font-size:36px;line-height:54px}.ejkey{width:106px;height:46px;margin:5px 6px;line-height:46px;font-size:21px}#ejHint{margin-top:10px;font-size:15px}}
+/* the profiles: a screen of their own, big faces in a row, as the streaming apps show them */
+#pfScreen{display:none;position:fixed;left:0;right:0;top:0;bottom:0;z-index:97;text-align:center;background:radial-gradient(ellipse at 50% 30%,#1a2130,#090b12 70%)}
+#pfTitle{margin-top:15vh;font-size:64px;font-weight:800;letter-spacing:-.5px;color:#fff}
+#pfRow{margin-top:70px;white-space:nowrap}
+.pf{display:inline-block;vertical-align:top;width:250px;margin:0 22px;white-space:normal}
+.pfav{width:220px;height:220px;margin:0 auto;border-radius:50%;overflow:hidden;line-height:220px;font-size:92px;font-weight:800;color:#fff;background:#27303a;box-shadow:0 0 0 0 transparent;transition:transform .12s ease}
+.pfav img{width:100%;height:100%;display:block}
+.pf.f .pfav{box-shadow:0 0 0 7px #fff;-webkit-transform:scale(1.06);transform:scale(1.06)}
+.pf.add .pfav{background:transparent;box-shadow:inset 0 0 0 4px rgba(255,255,255,.35);font-weight:300;color:rgba(255,255,255,.75)}
+.pf.add.f .pfav{box-shadow:inset 0 0 0 4px rgba(255,255,255,.35),0 0 0 7px #fff}
+.pfname{margin-top:24px;font-size:32px;font-weight:700;color:rgba(255,255,255,.72)}
+.pf.f .pfname{color:#fff}
+.pf.locked .pfav{opacity:.45}
+.pflock{margin-top:8px;font-size:19px;color:rgba(255,255,255,.55)}
+#pfEditBtn{display:inline-block;margin-top:60px;padding:16px 40px;border-radius:40px;font-size:28px;font-weight:700;color:rgba(255,255,255,.85);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+#pfEditBtn.f{background:#fff;color:#12101a;box-shadow:none}
+#pfHint{position:absolute;left:0;right:0;bottom:48px;font-size:22px;color:rgba(255,255,255,.55)}
+#pfEditor{margin-top:44px}
+#pfEdFace{width:180px;height:180px;line-height:180px;font-size:76px}
+#pfEdName{display:block;width:560px;margin:34px auto 0;padding:16px 24px;border:0;border-radius:14px;background:rgba(255,255,255,.1);color:#fff;font-size:32px;font-family:inherit;text-align:center;outline:none;box-sizing:border-box}
+#pfEdName.f,#pfEdName:focus{box-shadow:inset 0 0 0 3px #fff}
+#pfEdColors{margin-top:30px}
+.pfcolor{display:inline-block;width:56px;height:56px;margin:0 10px;border-radius:50%;box-shadow:0 0 0 0 transparent}
+.pfcolor.on{box-shadow:0 0 0 4px rgba(255,255,255,.55)}
+.pfcolor.f{box-shadow:0 0 0 5px #fff}
+#pfEdClip{width:1000px;margin:30px auto 0;overflow:hidden;text-align:left;padding:8px 0}
+#pfEdAvatars{white-space:nowrap;padding-left:8px;transition:transform .15s ease}
+.pfpick{display:inline-block;vertical-align:top;width:96px;height:96px;margin-right:24px;border-radius:50%;overflow:hidden;background:#27303a;text-align:center;line-height:96px;font-size:40px;font-weight:800;color:#fff}
+.pfpick img{width:100%;height:100%;display:block}
+.pfpick.on{box-shadow:0 0 0 4px rgba(255,255,255,.55)}
+.pfpick.f{box-shadow:0 0 0 5px #fff}
+#pfEdBtns{margin-top:36px}
+#pfEdBtns span{display:inline-block;margin:0 12px;padding:14px 44px;border-radius:40px;font-size:27px;font-weight:700;color:rgba(255,255,255,.85);box-shadow:inset 0 0 0 3px rgba(255,255,255,.3)}
+#pfEdBtns span.f{background:#fff;color:#12101a;box-shadow:none}
+@media (max-height:800px){
+  #pfTitle{font-size:43px}
+  #pfRow{margin-top:46px}
+  .pf{width:167px;margin:0 15px}
+  .pfav{width:147px;height:147px;line-height:147px;font-size:61px}
+  .pf.f .pfav,.pf.add.f .pfav{box-shadow:0 0 0 5px #fff}
+  .pfname{margin-top:16px;font-size:21px}
+  .pflock{font-size:13px}
+  #pfEditBtn{margin-top:40px;padding:11px 27px;font-size:19px}
+  #pfHint{bottom:30px;font-size:15px}
+  #pfEditor{margin-top:26px}
+  #pfEdFace{width:120px;height:120px;line-height:120px;font-size:50px}
+  #pfEdName{width:380px;margin-top:22px;padding:10px 16px;font-size:21px}
+  #pfEdColors{margin-top:20px}
+  .pfcolor{width:38px;height:38px;margin:0 7px}
+  #pfEdClip{width:680px;margin-top:20px}
+  .pfpick{width:64px;height:64px;margin-right:16px;line-height:64px;font-size:27px}
+  #pfEdBtns{margin-top:24px}
+  #pfEdBtns span{padding:9px 30px;font-size:18px}
+}
 #boot{position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 42%,rgba(20,184,166,.10),rgba(9,11,18,0) 38%),#090b12;z-index:100;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center}
 #boot .bootbox{text-align:center;width:360px}
 #boot .lg{width:94px;height:94px;-webkit-animation:bb 1.8s ease-in-out infinite;animation:bb 1.8s ease-in-out infinite}
@@ -597,13 +642,14 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 <div id="bg"></div><div id="bg2"></div><div id="logobg"></div><div id="bgshade"></div>
 
 <div id="topnav">
-  <img id="brand" src="/logo.png">
+  <div class="chip" id="chipProfile"><div class="face" id="navFace"></div><span class="navlabel" id="navName"></span></div>
   <div class="chip" id="chipSearch"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navlabel">Search</span></div>
   <div class="chip" id="chipHome"><svg viewBox="0 0 24 24"><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg><span class="navlabel">Home</span></div>
   <div class="chip" id="chipDisc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M15.7 8.3l-2.2 5.2-5.2 2.2 2.2-5.2z"/></svg><span class="navlabel">Discover</span></div>
   <div class="chip" id="chipLib"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 3h8M8 10h8"/></svg><span class="navlabel">Library</span></div>
   <div class="chip" id="chipAddons"><svg viewBox="0 0 24 24"><path d="M4 4h6v3a2 2 0 104 0V4h6v6h-3a2 2 0 100 4h3v6h-6v-3a2 2 0 10-4 0v3H4v-6h3a2 2 0 100-4H4z"/></svg><span class="navlabel">Addons</span></div>
   <div class="chip" id="chipSet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.4 1A7 7 0 0015 6.2L14.6 3h-5L9 6.2a7 7 0 00-1.5.9l-2.4-1-2 3.4L5.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.4-1a7 7 0 001.5.9l.6 3.2h5l.4-3.2a7 7 0 001.5-.9l2.4 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg><span class="navlabel">Settings</span></div>
+  <div class="chip" id="chipExit"><svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 012 2v12a2 2 0 01-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h10"/></svg><span class="navlabel">Leave</span></div>
 </div>
 
 <!-- Home and Library share the cinematic hero/rows layer. Discover has its own grid. -->
@@ -641,11 +687,15 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 </div>
 
 <div class="scr" id="scrSet">
-  <div id="setWrap"><div id="setInner">
-    <div id="setAcct"><div class="em"></div><div class="pl"></div></div>
-    <div id="setItems"></div>
-    <div class="sethint" id="setHint">Use Left/Right to change · changes apply immediately</div>
-  </div></div>
+  <div id="setWrap">
+    <div id="setTitle">Settings</div>
+    <div id="setCats"></div>
+    <div id="setPane"><div id="setInner">
+      <div id="setAcct"><div class="em"></div><div class="pl"></div></div>
+      <div id="setItems"></div>
+      <div class="sethint" id="setHint">Use Left/Right to change · changes apply immediately</div>
+    </div></div>
+  </div>
 </div>
 
 <div class="scr" id="scrAddons">
@@ -679,6 +729,18 @@ body.lite *{-webkit-transition:none!important;transition:none!important;-webkit-
 <div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stBest"></div><div id="stLang"></div><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
 <div id="serverPanel"><div id="srvBox"><div id="srvTitle"></div><div id="srvValue"></div><div id="srvKeys"></div><div id="srvStatus"></div></div></div>
+<div id="pfScreen">
+  <div id="pfTitle"></div>
+  <div id="pfPick"><div id="pfRow"></div><div id="pfEditBtn"></div></div>
+  <div id="pfEditor">
+    <div id="pfEdFace" class="pfav"></div>
+    <input id="pfEdName" maxlength="40" autocomplete="off">
+    <div id="pfEdColors"></div>
+    <div id="pfEdClip"><div id="pfEdAvatars"></div></div>
+    <div id="pfEdBtns"><span id="pfSave"></span><span id="pfCancel"></span></div>
+  </div>
+  <div id="pfHint"></div>
+</div>
 <div id="setupPanel"><div id="suBox"><div id="suTitle"></div><div id="suOptions"></div><div id="suHint"></div></div></div>
 <div id="episodeJump"><div id="ejBox"><div id="ejTitle"></div><div id="ejValue"></div><div id="ejKeys"></div><div id="ejHint"></div></div></div>
 <div id="toast"></div>

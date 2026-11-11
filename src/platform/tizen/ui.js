@@ -1,4 +1,8 @@
 // Interface side of the Tizen platform.
+/* the YouTube app is not opened from here on Samsung yet */
+function openYoutubeApp() {
+  return false;
+}
 function exitApp() {
   var left = false;
   function leave() {

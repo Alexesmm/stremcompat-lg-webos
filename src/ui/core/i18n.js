@@ -16,7 +16,8 @@ function applyStaticLanguage() {
     chipDisc: 'navDiscover',
     chipLib: 'navLibrary',
     chipAddons: 'navAddons',
-    chipSet: 'navSettings'
+    chipSet: 'navSettings',
+    chipExit: 'exitLeave'
   };
   for (var nid in navPairs)
     if (Object.prototype.hasOwnProperty.call(navPairs, nid) && $(nid)) {
@@ -26,6 +27,7 @@ function applyStaticLanguage() {
   var pairs = {
     sHint: 'searchHint',
     setHint: 'settingsHint',
+    setTitle: 'navSettings',
     discTitle: 'discoverTitle',
     lgAccount: 'accountNote',
     lgNote: 'unofficialNote',

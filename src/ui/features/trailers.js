@@ -6,7 +6,7 @@ function ytPlay(t, backHash) {
     '/yt?v=' + encodeURIComponent(t),
     function (j) {
       if (j && j.url) playUrl(j.url, 'other', '', '', backHash);
-      else toast(tx('trailerUnavailable'));
+      else toast(tx(openYoutubeApp(t) ? 'trailerInYoutube' : 'trailerUnavailable'));
     },
     14000
   );

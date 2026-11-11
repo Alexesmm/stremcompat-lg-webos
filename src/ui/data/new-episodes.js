@@ -3,10 +3,23 @@
    request at a time in the background after Home is up. The result is stored and shown
    the next time Home is built, so a row never appears under the viewer's focus. */
 var NEW_EPISODES_KEY = 'newEpisodes',
+  NEW_EPISODES_HIDDEN = 'newEpisodesHidden',
   NEW_EPISODES_EVERY = 24 * 60 * 60 * 1000;
+/* the series the viewer took out of the row (card menu) */
+function hiddenNewEpisodes() {
+  return lsJson(NEW_EPISODES_HIDDEN) || [];
+}
 function newEpisodeItems() {
-  var c = lsJson(NEW_EPISODES_KEY);
-  return c && c.items && c.items.length ? c.items : [];
+  var c = lsJson(NEW_EPISODES_KEY),
+    hidden = hiddenNewEpisodes();
+  return ((c && c.items) || []).filter(function (it) {
+    return hidden.indexOf(it.id) < 0;
+  });
+}
+function hideNewEpisodes(id) {
+  var hidden = hiddenNewEpisodes();
+  if (hidden.indexOf(id) < 0) hidden.push(id);
+  lsSet(NEW_EPISODES_HIDDEN, hidden);
 }
 /* the first aired, unwatched regular episode released after the series was last watched */
 function firstNewEpisode(meta, state) {
@@ -44,7 +57,7 @@ function checkNewEpisodes(done) {
   for (var i = 0; i < lib.length; i++) {
     var it = lib[i],
       s = it.state || {};
-    if (it.type !== 'series' || !it._id) continue;
+    if (it.type !== 'series' || !it._id || hiddenNewEpisodes().indexOf(it._id) >= 0) continue;
     if (it.removed && !(s.timeOffset > 0) && !(s.watchedEpisodes && s.watchedEpisodes.length)) continue;
     series.push(it);
   }
@@ -68,7 +81,7 @@ function checkNewEpisodes(done) {
         found.push({
           id: it._id,
           type: 'series',
-          name: it.name || (m && m.name) || '',
+          name: (m && m.name) || it.name || '',
           poster: it.poster || (m && m.poster) || '',
           background: it.background || (m && m.background) || '',
           videoId: ep.id,

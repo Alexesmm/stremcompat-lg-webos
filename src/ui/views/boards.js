@@ -64,7 +64,7 @@ var disc = {
     this.genreIdx = 0;
     this.idx = 0;
     this.built = false;
-    topNav.idx = 2;
+    topNav.idx = chipTarget.indexOf('disc');
     goScr('disc');
   },
   focusTop: function () {

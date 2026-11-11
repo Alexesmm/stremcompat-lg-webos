@@ -59,6 +59,10 @@ setInterval(function () {
   } catch (e) {}
 }, 30000);
 // Interface side of the Tizen platform.
+/* the YouTube app is not opened from here on Samsung yet */
+function openYoutubeApp() {
+  return false;
+}
 function exitApp() {
   var left = false;
   function leave() {
@@ -310,7 +314,6 @@ var UI_TEXT = {
     exitLeave: 'Leave the app',
     removedFromCw: 'Removed from Continue watching',
     torrentsNeedServer: 'This TV cannot run torrents by itself. Set a server in Settings > Streaming server.',
-    serverGroup: 'Streaming server',
     serverAddress: 'Address',
     serverHere: 'This TV',
     serverTitle: 'Streaming server address',
@@ -363,6 +366,7 @@ var UI_TEXT = {
     textLarge: 'Larger',
     loadingTrailer: 'Loading trailer…',
     trailerUnavailable: 'Trailer unavailable',
+    trailerInYoutube: 'Opening the trailer in the YouTube app',
     noTrailer: 'No trailer available',
     continueLabel: 'Continue',
     continueEpisode: 'Continue S{0} E{1}',
@@ -422,9 +426,6 @@ var UI_TEXT = {
     modeFull: 'Complete',
     modeFullHint: 'Every option, as before.',
     setupLookQuestion: 'Which look?',
-    lookModern: 'Modern',
-    lookModernHint:
-      'Full-screen, sharper backgrounds, more animation. Not recommended for webOS 3 or slower TVs.',
     lookLight: 'Light',
     lookLightHint: 'No effects and smaller images. Best for webOS 3 and TVs with little memory.',
     setupSkip: 'Skip',
@@ -433,15 +434,24 @@ var UI_TEXT = {
     uiLookLabel: 'Look',
     lookStandard: 'Standard',
     lookStandardHint: 'Recommended for most TVs. The look of earlier versions.',
-    nuvioNewsTitle: 'New: you can now sign in with a Nuvio account',
-    keepStremio: 'Continue with Stremio',
-    keepStremioHint: 'Your account, library and addons stay as they are.',
-    useNuvio: 'Sign in with Nuvio (experimental)',
-    useNuvioHint: 'Signs out of Stremio on this TV only, and opens the Nuvio sign-in.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Who is watching?',
     profileNumber: 'Profile {0}',
     profileLocked: 'Protected with a PIN, not available in StremCompat yet',
+    addProfile: 'Add profile',
+    editProfile: 'Edit profile',
+    profileName: 'Name',
+    profileNameNeeded: 'Give the profile a name',
+    profileNotSaved: 'Could not save the profile on Nuvio',
+    profilesHint: 'OK chooses · Down edits the profile',
+    profileEditHint: 'OK on the name opens the keyboard · Back returns',
+    hideNewEpisodes: 'Hide from New episodes',
+    newEpisodesHidden: 'This series no longer appears in New episodes',
+    showHiddenNewEpisodes: 'Show hidden series in New episodes',
+    newEpisodesShown: '{0} series back in New episodes',
+    save: 'Save',
+    cancel: 'Cancel',
+    saving: 'Saving…',
     nuvioProfile: 'Nuvio profile',
     profilesUnavailable: 'Could not read the Nuvio profiles',
     becauseYouWatched: 'Because you watched {0}',
@@ -503,7 +513,6 @@ var UI_TEXT = {
     evPlayRejected: 'Playback was refused',
     evAddonDown: 'Addon did not answer',
     reloadingApp: 'Reloading StremCompat…',
-    sourceGroup: 'Sources',
     preferredQuality: 'Preferred quality',
     qualityAsk: 'Ask',
     whichQuality: 'Which quality?',
@@ -704,7 +713,6 @@ var UI_TEXT = {
     removedFromCw: 'Removido de Continuar assistindo',
     torrentsNeedServer:
       'Esta TV não roda torrents sozinha. Defina um servidor em Configurações > Servidor de streaming.',
-    serverGroup: 'Servidor de streaming',
     serverAddress: 'Endereço',
     serverHere: 'Esta TV',
     serverTitle: 'Endereço do servidor de streaming',
@@ -757,6 +765,7 @@ var UI_TEXT = {
     textLarge: 'Maior',
     loadingTrailer: 'Carregando trailer…',
     trailerUnavailable: 'Trailer indisponível',
+    trailerInYoutube: 'Abrindo o trailer no app do YouTube',
     noTrailer: 'Trailer indisponível',
     continueLabel: 'Continuar',
     continueEpisode: 'Continuar T{0} E{1}',
@@ -816,9 +825,6 @@ var UI_TEXT = {
     modeFull: 'Completo',
     modeFullHint: 'Todas as opções, como até agora.',
     setupLookQuestion: 'Qual visual?',
-    lookModern: 'Moderno',
-    lookModernHint:
-      'Fundos em tela cheia e mais nítidos, mais animação. Não recomendado para webOS 3 ou TVs mais lentas.',
     lookLight: 'Leve',
     lookLightHint: 'Sem efeitos e com imagens menores. Melhor para webOS 3 e TVs com pouca memória.',
     setupSkip: 'Pular',
@@ -827,15 +833,24 @@ var UI_TEXT = {
     uiLookLabel: 'Visual',
     lookStandard: 'Padrão',
     lookStandardHint: 'Recomendado para a maioria das TVs. O visual das versões anteriores.',
-    nuvioNewsTitle: 'Novidade: agora você pode entrar com uma conta Nuvio',
-    keepStremio: 'Continuar com o Stremio',
-    keepStremioHint: 'Sua conta, biblioteca e addons ficam como estão.',
-    useNuvio: 'Entrar com o Nuvio (experimental)',
-    useNuvioHint: 'Sai do Stremio só nesta TV e abre o login do Nuvio.',
     providerNuvio: 'Nuvio (experimental)',
     whoIsWatching: 'Quem está assistindo?',
     profileNumber: 'Perfil {0}',
     profileLocked: 'Protegido por PIN, ainda não disponível no StremCompat',
+    addProfile: 'Adicionar perfil',
+    editProfile: 'Editar perfil',
+    profileName: 'Nome',
+    profileNameNeeded: 'Dê um nome ao perfil',
+    profileNotSaved: 'Não foi possível salvar o perfil no Nuvio',
+    profilesHint: 'OK escolhe · Para baixo edita o perfil',
+    profileEditHint: 'OK no nome abre o teclado · Voltar retorna',
+    hideNewEpisodes: 'Não mostrar em Novos episódios',
+    newEpisodesHidden: 'Esta série não aparece mais em Novos episódios',
+    showHiddenNewEpisodes: 'Mostrar séries ocultas em Novos episódios',
+    newEpisodesShown: '{0} série(s) de volta em Novos episódios',
+    save: 'Salvar',
+    cancel: 'Cancelar',
+    saving: 'Salvando…',
     nuvioProfile: 'Perfil do Nuvio',
     profilesUnavailable: 'Não foi possível ler os perfis do Nuvio',
     becauseYouWatched: 'Porque você assistiu {0}',
@@ -898,7 +913,6 @@ var UI_TEXT = {
     evPlayRejected: 'A reprodução foi recusada',
     evAddonDown: 'O addon não respondeu',
     reloadingApp: 'Recarregando o StremCompat…',
-    sourceGroup: 'Fontes',
     preferredQuality: 'Qualidade preferida',
     qualityAsk: 'Perguntar',
     whichQuality: 'Qual qualidade?',
@@ -1501,7 +1515,8 @@ function applyStaticLanguage() {
     chipDisc: 'navDiscover',
     chipLib: 'navLibrary',
     chipAddons: 'navAddons',
-    chipSet: 'navSettings'
+    chipSet: 'navSettings',
+    chipExit: 'exitLeave'
   };
   for (var nid in navPairs)
     if (Object.prototype.hasOwnProperty.call(navPairs, nid) && $(nid)) {
@@ -1511,6 +1526,7 @@ function applyStaticLanguage() {
   var pairs = {
     sHint: 'searchHint',
     setHint: 'settingsHint',
+    setTitle: 'navSettings',
     discTitle: 'discoverTitle',
     lgAccount: 'accountNote',
     lgNote: 'unofficialNote',
@@ -1812,13 +1828,10 @@ function bgSmall(it) {
   var u = String(bgOf(it) || '');
   return u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1small/');
 }
-/* The width the local server reduces a background to: smaller in the light look, the size
-   of the screen in the modern one, and the package's own otherwise. */
+/* The width the local server reduces a background to: smaller in the light look, the
+   package's own otherwise. */
 function bgWidth() {
-  var look = uiLook();
-  if (look === 'light') return 640;
-  if (look === 'modern') return 1280;
-  return 0;
+  return uiLook() === 'light' ? 640 : 0;
 }
 function bgMid(it) {
   var u = String(bgOf(it) || '');
@@ -3009,7 +3022,7 @@ function goBackScr() {
   }
   if (topNav.active) {
     if (SCR !== 'home') {
-      topNav.idx = 1;
+      topNav.idx = chipTarget.indexOf('home');
       search.reset();
       goScr('home', null, true);
       topNav.active = false;
@@ -3022,20 +3035,29 @@ function goBackScr() {
     return;
   }
   if (SCR === 'home') {
-    topNav.idx = 1;
+    topNav.idx = chipTarget.indexOf('home');
     topNav.focus();
     return;
   }
   if (SCR !== 'home') {
-    topNav.idx = 1;
+    topNav.idx = chipTarget.indexOf('home');
     goScr('home', null, true);
     return;
   }
   cwMenu.confirmExit();
 }
 
-var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chipAddons'), $('chipSet')];
-var chipTarget = ['search', 'home', 'disc', 'lib', 'addons', 'set'];
+var chips = [
+  $('chipProfile'),
+  $('chipSearch'),
+  $('chipHome'),
+  $('chipDisc'),
+  $('chipLib'),
+  $('chipAddons'),
+  $('chipSet'),
+  $('chipExit')
+];
+var chipTarget = ['profile', 'search', 'home', 'disc', 'lib', 'addons', 'set', 'exit'];
 window.__SC_PHASE__('M2');
 function paintChips() {
   if (topNav.active) bodyAdd('navopen');
@@ -3058,7 +3080,7 @@ function resetBoardPosition(board) {
   board._act = null;
 }
 var topNav = {
-  idx: 1,
+  idx: 2,
   active: false,
   paint: function () {
     paintChips();
@@ -3079,6 +3101,13 @@ var topNav = {
   },
   switchTo: function (i) {
     i = Math.max(0, Math.min(chips.length - 1, i));
+    /* the profile and leave items only take the focus: OK opens them */
+    if (chipTarget[i] === 'profile' || chipTarget[i] === 'exit') {
+      this.idx = i;
+      this.active = true;
+      this.paint();
+      return;
+    }
     if (
       i === this.idx &&
       (BOARD_SCR[SCR] || SCR === 'disc' || SCR === 'search' || SCR === 'addons' || SCR === 'set')
@@ -3137,6 +3166,8 @@ var topNav = {
   /* Choosing the section already on screen (OK or a click) goes back to its start; Right
      from the sidebar returns to the row and card that had the focus. */
   chooseSection: function (i) {
+    if (chipTarget[i] === 'profile') return openProfile();
+    if (chipTarget[i] === 'exit') return cwMenu.confirmExit();
     if (i === this.idx && curBoard()) {
       resetBoardPosition(curBoard());
       this.enterContent();
@@ -3145,6 +3176,11 @@ var topNav = {
   /* OK on a section while a title page is open goes to that section, e.g. Home from a
      series opened on Home, instead of staying on the series */
   key: function (k) {
+    var item = chipTarget[this.idx];
+    if ((item === 'profile' || item === 'exit') && (k === 13 || k === 39)) {
+      if (k === 13) return (item === 'exit' ? cwMenu.confirmExit() : openProfile()) || true;
+      this.idx = Math.max(0, chipTarget.indexOf(SCR === 'detail' || SCR === 'sim' ? 'home' : SCR));
+    }
     if (k === 38) this.switchTo(this.idx - 1);
     else if (k === 40) this.switchTo(this.idx + 1);
     else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
@@ -3499,7 +3535,7 @@ var disc = {
     this.genreIdx = 0;
     this.idx = 0;
     this.built = false;
-    topNav.idx = 2;
+    topNav.idx = chipTarget.indexOf('disc');
     goScr('disc');
   },
   focusTop: function () {
@@ -4280,7 +4316,7 @@ function ytPlay(t, backHash) {
     '/yt?v=' + encodeURIComponent(t),
     function (j) {
       if (j && j.url) playUrl(j.url, 'other', '', '', backHash);
-      else toast(tx('trailerUnavailable'));
+      else toast(tx(openYoutubeApp(t) ? 'trailerInYoutube' : 'trailerUnavailable'));
     },
     14000
   );
@@ -4536,6 +4572,13 @@ var cwMenu = {
         self.close();
         refreshCurBoard();
         toast(tx('removedFromCw'));
+      });
+    if (it.fresh)
+      add(ICON.close, tx('hideNewEpisodes'), function () {
+        hideNewEpisodes(it.id);
+        self.close();
+        buildHomeRows(true);
+        toast(tx('newEpisodesHidden'));
       });
     add(
       libHas(it.id) ? ICON.check : ICON.plus,
@@ -4893,10 +4936,23 @@ window.__SC_MERGE_EPISODES__ = mergeEpisodeDetails;
    request at a time in the background after Home is up. The result is stored and shown
    the next time Home is built, so a row never appears under the viewer's focus. */
 var NEW_EPISODES_KEY = 'newEpisodes',
+  NEW_EPISODES_HIDDEN = 'newEpisodesHidden',
   NEW_EPISODES_EVERY = 24 * 60 * 60 * 1000;
+/* the series the viewer took out of the row (card menu) */
+function hiddenNewEpisodes() {
+  return lsJson(NEW_EPISODES_HIDDEN) || [];
+}
 function newEpisodeItems() {
-  var c = lsJson(NEW_EPISODES_KEY);
-  return c && c.items && c.items.length ? c.items : [];
+  var c = lsJson(NEW_EPISODES_KEY),
+    hidden = hiddenNewEpisodes();
+  return ((c && c.items) || []).filter(function (it) {
+    return hidden.indexOf(it.id) < 0;
+  });
+}
+function hideNewEpisodes(id) {
+  var hidden = hiddenNewEpisodes();
+  if (hidden.indexOf(id) < 0) hidden.push(id);
+  lsSet(NEW_EPISODES_HIDDEN, hidden);
 }
 /* the first aired, unwatched regular episode released after the series was last watched */
 function firstNewEpisode(meta, state) {
@@ -4934,7 +4990,7 @@ function checkNewEpisodes(done) {
   for (var i = 0; i < lib.length; i++) {
     var it = lib[i],
       s = it.state || {};
-    if (it.type !== 'series' || !it._id) continue;
+    if (it.type !== 'series' || !it._id || hiddenNewEpisodes().indexOf(it._id) >= 0) continue;
     if (it.removed && !(s.timeOffset > 0) && !(s.watchedEpisodes && s.watchedEpisodes.length)) continue;
     series.push(it);
   }
@@ -4958,7 +5014,7 @@ function checkNewEpisodes(done) {
         found.push({
           id: it._id,
           type: 'series',
-          name: it.name || (m && m.name) || '',
+          name: (m && m.name) || it.name || '',
           poster: it.poster || (m && m.poster) || '',
           background: it.background || (m && m.background) || '',
           videoId: ep.id,
@@ -5803,31 +5859,29 @@ var episodeJump = {
   }
 };
 window.__SC_EPISODE_JUMP__ = episodeJump;
-// The first start of 4.0: how the app is used (simple or complete) and how it looks (modern or
+// The first start of 4.0: how the app is used (simple or complete) and how it looks (standard or
 // light). Both stay in Settings; skipping keeps everything as it was.
-/* the look this TV had before anyone chose: light on the TVs the profile already treats as small */
+/* the look this TV had before anyone chose: light on the TVs the profile already treats as small.
+   The modern look of the 4.0 tests is gone: a TV that chose it has the standard one. */
 var PROFILE_LOW_MEMORY = !!TV_PROFILE.lowMemory;
 function uiLook() {
-  return lsRaw('uiLook', PROFILE_LOW_MEMORY ? 'light' : 'standard');
+  return lsRaw('uiLook', '') === 'light' || (!lsRaw('uiLook', '') && PROFILE_LOW_MEMORY)
+    ? 'light'
+    : 'standard';
 }
 function simpleMode() {
   return lsRaw('uiMode', 'full') === 'simple';
 }
-/* Light: no animations or effects, smaller backgrounds and the small-TV caches.
-   Modern: full-screen, sharper backgrounds that move slowly, and larger focus effects. */
+/* Light: no animations or effects, smaller backgrounds and the small-TV caches. */
 function applyLook() {
-  var look = uiLook(),
-    light = look === 'light';
+  var light = uiLook() === 'light';
   TV_PROFILE.lowMemory = light || PROFILE_LOW_MEMORY;
   if (light) bodyAdd('lowmem');
   else if (!PROFILE_LOW_MEMORY) bodyRemove('lowmem');
   if (light) bodyAdd('lite');
   else bodyRemove('lite');
-  if (look === 'modern') bodyAdd('modern');
-  else bodyRemove('modern');
 }
-/* Draws the panel shared by the first-start questions, the Nuvio profiles and the interface
-   languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
+/* Draws the panel shared by the first-start questions and the interface languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
 function drawChoices(title, rows, hint) {
   var host = $('suOptions'),
     els = [];
@@ -5898,19 +5952,7 @@ var setupPanel = {
     this.build();
   },
   questions: function () {
-    var list = [];
-    /* signed in with Stremio: first, that a Nuvio account can be used now */
-    if (!isNuvioAccount())
-      list.push({
-        key: 'accountChoice',
-        title: tx('nuvioNewsTitle'),
-        options: [
-          ['stremio', tx('keepStremio'), tx('keepStremioHint')],
-          ['nuvio', tx('useNuvio'), tx('useNuvioHint')]
-        ],
-        current: 'stremio'
-      });
-    return list.concat([
+    return [
       {
         key: 'uiMode',
         title: tx('setupUseQuestion'),
@@ -5925,12 +5967,11 @@ var setupPanel = {
         title: tx('setupLookQuestion'),
         options: [
           ['standard', tx('lookStandard'), tx('lookStandardHint')],
-          ['modern', tx('lookModern'), tx('lookModernHint')],
           ['light', tx('lookLight'), tx('lookLightHint')]
         ],
         current: uiLook()
       }
-    ]);
+    ];
   },
   build: function () {
     var q = this.questions()[this.step],
@@ -5948,18 +5989,6 @@ var setupPanel = {
   choose: function (i) {
     var q = this.questions()[this.step];
     if (i >= q.options.length) return this.close();
-    /* Nuvio: this TV leaves the Stremio account and the sign-in opens on Nuvio; the other
-       questions come after signing in */
-    if (q.key === 'accountChoice') {
-      if (q.options[i][0] === 'nuvio') {
-        this.open = false;
-        $('setupPanel').style.display = 'none';
-        lsRawSet('loginProvider', 'nuvio');
-        return settings.logout();
-      }
-      this.step++;
-      return this.build();
-    }
     lsRawSet(q.key, q.options[i][0]);
     if (q.key === 'uiLook') applyLook();
     this.step++;
@@ -5978,17 +6007,104 @@ var setupPanel = {
     setF(this.els, this.idx);
   }
 };
-// "Who is watching?": the profiles of a Nuvio account, shown after signing in and from Settings.
-// It uses the same panel as the first-start questions (setup.js).
+// "Who is watching?": the profiles of a Nuvio account on a screen of their own, at every start
+// (the profile chosen last has the focus), after signing in and from the profile at the top of
+// the side menu. A profile can be added there, and its name, colour and avatar changed.
+
+/* A round face: the avatar when it loads, until then (or without one) the initial on the
+   profile's colour. Nuvio gives both; a Stremio account has its email's initial. */
+function drawFace(el, face) {
+  el.innerHTML = '';
+  el.style.backgroundColor = face.color || '#0F766E';
+  el.textContent = (face.name || '?').charAt(0).toUpperCase();
+  if (!face.avatar) return;
+  var img = new Image();
+  img.onload = function () {
+    el.textContent = '';
+    el.appendChild(img);
+  };
+  img.src = face.avatar;
+}
+/* the profile in use: Nuvio's as chosen (kept by profilePanel.use), or the Stremio account */
+function currentFace() {
+  var u = user() || {};
+  if (isNuvioAccount()) return lsJson('profileFace') || { name: u.email || '', color: '#1E88E5', avatar: '' };
+  return { name: u.email || tx('connectedAccount'), color: '#0F766E', avatar: '' };
+}
+function paintProfileChip() {
+  var face = currentFace();
+  drawFace($('navFace'), face);
+  $('navName').textContent = face.name;
+}
+/* After choosing, the app starts again with that profile; the screen of profiles stays up until
+   then, and the new start does not ask again. */
+function reloadWithProfile() {
+  try {
+    sessionStorage.setItem('profileChosen', '1');
+  } catch (e) {}
+  location.reload();
+}
+/* At every start a Nuvio account asks who is watching, with the last profile chosen in focus,
+   before Home is built; one profile alone is used without asking. then() builds Home. */
+function startProfiles(then) {
+  var chosen = false;
+  try {
+    chosen = sessionStorage.getItem('profileChosen') === '1';
+    sessionStorage.removeItem('profileChosen');
+  } catch (e) {}
+  paintProfileChip();
+  if (chosen) return then();
+  profilePanel.show(authKey(), function (changed) {
+    if (changed) return reloadWithProfile();
+    /* the opening screen comes back while Home is built, as on any start */
+    $('boot').style.display = '';
+    profilePanel.close();
+    paintProfileChip();
+    then();
+  });
+}
+/* OK on the profile item: Nuvio switches profiles; a Stremio account has one, so it opens its
+   Account settings */
+function openProfile() {
+  if (!isNuvioAccount()) {
+    topNav.switchTo(chipTarget.indexOf('set'));
+    return settings.openCategory('account');
+  }
+  profilePanel.show(
+    authKey(),
+    function (changed) {
+      if (changed) return reloadWithProfile();
+      profilePanel.close();
+      topNav.focus();
+    },
+    function () {
+      topNav.focus();
+    }
+  );
+}
+/* the colours offered for a profile, Nuvio's blue first */
+var PROFILE_COLORS = ['#1E88E5', '#E53935', '#43A047', '#FB8C00', '#8E24AA', '#00ACC1', '#F4511E', '#6D4C41'];
+var MAX_PROFILES = 6;
+
 var profilePanel = {
   open: false,
+  mode: 'pick',
+  zone: 'row',
   idx: 0,
   els: [],
   list: [],
   account: '',
   done: null,
   cancel: null,
-  /* done() runs once a profile is in use; cancel(), when given, lets Back close without choosing */
+  /* the profile being changed or made: { index, name, color, avatar } */
+  draft: null,
+  avatars: [],
+  colorIdx: 0,
+  avatarIdx: 0,
+  btnIdx: 0,
+  /* done(changed) runs once a profile is in use, changed when it is another one than before; the
+     screen stays up for it to close or start the app again. cancel(), when given, lets Back close
+     without choosing */
   show: function (key, done, cancel) {
     var self = this;
     this.account = key;
@@ -6000,71 +6116,276 @@ var profilePanel = {
         var list = (j && j.profiles) || [];
         if (!list.length) {
           toast(tx('profilesUnavailable'));
-          if (!cancel) done();
+          if (!cancel) done(false);
           return;
         }
         if (list.length === 1 && !list[0].locked && !cancel) return self.use(list[0]);
         self.list = list;
-        self.build();
+        self.buildPick();
       },
       20000
     );
   },
-  build: function () {
-    var rows = [];
+  /* ---------- choosing ---------- */
+  buildPick: function () {
+    var row = $('pfRow');
+    row.innerHTML = '';
+    this.mode = 'pick';
+    this.zone = 'row';
+    this.els = [];
     this.idx = 0;
+    $('pfScreen').style.display = 'block';
+    $('boot').style.display = 'none';
+    $('pfPick').style.display = '';
+    $('pfEditor').style.display = 'none';
+    $('pfTitle').textContent = tx('whoIsWatching');
+    $('pfEditBtn').textContent = tx('editProfile');
+    $('pfHint').textContent = tx('profilesHint');
     for (var i = 0; i < this.list.length; i++) {
       var p = this.list[i];
-      rows.push({
-        name: p.name || tx('profileNumber', p.index),
-        help: p.locked ? tx('profileLocked') : '',
-        cls: p.locked ? 'locked' : ''
-      });
+      this.addCard(p.name || tx('profileNumber', p.index), p, p.locked ? tx('profileLocked') : '');
       if (p.current) this.idx = i;
     }
-    this.els = drawChoices(tx('whoIsWatching'), rows);
+    if (this.list.length < MAX_PROFILES) this.addCard(tx('addProfile'), null, '');
     this.open = true;
-    setF(this.els, this.idx);
+    this.paint();
+  },
+  /* one card: the face and the name; null for "Add profile" */
+  addCard: function (label, p, note) {
+    var card = document.createElement('div'),
+      face = document.createElement('div'),
+      name = document.createElement('div');
+    card.className = 'pf' + (p && p.locked ? ' locked' : '') + (p ? '' : ' add');
+    face.className = 'pfav';
+    if (p) drawFace(face, p);
+    else face.textContent = '+';
+    name.className = 'pfname';
+    name.textContent = label;
+    card.appendChild(face);
+    card.appendChild(name);
+    if (note) {
+      var lock = document.createElement('div');
+      lock.className = 'pflock';
+      lock.textContent = note;
+      card.appendChild(lock);
+    }
+    $('pfRow').appendChild(card);
+    this.els.push(card);
   },
   choose: function (i) {
     var p = this.list[i];
-    if (!p) return;
+    if (!p) return this.edit(null);
     if (p.locked) return toast(tx('profileLocked'));
     this.use(p);
   },
   /* the server switches the session to it; the account's user id names the profile's library */
   use: function (p) {
     var self = this;
+    lsSet('profileFace', { name: p.name, color: p.color, avatar: p.avatar });
+    this.open = false;
+    if (p.current) return this.done(false);
     xhrJson(
       '/nuvioprofile?key=' + encodeURIComponent(this.account) + '&index=' + p.index,
       function (j) {
-        if (!j || !j.ok) return toast(tx('profilesUnavailable'));
+        if (!j || !j.ok) {
+          self.open = true;
+          return toast(tx('profilesUnavailable'));
+        }
         postJson(API + '/api/getUser', { authKey: self.account }, function (u) {
           if (u && u.result) lsSet('user', u.result);
           lsRawSet('addons', '');
-          self.close();
-          self.done();
+          self.done(true);
         });
       },
       20000
     );
   },
+  /* ---------- adding or changing a profile ---------- */
+  edit: function (p) {
+    var self = this;
+    this.mode = 'edit';
+    this.zone = 'name';
+    this.btnIdx = 0;
+    this.draft = p
+      ? { index: p.index, name: p.name, color: p.color, avatar: p.avatar || '' }
+      : { index: 0, name: '', color: PROFILE_COLORS[this.list.length % PROFILE_COLORS.length], avatar: '' };
+    $('pfPick').style.display = 'none';
+    $('pfEditor').style.display = '';
+    $('pfTitle').textContent = tx(p ? 'editProfile' : 'addProfile');
+    $('pfHint').textContent = tx('profileEditHint');
+    $('pfEdName').value = this.draft.name;
+    $('pfEdName').placeholder = tx('profileName');
+    $('pfSave').textContent = tx('save');
+    $('pfCancel').textContent = tx('cancel');
+    var colors = $('pfEdColors');
+    colors.innerHTML = '';
+    this.colorEls = [];
+    this.colorIdx = Math.max(0, PROFILE_COLORS.indexOf(String(this.draft.color).toUpperCase()));
+    for (var c = 0; c < PROFILE_COLORS.length; c++) {
+      var dot = document.createElement('div');
+      dot.className = 'pfcolor';
+      dot.style.backgroundColor = PROFILE_COLORS[c];
+      colors.appendChild(dot);
+      this.colorEls.push(dot);
+    }
+    this.drawAvatars([]);
+    xhrJson(
+      '/nuvioavatars?key=' + encodeURIComponent(this.account),
+      function (j) {
+        if (self.mode === 'edit') self.drawAvatars((j && j.avatars) || []);
+      },
+      20000
+    );
+    this.paint();
+  },
+  /* the avatars to pick from, the initial alone first */
+  drawAvatars: function (list) {
+    var host = $('pfEdAvatars');
+    host.innerHTML = '';
+    this.avatars = [{ id: '', url: '' }].concat(list);
+    this.avatarEls = [];
+    this.avatarIdx = 0;
+    for (var i = 0; i < this.avatars.length; i++) {
+      var a = document.createElement('div');
+      a.className = 'pfpick';
+      if (this.avatars[i].url) {
+        var img = new Image();
+        img.src = this.avatars[i].url;
+        a.appendChild(img);
+      } else a.textContent = (this.draft.name || '?').charAt(0).toUpperCase();
+      host.appendChild(a);
+      this.avatarEls.push(a);
+      if (this.avatars[i].url && this.avatars[i].url === this.draft.avatar) this.avatarIdx = i;
+    }
+    this.paint();
+  },
+  save: function () {
+    var self = this,
+      d = this.draft,
+      name = String($('pfEdName').value || '').trim(),
+      avatar = this.avatars[this.avatarIdx] || { id: '' };
+    if (!name) {
+      this.zone = 'name';
+      this.paint();
+      return toast(tx('profileNameNeeded'));
+    }
+    toast(tx('saving'));
+    xhrJson(
+      '/nuvioprofilesave?key=' +
+        encodeURIComponent(this.account) +
+        '&index=' +
+        (d.index || '') +
+        '&name=' +
+        encodeURIComponent(name) +
+        '&color=' +
+        encodeURIComponent(PROFILE_COLORS[this.colorIdx]) +
+        '&avatar=' +
+        encodeURIComponent(avatar.id),
+      function (j) {
+        if (!j || !j.ok) return toast(tx('profileNotSaved'));
+        /* the profile in use keeps its face in the side menu up to date */
+        for (var i = 0; i < self.list.length; i++)
+          if (self.list[i].current && self.list[i].index === j.index)
+            lsSet('profileFace', { name: name, color: PROFILE_COLORS[self.colorIdx], avatar: avatar.url });
+        self.show(self.account, self.done, self.cancel);
+      },
+      20000
+    );
+  },
+  /* the face of the draft follows the name, colour and avatar chosen */
+  paintDraft: function () {
+    var avatar = this.avatars[this.avatarIdx] || {};
+    drawFace($('pfEdFace'), {
+      name: $('pfEdName').value || '?',
+      color: PROFILE_COLORS[this.colorIdx],
+      avatar: avatar.url || ''
+    });
+  },
+  /* ---------- drawing the focus ---------- */
+  paint: function () {
+    if (this.mode === 'pick') {
+      setF(this.els, this.zone === 'row' ? this.idx : -1);
+      var canEdit = !!this.list[this.idx];
+      $('pfEditBtn').style.visibility = canEdit ? '' : 'hidden';
+      $('pfEditBtn').className = this.zone === 'edit' ? 'f' : '';
+      return;
+    }
+    $('pfEdName').className = this.zone === 'name' ? 'f' : '';
+    for (var c = 0; c < this.colorEls.length; c++)
+      this.colorEls[c].className =
+        'pfcolor' +
+        (c === this.colorIdx ? ' on' : '') +
+        (this.zone === 'colors' && c === this.colorIdx ? ' f' : '');
+    for (var a = 0; a < this.avatarEls.length; a++)
+      this.avatarEls[a].className =
+        'pfpick' +
+        (a === this.avatarIdx ? ' on' : '') +
+        (this.zone === 'avatars' && a === this.avatarIdx ? ' f' : '');
+    /* the avatar strip slides so the chosen one stays in view */
+    var step = this.avatarEls[1] ? this.avatarEls[1].offsetLeft - this.avatarEls[0].offsetLeft : 0,
+      off = Math.max(0, this.avatarIdx - 4) * step;
+    $('pfEdAvatars').style.webkitTransform = 'translateX(-' + off + 'px)';
+    $('pfEdAvatars').style.transform = 'translateX(-' + off + 'px)';
+    setF([$('pfSave'), $('pfCancel')], this.zone === 'btns' ? this.btnIdx : -1);
+    this.paintDraft();
+  },
   close: function () {
     this.open = false;
-    $('setupPanel').style.display = 'none';
+    $('pfEdName').blur();
+    $('pfScreen').style.display = 'none';
   },
   back: function () {
+    if (this.mode === 'edit') return this.buildPick();
     if (!this.cancel) return;
     this.close();
     this.cancel();
   },
+  /* the name box is typed in with the TV's keyboard; OK or Back leaves it */
+  typing: function () {
+    return document.activeElement === $('pfEdName');
+  },
   key: function (k) {
-    if (k === 38) this.idx = Math.max(0, this.idx - 1);
-    else if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
-    else if (k === 13) return this.choose(this.idx);
-    setF(this.els, this.idx);
+    if (this.mode === 'pick') return this.keyPick(k);
+    var zones = ['name', 'colors', 'avatars', 'btns'],
+      z = zones.indexOf(this.zone);
+    if (k === 40 && z < zones.length - 1) this.zone = zones[z + 1];
+    else if (k === 38 && z > 0) this.zone = zones[z - 1];
+    else if (k === 37 || k === 39) {
+      var d = k === 39 ? 1 : -1;
+      if (this.zone === 'colors')
+        this.colorIdx = Math.max(0, Math.min(this.colorEls.length - 1, this.colorIdx + d));
+      else if (this.zone === 'avatars')
+        this.avatarIdx = Math.max(0, Math.min(this.avatarEls.length - 1, this.avatarIdx + d));
+      else if (this.zone === 'btns') this.btnIdx = d > 0 ? 1 : 0;
+    } else if (k === 13) {
+      if (this.zone === 'name') return $('pfEdName').focus();
+      if (this.zone === 'btns') return this.btnIdx ? this.buildPick() : this.save();
+      this.zone = zones[z + 1];
+    }
+    this.paint();
+  },
+  keyPick: function (k) {
+    if (this.zone === 'row') {
+      if (k === 37) this.idx = Math.max(0, this.idx - 1);
+      else if (k === 39) this.idx = Math.min(this.els.length - 1, this.idx + 1);
+      else if (k === 40 && this.list[this.idx]) this.zone = 'edit';
+      else if (k === 13) return this.choose(this.idx);
+    } else if (k === 38) this.zone = 'row';
+    else if (k === 13) return this.edit(this.list[this.idx]);
+    this.paint();
   }
 };
+on($('pfEdName'), 'keydown', function (e) {
+  if (e.keyCode !== 13 && !isRemoteBack(e.keyCode)) return;
+  e.preventDefault();
+  e.stopPropagation();
+  $('pfEdName').blur();
+  profilePanel.zone = 'colors';
+  profilePanel.paint();
+});
+on($('pfEdName'), 'input', function () {
+  profilePanel.paintDraft();
+});
 // Source picker overlay.
 /* ================= STREAMS OVERLAY ================= */
 var streamsUI = {
@@ -7132,10 +7453,26 @@ function diagStreamingState(j) {
     cache = f.cacheMb != null && f.cacheCapMb ? '  ·  ' + tx('diagCache', f.cacheMb, f.cacheCapMb) : '';
   return tx(f.running ? 'diagRunning' : 'diagEngineReady') + where + cache;
 }
+/* an option that is only on or off is drawn as a switch, and OK flips it */
+function isSwitch(def) {
+  return (
+    !!def.opts &&
+    def.opts.length === 2 &&
+    /^(true|false)$/.test(def.opts[0][0]) &&
+    /^(true|false)$/.test(def.opts[1][0])
+  );
+}
+/* Settings in two columns, as the big streaming apps lay them out: the groups on the left and
+   the options of the chosen group on the right. Moving through the groups shows their options
+   at once; Right or OK goes into them and Left comes back. */
 var settings = {
   idx: 0,
   els: [],
   defs: [],
+  cats: [],
+  catEls: [],
+  catIdx: 0,
+  zone: 'cats',
   editing: false,
   editOriginal: null,
   enter: function (preserveEdit) {
@@ -7155,7 +7492,7 @@ var settings = {
       audioOpts = langOpts.slice(1),
       backupOpts = [['', tx('none')]].concat(audioOpts);
     this.defs = [
-      { head: tx('sourceGroup') },
+      { head: tx('playbackGroup'), id: 'playback' },
       {
         k: 'preferredSourceQuality',
         lb: tx('preferredQuality'),
@@ -7183,7 +7520,6 @@ var settings = {
         ],
         d: 'Auto'
       },
-      { head: tx('playbackGroup') },
       {
         k: 'bingeWatch',
         lb: tx('nextEpisode'),
@@ -7214,7 +7550,7 @@ var settings = {
         ],
         d: 'false'
       },
-      { head: tx('subtitlesGroup') },
+      { head: tx('subtitlesGroup'), id: 'subtitles' },
       { k: 'subsLang', lb: tx('defaultLanguage'), opts: langOpts, d: defaultMediaLanguage() },
       { k: 'subsLang2', lb: tx('backupLanguage'), opts: backupOpts, d: '' },
       {
@@ -7278,7 +7614,7 @@ var settings = {
         ],
         d: 'server'
       },
-      { head: tx('audioGroup') },
+      { head: tx('audioGroup'), id: 'audio' },
       {
         k: 'enableDefaultAudioTrack',
         lb: tx('autoAudio'),
@@ -7290,7 +7626,7 @@ var settings = {
       },
       { k: 'defaultAudioTrack', lb: tx('defaultAudio'), opts: audioOpts, d: defaultMediaLanguage() },
       { k: 'defaultAudioTrack2', lb: tx('backupLanguage'), opts: backupOpts, d: '' },
-      { head: tx('interfaceGroup') },
+      { head: tx('interfaceGroup'), id: 'interface' },
       {
         k: UI_LANG_KEY,
         lb: tx('interfaceLanguage'),
@@ -7313,7 +7649,6 @@ var settings = {
         lb: tx('uiLookLabel'),
         opts: [
           ['standard', tx('lookStandard')],
-          ['modern', tx('lookModern')],
           ['light', tx('lookLight')]
         ],
         d: uiLook()
@@ -7336,7 +7671,10 @@ var settings = {
         ],
         d: 'false'
       },
-      { head: tx('historyGroup') },
+      { head: tx('accountGroup'), id: 'account' },
+      { k: '__profile', lb: tx('nuvioProfile'), action: true },
+      { k: '__sync', lb: tx('syncAddons'), action: true },
+      { head: tx('historyGroup'), id: 'history' },
       {
         k: 'noHistory',
         lb: tx('noHistory'),
@@ -7348,18 +7686,15 @@ var settings = {
       },
       { k: '__clearSearches', lb: tx('clearSearches'), action: true },
       { k: '__clearCw', lb: tx('clearCw'), action: true },
+      { k: '__showNew', lb: tx('showHiddenNewEpisodes'), action: true },
       { k: '__clearCache', lb: tx('clearTorrentCache'), action: true },
-      { head: tx('serverGroup') },
+      { head: tx('maintenanceGroup'), id: 'maintenance' },
       { k: '__server', lb: tx('serverAddress'), action: true, info: true },
-      { head: tx('addonsGroup') },
-      { k: '__sync', lb: tx('syncAddons'), action: true },
-      { head: tx('accountGroup') },
-      { k: '__profile', lb: tx('nuvioProfile'), action: true },
-      { k: '__logout', lb: tx('signOut'), action: true },
-      { head: tx('maintenanceGroup') },
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__speed', lb: tx('testConnection'), action: true },
-      { k: '__reload', lb: tx('reloadApp'), action: true }
+      { k: '__reload', lb: tx('reloadApp'), action: true },
+      { head: tx('signOut'), id: 'logout' },
+      { k: '__logout', lb: tx('signOut'), action: true }
     ];
     /* profiles exist only on Nuvio accounts */
     if (!isNuvioAccount())
@@ -7369,7 +7704,7 @@ var settings = {
     /* Simple keeps what most people change: languages, subtitle size, the look and the account */
     if (simpleMode()) {
       var essential =
-        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|preferredSourceQuality|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
       this.defs = this.defs.filter(function (d) {
         return d.head || essential.test(d.k || '');
       });
@@ -7383,37 +7718,106 @@ var settings = {
       for (var nf = this.defs.length - 1; nf >= 0; nf--)
         if (/^(scrubPreview|embSubsMode|bgTrailer|__clearCache)$/.test(this.defs[nf].k || ''))
           this.defs.splice(nf, 1);
-    var host = $('setItems');
+    var oldCats = this.cats;
+    this.cats = [];
+    for (var i = 0; i < this.defs.length; i++) {
+      var def = this.defs[i];
+      if (def.head) this.cats.push({ name: def.head, id: def.id || '', items: [] });
+      else if (this.cats.length) this.cats[this.cats.length - 1].items.push(def);
+    }
+    this.cats = this.cats.filter(function (c) {
+      return c.items.length;
+    });
+    var keepCat = preserveEdit && oldCats.length ? oldCats[this.catIdx].id : '',
+      keepKey = preserveEdit && this.fdefs && this.fdefs[this.idx] ? this.fdefs[this.idx].k : '';
+    var catHost = $('setCats');
+    catHost.innerHTML = '';
+    this.catEls = [];
+    for (var c = 0; c < this.cats.length; c++) {
+      var el = document.createElement('div');
+      el.className = 'setcat' + (this.cats[c].id === 'logout' ? ' out' : '');
+      el.textContent = this.cats[c].name;
+      if (this.cats[c].id === keepCat) this.catIdx = c;
+      catHost.appendChild(el);
+      this.catEls.push(el);
+    }
+    if (!preserveEdit) {
+      this.catIdx = 0;
+      this.zone = 'cats';
+    }
+    this.catIdx = Math.min(this.catIdx, this.cats.length - 1);
+    this.showCat();
+    for (var f = 0; f < this.fdefs.length; f++) if (this.fdefs[f].k === keepKey) this.idx = f;
+    this.paint();
+    this.showServerAddress();
+    animIn($('setWrap'));
+  },
+  /* the options of the chosen group, as cards; the account card heads the Account group */
+  showCat: function () {
+    var cat = this.cats[this.catIdx],
+      host = $('setItems');
     host.innerHTML = '';
     this.els = [];
     this.fdefs = [];
     this.idx = 0;
-    for (var i = 0; i < this.defs.length; i++) {
-      var def = this.defs[i];
-      if (def.head) {
-        var hd = document.createElement('div');
-        hd.className = 'setgrp';
-        hd.textContent = def.head;
-        host.appendChild(hd);
-        continue;
-      }
-      var d = document.createElement('div');
-      d.className = 'set' + (def.action ? ' act' : '') + (def.info ? ' info' : '');
-      var l = document.createElement('div');
+    $('setAcct').style.display = cat.id === 'account' || cat.id === 'logout' ? '' : 'none';
+    var hd = document.createElement('div');
+    hd.className = 'setgrp';
+    hd.textContent = cat.name;
+    host.appendChild(hd);
+    for (var i = 0; i < cat.items.length; i++) {
+      var def = cat.items[i],
+        d = document.createElement('div'),
+        l = document.createElement('div'),
+        v = document.createElement('div');
+      d.className =
+        'set' + (def.action ? ' act' : '') + (def.info ? ' info' : '') + (def.k === '__logout' ? ' out' : '');
       l.className = 'lb';
       l.textContent = def.lb;
       d.appendChild(l);
-      var v = document.createElement('div');
       v.className = 'vl';
-      v.textContent = def.action ? '' : this.valLabel(def);
       d.appendChild(v);
       host.appendChild(d);
       this.els.push(d);
       this.fdefs.push(def);
+      this.paintValue(i);
     }
-    this.showServerAddress();
+    this.paintServerAddress();
     this.paint();
-    animIn($('setWrap'));
+  },
+  /* a switch for on and off, otherwise the chosen value */
+  paintValue: function (i) {
+    var def = this.fdefs[i],
+      v = this.els[i] && this.els[i].getElementsByClassName('vl')[0];
+    if (!v || def.action) return;
+    if (isSwitch(def)) {
+      v.className = 'vl sw' + (lsRaw(def.k, def.d) === 'true' ? ' on' : '');
+      v.textContent = '';
+    } else v.textContent = this.valLabel(def);
+  },
+  /* Account from the profile item of the side menu */
+  openCategory: function (id) {
+    for (var c = 0; c < this.cats.length; c++)
+      if (this.cats[c].id === id) {
+        this.catIdx = c;
+        this.showCat();
+        this.zone = 'items';
+        topNav.active = false;
+        topNav.paint();
+        this.paint();
+      }
+  },
+  /* OK on an option: an action runs, a switch flips, anything else starts editing */
+  activate: function () {
+    var def = this.fdefs[this.idx];
+    if (!def) return;
+    if (def.action) {
+      if (def.k === '__sync') this.syncNow();
+      else if (def.k === '__reload') this.reloadNow();
+      else this.runAction(def.k);
+    } else if (isSwitch(def)) {
+      if (!this.cycle(def, 1)) this.paintValue(this.idx);
+    } else this.startEdit();
   },
   /* the value of the address row comes from the local server */
   serverAddress: '',
@@ -7429,6 +7833,7 @@ var settings = {
     );
   },
   paintServerAddress: function () {
+    if (!this.fdefs) return;
     for (var i = 0; i < this.fdefs.length; i++)
       if (this.fdefs[i].k === '__server')
         this.els[i].getElementsByClassName('vl')[0].textContent =
@@ -7456,14 +7861,7 @@ var settings = {
         self.paintServerAddress();
       });
     } else if (k === '__diag') this.showDiag();
-    else if (k === '__profile')
-      profilePanel.show(
-        authKey(),
-        function () {
-          location.reload();
-        },
-        function () {}
-      );
+    else if (k === '__profile') openProfile();
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
       clearRecentSearches();
@@ -7490,6 +7888,10 @@ var settings = {
         },
         8000
       );
+    } else if (k === '__showNew') {
+      var hiddenCount = hiddenNewEpisodes().length;
+      lsSet(NEW_EPISODES_HIDDEN, []);
+      toast(hiddenCount ? tx('newEpisodesShown', hiddenCount) : tx('nothingToClear'));
     } else if (k === '__clearCw') {
       if (!this.confirming(k)) return;
       var n = clearContinueWatching();
@@ -7581,19 +7983,9 @@ var settings = {
     lsRawSet(def.k, def.opts[ci][0]);
     if (def.k === 'uiTextSize') applyTextSize();
     if (def.k === 'uiLook') applyLook();
-    if (def.k === 'uiMode') {
-      var keepMode = this.idx;
+    if (def.k === 'uiMode' || def.k === UI_LANG_KEY) {
+      if (def.k === UI_LANG_KEY) setUILanguage(def.opts[ci][0]);
       this.enter(true);
-      this.idx = Math.min(keepMode, this.els.length - 1);
-      this.paint();
-      return true;
-    }
-    if (def.k === UI_LANG_KEY) {
-      var keep = this.idx;
-      setUILanguage(def.opts[ci][0]);
-      this.enter(true);
-      this.idx = Math.min(keep, this.els.length - 1);
-      this.paint();
       return true;
     }
     if (def.k === 'bingeWatch') lsRawSet('enableNextVideo', def.opts[ci][0]);
@@ -7621,9 +8013,8 @@ var settings = {
       lsRawSet(old.k, old.v);
       if (old.k === UI_LANG_KEY) {
         setUILanguage(old.v);
-        this.enter();
-        this.idx = Math.min(idx, this.els.length - 1);
-      }
+        this.enter(true);
+      } else this.paintValue(idx);
     }
     this.paint();
   },
@@ -7637,6 +8028,8 @@ var settings = {
       if (
         k === 'authKey' ||
         k === 'user' ||
+        k === 'profileFace' ||
+        k === 'newEpisodes' ||
         k === 'addons' ||
         k === 'addonsLastModified' ||
         k === 'blib_migrated' ||
@@ -7660,11 +8053,17 @@ var settings = {
   focusTop: function () {
     this.editing = false;
     this.editOriginal = null;
-    this.idx = 0;
+    this.zone = 'cats';
     this.paint();
   },
   paint: function () {
-    setF(this.els, topNav.active ? -1 : this.idx);
+    var onCats = !topNav.active && this.zone === 'cats';
+    for (var g = 0; g < this.catEls.length; g++)
+      this.catEls[g].className =
+        'setcat' +
+        (this.cats[g].id === 'logout' ? ' out' : '') +
+        (g === this.catIdx ? (onCats ? ' f' : ' cur') : '');
+    setF(this.els, topNav.active || this.zone !== 'items' ? -1 : this.idx);
     for (var c = 0; c < this.els.length; c++)
       this.els[c].className =
         this.els[c].className.replace(/ ?\bediting\b/, '') +
@@ -7673,8 +8072,8 @@ var settings = {
     var el = this.els[this.idx],
       y = 0,
       /* the focus stops at this height of the screen, whatever its resolution */
-      stop = Math.round($('setWrap').clientHeight * 0.63);
-    if (el && el.offsetTop > stop) y = el.offsetTop - stop;
+      stop = Math.round($('setPane').clientHeight * 0.63);
+    if (this.zone === 'items' && el && el.offsetTop > stop) y = el.offsetTop - stop;
     $('setInner').style.transform = 'translateY(-' + y + 'px)';
     $('setInner').style.webkitTransform = 'translateY(-' + y + 'px)';
   },
@@ -7682,27 +8081,31 @@ var settings = {
     var def = this.fdefs[this.idx];
     if (this.editing) {
       if ((k === 37 || k === 39) && def && !def.action) {
-        var changed = this.cycle(def, k === 39 ? 1 : -1);
-        if (!changed && this.els[this.idx])
-          this.els[this.idx].getElementsByClassName('vl')[0].textContent = this.valLabel(def);
+        if (!this.cycle(def, k === 39 ? 1 : -1)) this.paintValue(this.idx);
       } else if (k === 13) this.finishEdit();
+      this.paint();
+      return true;
+    }
+    if (this.zone === 'cats') {
+      if (k === 40 || k === 38) {
+        var next = Math.max(0, Math.min(this.cats.length - 1, this.catIdx + (k === 40 ? 1 : -1)));
+        if (next !== this.catIdx) {
+          this.catIdx = next;
+          this.showCat();
+        }
+      } else if (k === 37) {
+        topNav.focus();
+        return true;
+      } else if (k === 39 || k === 13) this.zone = 'items';
       this.paint();
       return true;
     }
     if (k === 40) this.idx = Math.min(this.els.length - 1, this.idx + 1);
     else if (k === 38) {
       if (this.idx > 0) this.idx--;
-    } else if (k === 37) {
-      topNav.focus();
-      return true;
-    } else if (k === 13 && def) {
-      if (def.action) {
-        if (def.k === '__sync') this.syncNow();
-        else if (def.k === '__reload') this.reloadNow();
-        else this.runAction(def.k);
-        return true;
-      }
-      this.startEdit();
+    } else if (k === 37) this.zone = 'cats';
+    else if (k === 13 && def) {
+      this.activate();
       return true;
     }
     this.paint();
@@ -8099,10 +8502,7 @@ var login = {
     lsSet('authKey', ak);
     this.setStatus('accountConnected');
     /* a Nuvio account first asks whose profile this is */
-    if (isNuvioAccount())
-      return profilePanel.show(ak, function () {
-        location.reload();
-      });
+    if (isNuvioAccount()) return profilePanel.show(ak, reloadWithProfile);
     postJson(API + '/api/getUser', { authKey: ak }, function (j) {
       if (j && j.result) lsSet('user', j.result);
       syncAddons(function () {
@@ -8226,10 +8626,11 @@ function pointerUI(target, activate) {
     return true;
   }
   if (profilePanel.open) {
-    i = pointerIndex(target, profilePanel.els);
+    i = profilePanel.mode === 'pick' ? pointerIndex(target, profilePanel.els) : -1;
     if (i >= 0) {
+      profilePanel.zone = 'row';
       profilePanel.idx = i;
-      setF(profilePanel.els, i);
+      profilePanel.paint();
       if (activate) profilePanel.choose(i);
     }
     return true;
@@ -8423,24 +8824,31 @@ function pointerUI(target, activate) {
       return true;
     }
   }
+  if (SCR === 'set' && !settings.editing) {
+    i = pointerIndex(target, settings.catEls);
+    if (i >= 0) {
+      if (i !== settings.catIdx) {
+        settings.catIdx = i;
+        settings.showCat();
+      }
+      settings.zone = 'cats';
+      settings.paint();
+      return true;
+    }
+  }
   if (SCR === 'set') {
     i = pointerIndex(target, settings.els);
     if (i >= 0) {
       if (!settings.editing || settings.idx === i) {
         settings.idx = i;
+        settings.zone = 'items';
         settings.paint();
       }
       if (activate) {
         def = settings.fdefs[i];
-        if (def.action) {
-          if (def.k === '__sync') settings.syncNow();
-          else if (def.k === '__reload') settings.reloadNow();
-          else settings.runAction(def.k);
-        } else if (!settings.editing) settings.startEdit();
+        if (!settings.editing) settings.activate();
         else if (settings.idx === i) {
-          var rerendered = settings.cycle(def, 1);
-          if (!rerendered)
-            settings.els[settings.idx].getElementsByClassName('vl')[0].textContent = settings.valLabel(def);
+          if (!settings.cycle(def, 1)) settings.paintValue(i);
           settings.paint();
         }
       }
@@ -8610,7 +9018,7 @@ on(
     idleTouch();
     noteKey();
     var a = document.activeElement;
-    if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass'))
+    if (a === $('sBox') || a === $('lgEmail') || a === $('lgPass') || a === $('pfEdName'))
       return; /* typing: inputs manage themselves */
     if (serverPanel.open) {
       e.preventDefault();
@@ -8774,6 +9182,12 @@ function boot() {
     if (TV_PROFILE.lowMemory) bodyAdd('lowmem');
     applyLook();
     applyTextSize();
+    /* 4.0 keeps accounts differently: every TV signs in again once, on its first start of this
+       version, and never again after it */
+    if (!lsRaw('signedInFor40', '')) {
+      lsRawSet('signedInFor40', '1');
+      if (user() || authKey()) return settings.logout();
+    }
     if (!user()) {
       window.__SC_PHASE__('L0');
       showScr('login');
@@ -8783,6 +9197,29 @@ function boot() {
       $('boot').style.display = 'none';
       return;
     }
+    /* a Nuvio account says who is watching before Home is built */
+    if (isNuvioAccount()) startProfiles(startHome);
+    else startHome();
+  } catch (error) {
+    window.__SC_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
+  }
+}
+/* A profile seen for the first time on this TV has no library here yet: Home waits for it (as
+   long as Home waits for its rows), so Continue Watching and My list are there when it appears
+   instead of after. */
+function startHome() {
+  if (allLib().length) return showHome(false);
+  var started = false;
+  function go() {
+    if (started) return;
+    started = true;
+    showHome(true);
+  }
+  pullLib(go);
+  setTimeout(go, HOME_WAIT_MS);
+}
+function showHome(libraryPulled) {
+  try {
     var h = location.hash || '';
     var m = h.match(/^#detail\/([^\/]+)\/([^\/]+)(?:\/(.+))?$/);
     var ms = h.match(/^#sim\/([^\/]+)\/([^\/]+)$/);
@@ -8832,12 +9269,13 @@ function boot() {
       if (homeFilled) onHomeFilled();
     }
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
-    setTimeout(function () {
-      pullLib(function () {
-        invalidateBoards();
-        if (SCR === 'home' || SCR === 'lib') refreshCurBoard();
-      });
-    }, 700);
+    if (!libraryPulled)
+      setTimeout(function () {
+        pullLib(function () {
+          invalidateBoards();
+          if (SCR === 'home' || SCR === 'lib') refreshCurBoard();
+        });
+      }, 700);
     setTimeout(function () {
       syncAddons(function (changed) {
         if (changed) {

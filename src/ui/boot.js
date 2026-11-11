@@ -7,6 +7,12 @@ function boot() {
     if (TV_PROFILE.lowMemory) bodyAdd('lowmem');
     applyLook();
     applyTextSize();
+    /* 4.0 keeps accounts differently: every TV signs in again once, on its first start of this
+       version, and never again after it */
+    if (!lsRaw('signedInFor40', '')) {
+      lsRawSet('signedInFor40', '1');
+      if (user() || authKey()) return settings.logout();
+    }
     if (!user()) {
       window.__SC_PHASE__('L0');
       showScr('login');
@@ -16,6 +22,29 @@ function boot() {
       $('boot').style.display = 'none';
       return;
     }
+    /* a Nuvio account says who is watching before Home is built */
+    if (isNuvioAccount()) startProfiles(startHome);
+    else startHome();
+  } catch (error) {
+    window.__SC_BOOT_ERROR__((error && error.message) || String(error), 'BOOT');
+  }
+}
+/* A profile seen for the first time on this TV has no library here yet: Home waits for it (as
+   long as Home waits for its rows), so Continue Watching and My list are there when it appears
+   instead of after. */
+function startHome() {
+  if (allLib().length) return showHome(false);
+  var started = false;
+  function go() {
+    if (started) return;
+    started = true;
+    showHome(true);
+  }
+  pullLib(go);
+  setTimeout(go, HOME_WAIT_MS);
+}
+function showHome(libraryPulled) {
+  try {
     var h = location.hash || '';
     var m = h.match(/^#detail\/([^\/]+)\/([^\/]+)(?:\/(.+))?$/);
     var ms = h.match(/^#sim\/([^\/]+)\/([^\/]+)$/);
@@ -65,12 +94,13 @@ function boot() {
       if (homeFilled) onHomeFilled();
     }
     /* silent account syncs: library (Continue Watching / watched) + addon collection */
-    setTimeout(function () {
-      pullLib(function () {
-        invalidateBoards();
-        if (SCR === 'home' || SCR === 'lib') refreshCurBoard();
-      });
-    }, 700);
+    if (!libraryPulled)
+      setTimeout(function () {
+        pullLib(function () {
+          invalidateBoards();
+          if (SCR === 'home' || SCR === 'lib') refreshCurBoard();
+        });
+      }, 700);
     setTimeout(function () {
       syncAddons(function (changed) {
         if (changed) {

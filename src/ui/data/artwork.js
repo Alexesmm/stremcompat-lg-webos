@@ -29,13 +29,10 @@ function bgSmall(it) {
   var u = String(bgOf(it) || '');
   return u.replace(/(images\.metahub\.space\/background\/)[a-z]+\//, '$1small/');
 }
-/* The width the local server reduces a background to: smaller in the light look, the size
-   of the screen in the modern one, and the package's own otherwise. */
+/* The width the local server reduces a background to: smaller in the light look, the
+   package's own otherwise. */
 function bgWidth() {
-  var look = uiLook();
-  if (look === 'light') return 640;
-  if (look === 'modern') return 1280;
-  return 0;
+  return uiLook() === 'light' ? 640 : 0;
 }
 function bgMid(it) {
   var u = String(bgOf(it) || '');

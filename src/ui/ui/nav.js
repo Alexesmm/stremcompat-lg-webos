@@ -9,7 +9,7 @@ function resetBoardPosition(board) {
   board._act = null;
 }
 var topNav = {
-  idx: 1,
+  idx: 2,
   active: false,
   paint: function () {
     paintChips();
@@ -30,6 +30,13 @@ var topNav = {
   },
   switchTo: function (i) {
     i = Math.max(0, Math.min(chips.length - 1, i));
+    /* the profile and leave items only take the focus: OK opens them */
+    if (chipTarget[i] === 'profile' || chipTarget[i] === 'exit') {
+      this.idx = i;
+      this.active = true;
+      this.paint();
+      return;
+    }
     if (
       i === this.idx &&
       (BOARD_SCR[SCR] || SCR === 'disc' || SCR === 'search' || SCR === 'addons' || SCR === 'set')
@@ -88,6 +95,8 @@ var topNav = {
   /* Choosing the section already on screen (OK or a click) goes back to its start; Right
      from the sidebar returns to the row and card that had the focus. */
   chooseSection: function (i) {
+    if (chipTarget[i] === 'profile') return openProfile();
+    if (chipTarget[i] === 'exit') return cwMenu.confirmExit();
     if (i === this.idx && curBoard()) {
       resetBoardPosition(curBoard());
       this.enterContent();
@@ -96,6 +105,11 @@ var topNav = {
   /* OK on a section while a title page is open goes to that section, e.g. Home from a
      series opened on Home, instead of staying on the series */
   key: function (k) {
+    var item = chipTarget[this.idx];
+    if ((item === 'profile' || item === 'exit') && (k === 13 || k === 39)) {
+      if (k === 13) return (item === 'exit' ? cwMenu.confirmExit() : openProfile()) || true;
+      this.idx = Math.max(0, chipTarget.indexOf(SCR === 'detail' || SCR === 'sim' ? 'home' : SCR));
+    }
     if (k === 38) this.switchTo(this.idx - 1);
     else if (k === 40) this.switchTo(this.idx + 1);
     else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);

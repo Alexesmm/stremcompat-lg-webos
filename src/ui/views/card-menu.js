@@ -103,6 +103,13 @@ var cwMenu = {
         refreshCurBoard();
         toast(tx('removedFromCw'));
       });
+    if (it.fresh)
+      add(ICON.close, tx('hideNewEpisodes'), function () {
+        hideNewEpisodes(it.id);
+        self.close();
+        buildHomeRows(true);
+        toast(tx('newEpisodesHidden'));
+      });
     add(
       libHas(it.id) ? ICON.check : ICON.plus,
       libHas(it.id) ? tx('removeLibrary') : tx('addLibrary'),

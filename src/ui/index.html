@@ -11,13 +11,14 @@
 <div id="bg"></div><div id="bg2"></div><div id="logobg"></div><div id="bgshade"></div>
 
 <div id="topnav">
-  <img id="brand" src="/logo.png">
+  <div class="chip" id="chipProfile"><div class="face" id="navFace"></div><span class="navlabel" id="navName"></span></div>
   <div class="chip" id="chipSearch"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navlabel">Search</span></div>
   <div class="chip" id="chipHome"><svg viewBox="0 0 24 24"><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6"/></svg><span class="navlabel">Home</span></div>
   <div class="chip" id="chipDisc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M15.7 8.3l-2.2 5.2-5.2 2.2 2.2-5.2z"/></svg><span class="navlabel">Discover</span></div>
   <div class="chip" id="chipLib"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 3h8M8 10h8"/></svg><span class="navlabel">Library</span></div>
   <div class="chip" id="chipAddons"><svg viewBox="0 0 24 24"><path d="M4 4h6v3a2 2 0 104 0V4h6v6h-3a2 2 0 100 4h3v6h-6v-3a2 2 0 10-4 0v3H4v-6h3a2 2 0 100-4H4z"/></svg><span class="navlabel">Addons</span></div>
   <div class="chip" id="chipSet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.4 1A7 7 0 0015 6.2L14.6 3h-5L9 6.2a7 7 0 00-1.5.9l-2.4-1-2 3.4L5.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.4-1a7 7 0 001.5.9l.6 3.2h5l.4-3.2a7 7 0 001.5-.9l2.4 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg><span class="navlabel">Settings</span></div>
+  <div class="chip" id="chipExit"><svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 012 2v12a2 2 0 01-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h10"/></svg><span class="navlabel">Leave</span></div>
 </div>
 
 <!-- Home and Library share the cinematic hero/rows layer. Discover has its own grid. -->
@@ -55,11 +56,15 @@
 </div>
 
 <div class="scr" id="scrSet">
-  <div id="setWrap"><div id="setInner">
-    <div id="setAcct"><div class="em"></div><div class="pl"></div></div>
-    <div id="setItems"></div>
-    <div class="sethint" id="setHint">Use Left/Right to change · changes apply immediately</div>
-  </div></div>
+  <div id="setWrap">
+    <div id="setTitle">Settings</div>
+    <div id="setCats"></div>
+    <div id="setPane"><div id="setInner">
+      <div id="setAcct"><div class="em"></div><div class="pl"></div></div>
+      <div id="setItems"></div>
+      <div class="sethint" id="setHint">Use Left/Right to change · changes apply immediately</div>
+    </div></div>
+  </div>
 </div>
 
 <div class="scr" id="scrAddons">
@@ -93,6 +98,18 @@
 <div id="streams"><h3 id="streamsTitle">Sources</h3><div id="stBest"></div><div id="stLang"></div><div id="stSub"></div><div id="stChips"></div><div id="stClip"><div id="stInner"></div></div></div>
 <div id="cwm"><div id="cwmTitle"></div><div id="cwmSub"></div><div id="cwmItems"></div></div>
 <div id="serverPanel"><div id="srvBox"><div id="srvTitle"></div><div id="srvValue"></div><div id="srvKeys"></div><div id="srvStatus"></div></div></div>
+<div id="pfScreen">
+  <div id="pfTitle"></div>
+  <div id="pfPick"><div id="pfRow"></div><div id="pfEditBtn"></div></div>
+  <div id="pfEditor">
+    <div id="pfEdFace" class="pfav"></div>
+    <input id="pfEdName" maxlength="40" autocomplete="off">
+    <div id="pfEdColors"></div>
+    <div id="pfEdClip"><div id="pfEdAvatars"></div></div>
+    <div id="pfEdBtns"><span id="pfSave"></span><span id="pfCancel"></span></div>
+  </div>
+  <div id="pfHint"></div>
+</div>
 <div id="setupPanel"><div id="suBox"><div id="suTitle"></div><div id="suOptions"></div><div id="suHint"></div></div></div>
 <div id="episodeJump"><div id="ejBox"><div id="ejTitle"></div><div id="ejValue"></div><div id="ejKeys"></div><div id="ejHint"></div></div></div>
 <div id="toast"></div>

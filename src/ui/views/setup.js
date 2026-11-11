@@ -1,28 +1,26 @@
-// The first start of 4.0: how the app is used (simple or complete) and how it looks (modern or
+// The first start of 4.0: how the app is used (simple or complete) and how it looks (standard or
 // light). Both stay in Settings; skipping keeps everything as it was.
-/* the look this TV had before anyone chose: light on the TVs the profile already treats as small */
+/* the look this TV had before anyone chose: light on the TVs the profile already treats as small.
+   The modern look of the 4.0 tests is gone: a TV that chose it has the standard one. */
 var PROFILE_LOW_MEMORY = !!TV_PROFILE.lowMemory;
 function uiLook() {
-  return lsRaw('uiLook', PROFILE_LOW_MEMORY ? 'light' : 'standard');
+  return lsRaw('uiLook', '') === 'light' || (!lsRaw('uiLook', '') && PROFILE_LOW_MEMORY)
+    ? 'light'
+    : 'standard';
 }
 function simpleMode() {
   return lsRaw('uiMode', 'full') === 'simple';
 }
-/* Light: no animations or effects, smaller backgrounds and the small-TV caches.
-   Modern: full-screen, sharper backgrounds that move slowly, and larger focus effects. */
+/* Light: no animations or effects, smaller backgrounds and the small-TV caches. */
 function applyLook() {
-  var look = uiLook(),
-    light = look === 'light';
+  var light = uiLook() === 'light';
   TV_PROFILE.lowMemory = light || PROFILE_LOW_MEMORY;
   if (light) bodyAdd('lowmem');
   else if (!PROFILE_LOW_MEMORY) bodyRemove('lowmem');
   if (light) bodyAdd('lite');
   else bodyRemove('lite');
-  if (look === 'modern') bodyAdd('modern');
-  else bodyRemove('modern');
 }
-/* Draws the panel shared by the first-start questions, the Nuvio profiles and the interface
-   languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
+/* Draws the panel shared by the first-start questions and the interface languages: a title, rows of { name, help, cls } and a hint. Returns the rows' elements. */
 function drawChoices(title, rows, hint) {
   var host = $('suOptions'),
     els = [];
@@ -93,19 +91,7 @@ var setupPanel = {
     this.build();
   },
   questions: function () {
-    var list = [];
-    /* signed in with Stremio: first, that a Nuvio account can be used now */
-    if (!isNuvioAccount())
-      list.push({
-        key: 'accountChoice',
-        title: tx('nuvioNewsTitle'),
-        options: [
-          ['stremio', tx('keepStremio'), tx('keepStremioHint')],
-          ['nuvio', tx('useNuvio'), tx('useNuvioHint')]
-        ],
-        current: 'stremio'
-      });
-    return list.concat([
+    return [
       {
         key: 'uiMode',
         title: tx('setupUseQuestion'),
@@ -120,12 +106,11 @@ var setupPanel = {
         title: tx('setupLookQuestion'),
         options: [
           ['standard', tx('lookStandard'), tx('lookStandardHint')],
-          ['modern', tx('lookModern'), tx('lookModernHint')],
           ['light', tx('lookLight'), tx('lookLightHint')]
         ],
         current: uiLook()
       }
-    ]);
+    ];
   },
   build: function () {
     var q = this.questions()[this.step],
@@ -143,18 +128,6 @@ var setupPanel = {
   choose: function (i) {
     var q = this.questions()[this.step];
     if (i >= q.options.length) return this.close();
-    /* Nuvio: this TV leaves the Stremio account and the sign-in opens on Nuvio; the other
-       questions come after signing in */
-    if (q.key === 'accountChoice') {
-      if (q.options[i][0] === 'nuvio') {
-        this.open = false;
-        $('setupPanel').style.display = 'none';
-        lsRawSet('loginProvider', 'nuvio');
-        return settings.logout();
-      }
-      this.step++;
-      return this.build();
-    }
     lsRawSet(q.key, q.options[i][0]);
     if (q.key === 'uiLook') applyLook();
     this.step++;

@@ -223,7 +223,7 @@ async function main() {
 
     await protocol.call('Runtime.evaluate', {
       expression:
-        "localStorage.setItem('user',JSON.stringify({_id:'test-user',email:'test@example.com'}));localStorage.setItem('setupDone','1');localStorage.setItem('authKey',JSON.stringify('test-auth'));localStorage.setItem('addons'," +
+        "localStorage.setItem('user',JSON.stringify({_id:'test-user',email:'test@example.com'}));localStorage.setItem('setupDone','1');localStorage.setItem('signedInFor40','1');localStorage.setItem('authKey',JSON.stringify('test-auth'));localStorage.setItem('addons'," +
         JSON.stringify(JSON.stringify(mockAddon)) +
         ');location.reload()'
     });

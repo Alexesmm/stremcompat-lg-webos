@@ -114,23 +114,22 @@ function accountStorage() {
   return memoryStorage({
     user: JSON.stringify({ _id: 'test-user', email: 'test@example.com' }),
     authKey: JSON.stringify('test-auth-key'),
-    addons: '[]'
+    addons: '[]',
+    signedInFor40: '1'
   });
 }
 
 var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
 /* the first start of 4.0: two questions, and skipping keeps what the TV had */
 (function () {
-  function setup(stored, lowMemory, stremio) {
-    var data = Object.assign({}, stored), els = {}, body = { className: '' }, signedOut = [];
+  function setup(stored, lowMemory) {
+    var data = Object.assign({}, stored), els = {}, body = { className: '' };
     var ctx = {
       TV_PROFILE: { lowMemory: !!lowMemory },
       lsRaw: function (k, d) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : d; },
       lsRawSet: function (k, v) { data[k] = String(v); },
       user: function () { return { _id: 'u' }; },
       profilePanel: { open: false },
-      isNuvioAccount: function () { return !stremio; },
-      settings: { logout: function () { signedOut.push(1); } },
       tx: function (k) { return k; },
       $: function (id) { return els[id] || (els[id] = { style: {}, innerHTML: '', textContent: '', appendChild: function () {} }); },
       document: { createElement: function () { return { appendChild: function () {}, style: {} }; }, body: body },
@@ -141,33 +140,20 @@ var firstRun = run(emptyStorage(), 'scrLogin', null, 'en-US');
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'ui', 'views', 'setup.js'), 'utf8'), ctx);
     ctx.data = data;
     ctx.body = body;
-    ctx.signedOut = signedOut;
     return ctx;
   }
   var fresh = setup({});
   fresh.setupPanel.maybeShow();
   assert.strictEqual(fresh.setupPanel.open, true, 'the first start of 4.0 did not ask anything');
   fresh.setupPanel.choose(0);
-  fresh.setupPanel.choose(2);
+  fresh.setupPanel.choose(1);
   assert.strictEqual(fresh.data.uiMode, 'simple', 'Simple was not kept');
   assert.strictEqual(fresh.data.uiLook, 'light', 'Light was not kept');
   assert.strictEqual(fresh.setupPanel.open, false, 'the questions did not close after the second answer');
   assert.ok(/\blite\b/.test(fresh.body.className) && fresh.TV_PROFILE.lowMemory, 'Light did not take effect at once');
-  /* a Stremio account hears about Nuvio first */
-  var stremio = setup({}, false, true);
-  stremio.setupPanel.maybeShow();
-  stremio.setupPanel.choose(0);
-  stremio.setupPanel.choose(1);
-  assert.strictEqual(stremio.data.uiMode, 'full', 'keeping Stremio did not go on to the other questions');
-  var toNuvio = setup({}, false, true);
-  toNuvio.setupPanel.maybeShow();
-  toNuvio.setupPanel.choose(1);
-  assert.strictEqual(toNuvio.signedOut.length, 1, 'choosing Nuvio did not leave the Stremio account');
-  assert.strictEqual(toNuvio.data.loginProvider, 'nuvio', 'the sign-in will not open on Nuvio');
-  assert.notStrictEqual(toNuvio.data.setupDone, '1', 'the questions were marked answered before signing in with Nuvio');
-  var modern = setup({ uiLook: 'modern' });
-  modern.applyLook();
-  assert.ok(/modern/.test(modern.body.className) && !/lite/.test(modern.body.className), 'the modern look was not applied');
+  var oldModern = setup({ uiLook: 'modern' });
+  oldModern.applyLook();
+  assert.ok(oldModern.uiLook() === 'standard' && !/lite/.test(oldModern.body.className), 'a TV that chose the removed modern look did not get the standard one');
   assert.strictEqual(setup({}).uiLook(), 'standard', 'a TV that never chose did not keep the standard look');
   var again = setup({ setupDone: '1' });
   again.setupPanel.maybeShow();
@@ -461,6 +447,7 @@ run(accountStorage(), 'scrBoard');
 var animeRun = run(memoryStorage({
   user: JSON.stringify({ _id: 'anime-user', email: 'anime@example.com' }),
   authKey: JSON.stringify('anime-auth-key'),
+  signedInFor40: '1',
   addons: JSON.stringify([{ transportUrl: 'https://anime.example/manifest.json', manifest: { id: 'anime.test', name: 'Anime Test', catalogs: [{ type: 'anime', id: 'popular', name: 'Popular Anime' }] } }])
 }), 'scrBoard');
 var discoverTypes = JSON.parse(JSON.stringify(animeRun.context.__SC_DISCOVER_TYPES__()));

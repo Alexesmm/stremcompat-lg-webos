@@ -4,9 +4,7 @@ $outputDir = Join-Path $projectRoot '.build\visual-tests'
 
 $cases = @(
     @{ Profile = 'lg-armv7'; Port = 8082; Width = 1280; Height = 720 },
-    @{ Profile = 'lg-armv7-1080'; Port = 8082; Width = 1920; Height = 1080 },
-    @{ Profile = 'lg-armv7-1080'; Port = 8082; Width = 1920; Height = 1080; Look = 'modern' },
-    @{ Profile = 'lg-armv7'; Port = 8082; Width = 1280; Height = 720; Look = 'modern' }
+    @{ Profile = 'lg-armv7-1080'; Port = 8082; Width = 1920; Height = 1080 }
 )
 
 foreach ($case in $cases) {

@@ -125,7 +125,7 @@ function goBackScr() {
   }
   if (topNav.active) {
     if (SCR !== 'home') {
-      topNav.idx = 1;
+      topNav.idx = chipTarget.indexOf('home');
       search.reset();
       goScr('home', null, true);
       topNav.active = false;
@@ -138,20 +138,29 @@ function goBackScr() {
     return;
   }
   if (SCR === 'home') {
-    topNav.idx = 1;
+    topNav.idx = chipTarget.indexOf('home');
     topNav.focus();
     return;
   }
   if (SCR !== 'home') {
-    topNav.idx = 1;
+    topNav.idx = chipTarget.indexOf('home');
     goScr('home', null, true);
     return;
   }
   cwMenu.confirmExit();
 }
 
-var chips = [$('chipSearch'), $('chipHome'), $('chipDisc'), $('chipLib'), $('chipAddons'), $('chipSet')];
-var chipTarget = ['search', 'home', 'disc', 'lib', 'addons', 'set'];
+var chips = [
+  $('chipProfile'),
+  $('chipSearch'),
+  $('chipHome'),
+  $('chipDisc'),
+  $('chipLib'),
+  $('chipAddons'),
+  $('chipSet'),
+  $('chipExit')
+];
+var chipTarget = ['profile', 'search', 'home', 'disc', 'lib', 'addons', 'set', 'exit'];
 window.__SC_PHASE__('M2');
 function paintChips() {
   if (topNav.active) bodyAdd('navopen');
