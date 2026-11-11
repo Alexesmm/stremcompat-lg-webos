@@ -21,7 +21,7 @@ var id = appInfo.id;
 var version = appInfo.version;
 var fileName = id + '_' + version + '_all.ipk';
 var data = fs.readFileSync(ipk);
-var summary = 'Stremio addons on older LG TVs (webOS 3 and newer). Unofficial, and it needs no root.';
+var summary = 'Your Stremio or Nuvio account and addons on older LG TVs (webOS 3 and newer). Unofficial, and it needs no root.';
 
 var manifest = {
   id: id,
