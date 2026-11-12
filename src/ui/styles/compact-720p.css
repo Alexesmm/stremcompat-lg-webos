@@ -47,6 +47,7 @@
   .cwlabel{bottom:0;padding:28px 10px 17px;font-size:17px}
   .cwlabel .sub{margin-top:1px;font-size:15px}
   .epbadge{left:7px;top:7px;padding:3px 7px;font-size:14px}
+  .epdate{right:7px;top:7px;padding:3px 7px;font-size:13px}
   .wbadge{top:8px;right:8px;width:31px;height:31px}
   .wbadge svg{width:19px;height:19px}
   #streams{top:70px;width:620px;padding:20px}

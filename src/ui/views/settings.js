@@ -253,6 +253,15 @@ var settings = {
         d: 'normal'
       },
       {
+        k: 'episodeDates',
+        lb: tx('episodeAirDates'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: 'true'
+      },
+      {
         k: 'bgTrailer',
         lb: tx('backgroundTrailers'),
         opts: [
