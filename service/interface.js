@@ -2886,6 +2886,39 @@ function knownArtwork(type, id) {
   if (!m) return null;
   return { name: m.name || '', logo: m.logo || '', background: m.background || '', poster: m.poster || '' };
 }
+/* An addon besides Cinemeta that describes IMDb titles, such as TMDB set to Italian: the one the
+   viewer installed to read titles in their language. The first in the addon order is used; the
+   TMDB addon names only tmdb: ids in its manifest but answers IMDb ones too. */
+var LOCAL_META_TIMEOUT_MS = 5000;
+function localMetaBase(type, id) {
+  var bases = metaAddonsFor(type, id).concat(metaAddonsFor(type, 'tmdb:'));
+  for (var i = 0; i < bases.length; i++) if (bases[i] && bases[i].indexOf('cinemeta') < 0) return bases[i];
+  return '';
+}
+/* Cinemeta keeps the structure (ids, episodes, ratings, genres for its own catalogs); the name,
+   the synopsis and the episode titles and summaries come from that addon */
+function overlayLocalText(meta, local) {
+  if (!meta || !local) return;
+  if (local.name) meta.name = local.name;
+  if (local.description) meta.description = local.description;
+  if (!meta.videos || !local.videos) return;
+  var byNum = {},
+    i,
+    v,
+    x;
+  for (i = 0; i < local.videos.length; i++) {
+    x = local.videos[i];
+    byNum[x.season + ':' + x.episode] = x;
+  }
+  for (i = 0; i < meta.videos.length; i++) {
+    v = meta.videos[i];
+    x = byNum[v.season + ':' + v.episode];
+    if (!x) continue;
+    if (x.name || x.title) v.name = v.title = x.name || x.title;
+    if (x.overview || x.description) v.overview = v.description = x.overview || x.description;
+  }
+}
+window.__SC_OVERLAY_LOCAL__ = overlayLocalText;
 function getMeta(type, id, cb) {
   var k = type + '_' + id;
   if (metaMem[k]) {
@@ -2903,6 +2936,21 @@ function getMeta(type, id, cb) {
     cb(null);
     return;
   }
+  /* the text in the viewer's language is asked at the same time, and waited for up to 5 s */
+  var local = isImdb(id) ? localMetaBase(type, id) : '',
+    localMeta = null,
+    localDone = !local,
+    whenLocal = null;
+  if (local)
+    xhrJson(
+      local + '/meta/' + type + '/' + encodeURIComponent(id) + '.json' + addonQueryFor(addons(), local),
+      function (j) {
+        localMeta = j && j.meta;
+        localDone = true;
+        if (whenLocal) whenLocal();
+      },
+      LOCAL_META_TIMEOUT_MS
+    );
   var bi = 0;
   function tryNext() {
     if (bi >= bases.length) {
@@ -2918,10 +2966,16 @@ function getMeta(type, id, cb) {
           tryNext();
           return;
         }
-        putMetaMem(k, m);
-        lsSet('beta_meta_' + k, { t: Date.now(), meta: m });
-        capMetaCache(k);
-        if (!fresh) cb(m);
+        function keep() {
+          whenLocal = null;
+          overlayLocalText(m, localMeta);
+          putMetaMem(k, m);
+          lsSet('beta_meta_' + k, { t: Date.now(), meta: m });
+          capMetaCache(k);
+          if (!fresh) cb(m);
+        }
+        if (localDone) keep();
+        else whenLocal = keep;
       }
     );
   }

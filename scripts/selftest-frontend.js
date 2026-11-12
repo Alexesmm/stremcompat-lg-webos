@@ -409,6 +409,10 @@ assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',
   assert.strictEqual(best([hevc, fullHd]), fullHd, 'a source with a warning won over one without');
   assert.strictEqual(best([archive, hevc]), hevc, 'an archive was chosen over a source with a warning');
   assert.strictEqual(best([archive, stored]), null, 'something that cannot play was chosen');
+  /* the text of an addon in the viewer's language over Cinemeta's, which keeps its ids */
+  var cine = { id: 'tt1', name: 'The Dark Knight', description: 'EN', genres: ['Action'], videos: [{ id: 'tt1:1:1', season: 1, episode: 1, name: 'Pilot', overview: 'EN' }] };
+  firstRun.context.__SC_OVERLAY_LOCAL__(cine, { name: 'Il cavaliere oscuro', description: 'IT', genres: ['Azione'], videos: [{ id: 'x', season: 1, episode: 1, name: 'Episodio pilota', overview: 'IT' }] });
+  assert.deepStrictEqual([cine.name, cine.description, cine.genres[0], cine.videos[0].id, cine.videos[0].name, cine.videos[0].overview], ['Il cavaliere oscuro', 'IT', 'Action', 'tt1:1:1', 'Episodio pilota', 'IT'], 'the text in the viewer\'s language did not replace Cinemeta\'s, or the ids changed');
   var english = { addon: 'a', quality: '1080p', compatRank: 0, seeders: 1300, langs: ['en'] };
   var weakDub = { addon: 'a', quality: '1080p', compatRank: 0, seeders: 3, langs: ['pt-BR'] };
   var dub = { addon: 'a', quality: '1080p', compatRank: 0, seeders: 40, langs: ['pt-BR'] };
