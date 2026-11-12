@@ -4,7 +4,7 @@
   "appId": "io.github.alexesmm.stremcompat",
   "serviceId": "io.github.alexesmm.stremcompat.server",
   "title": "StremCompat",
-  "version": "4.0.1",
+  "version": "4.2.1",
   "port": 8082,
   "graphicsResolution": "1920x1080",
   "ecmaTarget": "chrome38",
