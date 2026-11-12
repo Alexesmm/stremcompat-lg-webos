@@ -71,7 +71,8 @@ var SOURCE_LANGUAGES = [
   ['fr', 'Français'],
   ['it', 'Italiano'],
   ['de', 'Deutsch'],
-  ['ko', '한국어']
+  ['ko', '한국어'],
+  ['ja', '日本語']
 ];
 function sourceLanguageName(code) {
   for (var i = 0; i < SOURCE_LANGUAGES.length; i++)

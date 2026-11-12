@@ -522,7 +522,8 @@ var UI_TEXT = {
     reloadingApp: 'Reloading StremCompat…',
     supportGroup: 'Support',
     supportCoffee: 'Buy me a coffee',
-    supportText: 'StremCompat is free and made by one person. If it helps you, a coffee keeps it going. Scan the code with your phone:',
+    supportText:
+      'StremCompat is free and made by one person. If it helps you, a coffee keeps it going. Scan the code with your phone:',
     preferredQuality: 'Preferred quality',
     qualityAsk: 'Ask',
     whichQuality: 'Which quality?',
@@ -949,7 +950,8 @@ var UI_TEXT = {
     reloadingApp: 'Recarregando o StremCompat…',
     supportGroup: 'Apoiar',
     supportCoffee: 'Pague um café ao desenvolvedor',
-    supportText: 'O StremCompat é gratuito e feito por uma pessoa só. Se ele te ajuda, um café ajuda a continuar. Aponte a câmera do celular para o código:',
+    supportText:
+      'O StremCompat é gratuito e feito por uma pessoa só. Se ele te ajuda, um café ajuda a continuar. Aponte a câmera do celular para o código:',
     preferredQuality: 'Qualidade preferida',
     qualityAsk: 'Perguntar',
     whichQuality: 'Qual qualidade?',
@@ -1132,7 +1134,9 @@ var UI_LANGUAGES = {
   de: 'Deutsch',
   it: 'Italiano',
   ru: 'Русский',
-  ko: '한국어'
+  ko: '한국어',
+  ja: '日本語',
+  zh: '中文（简体）'
 };
 function normalizeUILanguage(value) {
   return Object.prototype.hasOwnProperty.call(UI_LANGUAGES, value) ? value : 'en-US';
@@ -1169,9 +1173,18 @@ loadUILanguage(UI_LANG);
 /* the language of audio and subtitles until the viewer picks one */
 function defaultMediaLanguage() {
   return (
-    { 'pt-BR': 'por', es: 'spa', 'es-419': 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus', ko: 'kor' }[
-      UI_LANG
-    ] || 'eng'
+    {
+      'pt-BR': 'por',
+      es: 'spa',
+      'es-419': 'spa',
+      fr: 'fre',
+      de: 'ger',
+      it: 'ita',
+      ru: 'rus',
+      ko: 'kor',
+      ja: 'jpn',
+      zh: 'chi'
+    }[UI_LANG] || 'eng'
   );
 }
 function tx(key) {
