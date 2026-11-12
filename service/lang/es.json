@@ -387,7 +387,7 @@
   "updateProgress": "Descargando la actualización… {0} %",
   "updateInstalling": "Instalando la actualización. StremCompat se cerrará y volverá a abrirse.",
   "updateElsewhere": "No se pudo actualizar desde aquí. Actualiza StremCompat en el Homebrew Channel.",
-  "whatsNew": "Actualizado a StremCompat {0}: perfiles de Nuvio, nuevo menú lateral y Ajustes, y episodios, capítulos y velocidad en el reproductor.",
+  "whatsNew": "Actualizado a StremCompat {0}.",
   "lastStartStopped": "La última vez, StremCompat se detuvo al abrirse (paso {0}). Si vuelve a pasar, menciona este paso en tu reporte.",
   "setupUseQuestion": "¿Cómo quieres usar StremCompat?",
   "modeSimple": "Sencillo",

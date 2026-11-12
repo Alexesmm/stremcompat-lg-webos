@@ -151,7 +151,7 @@
   "updateProgress": "업데이트 다운로드 중… {0}%",
   "updateInstalling": "업데이트를 설치하는 중입니다. StremCompat이 닫혔다가 다시 열립니다.",
   "updateElsewhere": "여기서 업데이트할 수 없습니다. Homebrew Channel에서 StremCompat을 업데이트하세요.",
-  "whatsNew": "StremCompat {0}(으)로 업데이트되었습니다: Nuvio 프로필, 새 사이드 메뉴와 설정, 플레이어의 에피소드·챕터·속도 기능.",
+  "whatsNew": "StremCompat {0}(으)로 업데이트되었습니다.",
   "lastStartStopped": "지난번에 StremCompat이 시작 중에 멈췄습니다 (단계 {0}). 다시 발생하면 신고할 때 이 단계를 알려 주세요.",
   "setupUseQuestion": "StremCompat을 어떻게 사용하시겠어요?",
   "modeSimple": "간단",

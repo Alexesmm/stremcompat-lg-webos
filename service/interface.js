@@ -466,8 +466,7 @@ var UI_TEXT = {
     updateProgress: 'Downloading the update… {0}%',
     updateInstalling: 'Installing the update. StremCompat will close and open again.',
     updateElsewhere: 'Could not update from here. Update StremCompat in the Homebrew Channel.',
-    whatsNew:
-      'Updated to StremCompat {0}: Nuvio profiles, a new side menu and Settings, and episodes, chapters and speed in the player.',
+    whatsNew: 'Updated to StremCompat {0}.',
     lastStartStopped:
       'The last time, StremCompat stopped while starting (step {0}). If it happens again, mention this step in your report.',
     setupUseQuestion: 'How do you want to use StremCompat?',
@@ -900,8 +899,7 @@ var UI_TEXT = {
     updateProgress: 'Baixando a atualização… {0}%',
     updateInstalling: 'Instalando a atualização. O StremCompat vai fechar e abrir de novo.',
     updateElsewhere: 'Não foi possível atualizar por aqui. Atualize o StremCompat no Homebrew Channel.',
-    whatsNew:
-      'Atualizado para o StremCompat {0}: perfis do Nuvio, novo menu lateral e Ajustes, e episódios, capítulos e velocidade no player.',
+    whatsNew: 'Atualizado para o StremCompat {0}.',
     lastStartStopped:
       'Da última vez, o StremCompat parou enquanto abria (etapa {0}). Se acontecer de novo, cite essa etapa no seu relato.',
     setupUseQuestion: 'Como você quer usar o StremCompat?',

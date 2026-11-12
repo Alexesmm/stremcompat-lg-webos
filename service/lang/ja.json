@@ -151,7 +151,7 @@
   "updateProgress": "更新をダウンロード中… {0}%",
   "updateInstalling": "更新をインストール中です。StremCompatはいったん閉じて、また開きます。",
   "updateElsewhere": "ここからは更新できませんでした。Homebrew ChannelでStremCompatを更新してください。",
-  "whatsNew": "StremCompat {0}に更新しました: Nuvioのプロフィール、新しいサイドメニューと設定、プレーヤーのエピソード・チャプター・速度。",
+  "whatsNew": "StremCompat {0}に更新しました。",
   "lastStartStopped": "前回、StremCompatは起動中に止まりました（ステップ{0}）。また起きた場合は、報告にこのステップを書いてください。",
   "setupUseQuestion": "StremCompatをどのように使いますか？",
   "modeSimple": "シンプル",

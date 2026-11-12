@@ -151,7 +151,7 @@
   "updateProgress": "正在下载更新… {0}%",
   "updateInstalling": "正在安装更新。StremCompat 会关闭后重新打开。",
   "updateElsewhere": "无法在这里更新。请在 Homebrew Channel 中更新 StremCompat。",
-  "whatsNew": "已更新到 StremCompat {0}：Nuvio 个人资料、新的侧边菜单和设置，以及播放器中的剧集、章节和速度。",
+  "whatsNew": "已更新到 StremCompat {0}。",
   "lastStartStopped": "上次 StremCompat 在启动时停止了（步骤 {0}）。如果再次发生，请在报告中写上这个步骤。",
   "setupUseQuestion": "你想怎样使用 StremCompat？",
   "modeSimple": "简单",
