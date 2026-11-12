@@ -23,12 +23,22 @@ function checkUpdate(req, res) {
   function answer() {
     var version = latest && latest.version;
     var reply = { current: APP_VERSION };
-    if (version && isNewer(version, APP_VERSION)) reply.version = version;
+    /* the package and its checksum, for installing it from the app (Homebrew Channel) */
+    if (version && isNewer(version, APP_VERSION)) {
+      reply.version = version;
+      reply.ipkUrl = latest.ipkUrl;
+      reply.sha256 = latest.sha256;
+    }
     sendJson(res, reply);
   }
   if (!address || (latest && Date.now() - latest.at < UPDATE_LIFETIME_MS)) return answer();
   fetchJson(address, function (manifest) {
-    latest = { version: manifest && manifest.version, at: Date.now() };
+    latest = {
+      version: manifest && manifest.version,
+      ipkUrl: (manifest && manifest.ipkUrl) || '',
+      sha256: (manifest && manifest.ipkHash && manifest.ipkHash.sha256) || '',
+      at: Date.now()
+    };
     answer();
   });
 }

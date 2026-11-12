@@ -7,6 +7,7 @@
   .face{width:36px;height:36px;line-height:36px;font-size:17px}
   #chipProfile.f .face{box-shadow:0 0 0 3px #fff}
   #chipExit{bottom:22px;left:21px}
+  #chipUpdate{bottom:68px;left:21px}
   .chip{width:44px;height:40px;margin:3px 0;border-radius:10px}
   .chip svg{width:20px;height:20px}
   .navlabel{left:58px;margin-top:-12px;line-height:24px;font-size:18px}
@@ -110,6 +111,8 @@
   .setgrp{font-size:15px;letter-spacing:1.1px;margin:2px 0 9px 3px}
   .sethint{margin:12px 0 0 4px;font-size:16px}
   .setdiag{max-width:733px;margin:0 0 8px;padding:9px 17px;font-size:16px}
+  .setdiag.support img{width:150px;height:150px;margin-right:20px;padding:8px}
+  .setdiag.support b{font-size:17px}
   #cwm{width:400px;padding:37px 29px}
   #cwmTitle{font-size:27px;margin-bottom:5px;max-height:73px}
   #cwmSub{font-size:16px;margin-bottom:23px}

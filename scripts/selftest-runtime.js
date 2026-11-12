@@ -1433,6 +1433,8 @@ async function main() {
       appVersion,
       'the update check does not say which version is running'
     );
+    var supportQr = await request({ hostname: '127.0.0.1', port: appPort, path: '/support-qr.svg' });
+    assert.ok(supportQr.status === 200 && /^<svg/.test(supportQr.text), 'the support QR code was not drawn');
     var updateCheck = require(path.join(root, 'service', 'server', 'update-check.js'));
     assert.strictEqual(updateCheck.isNewer('3.1.0', '3.0.9'), true, 'a newer version was not noticed');
     assert.strictEqual(updateCheck.isNewer('3.0.10', '3.0.9'), true, 'versions were compared as text');

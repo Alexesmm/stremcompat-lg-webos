@@ -10,6 +10,9 @@
 #chipProfile.f .face{box-shadow:0 0 0 4px #fff}
 /* leaving the app, at the bottom (Back on Home asks the same) */
 #chipExit{position:absolute;bottom:34px;left:34px;margin:0}
+/* a newer version, above leaving the app (boot.js) */
+#chipUpdate{display:none;position:absolute;bottom:98px;left:34px;margin:0}
+body.hasupdate #chipUpdate{display:-webkit-flex;display:flex}
 /* Login is intentionally standalone: navigation and the decorative watermark only
    become relevant after an account is connected. */
 body.login #topnav,body.login #logobg{display:none}

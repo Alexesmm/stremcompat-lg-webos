@@ -9,6 +9,10 @@ function resetBoardPosition(board) {
   for (var i = 0; i < board.rows.length; i++) board.rows[i].col = 0;
   board._act = null;
 }
+/* side menu items that open something with OK instead of being a section */
+function menuItemOnly(item) {
+  return item === 'profile' || item === 'update' || item === 'exit';
+}
 var topNav = {
   idx: 2,
   active: false,
@@ -31,8 +35,8 @@ var topNav = {
   },
   switchTo: function (i) {
     i = Math.max(0, Math.min(chips.length - 1, i));
-    /* the profile and leave items only take the focus: OK opens them */
-    if (chipTarget[i] === 'profile' || chipTarget[i] === 'exit') {
+    /* the profile, update and leave items only take the focus: OK opens them */
+    if (menuItemOnly(chipTarget[i])) {
       this.idx = i;
       this.active = true;
       this.paint();
@@ -97,6 +101,7 @@ var topNav = {
      from the sidebar returns to the row and card that had the focus. */
   chooseSection: function (i) {
     if (chipTarget[i] === 'profile') return openProfile();
+    if (chipTarget[i] === 'update') return offerUpdate();
     if (chipTarget[i] === 'exit') return cwMenu.confirmExit();
     if (i === this.idx && curBoard()) {
       resetBoardPosition(curBoard());
@@ -107,13 +112,17 @@ var topNav = {
      series opened on Home, instead of staying on the series */
   key: function (k) {
     var item = chipTarget[this.idx];
-    if ((item === 'profile' || item === 'exit') && (k === 13 || k === 39)) {
-      if (k === 13) return (item === 'exit' ? cwMenu.confirmExit() : openProfile()) || true;
+    if (menuItemOnly(item) && (k === 13 || k === 39)) {
+      if (k === 13) return this.chooseSection(this.idx) || true;
       this.idx = Math.max(0, chipTarget.indexOf(SCR === 'detail' || SCR === 'sim' ? 'home' : SCR));
     }
-    if (k === 38) this.switchTo(this.idx - 1);
-    else if (k === 40) this.switchTo(this.idx + 1);
-    else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
+    if (k === 38 || k === 40) {
+      var step = k === 38 ? -1 : 1,
+        to = this.idx + step;
+      /* Update is there only when a newer version is */
+      if (chipTarget[to] === 'update' && !pendingUpdate) to += step;
+      if (to >= 0 && to < chips.length) this.switchTo(to);
+    } else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
     else if (k === 13 && curBoard()) this.chooseSection(this.idx);
     else if (k === 39 || k === 13) this.enterContent();
     return true;

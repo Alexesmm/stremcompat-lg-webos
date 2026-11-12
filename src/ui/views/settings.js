@@ -292,6 +292,8 @@ var settings = {
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true },
+      { head: tx('supportGroup'), id: 'support' },
+      { k: '__support', lb: tx('supportCoffee'), action: true },
       { head: tx('signOut'), id: 'logout' },
       { k: '__logout', lb: tx('signOut'), action: true }
     ];
@@ -303,7 +305,7 @@ var settings = {
     /* Simple keeps what most people change: languages, subtitle size, the look and the account */
     if (simpleMode()) {
       var essential =
-        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|preferredSourceQuality|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|preferredSourceQuality|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload|__support)$/;
       this.defs = this.defs.filter(function (d) {
         return d.head || essential.test(d.k || '');
       });
@@ -460,6 +462,7 @@ var settings = {
         self.paintServerAddress();
       });
     } else if (k === '__diag') this.showDiag();
+    else if (k === '__support') this.showSupport();
     else if (k === '__profile') openProfile();
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
@@ -522,6 +525,17 @@ var settings = {
     if (!box) return false;
     box.parentNode.removeChild(box);
     return true;
+  },
+  /* the support page as a QR code for the phone, with its address, under its row */
+  showSupport: function () {
+    if (this.closeDiag()) return;
+    var row = this.els[this.idx],
+      box = document.createElement('div');
+    box.id = 'setDiag';
+    box.className = 'setdiag support';
+    box.innerHTML = '<img src="/support-qr.svg" alt=""><div><p></p><b>buymeacoffee.com/Alexesmm</b></div>';
+    box.getElementsByTagName('p')[0].textContent = tx('supportText');
+    row.parentNode.insertBefore(box, row.nextSibling);
   },
   /* Numbers to compare before and after a change, read on the television itself. */
   showDiag: function () {

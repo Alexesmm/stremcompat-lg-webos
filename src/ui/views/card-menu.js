@@ -194,3 +194,33 @@ var cwMenu = {
     return true;
   }
 };
+/* ---- a newer version, from the side menu's Update item ----
+   On LG the Homebrew Channel installs it from here; elsewhere, or when the TV refuses, the
+   Homebrew Channel opens (or the viewer is told where to update). */
+var pendingUpdate = null;
+function offerUpdate() {
+  var info = pendingUpdate;
+  if (!info) return;
+  cwMenu.it = null;
+  cwMenu.begin(tx('updateTitle', info.version), tx('updateSub'));
+  cwMenu.add(ICON.check, tx('updateNow'), function () {
+    cwMenu.close();
+    toast(tx('updateStarting'), 60000);
+    installUpdate(
+      info,
+      function (text, percent) {
+        toast(percent != null ? tx('updateProgress', percent) : tx('updateInstalling'), 60000);
+      },
+      function (ok) {
+        if (ok) return toast(tx('updateInstalling'), 60000);
+        toast(tx('updateElsewhere'), 9000);
+        openUpdater();
+      }
+    );
+  });
+  cwMenu.add(ICON.close, tx('updateLater'), function () {
+    cwMenu.close();
+  });
+  $('cwm').style.display = 'block';
+  cwMenu.paint();
+}

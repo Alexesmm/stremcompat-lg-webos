@@ -127,13 +127,19 @@ function showHome(libraryPulled) {
         '/update',
         function (answer) {
           var current = answer && answer.current,
-            seen = lsRaw('versionSeen', '');
+            seen = lsRaw('versionSeen', ''),
+            told = false;
           if (current && current !== seen) {
             lsRawSet('versionSeen', current);
-            if (seen && SCR !== 'login' && !setupPanel.open) return toast(tx('whatsNew', current), 9000);
+            told = seen && SCR !== 'login' && !setupPanel.open;
+            if (told) toast(tx('whatsNew', current), 9000);
           }
           var version = answer && answer.version;
-          if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;
+          if (!version) return;
+          /* the Update item in the side menu stays until it is installed */
+          pendingUpdate = answer;
+          bodyAdd('hasupdate');
+          if (told || lsRaw('updateShown', '') === version || SCR === 'login') return;
           lsRawSet('updateShown', version);
           toast(tx('updateAvailable', version), 8000);
         },

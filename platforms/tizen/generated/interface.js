@@ -82,6 +82,13 @@ function exitApp() {
   } catch (e) {}
   setTimeout(leave, 500);
 }
+/* these packages are not updated from inside the app */
+function installUpdate(info, onStatus, done) {
+  done(false);
+}
+function openUpdater() {
+  return false;
+}
 // Service endpoints, the build profile, viewport metrics and DOM/event helpers.
 /* ================= utils ================= */
 var CIN = 'https://v3-cinemeta.strem.io';
@@ -426,6 +433,15 @@ var UI_TEXT = {
     seeDetails: 'See details',
     playingBest: 'Playing the best source: {0}',
     updateAvailable: 'StremCompat {0} is available. Update it in the Homebrew Channel.',
+    updateNav: 'Update',
+    updateTitle: 'StremCompat {0} is available',
+    updateSub: 'It installs over this version and keeps your account and settings.',
+    updateNow: 'Update now',
+    updateLater: 'Later',
+    updateStarting: 'Downloading the update…',
+    updateProgress: 'Downloading the update… {0}%',
+    updateInstalling: 'Installing the update. StremCompat will close and open again.',
+    updateElsewhere: 'Could not update from here. Update StremCompat in the Homebrew Channel.',
     whatsNew:
       'Updated to StremCompat {0}: Nuvio profiles, a new side menu and Settings, and episodes, chapters and speed in the player.',
     lastStartStopped:
@@ -524,6 +540,9 @@ var UI_TEXT = {
     evPlayRejected: 'Playback was refused',
     evAddonDown: 'Addon did not answer',
     reloadingApp: 'Reloading StremCompat…',
+    supportGroup: 'Support',
+    supportCoffee: 'Buy me a coffee',
+    supportText: 'StremCompat is free and made by one person. If it helps you, a coffee keeps it going. Scan the code with your phone:',
     preferredQuality: 'Preferred quality',
     qualityAsk: 'Ask',
     whichQuality: 'Which quality?',
@@ -838,6 +857,15 @@ var UI_TEXT = {
     seeDetails: 'Ver detalhes',
     playingBest: 'Tocando a melhor fonte: {0}',
     updateAvailable: 'StremCompat {0} disponível. Atualize pelo Homebrew Channel.',
+    updateNav: 'Atualizar',
+    updateTitle: 'O StremCompat {0} está disponível',
+    updateSub: 'Ele é instalado por cima desta versão e mantém sua conta e seus ajustes.',
+    updateNow: 'Atualizar agora',
+    updateLater: 'Depois',
+    updateStarting: 'Baixando a atualização…',
+    updateProgress: 'Baixando a atualização… {0}%',
+    updateInstalling: 'Instalando a atualização. O StremCompat vai fechar e abrir de novo.',
+    updateElsewhere: 'Não foi possível atualizar por aqui. Atualize o StremCompat no Homebrew Channel.',
     whatsNew:
       'Atualizado para o StremCompat {0}: perfis do Nuvio, novo menu lateral e Ajustes, e episódios, capítulos e velocidade no player.',
     lastStartStopped:
@@ -937,6 +965,9 @@ var UI_TEXT = {
     evPlayRejected: 'A reprodução foi recusada',
     evAddonDown: 'O addon não respondeu',
     reloadingApp: 'Recarregando o StremCompat…',
+    supportGroup: 'Apoiar',
+    supportCoffee: 'Pague um café ao desenvolvedor',
+    supportText: 'O StremCompat é gratuito e feito por uma pessoa só. Se ele te ajuda, um café ajuda a continuar. Aponte a câmera do celular para o código:',
     preferredQuality: 'Qualidade preferida',
     qualityAsk: 'Perguntar',
     whichQuality: 'Qual qualidade?',
@@ -1545,6 +1576,7 @@ function applyStaticLanguage() {
     chipLib: 'navLibrary',
     chipAddons: 'navAddons',
     chipSet: 'navSettings',
+    chipUpdate: 'updateNav',
     chipExit: 'exitLeave'
   };
   for (var nid in navPairs)
@@ -3183,9 +3215,10 @@ var chips = [
   $('chipLib'),
   $('chipAddons'),
   $('chipSet'),
+  $('chipUpdate'),
   $('chipExit')
 ];
-var chipTarget = ['profile', 'search', 'home', 'disc', 'lib', 'addons', 'set', 'exit'];
+var chipTarget = ['profile', 'search', 'home', 'disc', 'lib', 'addons', 'set', 'update', 'exit'];
 window.__SC_PHASE__('M2');
 function paintChips() {
   if (topNav.active) bodyAdd('navopen');
@@ -3207,6 +3240,10 @@ function resetBoardPosition(board) {
   board.top = true;
   for (var i = 0; i < board.rows.length; i++) board.rows[i].col = 0;
   board._act = null;
+}
+/* side menu items that open something with OK instead of being a section */
+function menuItemOnly(item) {
+  return item === 'profile' || item === 'update' || item === 'exit';
 }
 var topNav = {
   idx: 2,
@@ -3230,8 +3267,8 @@ var topNav = {
   },
   switchTo: function (i) {
     i = Math.max(0, Math.min(chips.length - 1, i));
-    /* the profile and leave items only take the focus: OK opens them */
-    if (chipTarget[i] === 'profile' || chipTarget[i] === 'exit') {
+    /* the profile, update and leave items only take the focus: OK opens them */
+    if (menuItemOnly(chipTarget[i])) {
       this.idx = i;
       this.active = true;
       this.paint();
@@ -3296,6 +3333,7 @@ var topNav = {
      from the sidebar returns to the row and card that had the focus. */
   chooseSection: function (i) {
     if (chipTarget[i] === 'profile') return openProfile();
+    if (chipTarget[i] === 'update') return offerUpdate();
     if (chipTarget[i] === 'exit') return cwMenu.confirmExit();
     if (i === this.idx && curBoard()) {
       resetBoardPosition(curBoard());
@@ -3306,13 +3344,17 @@ var topNav = {
      series opened on Home, instead of staying on the series */
   key: function (k) {
     var item = chipTarget[this.idx];
-    if ((item === 'profile' || item === 'exit') && (k === 13 || k === 39)) {
-      if (k === 13) return (item === 'exit' ? cwMenu.confirmExit() : openProfile()) || true;
+    if (menuItemOnly(item) && (k === 13 || k === 39)) {
+      if (k === 13) return this.chooseSection(this.idx) || true;
       this.idx = Math.max(0, chipTarget.indexOf(SCR === 'detail' || SCR === 'sim' ? 'home' : SCR));
     }
-    if (k === 38) this.switchTo(this.idx - 1);
-    else if (k === 40) this.switchTo(this.idx + 1);
-    else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
+    if (k === 38 || k === 40) {
+      var step = k === 38 ? -1 : 1,
+        to = this.idx + step;
+      /* Update is there only when a newer version is */
+      if (chipTarget[to] === 'update' && !pendingUpdate) to += step;
+      if (to >= 0 && to < chips.length) this.switchTo(to);
+    } else if (k === 13 && (SCR === 'detail' || SCR === 'sim')) this.switchTo(this.idx);
     else if (k === 13 && curBoard()) this.chooseSection(this.idx);
     else if (k === 39 || k === 13) this.enterContent();
     return true;
@@ -4815,6 +4857,36 @@ var cwMenu = {
     return true;
   }
 };
+/* ---- a newer version, from the side menu's Update item ----
+   On LG the Homebrew Channel installs it from here; elsewhere, or when the TV refuses, the
+   Homebrew Channel opens (or the viewer is told where to update). */
+var pendingUpdate = null;
+function offerUpdate() {
+  var info = pendingUpdate;
+  if (!info) return;
+  cwMenu.it = null;
+  cwMenu.begin(tx('updateTitle', info.version), tx('updateSub'));
+  cwMenu.add(ICON.check, tx('updateNow'), function () {
+    cwMenu.close();
+    toast(tx('updateStarting'), 60000);
+    installUpdate(
+      info,
+      function (text, percent) {
+        toast(percent != null ? tx('updateProgress', percent) : tx('updateInstalling'), 60000);
+      },
+      function (ok) {
+        if (ok) return toast(tx('updateInstalling'), 60000);
+        toast(tx('updateElsewhere'), 9000);
+        openUpdater();
+      }
+    );
+  });
+  cwMenu.add(ICON.close, tx('updateLater'), function () {
+    cwMenu.close();
+  });
+  $('cwm').style.display = 'block';
+  cwMenu.paint();
+}
 // Grid of similar titles.
 /* ================= SIMILAR (grid of same-genre titles) ================= */
 var similar = {
@@ -7933,6 +8005,8 @@ var settings = {
       { k: '__diag', lb: tx('diagnostics'), action: true },
       { k: '__speed', lb: tx('testConnection'), action: true },
       { k: '__reload', lb: tx('reloadApp'), action: true },
+      { head: tx('supportGroup'), id: 'support' },
+      { k: '__support', lb: tx('supportCoffee'), action: true },
       { head: tx('signOut'), id: 'logout' },
       { k: '__logout', lb: tx('signOut'), action: true }
     ];
@@ -7944,7 +8018,7 @@ var settings = {
     /* Simple keeps what most people change: languages, subtitle size, the look and the account */
     if (simpleMode()) {
       var essential =
-        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|preferredSourceQuality|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload)$/;
+        /^(subsLang|subsLang2|subtitleSize|enableDefaultAudioTrack|defaultAudioTrack|bingeWatch|preferredSourceQuality|uiLanguage|uiMode|uiLook|uiTextSize|__profile|__logout|__diag|__reload|__support)$/;
       this.defs = this.defs.filter(function (d) {
         return d.head || essential.test(d.k || '');
       });
@@ -8101,6 +8175,7 @@ var settings = {
         self.paintServerAddress();
       });
     } else if (k === '__diag') this.showDiag();
+    else if (k === '__support') this.showSupport();
     else if (k === '__profile') openProfile();
     else if (k === '__logout') this.logout();
     else if (k === '__clearSearches') {
@@ -8163,6 +8238,17 @@ var settings = {
     if (!box) return false;
     box.parentNode.removeChild(box);
     return true;
+  },
+  /* the support page as a QR code for the phone, with its address, under its row */
+  showSupport: function () {
+    if (this.closeDiag()) return;
+    var row = this.els[this.idx],
+      box = document.createElement('div');
+    box.id = 'setDiag';
+    box.className = 'setdiag support';
+    box.innerHTML = '<img src="/support-qr.svg" alt=""><div><p></p><b>buymeacoffee.com/Alexesmm</b></div>';
+    box.getElementsByTagName('p')[0].textContent = tx('supportText');
+    row.parentNode.insertBefore(box, row.nextSibling);
   },
   /* Numbers to compare before and after a change, read on the television itself. */
   showDiag: function () {
@@ -9656,13 +9742,19 @@ function showHome(libraryPulled) {
         '/update',
         function (answer) {
           var current = answer && answer.current,
-            seen = lsRaw('versionSeen', '');
+            seen = lsRaw('versionSeen', ''),
+            told = false;
           if (current && current !== seen) {
             lsRawSet('versionSeen', current);
-            if (seen && SCR !== 'login' && !setupPanel.open) return toast(tx('whatsNew', current), 9000);
+            told = seen && SCR !== 'login' && !setupPanel.open;
+            if (told) toast(tx('whatsNew', current), 9000);
           }
           var version = answer && answer.version;
-          if (!version || lsRaw('updateShown', '') === version || SCR === 'login') return;
+          if (!version) return;
+          /* the Update item in the side menu stays until it is installed */
+          pendingUpdate = answer;
+          bodyAdd('hasupdate');
+          if (told || lsRaw('updateShown', '') === version || SCR === 'login') return;
           lsRawSet('updateShown', version);
           toast(tx('updateAvailable', version), 8000);
         },

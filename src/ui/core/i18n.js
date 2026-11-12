@@ -17,6 +17,7 @@ function applyStaticLanguage() {
     chipLib: 'navLibrary',
     chipAddons: 'navAddons',
     chipSet: 'navSettings',
+    chipUpdate: 'updateNav',
     chipExit: 'exitLeave'
   };
   for (var nid in navPairs)
