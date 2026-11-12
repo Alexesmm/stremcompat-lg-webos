@@ -115,13 +115,46 @@ var cwMenu = {
     this.it = it;
     var self = this;
     var sub = it.type === 'series' ? tx('seriesOne') : tx('movie');
-    if (it.cw && it.videoId && it.videoId.indexOf(':') > 0) {
+    if ((it.cw || it.episode) && it.videoId && it.videoId.indexOf(':') > 0) {
       var pp = it.videoId.split(':');
       sub = tx('seasonEpisode', pp[pp.length - 2], pp[pp.length - 1]);
     }
     this.begin(it.name, sub);
     function add(ic, lb, fn) {
       self.add(ic, lb, fn);
+    }
+    /* a season of a series page: all its episodes at once */
+    if (it.season) {
+      var seDone = !!it.watched;
+      this.begin(it.name, tx('season', it.seasonN));
+      add(
+        seDone ? ICON.close : ICON.check,
+        tx(seDone ? 'markSeasonUnwatched' : 'markSeasonWatched'),
+        function () {
+          self.close();
+          for (var vi = 0; vi < it.vids.length; vi++) detail.watchedMap[it.vids[vi]] = seDone ? 0 : 1;
+          detail.markWatched();
+          setEpisodesWatched(it, it.vids, !seDone);
+          toast(tx(seDone ? 'markedUnwatched' : 'markedWatched'));
+        }
+      );
+      $('cwm').style.display = 'block';
+      this.paint();
+      return;
+    }
+    /* one episode of a series page: only its watched state */
+    if (it.episode) {
+      var epDone = !!it.watched;
+      add(epDone ? ICON.close : ICON.check, tx(epDone ? 'markUnwatched' : 'markWatched'), function () {
+        self.close();
+        detail.watchedMap[it.videoId] = epDone ? 0 : 1;
+        detail.markWatched();
+        setItemWatched(it, !epDone);
+        toast(tx(epDone ? 'markedUnwatched' : 'markedWatched'));
+      });
+      $('cwm').style.display = 'block';
+      this.paint();
+      return;
     }
     add(ICON.play, it.cw ? tx('continueLabel') : tx('watch'), function () {
       self.close();
@@ -146,6 +179,16 @@ var cwMenu = {
         refreshCurBoard();
         toast(tx('markedWatched'));
       });
+    /* a film anywhere else: watched or not, either way */
+    if (!it.cw && it.type !== 'series') {
+      var done = itemWatched(it);
+      add(done ? ICON.close : ICON.check, tx(done ? 'markUnwatched' : 'markWatched'), function () {
+        setItemWatched(it, !done);
+        self.close();
+        refreshCurBoard();
+        toast(tx(done ? 'markedUnwatched' : 'markedWatched'));
+      });
+    }
     if (it.cw)
       add(ICON.close, tx('removeFromCw'), function () {
         removeFromCw(it);

@@ -337,6 +337,7 @@ var UI_TEXT = {
     serverDisk: 'Could not save the address',
     historyGroup: 'History',
     noHistory: 'Do not save history',
+    episodeAirDates: 'Air dates on episodes',
     clearSearches: 'Clear recent searches',
     clearCw: 'Clear Continue watching',
     confirmAgain: 'Press OK again to confirm',
@@ -384,6 +385,10 @@ var UI_TEXT = {
     trailer: 'Trailer',
     markWatched: 'Mark as watched',
     markedWatched: 'Marked as watched',
+    markUnwatched: 'Mark as unwatched',
+    markedUnwatched: 'Marked as unwatched',
+    markSeasonWatched: 'Mark season as watched',
+    markSeasonUnwatched: 'Mark season as unwatched',
     removeLibrary: 'Remove from Library',
     addLibrary: 'Add to Library',
     removedLibrary: 'Removed from Library',
@@ -772,6 +777,7 @@ var UI_TEXT = {
     serverDisk: 'Não foi possível salvar o endereço',
     historyGroup: 'Histórico',
     noHistory: 'Não salvar histórico',
+    episodeAirDates: 'Datas de exibição nos episódios',
     clearSearches: 'Limpar buscas recentes',
     clearCw: 'Limpar Continuar assistindo',
     confirmAgain: 'Pressione OK de novo para confirmar',
@@ -819,6 +825,10 @@ var UI_TEXT = {
     trailer: 'Trailer',
     markWatched: 'Marcar como assistido',
     markedWatched: 'Marcado como assistido',
+    markUnwatched: 'Marcar como não assistido',
+    markedUnwatched: 'Marcado como não assistido',
+    markSeasonWatched: 'Marcar temporada como assistida',
+    markSeasonUnwatched: 'Marcar temporada como não assistida',
     removeLibrary: 'Remover da Biblioteca',
     addLibrary: 'Adicionar à Biblioteca',
     removedLibrary: 'Removido da Biblioteca',
@@ -4868,6 +4878,28 @@ function itemWatched(it) {
     for (var i = 0; i < s.watchedEpisodes.length; i++) if (s.watchedEpisodes[i] === vid) return true;
   return watchFinished(s.timeOffset, s.duration);
 }
+/* A library entry as Stremio stores one, for a title the library has not seen yet */
+function newLibItem(item, now) {
+  return {
+    state: {
+      lastWatched: now,
+      timeOffset: 0,
+      timeWatched: 0,
+      overallTimeWatched: 0,
+      timesWatched: 0,
+      flaggedWatched: 0,
+      duration: 0,
+      video_id: item.id,
+      watched: '',
+      noNotif: false,
+      season: 0,
+      episode: 0,
+      watchedEpisodes: []
+    },
+    _id: item.id,
+    _ctime: now
+  };
+}
 function libToggle(item) {
   var now = new Date().toISOString();
   var it = lsJson(PRE + item.id);
@@ -4877,26 +4909,7 @@ function libToggle(item) {
     lsSet(PRE + item.id, it);
     toast(tx('removedLibrary'));
   } else {
-    if (!it)
-      it = {
-        state: {
-          lastWatched: now,
-          timeOffset: 0,
-          timeWatched: 0,
-          overallTimeWatched: 0,
-          timesWatched: 0,
-          flaggedWatched: 0,
-          duration: 0,
-          video_id: item.id,
-          watched: '',
-          noNotif: false,
-          season: 0,
-          episode: 0,
-          watchedEpisodes: []
-        },
-        _id: item.id,
-        _ctime: now
-      };
+    if (!it) it = newLibItem(item, now);
     it.removed = false;
     it.temp = false;
     it._mtime = now;
@@ -4960,22 +4973,90 @@ function markCwWatched(it) {
   pushLib(lib2);
   invalidateBoards();
   if (lib2.type !== 'series' || vid === it.id) return;
+  pushEpisodeField(it.id, vid, true, s2.watched);
+}
+/* An episode's bit in state.watched, written by the local server (it has the episode
+   list), so other devices show the change too; cb runs once it is saved. */
+function pushEpisodeField(id, vid, watched, field, cb) {
   xhrJson(
     '/watchedset?id=' +
-      encodeURIComponent(it.id) +
+      encodeURIComponent(id) +
       '&vid=' +
       encodeURIComponent(vid) +
+      '&w=' +
+      (watched ? '1' : '0') +
       '&f=' +
-      encodeURIComponent(s2.watched || ''),
+      encodeURIComponent(field || ''),
     function (j) {
-      var cur = lsJson(PRE + it.id);
-      if (!j || !j.watched || !cur || !cur.state) return;
-      cur.state.watched = j.watched;
-      cur._mtime = new Date().toISOString();
-      lsSet(PRE + it.id, cur);
-      pushLib(cur);
+      var cur = lsJson(PRE + id);
+      if (j && j.watched && cur && cur.state) {
+        cur.state.watched = j.watched;
+        cur._mtime = new Date().toISOString();
+        lsSet(PRE + id, cur);
+        pushLib(cur);
+      }
+      if (cb) cb();
     }
   );
+}
+/* Mark as watched / unwatched from the title menu: a film (it.videoId empty or its own id)
+   or one episode of a series (it.videoId). A title not in the library gets an entry that
+   stays out of it (removed), as Stremio keeps watched state for titles never added. */
+function setItemWatched(it, watched, cb) {
+  var now = new Date().toISOString(),
+    lib = lsJson(PRE + it.id);
+  if (!lib) {
+    lib = newLibItem(it, now);
+    lib.removed = true;
+    lib.temp = true;
+    lib.name = it.name || '';
+    lib.type = it.type;
+    lib.poster = it.poster || '';
+    lib.posterShape = 'poster';
+    lib.background = it.background || '';
+  }
+  var s = lib.state || (lib.state = {}),
+    vid = it.videoId || it.id,
+    episode = it.type === 'series' && vid !== it.id;
+  if (!s.watchedEpisodes) s.watchedEpisodes = [];
+  var at = s.watchedEpisodes.indexOf(vid);
+  if (watched && at < 0) s.watchedEpisodes.push(vid);
+  if (!watched && at >= 0) s.watchedEpisodes.splice(at, 1);
+  if (!episode) {
+    if (watched && !s.flaggedWatched) s.timesWatched = (s.timesWatched || 0) + 1;
+    s.flaggedWatched = watched ? 1 : 0;
+    if (!watched) s.timesWatched = 0;
+  }
+  if (s.video_id === vid) s.timeOffset = 0;
+  lib._mtime = now;
+  lsSet(PRE + it.id, lib);
+  pushLib(lib);
+  invalidateBoards();
+  if (episode) pushEpisodeField(it.id, vid, watched, s.watched, cb);
+  else if (cb) cb();
+}
+/* A whole season at once: its episodes one after another, since each episode's bit is
+   written over the field the previous one left. */
+function setEpisodesWatched(it, vids, watched, cb) {
+  var i = 0;
+  (function next() {
+    if (i >= vids.length) {
+      if (cb) cb();
+      return;
+    }
+    setItemWatched(
+      {
+        type: 'series',
+        id: it.id,
+        name: it.name,
+        poster: it.poster,
+        background: it.background,
+        videoId: vids[i++]
+      },
+      watched,
+      next
+    );
+  })();
 }
 // Long-press OK side menu available on every card.
 /* ================= unified long-press side menu (any card) ================= */
@@ -5094,13 +5175,46 @@ var cwMenu = {
     this.it = it;
     var self = this;
     var sub = it.type === 'series' ? tx('seriesOne') : tx('movie');
-    if (it.cw && it.videoId && it.videoId.indexOf(':') > 0) {
+    if ((it.cw || it.episode) && it.videoId && it.videoId.indexOf(':') > 0) {
       var pp = it.videoId.split(':');
       sub = tx('seasonEpisode', pp[pp.length - 2], pp[pp.length - 1]);
     }
     this.begin(it.name, sub);
     function add(ic, lb, fn) {
       self.add(ic, lb, fn);
+    }
+    /* a season of a series page: all its episodes at once */
+    if (it.season) {
+      var seDone = !!it.watched;
+      this.begin(it.name, tx('season', it.seasonN));
+      add(
+        seDone ? ICON.close : ICON.check,
+        tx(seDone ? 'markSeasonUnwatched' : 'markSeasonWatched'),
+        function () {
+          self.close();
+          for (var vi = 0; vi < it.vids.length; vi++) detail.watchedMap[it.vids[vi]] = seDone ? 0 : 1;
+          detail.markWatched();
+          setEpisodesWatched(it, it.vids, !seDone);
+          toast(tx(seDone ? 'markedUnwatched' : 'markedWatched'));
+        }
+      );
+      $('cwm').style.display = 'block';
+      this.paint();
+      return;
+    }
+    /* one episode of a series page: only its watched state */
+    if (it.episode) {
+      var epDone = !!it.watched;
+      add(epDone ? ICON.close : ICON.check, tx(epDone ? 'markUnwatched' : 'markWatched'), function () {
+        self.close();
+        detail.watchedMap[it.videoId] = epDone ? 0 : 1;
+        detail.markWatched();
+        setItemWatched(it, !epDone);
+        toast(tx(epDone ? 'markedUnwatched' : 'markedWatched'));
+      });
+      $('cwm').style.display = 'block';
+      this.paint();
+      return;
     }
     add(ICON.play, it.cw ? tx('continueLabel') : tx('watch'), function () {
       self.close();
@@ -5125,6 +5239,16 @@ var cwMenu = {
         refreshCurBoard();
         toast(tx('markedWatched'));
       });
+    /* a film anywhere else: watched or not, either way */
+    if (!it.cw && it.type !== 'series') {
+      var done = itemWatched(it);
+      add(done ? ICON.close : ICON.check, tx(done ? 'markUnwatched' : 'markWatched'), function () {
+        setItemWatched(it, !done);
+        self.close();
+        refreshCurBoard();
+        toast(tx(done ? 'markedUnwatched' : 'markedWatched'));
+      });
+    }
     if (it.cw)
       add(ICON.close, tx('removeFromCw'), function () {
         removeFromCw(it);
@@ -6244,6 +6368,14 @@ detail.buildSeasonControls = function () {
   );
   if (this.seasonControlIdx >= this.seasonEls.length) this.seasonControlIdx = 0;
 };
+/* an air date in the viewer's language, "10 Mar 2008" */
+function episodeDay(at) {
+  try {
+    return new Date(at).toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return new Date(at).toISOString().slice(0, 10);
+  }
+}
 /* the focused episode: numbering, air date, length and whether it has aired yet */
 function episodeMetaLine(cv) {
   var bits = [
@@ -6252,15 +6384,7 @@ function episodeMetaLine(cv) {
         : tx('seasonEpisode', cv._stremSeason, cv._stremSeasonEpisode)
     ],
     at = releasedTime(cv);
-  if (at) {
-    var day = '';
-    try {
-      day = new Date(at).toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch (e) {
-      day = new Date(at).toISOString().slice(0, 10);
-    }
-    bits.push(day);
-  }
+  if (at) bits.push(episodeDay(at));
   if (cv.runtime) bits.push(cv.runtime);
   if (at > Date.now()) bits.push(tx('badgeSoon'));
   return bits.join('  ·  ');
@@ -6283,7 +6407,8 @@ detail.buildEps = function () {
   /* progress of the episode being watched, and release badges */
   var lib = lsJson(PRE + this.id),
     st = (lib && lib.state) || {},
-    now = Date.now();
+    now = Date.now(),
+    showDates = lsRaw('episodeDates', 'true') !== 'false'; /* Settings > Air dates on episodes */
   for (var i = 0; i < this.eps.length; i++) {
     var v = this.eps[i];
     var d = document.createElement('div');
@@ -6326,6 +6451,15 @@ detail.buildEps = function () {
       pf.style.width = Math.min(100, Math.round((st.timeOffset / st.duration) * 100)) + '%';
       pb.appendChild(pf);
       th.appendChild(pb);
+    }
+    /* every episode shows when it aired, on its picture (already in the episode list, no
+       extra request) */
+    var aired = showDates ? releasedTime(v) : 0;
+    if (aired) {
+      var ad = document.createElement('div');
+      ad.className = 'epdate';
+      ad.textContent = episodeDay(aired);
+      th.appendChild(ad);
     }
     d.appendChild(th);
     var bd = document.createElement('div');
@@ -8334,6 +8468,15 @@ var settings = {
         d: 'normal'
       },
       {
+        k: 'episodeDates',
+        lb: tx('episodeAirDates'),
+        opts: [
+          ['false', tx('disabled')],
+          ['true', tx('enabled')]
+        ],
+        d: 'true'
+      },
+      {
         k: 'bgTrailer',
         lb: tx('backgroundTrailers'),
         opts: [
@@ -9807,6 +9950,45 @@ function currentFocusedItem() {
   if (b) return b.focusedItem();
   if (SCR === 'disc' && disc.zone === 'grid' && !disc.filterOpen) return disc.focusedItem();
   if (SCR === 'sim') return similar.items[similar.idx] || null;
+  /* the focused season of a series page, to mark all its episodes */
+  if (
+    SCR === 'detail' &&
+    detail.type === 'series' &&
+    detail.zone === 'seasons' &&
+    detail.episodeMode !== 'continuous'
+  ) {
+    var se = detail.seasons && detail.seasons[detail.seasonIdx];
+    if (!se || !se.eps || !se.eps.length) return null;
+    var vids = [],
+      all = true;
+    for (var si = 0; si < se.eps.length; si++) {
+      vids.push(se.eps[si].id);
+      if (!detail.watchedMap[se.eps[si].id]) all = false;
+    }
+    return {
+      season: true,
+      type: 'series',
+      id: detail.id,
+      name: (detail.meta && detail.meta.name) || '',
+      seasonN: se.n,
+      vids: vids,
+      watched: all
+    };
+  }
+  /* the focused episode of a series page, for its watched toggle */
+  if (SCR === 'detail' && detail.type === 'series' && detail.zone === 'eps') {
+    var ep = detail.currentEpisode();
+    return ep
+      ? {
+          episode: true,
+          type: 'series',
+          id: detail.id,
+          videoId: ep.id,
+          name: ep.name || ep.title || (detail.meta && detail.meta.name) || '',
+          watched: !!detail.watchedMap[ep.id]
+        }
+      : null;
+  }
   if (SCR === 'search' && search.zone === 'rows') {
     var row = search.rows[search.rowIdx];
     return row ? row.items[row.col] || null : null;
@@ -9930,7 +10112,8 @@ on(
     okHold = { down: false, rep: 0, menu: false, item: null };
     if (h.down && !h.menu && h.item) {
       /* short press = the card's normal action */
-      if (SCR === 'sim') goScr('detail', { type: h.item.type, id: h.item.id, vid: null });
+      if (h.item.episode || h.item.season) detail.key(13);
+      else if (SCR === 'sim') goScr('detail', { type: h.item.type, id: h.item.id, vid: null });
       else openItem(h.item);
     }
   },

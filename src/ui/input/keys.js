@@ -5,6 +5,45 @@ function currentFocusedItem() {
   if (b) return b.focusedItem();
   if (SCR === 'disc' && disc.zone === 'grid' && !disc.filterOpen) return disc.focusedItem();
   if (SCR === 'sim') return similar.items[similar.idx] || null;
+  /* the focused season of a series page, to mark all its episodes */
+  if (
+    SCR === 'detail' &&
+    detail.type === 'series' &&
+    detail.zone === 'seasons' &&
+    detail.episodeMode !== 'continuous'
+  ) {
+    var se = detail.seasons && detail.seasons[detail.seasonIdx];
+    if (!se || !se.eps || !se.eps.length) return null;
+    var vids = [],
+      all = true;
+    for (var si = 0; si < se.eps.length; si++) {
+      vids.push(se.eps[si].id);
+      if (!detail.watchedMap[se.eps[si].id]) all = false;
+    }
+    return {
+      season: true,
+      type: 'series',
+      id: detail.id,
+      name: (detail.meta && detail.meta.name) || '',
+      seasonN: se.n,
+      vids: vids,
+      watched: all
+    };
+  }
+  /* the focused episode of a series page, for its watched toggle */
+  if (SCR === 'detail' && detail.type === 'series' && detail.zone === 'eps') {
+    var ep = detail.currentEpisode();
+    return ep
+      ? {
+          episode: true,
+          type: 'series',
+          id: detail.id,
+          videoId: ep.id,
+          name: ep.name || ep.title || (detail.meta && detail.meta.name) || '',
+          watched: !!detail.watchedMap[ep.id]
+        }
+      : null;
+  }
   if (SCR === 'search' && search.zone === 'rows') {
     var row = search.rows[search.rowIdx];
     return row ? row.items[row.col] || null : null;
@@ -128,7 +167,8 @@ on(
     okHold = { down: false, rep: 0, menu: false, item: null };
     if (h.down && !h.menu && h.item) {
       /* short press = the card's normal action */
-      if (SCR === 'sim') goScr('detail', { type: h.item.type, id: h.item.id, vid: null });
+      if (h.item.episode || h.item.season) detail.key(13);
+      else if (SCR === 'sim') goScr('detail', { type: h.item.type, id: h.item.id, vid: null });
       else openItem(h.item);
     }
   },

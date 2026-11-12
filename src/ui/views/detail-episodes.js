@@ -166,6 +166,14 @@ detail.buildSeasonControls = function () {
   );
   if (this.seasonControlIdx >= this.seasonEls.length) this.seasonControlIdx = 0;
 };
+/* an air date in the viewer's language, "10 Mar 2008" */
+function episodeDay(at) {
+  try {
+    return new Date(at).toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return new Date(at).toISOString().slice(0, 10);
+  }
+}
 /* the focused episode: numbering, air date, length and whether it has aired yet */
 function episodeMetaLine(cv) {
   var bits = [
@@ -174,15 +182,7 @@ function episodeMetaLine(cv) {
         : tx('seasonEpisode', cv._stremSeason, cv._stremSeasonEpisode)
     ],
     at = releasedTime(cv);
-  if (at) {
-    var day = '';
-    try {
-      day = new Date(at).toLocaleDateString(UI_LANG, { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch (e) {
-      day = new Date(at).toISOString().slice(0, 10);
-    }
-    bits.push(day);
-  }
+  if (at) bits.push(episodeDay(at));
   if (cv.runtime) bits.push(cv.runtime);
   if (at > Date.now()) bits.push(tx('badgeSoon'));
   return bits.join('  ·  ');
@@ -205,7 +205,8 @@ detail.buildEps = function () {
   /* progress of the episode being watched, and release badges */
   var lib = lsJson(PRE + this.id),
     st = (lib && lib.state) || {},
-    now = Date.now();
+    now = Date.now(),
+    showDates = lsRaw('episodeDates', 'true') !== 'false'; /* Settings > Air dates on episodes */
   for (var i = 0; i < this.eps.length; i++) {
     var v = this.eps[i];
     var d = document.createElement('div');
@@ -248,6 +249,15 @@ detail.buildEps = function () {
       pf.style.width = Math.min(100, Math.round((st.timeOffset / st.duration) * 100)) + '%';
       pb.appendChild(pf);
       th.appendChild(pb);
+    }
+    /* every episode shows when it aired, on its picture (already in the episode list, no
+       extra request) */
+    var aired = showDates ? releasedTime(v) : 0;
+    if (aired) {
+      var ad = document.createElement('div');
+      ad.className = 'epdate';
+      ad.textContent = episodeDay(aired);
+      th.appendChild(ad);
     }
     d.appendChild(th);
     var bd = document.createElement('div');
