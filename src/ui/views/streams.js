@@ -236,7 +236,7 @@ var streamsUI = {
     for (n = 0; n < allItems.length; n++) {
       var s = allItems[n];
       if (s.stored) continue;
-      var audio = s.subLangsOnly ? ['none'] : langGroups(s);
+      var audio = langGroups(s);
       for (var a = 0; a < audio.length; a++) count('a:' + audio[a]);
       var subs = subtitleGroups(s);
       for (var b = 0; b < subs.length; b++) count('s:' + subs[b]);
@@ -274,9 +274,6 @@ var streamsUI = {
     function row(selected, label, act) {
       cwMenu.add(selected ? ICON.check : '<svg viewBox="0 0 24 24"></svg>', label, act);
     }
-    row(this.langFilter === 'All', tx('langChipAll'), function () {
-      self.setLangFilter('All');
-    });
     if (kinds.a)
       row(this.langFilter.charAt(0) === 'a', tx('filterByAudio') + '  \u203a', function () {
         self.chooseLangOf('a');
@@ -284,6 +281,11 @@ var streamsUI = {
     if (kinds.s)
       row(this.langFilter.charAt(0) === 's', tx('filterBySubs') + '  \u203a', function () {
         self.chooseLangOf('s');
+      });
+    /* with a filter on, the way back to every source */
+    if (this.langFilter !== 'All')
+      cwMenu.add(ICON.close, tx('clearLangFilter'), function () {
+        self.setLangFilter('All');
       });
     $('cwm').style.display = 'block';
     cwMenu.paint();

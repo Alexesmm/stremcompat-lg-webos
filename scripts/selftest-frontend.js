@@ -282,11 +282,7 @@ assert.strictEqual(tagText, '4K,DOLBY VISION,HDR,5.1,24.5 GB,532 seeds', 'source
 var premium = firstRun.context.__SC_SOURCE_TAGS__({ name:'X', title:'Film.2160p.IMAX.REMUX.TrueHD.Atmos.7.1 60 GB', quality:'4K' }).map(function (x) { return x.t; }).join(',');
 assert.strictEqual(premium, '4K,ATMOS,IMAX,REMUX,7.1,60 GB', 'Atmos, IMAX, Remux or 7.1 were not shown');
 var filterIn = firstRun.context.__SC_IN_LANG_FILTER__;
-assert.deepStrictEqual([filterIn({ langs:['pt-BR'] }, 'a:pt'), filterIn({ langs:['pt-BR'], subLangsOnly:true, subLangs:['pt-BR'] }, 'a:pt'), filterIn({ langs:['pt-BR'], subLangsOnly:true, subLangs:['pt-BR'] }, 's:pt'), filterIn({ langs:['pt-BR'], subLangsOnly:true, subLangs:['pt-BR'] }, 'a:none'), filterIn({ langs:['en'], subLangs:['pt-BR'] }, 's:pt')], [true, false, true, true, true], 'a source with only Portuguese subtitles was filtered as Portuguese audio');
-var subWords = firstRun.context.__SC_SUBTITLE_WORDS__, flagAudio = ['pt-BR', 'en'], dubAudio = ['pt-BR'];
-assert.strictEqual(subWords({ title:'Show.S01E01.1080p.WEB.Legendado' }, flagAudio).join() + '|' + flagAudio.join(), 'pt-BR|en', 'Legendado did not make Portuguese the subtitles instead of the audio');
-assert.strictEqual(subWords({ title:'Show.S01E01.1080p.Dual.Audio.Legendado' }, dubAudio).join() + '|' + dubAudio.join(), 'pt-BR|pt-BR', 'a dubbed release that also names subtitles lost its audio');
-assert.strictEqual(subWords({ title:'Film.2019.VOSTFR.1080p' }, []).join() + subWords({ title:'Film.2019.1080p.ESub' }, []).join() + subWords({ title:'Film Sub ITA' }, []).join(), 'frenit', 'VOSTFR, ESub or Sub ITA were not read as subtitles');
+assert.deepStrictEqual([filterIn({ langs:['pt-BR'] }, 'a:pt'), filterIn({ langs:[], subLangs:['pt-BR'] }, 'a:pt'), filterIn({ langs:[], subLangs:['pt-BR'] }, 's:pt'), filterIn({ langs:[], subLangs:['pt-BR'] }, 'a:none'), filterIn({ langs:['en'], subLangs:['pt-BR'] }, 's:pt')], [true, false, true, true, true], 'a source with only Portuguese subtitles was filtered as Portuguese audio');
 assert.strictEqual(firstRun.context.__SC_STREAM_COMPAT__({ title:'Show.S01.1080p RAR' }).rank + '|' + firstRun.context.__SC_STREAM_COMPAT__({ title:'Show.S01.1080p.RARBG' }).rank, '4|0', 'a debrid RAR was not moved to the end, or RARBG was taken for one');
 var langsOf = function (title, name) { return firstRun.context.__SC_STREAM_LANGUAGES__({ name: name || 'Torrentio', title: title }).join(','); };
 assert.strictEqual(langsOf('Show.S01E01.1080p\n👤 12 💾 1.2 GB\nMulti Audio / 🇬🇧 / 🇮🇹'), 'en,it,multi', 'flags and multi audio were not read');
@@ -294,22 +290,28 @@ assert.strictEqual(langsOf('Filme.2023.1080p.WEB-DL.DUAL.5.1 Dublado'), 'pt-BR,m
 assert.strictEqual(langsOf('Pelicula 1080p 🇲🇽 Latino', 'Latam'), 'es-419', 'Latin American Spanish was not detected');
 assert.strictEqual(langsOf('The.Movie.2160p.WEB-DL.DDP5.1.HEVC'), '', 'a release without language words got a language');
 assert.strictEqual(langsOf('Lost.Italy.Germany.1080p'), '', 'country names in a title were read as languages');
-/* The language filter keeps exactly the sources of 1.3.0: detection is unchanged, Multi Subs
-   sources only get a subtitle tag. Expected groups are the ones 1.3.0 produced. */
-var langSamples = [
-  ['Torrentio', '[Erai-raws] One Piece - 1180 [1080p CR WEBRip HEVC AAC][MultiSub]\n\uD83D\uDC64 167 \uD83D\uDCBE 710 MB NyaaSi Multi Subs / \uD83C\uDDEC\uD83C\uDDE7 / \uD83C\uDDE7\uD83C\uDDF7 / \uD83C\uDDEA\uD83C\uDDF8 / \uD83C\uDDEB\uD83C\uDDF7 / \uD83C\uDDE9\uD83C\uDDEA', 'en,pt-BR,es,fr,de,multi', true],
-  ['Torrentio', 'Show.S01E01.1080p\nMulti Audio / \uD83C\uDDEC\uD83C\uDDE7 / \uD83C\uDDEE\uD83C\uDDF9', 'en,it,multi', false],
-  ['Torrentio', 'Filme.2023.1080p.WEB-DL.DUAL.5.1 Dublado', 'pt-BR,multi', false],
-  ['Latam', 'Pelicula 720p \uD83C\uDDF2\uD83C\uDDFD Latino', 'es-419', false],
-  ['Torrentio', 'The.Movie.2023.2160p.WEB-DL.DDP5.1.HEVC', '', false],
-  ['Torrentio', 'Anime 1080p Multi-Subs Dual Audio / \uD83C\uDDEF\uD83C\uDDF5 / \uD83C\uDDFA\uD83C\uDDF8', 'ja,en,multi', false]
-];
-langSamples.forEach(function (sample) {
-  var src = { name: sample[0], title: sample[1] };
-  assert.strictEqual(firstRun.context.__SC_STREAM_LANGUAGES__(src).join(','), sample[2], 'language detection changed for: ' + sample[1]);
-  assert.strictEqual(firstRun.context.__SC_SUBTITLE_LANGUAGES_ONLY__(src), sample[3], 'subtitle-only flags misread for: ' + sample[1]);
+/* Audio and subtitles told apart from the name: words that name each, and Torrentio's flags,
+   which are audio with Multi/Dual Audio, subtitles with Multi Subs, and past two flags only the
+   first is audio (streaming rips with many subtitle tracks). Cases from real Torrentio answers. */
+var languageInfo = firstRun.context.__SC_LANGUAGE_INFO__;
+[  ["[Erai-raws] One Piece - 1180 [1080p CR WEBRip HEVC AAC][MultiSub]\n167 710 MB NyaaSi Multi Subs / \ud83c\uddec\ud83c\udde7 / \ud83c\udde7\ud83c\uddf7 / \ud83c\uddea\ud83c\uddf8 / \ud83c\uddeb\ud83c\uddf7 / \ud83c\udde9\ud83c\uddea", "", "en,pt-BR,es,fr,de"],
+  ["Show.S01E01.1080p\nMulti Audio / \ud83c\uddec\ud83c\udde7 / \ud83c\uddee\ud83c\uddf9", "en,it,multi", ""],
+  ["Filme.2023.1080p.WEB-DL.DUAL.5.1 Dublado", "pt-BR,multi", ""],
+  ["Anime 1080p Multi-Subs Dual Audio / \ud83c\uddef\ud83c\uddf5 / \ud83c\uddfa\ud83c\uddf8", "ja,en,multi", "multi"],
+  ["The Simpsons S19E05 1080p DSNP WEB-DL DD 5 1\n\ud83c\uddec\ud83c\udde7 / \ud83c\uddef\ud83c\uddf5 / \ud83c\uddee\ud83c\uddf9 / \ud83c\uddf5\ud83c\uddf9 / \ud83c\uddea\ud83c\uddf8 / \ud83c\uddf0\ud83c\uddf7 / \ud83c\udde8\ud83c\uddf3 / \ud83c\uddeb\ud83c\uddf7 / \ud83c\udde9\ud83c\uddea / \ud83c\uddf3\ud83c\uddf1", "en", "ja,it,pt,es,ko,zh,fr,de"],
+  ["I Simpson - Stagione 1-34 [720p x264 ITA E-AC3/AAC ENG E-AC3 SUB ITA ENG] MIRCrew", "en,it", "it,en"],
+  ["I Simpson Stagioni 1 - 36 [1080p H264 Eng EAC3 Multisub]", "en", "multi"],
+  ["Simpsons DVO (2x2) + Dub (Ukr) + Sub (rus eng)", "", "ru,en"],
+  ["Serie.S01E01.1080p.WEB-DL.Legendado / \ud83c\uddf5\ud83c\uddf9", "", "pt-BR"],
+  ["Film.2019.VOSTFR.1080p", "", "fr"],
+  ["Film.2019.1080p.WEB.ESub", "", "en"],
+  ["The.Movie.2023.2160p.WEB-DL.DDP5.1.HEVC", "", ""],
+  ["Lost.Italy.Germany.1080p", "", ""]
+].forEach(function (sample) {
+  var info = languageInfo({ name: 'Torrentio', title: sample[0] });
+  assert.strictEqual(info.audio.join(',') + ' | ' + info.subs.join(','), sample[1] + ' | ' + sample[2], 'audio and subtitles misread for: ' + sample[0]);
 });
-var subTags = firstRun.context.__SC_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: ['en', 'pt-BR', 'es', 'multi'], subLangsOnly: true, subLangs: ['en', 'pt-BR', 'es', 'multi'] });
+var subTags = firstRun.context.__SC_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: [], subLangs: ['en', 'pt-BR', 'es', 'multi'] });
 assert.strictEqual(subTags[1].c + ':' + subTags[1].t, 'sublang:SUBS EN · PT-BR +1', 'Multi Subs flags were not tagged as subtitles');
 var heroHtml = firstRun.context.__SC_HERO_META__({ runtime: '109 min', year: '2026', imdbRating: '7.8' });
 assert.ok(/109 min.*2026.*7\.8.*IMDb/.test(heroHtml), 'the hero info line is out of order: ' + heroHtml);

@@ -37,15 +37,14 @@ function sourceTags(s) {
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
   /* the audio and subtitle languages go right after the quality */
   var langTags = [];
-  if (s.langs && s.langs.length && !s.subLangsOnly) langTags.push({ t: langTagText(s.langs), c: 'lang' });
+  if (s.langs && s.langs.length) langTags.push({ t: langTagText(s.langs), c: 'lang' });
   if (s.subLangs && s.subLangs.length) langTags.push(subTag(s.subLangs));
   Array.prototype.splice.apply(out, [out.length && out[0].c === 'q' ? 1 : 0, 0].concat(langTags));
   return out;
 }
 window.__SC_SOURCE_TAGS__ = sourceTags;
 window.__SC_STREAM_LANGUAGES__ = streamLanguages;
-window.__SC_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
-window.__SC_SUBTITLE_WORDS__ = subtitleWordLanguages;
+window.__SC_LANGUAGE_INFO__ = streamLanguageInfo;
 /* 'PT-BR', 'ES-LA · EN', 'MULTI', or the first two and '+2' when there are more */
 function langTagText(langs) {
   var names = [];
@@ -75,7 +74,7 @@ function inLangFilter(s, key) {
   if (key === 'All') return true;
   var lang = key.slice(2);
   if (key.charAt(0) === 's') return subtitleGroups(s).indexOf(lang) >= 0;
-  return (s.subLangsOnly ? ['none'] : langGroups(s)).indexOf(lang) >= 0;
+  return langGroups(s).indexOf(lang) >= 0;
 }
 /* the language groups of a source's subtitles */
 function subtitleGroups(s) {
@@ -123,13 +122,13 @@ function preferredSourceLanguage() {
   var set = lsRaw('preferredSourceLanguage', 'Ask');
   return set === 'Ask' ? lsRaw('bestLanguage', 'Auto') : set;
 }
-/* 0 when the source has the preferred audio language, 1 for multi audio, 2 otherwise. A source
-   whose flags name only its subtitles ("Multi Subs") counts as otherwise, and so does a torrent
-   with almost no seeders: the language does not put one that would hardly load above the rest. */
+/* 0 when the source has the preferred audio language, 1 for multi audio, 2 otherwise. A torrent
+   with almost no seeders counts as otherwise: the language does not put one that would hardly
+   load above the rest. */
 var LANGUAGE_MIN_SEEDERS = 5;
 function langRank(s, pref) {
   if (!pref || pref === 'Auto') return 0;
-  if (s.subLangsOnly || (s.seeders != null && s.seeders < LANGUAGE_MIN_SEEDERS)) return 2;
+  if (s.seeders != null && s.seeders < LANGUAGE_MIN_SEEDERS) return 2;
   var g = langGroups(s);
   return g.indexOf(pref) >= 0 ? 0 : g.indexOf('multi') >= 0 ? 1 : 2;
 }

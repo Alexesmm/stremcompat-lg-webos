@@ -696,11 +696,12 @@ var UI_TEXT = {
     anyLanguage: 'Any',
     langFilter: 'Audio: {0}',
     subsFilter: 'Subtitles: {0}',
-    langChipAll: 'Language: all',
+    langChipAll: 'Filter by language',
     langFilterTitle: 'Filter by language',
     langFilterSub: 'Audio: the source is dubbed in that language. Subtitles: only the subtitles come in it.',
     filterByAudio: 'By audio (dubbed)',
     filterBySubs: 'By embedded subtitles',
+    clearLangFilter: 'Remove the filter (show all sources)',
     langAll: 'All',
     langOther: 'Other',
     subsTag: 'SUBS',
@@ -1130,11 +1131,12 @@ var UI_TEXT = {
     anyLanguage: 'Qualquer',
     langFilter: 'Áudio: {0}',
     subsFilter: 'Legenda: {0}',
-    langChipAll: 'Idioma: todos',
+    langChipAll: 'Filtrar idioma',
     langFilterTitle: 'Filtrar por idioma',
     langFilterSub: 'Áudio: a fonte é dublada nesse idioma. Legenda: só a legenda vem nesse idioma.',
     filterByAudio: 'Por áudio (dublagem)',
     filterBySubs: 'Por legenda embutida',
+    clearLangFilter: 'Tirar o filtro (mostrar todas as fontes)',
     langAll: 'Todos',
     langOther: 'Outros',
     subsTag: 'LEG',
@@ -1529,10 +1531,16 @@ function streamCompatibility(s) {
   }
   return { labels: labels, rank: rank };
 }
-/* ---- audio languages of a source, read once when the addon answers (fetchStreams) ----
-   From country flags (addons such as Torrentio list them) and the usual release words.
-   Codes are pt-BR, pt, es-419 (Latin American Spanish), es, en, fr, it, de, ja, ko, ru,
-   hi, plus 'multi' for multi or dual audio. */
+/* ---- the audio and subtitle languages of a source, read once when the addon answers ----
+   Only the name says it, so the clues are weighed:
+   - words that name the audio ("Dublado", "Latino", "Castellano", "VFF", "iTA", "ENG") and words
+     that name subtitles ("Legendado", "VOSTFR", "Sub ITA ENG", "Eng Subs", "MultiSub");
+   - the flags Torrentio lists, which mix audio and subtitles: they are audio with "Multi Audio"
+     or "Dual Audio", subtitles with "Multi Subs" alone, and when a release lists three or more
+     with neither, only the first (or one a word names) is audio and the rest are subtitles,
+     as in streaming rips that carry many subtitle tracks.
+   Codes are pt-BR, pt, es-419 (Latin American Spanish), es, en, fr, it, de, ja, ko, zh, ru,
+   hi, plus 'multi' for multi or dual audio (or many subtitles). */
 var FLAG_LANG = {
   BR: 'pt-BR',
   PT: 'pt',
@@ -1551,9 +1559,12 @@ var FLAG_LANG = {
   DE: 'de',
   JP: 'ja',
   KR: 'ko',
+  CN: 'zh',
+  TW: 'zh',
   RU: 'ru',
   IN: 'hi'
 };
+/* words that name the audio */
 var WORD_LANG = [
   ['pt-BR', /\b(dublado|pt[ ._-]?br|brazilian)\b/],
   ['pt', /\b(portugu[eê]se?|portugu[eê]s)\b/],
@@ -1566,62 +1577,141 @@ var WORD_LANG = [
   ['ja', /\b(japanese|jpn)\b/],
   ['ko', /\b(korean)\b/],
   ['ru', /\b(russian|rus)\b/],
-  ['hi', /\b(hindi)\b/],
-  ['multi', /\b(multi|dual)\b/]
+  ['hi', /\b(hindi)\b/]
 ];
-function streamLanguages(s) {
+/* a language as subtitle lists write it: "SUB ITA ENG", "Sub (rus eng)", "Subs: spa, por" */
+var SUB_TOKEN = {
+  en: 'en',
+  eng: 'en',
+  english: 'en',
+  it: 'it',
+  ita: 'it',
+  italian: 'it',
+  es: 'es',
+  esp: 'es',
+  spa: 'es',
+  spanish: 'es',
+  lat: 'es-419',
+  pt: 'pt-BR',
+  por: 'pt-BR',
+  ptbr: 'pt-BR',
+  bra: 'pt-BR',
+  portuguese: 'pt-BR',
+  fr: 'fr',
+  fre: 'fr',
+  fra: 'fr',
+  french: 'fr',
+  de: 'de',
+  ger: 'de',
+  deu: 'de',
+  german: 'de',
+  ja: 'ja',
+  jap: 'ja',
+  jpn: 'ja',
+  japanese: 'ja',
+  ko: 'ko',
+  kor: 'ko',
+  korean: 'ko',
+  zh: 'zh',
+  chi: 'zh',
+  chs: 'zh',
+  cht: 'zh',
+  chinese: 'zh',
+  ru: 'ru',
+  rus: 'ru',
+  russian: 'ru',
+  hi: 'hi',
+  hin: 'hi',
+  hindi: 'hi'
+};
+/* the subtitle phrases of a name: their languages, and the name without them */
+function subtitlePhrases(low) {
+  var subs = [];
+  function add(code) {
+    if (code && subs.indexOf(code) < 0) subs.push(code);
+  }
+  /* "sub ita eng", "subs: spa, por", "subtitles (rus eng)" */
+  var after = /\b(?:subs?|subtitles?|legendas?)\b[\s._:(\[-]*((?:[a-z]{2,10}(?:[\s._,+/&)\]-]+|$)){1,10})/g;
+  low = low.replace(after, function (all, list) {
+    var words = list.split(/[^a-z]+/),
+      used = 0;
+    for (var i = 0; i < words.length; i++) {
+      if (!words[i]) continue;
+      if (!SUB_TOKEN[words[i]]) break;
+      add(SUB_TOKEN[words[i]]);
+      used++;
+    }
+    return used ? ' ' : all;
+  });
+  /* "eng subs", "spa sub", "esub" */
+  low = low.replace(/\b([a-z]{2,10})[ ._-]?subs?\b/g, function (all, word) {
+    if (word === 'e') return all;
+    if (!SUB_TOKEN[word]) return all;
+    add(SUB_TOKEN[word]);
+    return ' ';
+  });
+  low = low.replace(/\be[ ._-]?subs?\b/g, function () {
+    add('en');
+    return ' ';
+  });
+  if (/\b(legendad[oa])\b/.test(low)) add('pt-BR');
+  if (/\b(vostfr|vost)\b/.test(low)) add('fr');
+  return { subs: subs, rest: low.replace(/\b(legendad[oa]|vostfr|vost)\b/g, ' ') };
+}
+function streamLanguageInfo(s) {
   var t = streamText(s),
-    low = t.toLowerCase(),
-    out = [],
+    phrases = subtitlePhrases(t.toLowerCase()),
+    low = phrases.rest,
+    subs = phrases.subs,
+    audio = [],
+    flags = [],
     flag = /\uD83C([\uDDE6-\uDDFF])\uD83C([\uDDE6-\uDDFF])/g,
     m,
     i;
-  function add(code) {
-    if (out.indexOf(code) < 0) out.push(code);
+  function addTo(list, code) {
+    if (code && list.indexOf(code) < 0) list.push(code);
   }
   while ((m = flag.exec(t))) {
     var cc = String.fromCharCode(m[1].charCodeAt(0) - 0xdde6 + 65, m[2].charCodeAt(0) - 0xdde6 + 65);
-    if (FLAG_LANG[cc]) add(FLAG_LANG[cc]);
+    addTo(flags, FLAG_LANG[cc]);
   }
-  for (i = 0; i < WORD_LANG.length; i++) if (WORD_LANG[i][1].test(low)) add(WORD_LANG[i][0]);
+  var named = [];
+  for (i = 0; i < WORD_LANG.length; i++) if (WORD_LANG[i][1].test(low)) addTo(named, WORD_LANG[i][0]);
+  var multiSubs = /\bmulti[ ._-]?subs?\b|\bmultisubs?\b/.test(low),
+    multiAudio =
+      /\b(multi[ ._-]?audio|dual[ ._-]?audio|dual)\b/.test(low) || /\bmulti\b(?![ ._-]?subs?)/.test(low);
+  for (i = 0; i < named.length; i++) addTo(audio, named[i]);
+  if (multiAudio) for (i = 0; i < flags.length; i++) addTo(audio, flags[i]);
+  else if (multiSubs)
+    for (i = 0; i < flags.length; i++) addTo(audio.indexOf(flags[i]) >= 0 ? audio : subs, flags[i]);
+  else if (flags.length < 3) for (i = 0; i < flags.length; i++) addTo(audio, flags[i]);
+  else
+    for (i = 0; i < flags.length; i++) {
+      /* many flags, nothing about audio: the first (or one a word names) is the audio */
+      if (audio.indexOf(flags[i]) >= 0) continue;
+      addTo(!audio.length && i === 0 ? audio : subs, flags[i]);
+    }
+  if (multiSubs && !subs.length) subs.push('multi');
+  /* a language whose subtitles a word names, which no word gives as audio, is not the audio */
+  var subBases = phrases.subs.map(langBase),
+    namedBases = named.map(langBase);
+  for (i = audio.length - 1; i >= 0; i--) {
+    var base = langBase(audio[i]);
+    if (subBases.indexOf(base) >= 0 && namedBases.indexOf(base) < 0 && !multiAudio) {
+      addTo(subs, audio[i]);
+      audio.splice(i, 1);
+    }
+  }
+  if (multiAudio) addTo(audio, 'multi');
   /* "dublado" or a Brazilian flag says more than a plain "portuguese" */
-  if (out.indexOf('pt-BR') >= 0 && out.indexOf('pt') >= 0) out.splice(out.indexOf('pt'), 1);
-  if (out.indexOf('es-419') >= 0 && out.indexOf('es') >= 0) out.splice(out.indexOf('es'), 1);
-  return out;
+  [audio, subs].forEach(function (list) {
+    if (list.indexOf('pt-BR') >= 0 && list.indexOf('pt') >= 0) list.splice(list.indexOf('pt'), 1);
+    if (list.indexOf('es-419') >= 0 && list.indexOf('es') >= 0) list.splice(list.indexOf('es'), 1);
+  });
+  return { audio: audio, subs: subs };
 }
-/* "Multi Subs" releases (anime above all) list their SUBTITLE languages with flags. The
-   detected languages stay the same for the filter and the preferred-language order; only
-   the tag says they are subtitles. */
-function subtitleLanguagesOnly(s) {
-  var low = streamText(s).toLowerCase();
-  return /\bmulti[ ._-]?subs?\b/.test(low) && !/\b(multi[ ._-]?audio|dual|dublado|dubbed|dub)\b/.test(low);
-}
-/* ---- subtitle languages a source names in words: "Legendado", "VOSTFR", "Sub ITA", "ESub" ----
-   A country flag next to such a word is the subtitles' language, not the audio's, unless the
-   name also says the audio is dubbed. */
-var SUB_WORD_LANG = [
-  ['pt-BR', /\b(legendad[oa]|leg)\b/],
-  ['fr', /\b(vostfr|vost)\b/],
-  ['it', /\b(sub[ ._-]?ita|subita)\b/],
-  ['es', /\b(sub[ ._-]?(esp|spa)|(esp|spa|spanish)[ ._-]?subs?)\b/],
-  ['en', /\b(e[ ._-]?subs?|eng?[ ._-]?subs?|english[ ._-]?subs?|subs?[ ._-]?eng?)\b/]
-];
-var DUBBED_WORDS = {
-  'pt-BR': /\b(dublado|dual|dub|dubbed)\b/,
-  fr: /\b(vff|vf2?|truefrench|dual|multi)\b/
-};
-/* the subtitle languages named in words; takes out of audio a language only its subtitles have */
-function subtitleWordLanguages(s, audio) {
-  var low = streamText(s).toLowerCase(),
-    subs = [];
-  for (var i = 0; i < SUB_WORD_LANG.length; i++) {
-    var code = SUB_WORD_LANG[i][0];
-    if (!SUB_WORD_LANG[i][1].test(low)) continue;
-    if (subs.indexOf(code) < 0) subs.push(code);
-    var at = audio.indexOf(code);
-    if (at >= 0 && DUBBED_WORDS[code] && !DUBBED_WORDS[code].test(low)) audio.splice(at, 1);
-  }
-  return subs;
+function streamLanguages(s) {
+  return streamLanguageInfo(s).audio;
 }
 function langBase(code) {
   return String(code).split('-')[0];
@@ -1656,10 +1746,9 @@ function sourceItem(s, addonName, addonBase) {
     notWebReady: !!h.notWebReady,
     headers: (h.proxyHeaders && h.proxyHeaders.request) || null
   };
-  item.langs = streamLanguages(s);
-  item.subLangsOnly = item.langs.length > 0 && subtitleLanguagesOnly(s);
-  /* the languages of its subtitles: all its flags for "Multi Subs", else the words */
-  item.subLangs = item.subLangsOnly ? item.langs.slice() : subtitleWordLanguages(s, item.langs);
+  var languages = streamLanguageInfo(s);
+  item.langs = languages.audio;
+  item.subLangs = languages.subs;
   var compat = streamCompatibility(item);
   item.compatLabels = compat.labels;
   item.compatRank = compat.rank;
@@ -1709,7 +1798,7 @@ function sourceTraits(value) {
    language and are not judged. */
 function nextLanguageFit(wanted, s) {
   if (!wanted) return 0;
-  var have = s.subLangsOnly ? [] : s.langs || [],
+  var have = s.langs || [],
     named = [],
     score = 0,
     i;
@@ -2838,7 +2927,7 @@ function nextSourcePref() {
     compat: COMPAT,
     text: SNAME,
     binge: BINGE,
-    langs: subtitleLanguagesOnly({ name: SNAME }) ? [] : streamLanguages({ name: SNAME })
+    langs: streamLanguages({ name: SNAME })
   };
 }
 /* kept for the title page of the episode being opened: the next one, unless another is named */

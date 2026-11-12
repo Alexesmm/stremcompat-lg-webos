@@ -41,7 +41,7 @@ function nextSourcePref() {
     compat: COMPAT,
     text: SNAME,
     binge: BINGE,
-    langs: subtitleLanguagesOnly({ name: SNAME }) ? [] : streamLanguages({ name: SNAME })
+    langs: streamLanguages({ name: SNAME })
   };
 }
 /* kept for the title page of the episode being opened: the next one, unless another is named */

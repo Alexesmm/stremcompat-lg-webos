@@ -105,7 +105,7 @@ function nextDirect(streams, opts) {
   };
   vm.runInNewContext(
     src('platform/lg/common.js') + src('shared/strings.js') + src('shared/stream-addons.js') + src('shared/source-info.js') + src('player/strings.js') + src('player/up-next.js') +
-    ';function nextSourcePref(){return{addon:ADDON,quality:QUALITY,compat:COMPAT,text:SNAME,binge:BINGE,langs:subtitleLanguagesOnly({name:SNAME})?[]:streamLanguages({name:SNAME})};}' +
+    ';function nextSourcePref(){return{addon:ADDON,quality:QUALITY,compat:COMPAT,text:SNAME,binge:BINGE,langs:streamLanguages({name:SNAME})};}' +
     (opts.ahead ? ';prefetchNext();' : '') + ';openNextDirect();',
     ctx
   );

@@ -31,7 +31,7 @@ This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronic
 - **New side menu and Settings:** your profile at the top, Settings in two columns, Sign out and Leave the app easy to find.
 - **More in the player:** episodes, chapters, picture size, speed, and better subtitles and audio.
 - **You sign in again once** after updating to 4.0 from 3.x. See the [release notes](docs/releases/v4.0.0.md).
-- **4.2:** Skip intro and recap, Nuvio Collections on Home, updates from inside the app, and Korean, Japanese and Chinese. See the [4.2.0 notes](docs/releases/v4.2.0.md).
+- **4.2:** Skip intro and recap, Nuvio Collections on Home, updates from inside the app, and Korean, Japanese and Chinese. 4.2.1 tells audio from subtitles much better in the source list. See the [4.2.1 notes](docs/releases/v4.2.1.md).
 - **4.1:** a black-and-white look with featured titles, Best source picks the audio language, and the player has its own buttons for audio and subtitles, episodes and sources.
 
 ## Features
@@ -89,7 +89,7 @@ There are two packages, and the video looks the same in both:
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v4.2.0-1080p.ipk` or `StremCompat-v4.2.0-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v4.2.1-1080p.ipk` or `StremCompat-v4.2.1-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 

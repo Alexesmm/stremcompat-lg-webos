@@ -48,7 +48,7 @@ body:
     attributes:
       label: Exact IPK filename
       description: Include the version and graphics resolution from the downloaded filename.
-      placeholder: StremCompat-v4.2.0-720p.ipk
+      placeholder: StremCompat-v4.2.1-720p.ipk
     validations:
       required: true
   - type: input
