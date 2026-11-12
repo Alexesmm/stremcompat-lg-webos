@@ -14,6 +14,7 @@
   "options.js",
   "menus.js",
   "paused.js",
+  "skips.js",
   "up-next.js",
   "previews.js",
   "keys.js"

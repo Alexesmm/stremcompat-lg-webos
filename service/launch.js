@@ -19,6 +19,10 @@ var APP_PORT = PROFILE.port;
 var APP_VERSION = PROFILE.version;
 var service = new Service(PROFILE.serviceId);
 var spawned = false;
+/* the server has answered at least once since this service started */
+var everReady = false;
+/* how long a server of its own may take to answer before it runs inside the service */
+var OWN_PROCESS_WAIT_MS = 30000;
 
 /* A smaller V8 young generation for the local server, which mostly moves Buffers: those
    live outside the V8 heap, so the TV gets that memory back. */
@@ -27,7 +31,10 @@ function runtimeFlags() {
   return semi > 0 ? ['--max_semi_space_size=' + semi] : [];
 }
 
+var recentLog = [];
 function log(message) {
+  recentLog.push(message);
+  if (recentLog.length > 3) recentLog.shift();
   try {
     fs.appendFileSync(path.join(DIR, 'launch.log'), new Date().toISOString() + ' ' + message + '\n');
   } catch (ignore) {}
@@ -231,10 +238,23 @@ function startRuntime() {
     if (insideService) return;
     spawned = false;
     log('Runtime exit code=' + code + ' signal=' + signal);
+    /* A server that never answered: this TV does not let the service run a Node of its own
+       (webOS 10, where 2.1's bundled Node still ran). It runs inside the service instead. */
+    if (!everReady) return runInsideService('exit ' + code + ' ' + signal);
     scheduleRestart();
   });
   log('Runtime pid=' + child.pid);
   child.unref();
+  setTimeout(function () {
+    if (everReady || insideService) return;
+    healthVersion(function (version) {
+      if (version === APP_VERSION || insideService) return;
+      try {
+        process.kill(child.pid, 'SIGKILL');
+      } catch (ignore) {}
+      runInsideService('no answer in ' + OWN_PROCESS_WAIT_MS / 1000 + ' s');
+    });
+  }, OWN_PROCESS_WAIT_MS);
 }
 
 /* callback(ready, staleVersion). A normal start gets the full minute. Only while ANOTHER
@@ -243,7 +263,10 @@ function startRuntime() {
 function waitUntilReady(callback, attempts) {
   attempts = attempts || 0;
   healthVersion(function (version) {
-    if (version === APP_VERSION) return callback(true, '');
+    if (version === APP_VERSION) {
+      everReady = true;
+      return callback(true, '');
+    }
     if (version && version !== '?' && attempts >= 60) return callback(false, version);
     if (attempts >= 120) return callback(false, '');
     if (!spawned) startRuntime();
@@ -278,6 +301,8 @@ service.register('start', function (message) {
         runtime: 'system-node-' + process.version,
         target: PROFILE.targetLabel
       };
+      /* what the service saw last, for the launcher's error code */
+      if (!ready) reply.log = recentLog.join(' | ');
       if (!ready && staleVersion) {
         reply.reason = 'STALE_SERVICE';
         reply.staleVersion = staleVersion;

@@ -85,6 +85,9 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter
 #spvT{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:28px;font-weight:800;padding:12px 0;background:linear-gradient(transparent,rgba(0,0,0,.75));text-shadow:0 2px 8px #000}
 #menu{position:fixed;right:52px;bottom:190px;min-width:360px;max-height:64%;overflow:auto;background:rgba(20,20,22,.97);border-radius:14px;padding:12px;display:none;z-index:6}
 #menu.show{display:block}
+/* Skip intro / recap (skips.js): OK while it shows */
+#skip{position:fixed;right:52px;bottom:230px;display:none;z-index:6;padding:16px 30px;border-radius:12px;background:rgba(20,20,22,.88);border:2px solid rgba(255,255,255,.85);color:#fff;font-size:26px;font-weight:700;cursor:pointer}
+#skip.show{display:block}
 #menu.atleft{right:auto;left:52px}
 .mi{padding:16px 22px;font-size:25px;border-radius:8px;max-width:820px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .mi.f{background:#fff;color:#0a0a0b}

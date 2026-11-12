@@ -855,6 +855,36 @@ assert.strictEqual(pushed, true, 'leaving the player would wait for a push that 
   assert.strictEqual(player(torrent, false).context.reopenSource(), false, 'a torrent that never played is a startup failure, not a pause');
 })();
 
+// ---- Skip intro and recap (skips.js), from the databases and from chapter names ----
+(function () {
+  var listeners = {}, asked = [];
+  var el = { className: '', textContent: '', addEventListener: function () {} };
+  var ctx = {
+    VID: 'tt1:1:2', P: { skipIntro: 'Skip intro', skipRecap: 'Skip recap' }, mediaInfo: null,
+    v: { currentTime: 0, duration: 3000, addEventListener: function (n, fn) { (listeners[n] = listeners[n] || []).push(fn); } },
+    document: { getElementById: function () { return el; } },
+    xhr: function (u, cb) { asked.push(u); cb({ segments: [{ kind: 'recap', start: 0, end: 40 }, { kind: 'outro', start: 2800, end: 2990 }] }); }
+  };
+  vm.runInNewContext(src('player/skips.js') + ';this.skipNow=skipNow;this.creditsStart=creditsStart;this.chapterSkips=chapterSkips;', ctx);
+  function at(t) { ctx.v.currentTime = t; listeners.timeupdate.forEach(function (fn) { fn(); }); }
+  listeners.playing[0]();
+  listeners.playing[0]();
+  assert.deepStrictEqual(asked, ['/skips?vid=tt1%3A1%3A2'], 'the episode times were not asked once');
+  at(10);
+  assert.strictEqual(el.textContent + '|' + el.className, 'Skip recap|show', 'the recap did not offer to be skipped');
+  assert.strictEqual(ctx.skipNow(), true, 'OK did not skip');
+  assert.strictEqual(ctx.v.currentTime, 40, 'the recap was not skipped to its end');
+  assert.strictEqual(ctx.skipNow(), false, 'OK skipped with nothing to skip');
+  ctx.mediaInfo = { chapters: [{ t: 0, name: 'Recap' }, { t: 60, name: 'Opening' }, { t: 150, name: 'Episode' }] };
+  ctx.chapterSkips();
+  at(70);
+  assert.strictEqual(el.textContent, 'Skip intro', 'a chapter named Opening did not offer to be skipped');
+  ctx.skipNow();
+  assert.strictEqual(ctx.v.currentTime, 150, 'the opening chapter was not skipped to the next chapter');
+  at(500);
+  assert.strictEqual(el.className, '', 'the button stayed after the opening');
+  assert.strictEqual(ctx.creditsStart(), 2800, 'the end credits were not known');
+})();
 console.log('OK: settings menu shows what is in use, with episodes, chapters, torrent files, picture, speed and subtitle position.');
 console.log('OK: torrent opened again after a long pause.');
 console.log('OK: watched state like the official apps, next-episode countdown, next episode opened directly, waiting for a chosen subtitle, do not save history, still-watching prompt, per-title audio, subtitles and delay, addon request URLs, subtitle addon choice, controls kept while loading, exact seek steps.');

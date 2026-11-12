@@ -310,6 +310,8 @@
     "picture": "Image",
     "pictureFit": "Image entière",
     "pictureZoom": "Remplir l'écran",
+    "skipIntro": "Passer l'intro",
+    "skipRecap": "Passer le résumé",
     "audioSubs": "Audio et sous-titres",
     "sources": "Sources",
     "speed": "Vitesse",

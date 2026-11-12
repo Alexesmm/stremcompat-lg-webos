@@ -94,6 +94,7 @@ function markChapters() {
     tick.style.left = (mark.t / duration) * 100 + '%';
     seekBar.appendChild(tick);
   });
+  chapterSkips();
 }
 v.addEventListener('loadedmetadata', markChapters);
 function currentChapter() {

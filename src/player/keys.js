@@ -136,7 +136,7 @@ document.addEventListener(
       return;
     }
     if (k === 13) {
-      if (!restartOffered()) tog();
+      if (!skipNow() && !restartOffered()) tog();
       e.preventDefault();
     } else if (k === 37) {
       seek(-SEEKSTEP);

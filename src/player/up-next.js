@@ -58,12 +58,15 @@ function npGo() {
 }
 function checkNp() {
   if (!POPHREF || npDismissed || !v.duration) return;
-  var rem = v.duration - v.currentTime;
-  if (rem <= 180 && rem > 2 && !npShown) {
+  /* from where the end credits begin when that is known, else in the last three minutes */
+  var rem = v.duration - v.currentTime,
+    credits = creditsStart(),
+    due = credits ? v.currentTime >= credits : rem <= 180;
+  if (due && rem > 2 && !npShown) {
     npShown = true;
     paintNp();
     prefetchNext();
-  } else if (rem > 180 && npShown) {
+  } else if (!due && npShown) {
     npShown = false;
     npFocus = false;
     paintNp();

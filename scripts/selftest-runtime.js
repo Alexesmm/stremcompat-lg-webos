@@ -1433,6 +1433,17 @@ async function main() {
       appVersion,
       'the update check does not say which version is running'
     );
+    var skips = require(path.join(root, 'service', 'server', 'skips.js'));
+    assert.deepStrictEqual(
+      skips.fromIntroDb({ intro: { start_sec: 62, end_sec: 91 }, recap: null, outro: { start_sec: 2794, end_sec: 2848 } }),
+      [{ kind: 'intro', start: 62, end: 91 }, { kind: 'outro', start: 2794, end: 2848 }],
+      'IntroDB times were not read'
+    );
+    assert.deepStrictEqual(
+      skips.fromAniSkip({ results: [{ skipType: 'op', interval: { startTime: 13.9, endTime: 123.8 } }, { skipType: 'mixed-ed', interval: { startTime: 1300, endTime: 1390 } }] }),
+      [{ kind: 'intro', start: 13.9, end: 123.8 }, { kind: 'outro', start: 1300, end: 1390 }],
+      'AniSkip times were not read'
+    );
     var supportQr = await request({ hostname: '127.0.0.1', port: appPort, path: '/support-qr.svg' });
     assert.ok(supportQr.status === 200 && /^<svg/.test(supportQr.text), 'the support QR code was not drawn');
     var updateCheck = require(path.join(root, 'service', 'server', 'update-check.js'));

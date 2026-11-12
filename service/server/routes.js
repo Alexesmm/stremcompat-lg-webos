@@ -23,6 +23,7 @@ var { ytResolve } = require('./youtube');
 var { grabFrame, probeInfo, spriteGen } = require('./media');
 var { bgResize } = require('./images');
 var { checkUpdate } = require('./update-check');
+var { skipTimes } = require('./skips');
 var { qrSvg } = require('./qr');
 var SUPPORT_URL = 'https://buymeacoffee.com/Alexesmm';
 var { diagnostics, netcheck, recordEvent, speedTest } = require('./diag');
@@ -260,6 +261,7 @@ var ROUTES = {
   '/watchedset': watchedSet,
   '/logo.png': logo,
   '/update': checkUpdate,
+  '/skips': skipTimes,
   /* the QR code of the support page, for Settings */
   '/support-qr.svg': function (req, res) {
     res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'max-age=86400' });

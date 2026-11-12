@@ -88,6 +88,9 @@ $('retry').innerHTML = TEXT.retry;
 setStatus(TEXT.starting);
 
 /* the error screen; code says what happened, for a report or a photo of the screen */
+function escapeText(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 function fail(text, hint, code) {
     if (finished) return;
     finished = true;
@@ -162,6 +165,9 @@ try {
             if (data.ready && (!data.version || data.version === '__APP_VERSION__')) openApp();
             else if (data.ready) staleFailure('OLD_SERVICE ' + data.version);
             else if (data.reason === 'STALE_SERVICE') staleFailure('STALE_SERVICE ' + data.staleVersion + ' · ' + (data.detail || ''));
+            /* the TV refused or could not run the service: say what it answered, at once */
+            else if (data.errorText || data.errorCode) fail(TEXT.failed, TEXT.failedHint, 'SERVICE_ERROR · ' + escapeText((data.errorCode || '') + ' ' + (data.errorText || '')) + ' · __APP_VERSION__');
+            else if (data.returnValue === false) fail(TEXT.failed, TEXT.failedHint, 'RUNTIME_START_TIMEOUT · __APP_VERSION__<br>' + escapeText(data.log || ''));
         } catch (ignore) {}
     };
     bridge.call('luna://__SERVICE_ID__/start', '{}');
