@@ -2,7 +2,8 @@
 var home = makeBoard(function (b, keep) {
   var defs = homeDefs(),
     because = becauseYouWatchedDef();
-  if (because) defs.splice(Math.min(1, defs.length), 0, because);
+  /* a Home made of Nuvio Collections stays only those, as in Nuvio's apps */
+  if (because && !(defs[0] && defs[0].tiles)) defs.splice(Math.min(1, defs.length), 0, because);
   loadCatalogRows(b, defs, true, keep);
 });
 /* Discover intentionally differs from Home: three compact filters feed one virtualized
@@ -392,4 +393,9 @@ var disc = {
 };
 var lib = makeBoard(function (b, keep) {
   loadLibraryRows(b);
+});
+/* A Nuvio Collections folder opened from Home: one row per catalog it holds */
+var fold = makeBoard(function (b, keep) {
+  var folder = (scrParams && scrParams.folder) || {};
+  loadCatalogRows(b, folderRowDefs(folder), false, keep);
 });

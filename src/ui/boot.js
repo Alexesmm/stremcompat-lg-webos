@@ -103,10 +103,10 @@ function showHome(libraryPulled) {
       }, 700);
     setTimeout(function () {
       syncAddons(function (changed) {
-        if (changed) {
-          toast(tx('addonsUpdated'));
-          buildHomeRows(true);
-        }
+        syncCollections(function (collectionsChanged) {
+          if (changed) toast(tx('addonsUpdated'));
+          if (changed || collectionsChanged) buildHomeRows(true);
+        });
       });
     }, 900);
     /* new episodes of followed series, at most once a day; shown on the next Home build */

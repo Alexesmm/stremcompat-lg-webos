@@ -87,6 +87,16 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
   }
   for (var d = 0; d < defs.length; d++)
     (function (def, di) {
+      /* a Collections row: folder tiles, already known, nothing to fetch */
+      if (def.tiles) {
+        var tileRow = buildRow(def.title, def.tiles, true, false, di < 3);
+        board.rows.push(tileRow);
+        reveal(tileRow, 120 + di * 80);
+        waiting--;
+        if (di < 3) firstRows--;
+        if (board === home && (!firstRows || !waiting)) markHomeFilled();
+        return;
+      }
       var row = buildRow(def.title, [], false);
       row.catalog = def;
       board.rows.push(row);
@@ -176,6 +186,9 @@ function becauseYouWatchedDef() {
 }
 /* HOME rows = YOUR addon catalogs (in order); Cinemeta defaults if none configured */
 function homeDefs() {
+  var tiles = collectionTileDefs();
+  /* with Nuvio Collections, Home is those collections only, as in Nuvio's own apps */
+  if (tiles.length) return tiles;
   var cats = homeCatalogs();
   if (!cats.length)
     cats = [
@@ -262,6 +275,10 @@ function buildHomeRows(keep) {
 }
 
 function openItem(it) {
+  if (it.folder) {
+    goScr('fold', { folder: it.folder });
+    return;
+  }
   if (it.more) {
     disc.openCatalog(it.catalog);
     return;

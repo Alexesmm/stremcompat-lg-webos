@@ -502,6 +502,27 @@ assert.strictEqual(matchNext([{ addon:'Torrentio',quality:'1080p',title:'x.rar',
   small.tick();
   assert.strictEqual(small.applied.length, 0, 'the titles passed by themselves on a TV with little memory');
 })();
+/* Nuvio Collections: pinned first, a folder row per installed addon catalog, None as no genre,
+   and folders with nothing installed left out */
+(function nuvioCollections() {
+  var addon = { transportUrl: 'https://a.example/manifest.json', manifest: { id: 'a', catalogs: [{ type: 'movie', id: 'top', name: 'Top' }] } };
+  var ctx = {
+    window: {}, TV_PROFILE: {}, tx: function (k) { return k; }, addonBase: function () { return 'https://a.example'; }, addonQuery: function () { return ''; },
+    remoteAddons: function () { return [addon]; },
+    nuvioCollections: function () {
+      return [
+        { title: 'Later', folders: [{ id: 'f1', title: 'Films', sources: [{ provider: 'addon', addonId: 'a', type: 'movie', catalogId: 'top', genre: 'None' }] }] },
+        { title: 'Pinned', pinToTop: true, folders: [{ id: 'f2', title: 'Kids', sources: [{ provider: 'addon', addonId: 'a', type: 'movie', catalogId: 'top', genre: 'Animation' }] }, { id: 'f3', title: 'Lists', sources: [{ provider: 'trakt' }] }] }
+      ];
+    }
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'ui', 'data', 'catalogs.js'), 'utf8'), ctx);
+  var rows = ctx.collectionTileDefs();
+  assert.strictEqual(rows.map(function (r) { return r.title + ':' + r.tiles.length; }).join(), 'Pinned:1,Later:1', 'collections out of order, or a folder without installed catalogs kept');
+  var kids = ctx.folderRowDefs(rows[0].tiles[0].folder)[0], films = ctx.folderRowDefs(rows[1].tiles[0].folder)[0];
+  assert.strictEqual(kids.url, 'https://a.example/catalog/movie/top/genre=Animation.json', 'a folder genre was not asked of the addon');
+  assert.strictEqual(films.url, 'https://a.example/catalog/movie/top.json', 'Nuvio\'s None was taken as a genre');
+})();
 firstRun.context.__SC_SET_UI_LANGUAGE__('pt-BR');
 assert.strictEqual(firstRun.context.__SC_UI_LANGUAGE__(), 'pt-BR');
 assert.strictEqual(firstRun.context.localStorage.getItem('uiLanguage'), 'pt-BR', 'language preference was not persisted');

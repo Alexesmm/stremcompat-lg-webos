@@ -2139,6 +2139,33 @@ function remoteAddons() {
       out.push(all[i]);
   return out;
 }
+/* Nuvio Collections of the profile (folders of catalogs), kept for the Home rows */
+function nuvioCollections() {
+  return isNuvioAccount() ? lsJson('nuvioCollections') || [] : [];
+}
+function syncCollections(cb) {
+  var ak = authKey();
+  if (!ak || !isNuvioAccount()) {
+    if (cb) cb(false);
+    return;
+  }
+  postJson(API + '/api/collectionsGet', { authKey: ak }, function (r) {
+    var got = r && r.result;
+    if (!got || typeof got.length !== 'number') {
+      if (cb) cb(false);
+      return;
+    }
+    var cur = '';
+    try {
+      cur = localStorage.getItem('nuvioCollections') || '';
+    } catch (e) {}
+    var next = JSON.stringify(got);
+    if (next !== cur) {
+      lsRawSet('nuvioCollections', next);
+      if (cb) cb(true);
+    } else if (cb) cb(false);
+  });
+}
 function syncAddons(cb) {
   var ak = authKey();
   if (!ak) {
@@ -2235,6 +2262,83 @@ function catalogCacheKey(addon, cat) {
   );
 }
 var CATALOG_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+/* Nuvio Collections of the profile, pinned ones first, in the order Nuvio keeps them */
+function orderedCollections() {
+  var cols = nuvioCollections(),
+    out = [],
+    i;
+  for (i = 0; i < cols.length; i++) if (cols[i] && cols[i].pinToTop) out.push(cols[i]);
+  for (i = 0; i < cols.length; i++) if (cols[i] && !cols[i].pinToTop) out.push(cols[i]);
+  return out;
+}
+/* The rows a Collections folder opens to: one per source that points at an installed addon
+   catalog. TMDB and Trakt sources need Nuvio's own feeds and are left out. */
+function folderRowDefs(folder) {
+  var a = remoteAddons(),
+    byId = {},
+    out = [],
+    i;
+  for (i = 0; i < a.length; i++) {
+    var man = a[i] && a[i].manifest;
+    if (man && man.id && !byId[man.id]) byId[man.id] = a[i];
+  }
+  var sources = folder.sources && folder.sources.length ? folder.sources : folder.catalogSources || [];
+  for (var s = 0; s < sources.length && out.length < (TV_PROFILE.catalogRowsCap || 16); s++) {
+    var src = sources[s] || {};
+    if (src.provider && src.provider !== 'addon') continue;
+    var addon = byId[src.addonId],
+      cats = (addon && addon.manifest.catalogs) || [],
+      cat = null;
+    for (var k = 0; k < cats.length; k++)
+      if (cats[k] && cats[k].type === src.type && String(cats[k].id) === String(src.catalogId)) cat = cats[k];
+    if (!cat) continue;
+    /* Nuvio stores "no genre" as the text None (or null) */
+    var genre = src.genre ? String(src.genre).trim() : '';
+    if (/^(none|null|undefined)$/i.test(genre)) genre = '';
+    out.push({
+      title:
+        (cat.name ? cat.name : folder.title || '') +
+        (genre ? ' · ' + genre : '') +
+        ' · ' +
+        typeLabel(cat.type),
+      type: cat.type,
+      url:
+        addonBase(addon) +
+        '/catalog/' +
+        cat.type +
+        '/' +
+        encodeURIComponent(cat.id) +
+        (genre ? '/genre=' + encodeURIComponent(genre) : '') +
+        '.json' +
+        addonQuery(addon),
+      key: catalogCacheKey(addon, cat) + (genre ? '_' + stableHash(genre) : '')
+    });
+  }
+  return out;
+}
+/* Home rows for the Collections: one row of folder tiles per collection (no requests until a
+   folder is opened), only folders that have something to show. */
+function collectionTileDefs() {
+  var cols = orderedCollections(),
+    out = [];
+  for (var c = 0; c < cols.length; c++) {
+    var tiles = [],
+      folders = cols[c].folders || [];
+    for (var f = 0; f < folders.length; f++) {
+      var folder = folders[f];
+      if (!folder || !folderRowDefs(folder).length) continue;
+      tiles.push({
+        folder: folder,
+        id: 'folder:' + (folder.id || cols[c].title + '/' + folder.title),
+        type: 'folder',
+        name: folder.hideTitle ? '' : folder.title || '',
+        background: folder.coverImageUrl || ''
+      });
+    }
+    if (tiles.length) out.push({ title: cols[c].title || '', tiles: tiles });
+  }
+  return out;
+}
 function homeCatalogs() {
   var out = [],
     a = remoteAddons(),
@@ -3086,7 +3190,7 @@ var SCR = 'home';
 var backStack = [];
 var BACK_LIMIT = 20;
 var scrParams = null;
-var BOARD_SCR = { home: 1, lib: 1 };
+var BOARD_SCR = { home: 1, lib: 1, fold: 1 };
 function showScr(name) {
   var el = BOARD_SCR[name]
     ? 'scrBoard'
@@ -3170,6 +3274,10 @@ function goScr(name, params, noStack) {
   } else if (name === 'lib') {
     showScr('lib');
     lib.enter();
+  } else if (name === 'fold') {
+    showScr('fold');
+    fold.built = false;
+    fold.enter();
   } else if (name === 'addons') {
     showScr('addons');
     addonPanel.enter();
@@ -3257,7 +3365,7 @@ function paintChips() {
 // Sidebar navigation.
 /* ================= top nav — centered; moving Left/Right auto-loads each page ================= */
 function curBoard() {
-  return SCR === 'home' ? home : SCR === 'lib' ? lib : null;
+  return SCR === 'home' ? home : SCR === 'lib' ? lib : SCR === 'fold' ? fold : null;
 }
 function resetBoardPosition(board) {
   board.rowIdx = 0;
@@ -3461,6 +3569,7 @@ function makeBoard(loader) {
       if (home !== this) unloadBoard(home);
       if (disc !== this) unloadBoard(disc);
       if (lib !== this) unloadBoard(lib);
+      if (fold !== this) unloadBoard(fold);
       this._act = null;
       if (!fresh) this.reveal();
       this.paint(true);
@@ -3689,7 +3798,8 @@ function makeBoard(loader) {
 var home = makeBoard(function (b, keep) {
   var defs = homeDefs(),
     because = becauseYouWatchedDef();
-  if (because) defs.splice(Math.min(1, defs.length), 0, because);
+  /* a Home made of Nuvio Collections stays only those, as in Nuvio's apps */
+  if (because && !(defs[0] && defs[0].tiles)) defs.splice(Math.min(1, defs.length), 0, because);
   loadCatalogRows(b, defs, true, keep);
 });
 /* Discover intentionally differs from Home: three compact filters feed one virtualized
@@ -4080,6 +4190,11 @@ var disc = {
 var lib = makeBoard(function (b, keep) {
   loadLibraryRows(b);
 });
+/* A Nuvio Collections folder opened from Home: one row per catalog it holds */
+var fold = makeBoard(function (b, keep) {
+  var folder = (scrParams && scrParams.folder) || {};
+  loadCatalogRows(b, folderRowDefs(folder), false, keep);
+});
 // Card and row construction, with texture virtualization for low-memory TVs.
 /* ---- image virtualization: this TV has ~38MB free RAM; keeping EVERY row's decoded
    posters pinned (Discover = 200+) is what caused blockiness then OOM crashes. Only rows
@@ -4335,6 +4450,16 @@ function loadCatalogRows(board, defs, includeCW, keepFocus) {
   }
   for (var d = 0; d < defs.length; d++)
     (function (def, di) {
+      /* a Collections row: folder tiles, already known, nothing to fetch */
+      if (def.tiles) {
+        var tileRow = buildRow(def.title, def.tiles, true, false, di < 3);
+        board.rows.push(tileRow);
+        reveal(tileRow, 120 + di * 80);
+        waiting--;
+        if (di < 3) firstRows--;
+        if (board === home && (!firstRows || !waiting)) markHomeFilled();
+        return;
+      }
       var row = buildRow(def.title, [], false);
       row.catalog = def;
       board.rows.push(row);
@@ -4424,6 +4549,9 @@ function becauseYouWatchedDef() {
 }
 /* HOME rows = YOUR addon catalogs (in order); Cinemeta defaults if none configured */
 function homeDefs() {
+  var tiles = collectionTileDefs();
+  /* with Nuvio Collections, Home is those collections only, as in Nuvio's own apps */
+  if (tiles.length) return tiles;
   var cats = homeCatalogs();
   if (!cats.length)
     cats = [
@@ -4510,6 +4638,10 @@ function buildHomeRows(keep) {
 }
 
 function openItem(it) {
+  if (it.folder) {
+    goScr('fold', { folder: it.folder });
+    return;
+  }
   if (it.more) {
     disc.openCatalog(it.catalog);
     return;
@@ -9545,7 +9677,8 @@ on(
     }
     if (k === 13) {
       var fi = currentFocusedItem();
-      if (fi && !fi.more) {
+      /* See all and Collections folders open at once: they have no title menu */
+      if (fi && !fi.more && !fi.folder) {
         if (!okHold.down) {
           okHold.down = true;
           okHold.rep = 0;
@@ -9567,6 +9700,7 @@ on(
     else if (SCR === 'disc') disc.key(k);
     else if (SCR === 'search') search.key(k);
     else if (SCR === 'lib') lib.key(k);
+    else if (SCR === 'fold') fold.key(k);
     else if (SCR === 'addons') addonPanel.key(k);
     else if (SCR === 'set') settings.key(k);
     else if (SCR === 'login') login.key(k);
@@ -9742,10 +9876,10 @@ function showHome(libraryPulled) {
       }, 700);
     setTimeout(function () {
       syncAddons(function (changed) {
-        if (changed) {
-          toast(tx('addonsUpdated'));
-          buildHomeRows(true);
-        }
+        syncCollections(function (collectionsChanged) {
+          if (changed) toast(tx('addonsUpdated'));
+          if (changed || collectionsChanged) buildHomeRows(true);
+        });
       });
     }, 900);
     /* new episodes of followed series, at most once a day; shown on the next Home build */

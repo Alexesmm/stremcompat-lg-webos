@@ -87,7 +87,8 @@ on(
     }
     if (k === 13) {
       var fi = currentFocusedItem();
-      if (fi && !fi.more) {
+      /* See all and Collections folders open at once: they have no title menu */
+      if (fi && !fi.more && !fi.folder) {
         if (!okHold.down) {
           okHold.down = true;
           okHold.rep = 0;
@@ -109,6 +110,7 @@ on(
     else if (SCR === 'disc') disc.key(k);
     else if (SCR === 'search') search.key(k);
     else if (SCR === 'lib') lib.key(k);
+    else if (SCR === 'fold') fold.key(k);
     else if (SCR === 'addons') addonPanel.key(k);
     else if (SCR === 'set') settings.key(k);
     else if (SCR === 'login') login.key(k);
