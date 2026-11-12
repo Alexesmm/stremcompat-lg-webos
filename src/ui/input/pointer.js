@@ -98,7 +98,7 @@ function pointerUI(target, activate) {
     if (target && target.id === 'stLang') {
       streamsUI.zone = 'lang';
       streamsUI.paint();
-      if (activate) streamsUI.nextLang();
+      if (activate) streamsUI.chooseLang();
       return true;
     }
     i = pointerIndex(target, streamsUI.chipEls);

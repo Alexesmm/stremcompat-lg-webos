@@ -223,43 +223,94 @@ var streamsUI = {
   },
   /* The language selector stays small in the corner: it appears only when the sources
      come in two or more languages, and OK steps through them. */
+  /* The language filter: 'a:pt' for sources in Portuguese audio, 's:pt' for sources that only
+     carry Portuguese subtitles, with how many of each; shown when there is a choice. */
   renderLangs: function (allItems) {
     var counts = {},
       order = [],
-      n,
-      g;
-    for (n = 0; n < allItems.length; n++) {
-      if (allItems[n].stored) continue;
-      g = langGroups(allItems[n]);
-      for (var j = 0; j < g.length; j++) {
-        if (!counts[g[j]]) order.push(g[j]);
-        counts[g[j]] = (counts[g[j]] || 0) + 1;
-      }
+      n;
+    function count(key) {
+      if (!counts[key]) order.push(key);
+      counts[key] = (counts[key] || 0) + 1;
     }
-    /* a fixed order so the selector always steps the same way: English, Portuguese,
-       Spanish, the other languages, multi audio, then sources with no language */
-    var rank = ['en', 'pt', 'es', 'fr', 'it', 'de', 'ja', 'ko', 'ru', 'hi', 'multi', 'none'];
-    order.sort(function (a, b) {
-      return rank.indexOf(a) - rank.indexOf(b);
+    for (n = 0; n < allItems.length; n++) {
+      var s = allItems[n];
+      if (s.stored) continue;
+      var audio = s.subLangsOnly ? ['none'] : langGroups(s);
+      for (var a = 0; a < audio.length; a++) count('a:' + audio[a]);
+      var subs = subtitleGroups(s);
+      for (var b = 0; b < subs.length; b++) count('s:' + subs[b]);
+    }
+    /* audio first, then subtitles; within each English, Portuguese, Spanish, the other
+       languages, multi audio, then sources with no language */
+    var rank = ['en', 'pt', 'es', 'fr', 'it', 'de', 'ja', 'ko', 'zh', 'ru', 'hi', 'multi', 'none'];
+    function place(key) {
+      return (key.charAt(0) === 's' ? 100 : 0) + rank.indexOf(key.slice(2));
+    }
+    order.sort(function (x, y) {
+      return place(x) - place(y);
     });
+    this.langCounts = counts;
     this.langs = order.length > 1 ? ['All'].concat(order) : [];
     if (this.langs.indexOf(this.langFilter) < 0) this.langFilter = 'All';
     if (!this.langs.length && this.zone === 'lang') this.zone = 'chips';
     $('stLang').style.display = this.langs.length ? 'block' : 'none';
   },
-  langName: function (g) {
-    return g === 'All'
-      ? tx('langAll')
-      : g === 'none'
-        ? tx('langOther')
-        : g === 'multi'
-          ? 'Multi'
-          : g.toUpperCase();
+  /* 'Audio: Português', 'Subtitles: English', or 'Language: all' */
+  langName: function (key) {
+    if (key === 'All') return tx('langChipAll');
+    return tx(key.charAt(0) === 's' ? 'subsFilter' : 'langFilter', sourceLanguageLabel(key.slice(2)));
   },
-  nextLang: function (step) {
-    var n = this.langs.length;
-    if (!n) return;
-    this.langFilter = this.langs[(this.langs.indexOf(this.langFilter) + (step || 1) + n) % n];
+  /* The filter in two steps: by audio or by embedded subtitles, then the languages of that kind
+     with how many sources each; Back goes from the languages to the first step. */
+  chooseLang: function () {
+    var self = this,
+      kinds = { a: false, s: false };
+    this.langs.forEach(function (key) {
+      if (key !== 'All') kinds[key.charAt(0)] = true;
+    });
+    cwMenu.it = null;
+    cwMenu.begin(tx('langFilterTitle'), tx('langFilterSub'));
+    function row(selected, label, act) {
+      cwMenu.add(selected ? ICON.check : '<svg viewBox="0 0 24 24"></svg>', label, act);
+    }
+    row(this.langFilter === 'All', tx('langChipAll'), function () {
+      self.setLangFilter('All');
+    });
+    if (kinds.a)
+      row(this.langFilter.charAt(0) === 'a', tx('filterByAudio') + '  \u203a', function () {
+        self.chooseLangOf('a');
+      });
+    if (kinds.s)
+      row(this.langFilter.charAt(0) === 's', tx('filterBySubs') + '  \u203a', function () {
+        self.chooseLangOf('s');
+      });
+    $('cwm').style.display = 'block';
+    cwMenu.paint();
+  },
+  chooseLangOf: function (kind) {
+    var self = this;
+    cwMenu.begin(tx(kind === 's' ? 'filterBySubs' : 'filterByAudio'), tx('langFilterSub'));
+    cwMenu.onBack = function () {
+      self.chooseLang();
+    };
+    this.langs.forEach(function (key) {
+      if (key.charAt(0) !== kind) return;
+      var on = key === self.langFilter;
+      if (on) cwMenu.idx = cwMenu.els.length;
+      cwMenu.add(
+        on ? ICON.check : '<svg viewBox="0 0 24 24"></svg>',
+        sourceLanguageLabel(key.slice(2)) + '  \u00b7  ' + self.langCounts[key],
+        function () {
+          self.setLangFilter(key);
+        }
+      );
+    });
+    cwMenu.paint();
+  },
+  setLangFilter: function (key) {
+    cwMenu.close();
+    this.langFilter = key;
     this.refilter();
   },
   refilter: function () {
@@ -276,7 +327,7 @@ var streamsUI = {
     this.revealChip(this.zone === 'chips' ? this.chipIdx : this.chips.indexOf(this.filter));
     $('stBest').className = this.zone === 'best' ? 'f' : '';
     var lang = $('stLang');
-    lang.textContent = tx('langFilter', this.langName(this.langFilter));
+    lang.textContent = this.langName(this.langFilter) + '  \u203a';
     lang.className = (this.langFilter !== 'All' ? 'cur' : '') + (this.zone === 'lang' ? ' f' : '');
   },
   /* When the chips do not fit (All, 4K, 1080p, 720p, SD, Other), the row scrolls so the
@@ -302,10 +353,7 @@ var streamsUI = {
       langPref = fixedSourceLanguage(),
       lf = this.langFilter;
     flat = flat.filter(function (s) {
-      return (
-        (self.filter === 'All' || s.quality === self.filter) &&
-        (lf === 'All' || s.stored || langGroups(s).indexOf(lf) >= 0)
-      );
+      return (self.filter === 'All' || s.quality === self.filter) && (s.stored || inLangFilter(s, lf));
     });
     /* the last source first, then the preferred language, then the preferred quality */
     flat.sort(function (a, b) {
@@ -422,9 +470,11 @@ var streamsUI = {
       return true;
     }
     if (this.zone === 'lang') {
-      if (k === 13 || k === 39) this.nextLang(1);
-      else if (k === 37) this.nextLang(-1);
-      else if (k === 40) {
+      if (k === 13) this.chooseLang();
+      else if (k === 37) {
+        this.zone = 'best';
+        this.paint();
+      } else if (k === 40) {
         this.zone = 'chips';
         this.paint();
       }

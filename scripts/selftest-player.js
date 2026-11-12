@@ -171,7 +171,7 @@ assert.strictEqual(subtitlePrefs({ enableDefaultAudioTrack: 'true' }).aud, 'por'
   function node() { return { style: {}, appendChild: function () {}, innerHTML: '', offsetTop: 0 }; }
   var ctx = {
     document: { createElement: node }, $: node, tx: function () { return ''; }, lsRaw: function (k, d) { return d; },
-    langRank: function () { return 0; }, preferredSourceLanguage: function () { return 'Auto'; }, fixedSourceLanguage: function () { return 'Auto'; }, langGroups: function () { return []; }, sourceTags: function () { return []; },
+    langRank: function () { return 0; }, preferredSourceLanguage: function () { return 'Auto'; }, fixedSourceLanguage: function () { return 'Auto'; }, inLangFilter: function () { return true; }, sourceLanguageLabel: function (c) { return c; }, langGroups: function () { return []; }, sourceTags: function () { return []; },
     setF: function () {}, bestSource: function () { return null; }, sourceOrder: function (a, b) { return b.seeds - a.seeds; }, window: {}
   };
   vm.runInNewContext(src('ui/views/streams.js') + ';this.list=streamsUI;', ctx);

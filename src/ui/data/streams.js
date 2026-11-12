@@ -13,32 +13,39 @@ function qualityLabel(value) {
         : value;
 }
 window.__SC_STREAM_COMPAT__ = streamCompatibility;
-/* Short tags for the source list, read from the same advisory text: quality, language, HDR,
-   size and seeders. A codec or audio format only shows when it is a compatibility warning. */
+/* Short tags for the source list, read from the same advisory text: quality, language, what
+   stands out in picture and sound (Dolby Vision, HDR, Atmos, DTS:X, IMAX, Remux, 5.1/7.1), size
+   and seeders. Other codecs only show when they are a compatibility warning. */
 function sourceTags(s) {
   var t = streamText(s),
     low = t.toLowerCase(),
     out = [],
     m;
   if (s.quality && s.quality !== 'Other' && s.quality !== 'Recent') out.push({ t: s.quality, c: 'q' });
-  if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+' });
-  else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR' });
-  if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DV' });
+  /* what makes a release stand out, as badges of their own */
+  if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DOLBY VISION', c: 'fx' });
+  if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+', c: 'fx' });
+  else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR', c: 'fx' });
+  if (/\batmos\b/.test(low)) out.push({ t: 'ATMOS', c: 'fx' });
+  if (/\bdts[ ._-]?x\b/.test(low)) out.push({ t: 'DTS:X', c: 'fx' });
+  if (/\bimax\b/.test(low)) out.push({ t: 'IMAX', c: 'fx' });
+  if (/\bremux\b/.test(low)) out.push({ t: 'REMUX', c: 'fx' });
+  m = low.match(/(?:^|[^0-9])([57])[ ._]1(?![0-9])/);
+  if (m) out.push({ t: m[1] + '.1' });
   m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
   if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
-  /* the language goes right after the quality */
-  if (s.langs && s.langs.length)
-    out.splice(
-      out.length && out[0].c === 'q' ? 1 : 0,
-      0,
-      s.subLangsOnly ? subTag(s.langs) : { t: langTagText(s.langs), c: 'lang' }
-    );
+  /* the audio and subtitle languages go right after the quality */
+  var langTags = [];
+  if (s.langs && s.langs.length && !s.subLangsOnly) langTags.push({ t: langTagText(s.langs), c: 'lang' });
+  if (s.subLangs && s.subLangs.length) langTags.push(subTag(s.subLangs));
+  Array.prototype.splice.apply(out, [out.length && out[0].c === 'q' ? 1 : 0, 0].concat(langTags));
   return out;
 }
 window.__SC_SOURCE_TAGS__ = sourceTags;
 window.__SC_STREAM_LANGUAGES__ = streamLanguages;
 window.__SC_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
+window.__SC_SUBTITLE_WORDS__ = subtitleWordLanguages;
 /* 'PT-BR', 'ES-LA · EN', 'MULTI', or the first two and '+2' when there are more */
 function langTagText(langs) {
   var names = [];
@@ -63,6 +70,32 @@ function langGroups(s) {
   if (!out.length) out.push('none');
   return out;
 }
+/* whether a source passes the language filter of the source list (views/streams.js) */
+function inLangFilter(s, key) {
+  if (key === 'All') return true;
+  var lang = key.slice(2);
+  if (key.charAt(0) === 's') return subtitleGroups(s).indexOf(lang) >= 0;
+  return (s.subLangsOnly ? ['none'] : langGroups(s)).indexOf(lang) >= 0;
+}
+/* the language groups of a source's subtitles */
+function subtitleGroups(s) {
+  var out = [],
+    subs = s.subLangs || [];
+  for (var i = 0; i < subs.length; i++) {
+    var g = langBase(subs[i]);
+    if (g !== 'multi' && out.indexOf(g) < 0) out.push(g);
+  }
+  return out;
+}
+/* a language group by its own name, as in the lists of languages */
+function sourceLanguageLabel(code) {
+  if (code === 'none') return tx('langOther');
+  if (code === 'multi') return 'Multi';
+  for (var i = 0; i < SOURCE_LANGUAGES.length; i++)
+    if (SOURCE_LANGUAGES[i][0] === code) return SOURCE_LANGUAGES[i][1];
+  return { ru: 'Русский', hi: 'हिन्दी', zh: '中文' }[code] || code.toUpperCase();
+}
+window.__SC_IN_LANG_FILTER__ = inLangFilter;
 /* the languages a source can be chosen in, by their own names (Settings, Best source) */
 var SOURCE_LANGUAGES = [
   ['pt', 'Português'],

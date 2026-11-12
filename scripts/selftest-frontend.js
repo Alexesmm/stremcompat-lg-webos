@@ -278,7 +278,16 @@ var pointer = cwCard({ _id:'tt8', type:'series', name:'Other', state:{ video_id:
 assert.strictEqual(pointer.upNext && pointer.videoId, 'tt8:1:4', 'the next episode set by another Stremio app was not offered');
 assert.strictEqual(cwCard({ _id:'m2', type:'movie', state:{ video_id:'m2', timeOffset:1, duration:0 } }).upNext, false, 'a film at the start became an up next card');
 var tagText = firstRun.context.__SC_SOURCE_TAGS__({ name:'Torrentio 4k', title:'Show.2160p.WEB-DL.DDP5.1.DV.HDR10.HEVC 24.5 GB', quality:'4K', seeders:532 }).map(function (x) { return x.t; }).join(',');
-assert.strictEqual(tagText, '4K,HDR,DV,24.5 GB,532 seeds', 'source tags were not read from the stream text');
+assert.strictEqual(tagText, '4K,DOLBY VISION,HDR,5.1,24.5 GB,532 seeds', 'source tags were not read from the stream text');
+var premium = firstRun.context.__SC_SOURCE_TAGS__({ name:'X', title:'Film.2160p.IMAX.REMUX.TrueHD.Atmos.7.1 60 GB', quality:'4K' }).map(function (x) { return x.t; }).join(',');
+assert.strictEqual(premium, '4K,ATMOS,IMAX,REMUX,7.1,60 GB', 'Atmos, IMAX, Remux or 7.1 were not shown');
+var filterIn = firstRun.context.__SC_IN_LANG_FILTER__;
+assert.deepStrictEqual([filterIn({ langs:['pt-BR'] }, 'a:pt'), filterIn({ langs:['pt-BR'], subLangsOnly:true, subLangs:['pt-BR'] }, 'a:pt'), filterIn({ langs:['pt-BR'], subLangsOnly:true, subLangs:['pt-BR'] }, 's:pt'), filterIn({ langs:['pt-BR'], subLangsOnly:true, subLangs:['pt-BR'] }, 'a:none'), filterIn({ langs:['en'], subLangs:['pt-BR'] }, 's:pt')], [true, false, true, true, true], 'a source with only Portuguese subtitles was filtered as Portuguese audio');
+var subWords = firstRun.context.__SC_SUBTITLE_WORDS__, flagAudio = ['pt-BR', 'en'], dubAudio = ['pt-BR'];
+assert.strictEqual(subWords({ title:'Show.S01E01.1080p.WEB.Legendado' }, flagAudio).join() + '|' + flagAudio.join(), 'pt-BR|en', 'Legendado did not make Portuguese the subtitles instead of the audio');
+assert.strictEqual(subWords({ title:'Show.S01E01.1080p.Dual.Audio.Legendado' }, dubAudio).join() + '|' + dubAudio.join(), 'pt-BR|pt-BR', 'a dubbed release that also names subtitles lost its audio');
+assert.strictEqual(subWords({ title:'Film.2019.VOSTFR.1080p' }, []).join() + subWords({ title:'Film.2019.1080p.ESub' }, []).join() + subWords({ title:'Film Sub ITA' }, []).join(), 'frenit', 'VOSTFR, ESub or Sub ITA were not read as subtitles');
+assert.strictEqual(firstRun.context.__SC_STREAM_COMPAT__({ title:'Show.S01.1080p RAR' }).rank + '|' + firstRun.context.__SC_STREAM_COMPAT__({ title:'Show.S01.1080p.RARBG' }).rank, '4|0', 'a debrid RAR was not moved to the end, or RARBG was taken for one');
 var langsOf = function (title, name) { return firstRun.context.__SC_STREAM_LANGUAGES__({ name: name || 'Torrentio', title: title }).join(','); };
 assert.strictEqual(langsOf('Show.S01E01.1080p\n👤 12 💾 1.2 GB\nMulti Audio / 🇬🇧 / 🇮🇹'), 'en,it,multi', 'flags and multi audio were not read');
 assert.strictEqual(langsOf('Filme.2023.1080p.WEB-DL.DUAL.5.1 Dublado'), 'pt-BR,multi', 'a Brazilian dubbed release was not detected');
@@ -300,7 +309,7 @@ langSamples.forEach(function (sample) {
   assert.strictEqual(firstRun.context.__SC_STREAM_LANGUAGES__(src).join(','), sample[2], 'language detection changed for: ' + sample[1]);
   assert.strictEqual(firstRun.context.__SC_SUBTITLE_LANGUAGES_ONLY__(src), sample[3], 'subtitle-only flags misread for: ' + sample[1]);
 });
-var subTags = firstRun.context.__SC_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: ['en', 'pt-BR', 'es', 'multi'], subLangsOnly: true });
+var subTags = firstRun.context.__SC_SOURCE_TAGS__({ name: 'Torrentio', title: '1080p', quality: '1080p', langs: ['en', 'pt-BR', 'es', 'multi'], subLangsOnly: true, subLangs: ['en', 'pt-BR', 'es', 'multi'] });
 assert.strictEqual(subTags[1].c + ':' + subTags[1].t, 'sublang:SUBS EN · PT-BR +1', 'Multi Subs flags were not tagged as subtitles');
 var heroHtml = firstRun.context.__SC_HERO_META__({ runtime: '109 min', year: '2026', imdbRating: '7.8' });
 assert.ok(/109 min.*2026.*7\.8.*IMDb/.test(heroHtml), 'the hero info line is out of order: ' + heroHtml);

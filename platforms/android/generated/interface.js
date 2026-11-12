@@ -498,6 +498,12 @@ var UI_TEXT = {
     preferredLanguage: 'Audio language of sources',
     anyLanguage: 'Any',
     langFilter: 'Audio: {0}',
+    subsFilter: 'Subtitles: {0}',
+    langChipAll: 'Language: all',
+    langFilterTitle: 'Filter by language',
+    langFilterSub: 'Audio: the source is dubbed in that language. Subtitles: only the subtitles come in it.',
+    filterByAudio: 'By audio (dubbed)',
+    filterBySubs: 'By embedded subtitles',
     langAll: 'All',
     langOther: 'Other',
     subsTag: 'SUBS',
@@ -926,6 +932,12 @@ var UI_TEXT = {
     preferredLanguage: 'Idioma do áudio das fontes',
     anyLanguage: 'Qualquer',
     langFilter: 'Áudio: {0}',
+    subsFilter: 'Legenda: {0}',
+    langChipAll: 'Idioma: todos',
+    langFilterTitle: 'Filtrar por idioma',
+    langFilterSub: 'Áudio: a fonte é dublada nesse idioma. Legenda: só a legenda vem nesse idioma.',
+    filterByAudio: 'Por áudio (dublagem)',
+    filterBySubs: 'Por legenda embutida',
     langAll: 'Todos',
     langOther: 'Outros',
     subsTag: 'LEG',
@@ -1313,6 +1325,10 @@ function streamCompatibility(s) {
   if (archive) {
     add(archive[1].toUpperCase());
     rank = Math.max(rank, 4);
+  } else if (/\brar\b/.test(t)) {
+    /* debrid services that keep a torrent packed say only "RAR" (RARBG is a word of its own) */
+    add('RAR');
+    rank = Math.max(rank, 4);
   }
   return { labels: labels, rank: rank };
 }
@@ -1383,6 +1399,33 @@ function subtitleLanguagesOnly(s) {
   var low = streamText(s).toLowerCase();
   return /\bmulti[ ._-]?subs?\b/.test(low) && !/\b(multi[ ._-]?audio|dual|dublado|dubbed|dub)\b/.test(low);
 }
+/* ---- subtitle languages a source names in words: "Legendado", "VOSTFR", "Sub ITA", "ESub" ----
+   A country flag next to such a word is the subtitles' language, not the audio's, unless the
+   name also says the audio is dubbed. */
+var SUB_WORD_LANG = [
+  ['pt-BR', /\b(legendad[oa]|leg)\b/],
+  ['fr', /\b(vostfr|vost)\b/],
+  ['it', /\b(sub[ ._-]?ita|subita)\b/],
+  ['es', /\b(sub[ ._-]?(esp|spa)|(esp|spa|spanish)[ ._-]?subs?)\b/],
+  ['en', /\b(e[ ._-]?subs?|eng?[ ._-]?subs?|english[ ._-]?subs?|subs?[ ._-]?eng?)\b/]
+];
+var DUBBED_WORDS = {
+  'pt-BR': /\b(dublado|dual|dub|dubbed)\b/,
+  fr: /\b(vff|vf2?|truefrench|dual|multi)\b/
+};
+/* the subtitle languages named in words; takes out of audio a language only its subtitles have */
+function subtitleWordLanguages(s, audio) {
+  var low = streamText(s).toLowerCase(),
+    subs = [];
+  for (var i = 0; i < SUB_WORD_LANG.length; i++) {
+    var code = SUB_WORD_LANG[i][0];
+    if (!SUB_WORD_LANG[i][1].test(low)) continue;
+    if (subs.indexOf(code) < 0) subs.push(code);
+    var at = audio.indexOf(code);
+    if (at >= 0 && DUBBED_WORDS[code] && !DUBBED_WORDS[code].test(low)) audio.splice(at, 1);
+  }
+  return subs;
+}
 function langBase(code) {
   return String(code).split('-')[0];
 }
@@ -1418,6 +1461,8 @@ function sourceItem(s, addonName, addonBase) {
   };
   item.langs = streamLanguages(s);
   item.subLangsOnly = item.langs.length > 0 && subtitleLanguagesOnly(s);
+  /* the languages of its subtitles: all its flags for "Multi Subs", else the words */
+  item.subLangs = item.subLangsOnly ? item.langs.slice() : subtitleWordLanguages(s, item.langs);
   var compat = streamCompatibility(item);
   item.compatLabels = compat.labels;
   item.compatRank = compat.rank;
@@ -2411,32 +2456,39 @@ function qualityLabel(value) {
         : value;
 }
 window.__SC_STREAM_COMPAT__ = streamCompatibility;
-/* Short tags for the source list, read from the same advisory text: quality, language, HDR,
-   size and seeders. A codec or audio format only shows when it is a compatibility warning. */
+/* Short tags for the source list, read from the same advisory text: quality, language, what
+   stands out in picture and sound (Dolby Vision, HDR, Atmos, DTS:X, IMAX, Remux, 5.1/7.1), size
+   and seeders. Other codecs only show when they are a compatibility warning. */
 function sourceTags(s) {
   var t = streamText(s),
     low = t.toLowerCase(),
     out = [],
     m;
   if (s.quality && s.quality !== 'Other' && s.quality !== 'Recent') out.push({ t: s.quality, c: 'q' });
-  if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+' });
-  else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR' });
-  if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DV' });
+  /* what makes a release stand out, as badges of their own */
+  if (/(dolby[ ._-]?vision|\bdovi\b|\bdv\b)/.test(low)) out.push({ t: 'DOLBY VISION', c: 'fx' });
+  if (/hdr10\+/.test(low)) out.push({ t: 'HDR10+', c: 'fx' });
+  else if (/\bhdr(10)?\b/.test(low)) out.push({ t: 'HDR', c: 'fx' });
+  if (/\batmos\b/.test(low)) out.push({ t: 'ATMOS', c: 'fx' });
+  if (/\bdts[ ._-]?x\b/.test(low)) out.push({ t: 'DTS:X', c: 'fx' });
+  if (/\bimax\b/.test(low)) out.push({ t: 'IMAX', c: 'fx' });
+  if (/\bremux\b/.test(low)) out.push({ t: 'REMUX', c: 'fx' });
+  m = low.match(/(?:^|[^0-9])([57])[ ._]1(?![0-9])/);
+  if (m) out.push({ t: m[1] + '.1' });
   m = t.match(/(\d+(?:[.,]\d+)?)\s*(gb|gib|mb|mib)\b/i);
   if (m) out.push({ t: m[1].replace(',', '.') + ' ' + m[2].charAt(0).toUpperCase() + 'B', c: 'size' });
   if (s.seeders >= 0) out.push({ t: tx('seedsTag', s.seeders), c: 'seed' });
-  /* the language goes right after the quality */
-  if (s.langs && s.langs.length)
-    out.splice(
-      out.length && out[0].c === 'q' ? 1 : 0,
-      0,
-      s.subLangsOnly ? subTag(s.langs) : { t: langTagText(s.langs), c: 'lang' }
-    );
+  /* the audio and subtitle languages go right after the quality */
+  var langTags = [];
+  if (s.langs && s.langs.length && !s.subLangsOnly) langTags.push({ t: langTagText(s.langs), c: 'lang' });
+  if (s.subLangs && s.subLangs.length) langTags.push(subTag(s.subLangs));
+  Array.prototype.splice.apply(out, [out.length && out[0].c === 'q' ? 1 : 0, 0].concat(langTags));
   return out;
 }
 window.__SC_SOURCE_TAGS__ = sourceTags;
 window.__SC_STREAM_LANGUAGES__ = streamLanguages;
 window.__SC_SUBTITLE_LANGUAGES_ONLY__ = subtitleLanguagesOnly;
+window.__SC_SUBTITLE_WORDS__ = subtitleWordLanguages;
 /* 'PT-BR', 'ES-LA · EN', 'MULTI', or the first two and '+2' when there are more */
 function langTagText(langs) {
   var names = [];
@@ -2461,6 +2513,32 @@ function langGroups(s) {
   if (!out.length) out.push('none');
   return out;
 }
+/* whether a source passes the language filter of the source list (views/streams.js) */
+function inLangFilter(s, key) {
+  if (key === 'All') return true;
+  var lang = key.slice(2);
+  if (key.charAt(0) === 's') return subtitleGroups(s).indexOf(lang) >= 0;
+  return (s.subLangsOnly ? ['none'] : langGroups(s)).indexOf(lang) >= 0;
+}
+/* the language groups of a source's subtitles */
+function subtitleGroups(s) {
+  var out = [],
+    subs = s.subLangs || [];
+  for (var i = 0; i < subs.length; i++) {
+    var g = langBase(subs[i]);
+    if (g !== 'multi' && out.indexOf(g) < 0) out.push(g);
+  }
+  return out;
+}
+/* a language group by its own name, as in the lists of languages */
+function sourceLanguageLabel(code) {
+  if (code === 'none') return tx('langOther');
+  if (code === 'multi') return 'Multi';
+  for (var i = 0; i < SOURCE_LANGUAGES.length; i++)
+    if (SOURCE_LANGUAGES[i][0] === code) return SOURCE_LANGUAGES[i][1];
+  return { ru: 'Русский', hi: 'हिन्दी', zh: '中文' }[code] || code.toUpperCase();
+}
+window.__SC_IN_LANG_FILTER__ = inLangFilter;
 /* the languages a source can be chosen in, by their own names (Settings, Best source) */
 var SOURCE_LANGUAGES = [
   ['pt', 'Português'],
@@ -7017,43 +7095,94 @@ var streamsUI = {
   },
   /* The language selector stays small in the corner: it appears only when the sources
      come in two or more languages, and OK steps through them. */
+  /* The language filter: 'a:pt' for sources in Portuguese audio, 's:pt' for sources that only
+     carry Portuguese subtitles, with how many of each; shown when there is a choice. */
   renderLangs: function (allItems) {
     var counts = {},
       order = [],
-      n,
-      g;
-    for (n = 0; n < allItems.length; n++) {
-      if (allItems[n].stored) continue;
-      g = langGroups(allItems[n]);
-      for (var j = 0; j < g.length; j++) {
-        if (!counts[g[j]]) order.push(g[j]);
-        counts[g[j]] = (counts[g[j]] || 0) + 1;
-      }
+      n;
+    function count(key) {
+      if (!counts[key]) order.push(key);
+      counts[key] = (counts[key] || 0) + 1;
     }
-    /* a fixed order so the selector always steps the same way: English, Portuguese,
-       Spanish, the other languages, multi audio, then sources with no language */
-    var rank = ['en', 'pt', 'es', 'fr', 'it', 'de', 'ja', 'ko', 'ru', 'hi', 'multi', 'none'];
-    order.sort(function (a, b) {
-      return rank.indexOf(a) - rank.indexOf(b);
+    for (n = 0; n < allItems.length; n++) {
+      var s = allItems[n];
+      if (s.stored) continue;
+      var audio = s.subLangsOnly ? ['none'] : langGroups(s);
+      for (var a = 0; a < audio.length; a++) count('a:' + audio[a]);
+      var subs = subtitleGroups(s);
+      for (var b = 0; b < subs.length; b++) count('s:' + subs[b]);
+    }
+    /* audio first, then subtitles; within each English, Portuguese, Spanish, the other
+       languages, multi audio, then sources with no language */
+    var rank = ['en', 'pt', 'es', 'fr', 'it', 'de', 'ja', 'ko', 'zh', 'ru', 'hi', 'multi', 'none'];
+    function place(key) {
+      return (key.charAt(0) === 's' ? 100 : 0) + rank.indexOf(key.slice(2));
+    }
+    order.sort(function (x, y) {
+      return place(x) - place(y);
     });
+    this.langCounts = counts;
     this.langs = order.length > 1 ? ['All'].concat(order) : [];
     if (this.langs.indexOf(this.langFilter) < 0) this.langFilter = 'All';
     if (!this.langs.length && this.zone === 'lang') this.zone = 'chips';
     $('stLang').style.display = this.langs.length ? 'block' : 'none';
   },
-  langName: function (g) {
-    return g === 'All'
-      ? tx('langAll')
-      : g === 'none'
-        ? tx('langOther')
-        : g === 'multi'
-          ? 'Multi'
-          : g.toUpperCase();
+  /* 'Audio: Português', 'Subtitles: English', or 'Language: all' */
+  langName: function (key) {
+    if (key === 'All') return tx('langChipAll');
+    return tx(key.charAt(0) === 's' ? 'subsFilter' : 'langFilter', sourceLanguageLabel(key.slice(2)));
   },
-  nextLang: function (step) {
-    var n = this.langs.length;
-    if (!n) return;
-    this.langFilter = this.langs[(this.langs.indexOf(this.langFilter) + (step || 1) + n) % n];
+  /* The filter in two steps: by audio or by embedded subtitles, then the languages of that kind
+     with how many sources each; Back goes from the languages to the first step. */
+  chooseLang: function () {
+    var self = this,
+      kinds = { a: false, s: false };
+    this.langs.forEach(function (key) {
+      if (key !== 'All') kinds[key.charAt(0)] = true;
+    });
+    cwMenu.it = null;
+    cwMenu.begin(tx('langFilterTitle'), tx('langFilterSub'));
+    function row(selected, label, act) {
+      cwMenu.add(selected ? ICON.check : '<svg viewBox="0 0 24 24"></svg>', label, act);
+    }
+    row(this.langFilter === 'All', tx('langChipAll'), function () {
+      self.setLangFilter('All');
+    });
+    if (kinds.a)
+      row(this.langFilter.charAt(0) === 'a', tx('filterByAudio') + '  \u203a', function () {
+        self.chooseLangOf('a');
+      });
+    if (kinds.s)
+      row(this.langFilter.charAt(0) === 's', tx('filterBySubs') + '  \u203a', function () {
+        self.chooseLangOf('s');
+      });
+    $('cwm').style.display = 'block';
+    cwMenu.paint();
+  },
+  chooseLangOf: function (kind) {
+    var self = this;
+    cwMenu.begin(tx(kind === 's' ? 'filterBySubs' : 'filterByAudio'), tx('langFilterSub'));
+    cwMenu.onBack = function () {
+      self.chooseLang();
+    };
+    this.langs.forEach(function (key) {
+      if (key.charAt(0) !== kind) return;
+      var on = key === self.langFilter;
+      if (on) cwMenu.idx = cwMenu.els.length;
+      cwMenu.add(
+        on ? ICON.check : '<svg viewBox="0 0 24 24"></svg>',
+        sourceLanguageLabel(key.slice(2)) + '  \u00b7  ' + self.langCounts[key],
+        function () {
+          self.setLangFilter(key);
+        }
+      );
+    });
+    cwMenu.paint();
+  },
+  setLangFilter: function (key) {
+    cwMenu.close();
+    this.langFilter = key;
     this.refilter();
   },
   refilter: function () {
@@ -7070,7 +7199,7 @@ var streamsUI = {
     this.revealChip(this.zone === 'chips' ? this.chipIdx : this.chips.indexOf(this.filter));
     $('stBest').className = this.zone === 'best' ? 'f' : '';
     var lang = $('stLang');
-    lang.textContent = tx('langFilter', this.langName(this.langFilter));
+    lang.textContent = this.langName(this.langFilter) + '  \u203a';
     lang.className = (this.langFilter !== 'All' ? 'cur' : '') + (this.zone === 'lang' ? ' f' : '');
   },
   /* When the chips do not fit (All, 4K, 1080p, 720p, SD, Other), the row scrolls so the
@@ -7096,10 +7225,7 @@ var streamsUI = {
       langPref = fixedSourceLanguage(),
       lf = this.langFilter;
     flat = flat.filter(function (s) {
-      return (
-        (self.filter === 'All' || s.quality === self.filter) &&
-        (lf === 'All' || s.stored || langGroups(s).indexOf(lf) >= 0)
-      );
+      return (self.filter === 'All' || s.quality === self.filter) && (s.stored || inLangFilter(s, lf));
     });
     /* the last source first, then the preferred language, then the preferred quality */
     flat.sort(function (a, b) {
@@ -7216,9 +7342,11 @@ var streamsUI = {
       return true;
     }
     if (this.zone === 'lang') {
-      if (k === 13 || k === 39) this.nextLang(1);
-      else if (k === 37) this.nextLang(-1);
-      else if (k === 40) {
+      if (k === 13) this.chooseLang();
+      else if (k === 37) {
+        this.zone = 'best';
+        this.paint();
+      } else if (k === 40) {
         this.zone = 'chips';
         this.paint();
       }
@@ -9099,7 +9227,7 @@ function pointerUI(target, activate) {
     if (target && target.id === 'stLang') {
       streamsUI.zone = 'lang';
       streamsUI.paint();
-      if (activate) streamsUI.nextLang();
+      if (activate) streamsUI.chooseLang();
       return true;
     }
     i = pointerIndex(target, streamsUI.chipEls);

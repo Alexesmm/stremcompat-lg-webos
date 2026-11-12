@@ -69,6 +69,10 @@ function streamCompatibility(s) {
   if (archive) {
     add(archive[1].toUpperCase());
     rank = Math.max(rank, 4);
+  } else if (/\brar\b/.test(t)) {
+    /* debrid services that keep a torrent packed say only "RAR" (RARBG is a word of its own) */
+    add('RAR');
+    rank = Math.max(rank, 4);
   }
   return { labels: labels, rank: rank };
 }
@@ -139,6 +143,33 @@ function subtitleLanguagesOnly(s) {
   var low = streamText(s).toLowerCase();
   return /\bmulti[ ._-]?subs?\b/.test(low) && !/\b(multi[ ._-]?audio|dual|dublado|dubbed|dub)\b/.test(low);
 }
+/* ---- subtitle languages a source names in words: "Legendado", "VOSTFR", "Sub ITA", "ESub" ----
+   A country flag next to such a word is the subtitles' language, not the audio's, unless the
+   name also says the audio is dubbed. */
+var SUB_WORD_LANG = [
+  ['pt-BR', /\b(legendad[oa]|leg)\b/],
+  ['fr', /\b(vostfr|vost)\b/],
+  ['it', /\b(sub[ ._-]?ita|subita)\b/],
+  ['es', /\b(sub[ ._-]?(esp|spa)|(esp|spa|spanish)[ ._-]?subs?)\b/],
+  ['en', /\b(e[ ._-]?subs?|eng?[ ._-]?subs?|english[ ._-]?subs?|subs?[ ._-]?eng?)\b/]
+];
+var DUBBED_WORDS = {
+  'pt-BR': /\b(dublado|dual|dub|dubbed)\b/,
+  fr: /\b(vff|vf2?|truefrench|dual|multi)\b/
+};
+/* the subtitle languages named in words; takes out of audio a language only its subtitles have */
+function subtitleWordLanguages(s, audio) {
+  var low = streamText(s).toLowerCase(),
+    subs = [];
+  for (var i = 0; i < SUB_WORD_LANG.length; i++) {
+    var code = SUB_WORD_LANG[i][0];
+    if (!SUB_WORD_LANG[i][1].test(low)) continue;
+    if (subs.indexOf(code) < 0) subs.push(code);
+    var at = audio.indexOf(code);
+    if (at >= 0 && DUBBED_WORDS[code] && !DUBBED_WORDS[code].test(low)) audio.splice(at, 1);
+  }
+  return subs;
+}
 function langBase(code) {
   return String(code).split('-')[0];
 }
@@ -174,6 +205,8 @@ function sourceItem(s, addonName, addonBase) {
   };
   item.langs = streamLanguages(s);
   item.subLangsOnly = item.langs.length > 0 && subtitleLanguagesOnly(s);
+  /* the languages of its subtitles: all its flags for "Multi Subs", else the words */
+  item.subLangs = item.subLangsOnly ? item.langs.slice() : subtitleWordLanguages(s, item.langs);
   var compat = streamCompatibility(item);
   item.compatLabels = compat.labels;
   item.compatRank = compat.rank;
