@@ -571,7 +571,8 @@ var UI_TEXT = {
     bestAudioHint: 'Sources with {0} audio first. Subtitles are chosen later, in the player.',
     bestAudioAny: 'Any audio language. Subtitles are chosen later, in the player.',
     audioLanguageTitle: 'Audio language',
-    audioLanguageSub: 'Sources dubbed in this language come first. Subtitles are chosen later, in the player.',
+    audioLanguageSub:
+      'Sources dubbed in this language come first. Subtitles are chosen later, in the player.',
     anyAudioLanguage: 'Any language',
     sourcesButton: 'All sources',
     seeDetails: 'See details',
@@ -1267,7 +1268,8 @@ var UI_LANGUAGES = {
   fr: 'Français',
   de: 'Deutsch',
   it: 'Italiano',
-  ru: 'Русский'
+  ru: 'Русский',
+  ko: '한국어'
 };
 function normalizeUILanguage(value) {
   return Object.prototype.hasOwnProperty.call(UI_LANGUAGES, value) ? value : 'en-US';
@@ -1304,8 +1306,9 @@ loadUILanguage(UI_LANG);
 /* the language of audio and subtitles until the viewer picks one */
 function defaultMediaLanguage() {
   return (
-    { 'pt-BR': 'por', es: 'spa', 'es-419': 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus' }[UI_LANG] ||
-    'eng'
+    { 'pt-BR': 'por', es: 'spa', 'es-419': 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus', ko: 'kor' }[
+      UI_LANG
+    ] || 'eng'
   );
 }
 function tx(key) {
@@ -2846,9 +2849,21 @@ function hideControls() {
   paintBtns();
   bar.className = '';
 }
+/* the name above the focused button sits centred on it, moved in only where it would leave the screen */
+var LABEL_EDGE = 16;
+function placeLabel(btn) {
+  var label = btn && btn.getElementsByTagName && btn.getElementsByTagName('span')[0];
+  if (!label || !label.getBoundingClientRect) return;
+  label.style.marginLeft = '';
+  var r = label.getBoundingClientRect(),
+    right = window.innerWidth - LABEL_EDGE;
+  if (r.left < LABEL_EDGE) label.style.marginLeft = LABEL_EDGE - r.left + 'px';
+  else if (r.right > right) label.style.marginLeft = right - r.right + 'px';
+}
 function paintBtns() {
   for (var i = 0; i < btns.length; i++)
     btns[i].className = btns[i]._base + (mode === 'controls' && i === bIdx ? ' f' : '');
+  if (mode === 'controls') placeLabel(btns[bIdx]);
   if (seekBar) seekBar.className = (seekTarget >= 0 ? 'seeking' : '') + (mode === 'seek' ? ' f' : '');
 }
 function hideLoad() {

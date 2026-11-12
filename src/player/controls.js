@@ -138,9 +138,21 @@ function hideControls() {
   paintBtns();
   bar.className = '';
 }
+/* the name above the focused button sits centred on it, moved in only where it would leave the screen */
+var LABEL_EDGE = 16;
+function placeLabel(btn) {
+  var label = btn && btn.getElementsByTagName && btn.getElementsByTagName('span')[0];
+  if (!label || !label.getBoundingClientRect) return;
+  label.style.marginLeft = '';
+  var r = label.getBoundingClientRect(),
+    right = window.innerWidth - LABEL_EDGE;
+  if (r.left < LABEL_EDGE) label.style.marginLeft = LABEL_EDGE - r.left + 'px';
+  else if (r.right > right) label.style.marginLeft = right - r.right + 'px';
+}
 function paintBtns() {
   for (var i = 0; i < btns.length; i++)
     btns[i].className = btns[i]._base + (mode === 'controls' && i === bIdx ? ' f' : '');
+  if (mode === 'controls') placeLabel(btns[bIdx]);
   if (seekBar) seekBar.className = (seekTarget >= 0 ? 'seeking' : '') + (mode === 'seek' ? ' f' : '');
 }
 function hideLoad() {

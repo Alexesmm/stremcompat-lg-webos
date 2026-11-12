@@ -31,7 +31,7 @@ This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronic
 - **New side menu and Settings:** your profile at the top, Settings in two columns, Sign out and Leave the app easy to find.
 - **More in the player:** episodes, chapters, picture size, speed, and better subtitles and audio.
 - **You sign in again once** after updating to 4.0 from 3.x. See the [release notes](docs/releases/v4.0.0.md).
-- **4.1:** a black-and-white look with featured titles at the top of Home, Best source picks the audio language too, Simple mode goes straight to it, and the player has its own buttons for audio and subtitles, episodes and sources. 4.1.1 shows titles and episodes in your language when a metadata addon such as TMDB is set to it. See the [4.1.1 notes](docs/releases/v4.1.1.md).
+- **4.1:** a black-and-white look with featured titles at the top of Home, Best source picks the audio language too, Simple mode goes straight to it, and the player has its own buttons for audio and subtitles, episodes and sources. 4.1.1 shows titles and episodes in your language when a metadata addon such as TMDB is set to it, and 4.1.2 adds Korean. See the [4.1.2 notes](docs/releases/v4.1.2.md).
 
 ## Features
 
@@ -47,7 +47,7 @@ This project is not affiliated with or endorsed by Stremio, Nuvio, LG Electronic
 - **Series:** the next episode starts with the same release or a matching source, even when the addon is slow, with an "are you still watching?" check.
 - **Storage:** torrents never fill the TV's storage; with no room on the TV they can use a USB drive, and Settings clears the torrent cache.
 - **Made for the TV:** remote and Magic Remote, color-button shortcuts and optional larger text.
-- **Eight languages:** English, Brazilian Portuguese, Spanish from Spain and from Latin America, French, German, Italian and Russian, following the TV's language at first. Corrections to the translations are welcome.
+- **Nine languages:** English, Brazilian Portuguese, Spanish from Spain and from Latin America, French, German, Italian, Russian and Korean, following the TV's language at first. Corrections to the translations are welcome.
 - **Your control:** **Do not save history** keeps progress and searches off the TV and your account, **Settings > Diagnostics** shows memory, storage, how fast the remote is answered and recent problems, and **Test connection** measures Stremio and the last source.
 
 ## Screenshots
@@ -88,7 +88,7 @@ There are two packages, and the video looks the same in both:
 
 1. Install LG's **Developer Mode** app on the TV, sign in, and enable Developer Mode and Key Server.
 2. Add the TV in **webOS Dev Manager**.
-3. Download `StremCompat-v4.1.1-1080p.ipk` or `StremCompat-v4.1.1-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
+3. Download `StremCompat-v4.1.2-1080p.ipk` or `StremCompat-v4.1.2-720p.ipk` from the [Releases page](https://github.com/Alexesmm/stremcompat-lg-webos/releases) and install it.
 
 Developer Mode installations expire with its timer, so renew it before it reaches zero.
 

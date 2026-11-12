@@ -145,7 +145,8 @@ var UI_TEXT = {
     bestAudioHint: 'Sources with {0} audio first. Subtitles are chosen later, in the player.',
     bestAudioAny: 'Any audio language. Subtitles are chosen later, in the player.',
     audioLanguageTitle: 'Audio language',
-    audioLanguageSub: 'Sources dubbed in this language come first. Subtitles are chosen later, in the player.',
+    audioLanguageSub:
+      'Sources dubbed in this language come first. Subtitles are chosen later, in the player.',
     anyAudioLanguage: 'Any language',
     sourcesButton: 'All sources',
     seeDetails: 'See details',
@@ -841,7 +842,8 @@ var UI_LANGUAGES = {
   fr: 'Français',
   de: 'Deutsch',
   it: 'Italiano',
-  ru: 'Русский'
+  ru: 'Русский',
+  ko: '한국어'
 };
 function normalizeUILanguage(value) {
   return Object.prototype.hasOwnProperty.call(UI_LANGUAGES, value) ? value : 'en-US';
@@ -878,8 +880,9 @@ loadUILanguage(UI_LANG);
 /* the language of audio and subtitles until the viewer picks one */
 function defaultMediaLanguage() {
   return (
-    { 'pt-BR': 'por', es: 'spa', 'es-419': 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus' }[UI_LANG] ||
-    'eng'
+    { 'pt-BR': 'por', es: 'spa', 'es-419': 'spa', fr: 'fre', de: 'ger', it: 'ita', ru: 'rus', ko: 'kor' }[
+      UI_LANG
+    ] || 'eng'
   );
 }
 function tx(key) {
