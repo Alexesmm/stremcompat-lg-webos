@@ -5,11 +5,14 @@ function currentFocusedItem() {
   if (b) return b.focusedItem();
   if (SCR === 'disc' && disc.zone === 'grid' && !disc.filterOpen) return disc.focusedItem();
   if (SCR === 'sim') return similar.items[similar.idx] || null;
-  /* the focused season of a series page, to mark all its episodes */
+  /* the season button of a series page (not its arrows or Go to episode), to mark all its
+     episodes */
+  var seasonButton =
+    SCR === 'detail' && detail.zone === 'seasons' && detail.seasonEls[detail.seasonControlIdx];
   if (
-    SCR === 'detail' &&
+    seasonButton &&
+    /selector/.test(seasonButton.className) &&
     detail.type === 'series' &&
-    detail.zone === 'seasons' &&
     detail.episodeMode !== 'continuous'
   ) {
     var se = detail.seasons && detail.seasons[detail.seasonIdx];

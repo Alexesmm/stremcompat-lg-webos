@@ -250,8 +250,8 @@ detail.buildEps = function () {
       pb.appendChild(pf);
       th.appendChild(pb);
     }
-    /* every episode shows when it aired, on its picture (already in the episode list, no
-       extra request) */
+    /* every episode shows when it aired, at the bottom left of its picture, clear of the
+       watched mark (already in the episode list, no extra request) */
     var aired = showDates ? releasedTime(v) : 0;
     if (aired) {
       var ad = document.createElement('div');

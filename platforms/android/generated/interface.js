@@ -6398,8 +6398,8 @@ detail.buildEps = function () {
       pb.appendChild(pf);
       th.appendChild(pb);
     }
-    /* every episode shows when it aired, on its picture (already in the episode list, no
-       extra request) */
+    /* every episode shows when it aired, at the bottom left of its picture, clear of the
+       watched mark (already in the episode list, no extra request) */
     var aired = showDates ? releasedTime(v) : 0;
     if (aired) {
       var ad = document.createElement('div');
@@ -9896,11 +9896,14 @@ function currentFocusedItem() {
   if (b) return b.focusedItem();
   if (SCR === 'disc' && disc.zone === 'grid' && !disc.filterOpen) return disc.focusedItem();
   if (SCR === 'sim') return similar.items[similar.idx] || null;
-  /* the focused season of a series page, to mark all its episodes */
+  /* the season button of a series page (not its arrows or Go to episode), to mark all its
+     episodes */
+  var seasonButton =
+    SCR === 'detail' && detail.zone === 'seasons' && detail.seasonEls[detail.seasonControlIdx];
   if (
-    SCR === 'detail' &&
+    seasonButton &&
+    /selector/.test(seasonButton.className) &&
     detail.type === 'series' &&
-    detail.zone === 'seasons' &&
     detail.episodeMode !== 'continuous'
   ) {
     var se = detail.seasons && detail.seasons[detail.seasonIdx];
