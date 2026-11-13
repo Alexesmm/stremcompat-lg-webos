@@ -18,6 +18,28 @@ function itemWatched(it) {
     for (var i = 0; i < s.watchedEpisodes.length; i++) if (s.watchedEpisodes[i] === vid) return true;
   return watchFinished(s.timeOffset, s.duration);
 }
+/* A library entry as Stremio stores one, for a title the library has not seen yet */
+function newLibItem(item, now) {
+  return {
+    state: {
+      lastWatched: now,
+      timeOffset: 0,
+      timeWatched: 0,
+      overallTimeWatched: 0,
+      timesWatched: 0,
+      flaggedWatched: 0,
+      duration: 0,
+      video_id: item.id,
+      watched: '',
+      noNotif: false,
+      season: 0,
+      episode: 0,
+      watchedEpisodes: []
+    },
+    _id: item.id,
+    _ctime: now
+  };
+}
 function libToggle(item) {
   var now = new Date().toISOString();
   var it = lsJson(PRE + item.id);
@@ -27,26 +49,7 @@ function libToggle(item) {
     lsSet(PRE + item.id, it);
     toast(tx('removedLibrary'));
   } else {
-    if (!it)
-      it = {
-        state: {
-          lastWatched: now,
-          timeOffset: 0,
-          timeWatched: 0,
-          overallTimeWatched: 0,
-          timesWatched: 0,
-          flaggedWatched: 0,
-          duration: 0,
-          video_id: item.id,
-          watched: '',
-          noNotif: false,
-          season: 0,
-          episode: 0,
-          watchedEpisodes: []
-        },
-        _id: item.id,
-        _ctime: now
-      };
+    if (!it) it = newLibItem(item, now);
     it.removed = false;
     it.temp = false;
     it._mtime = now;
@@ -110,20 +113,88 @@ function markCwWatched(it) {
   pushLib(lib2);
   invalidateBoards();
   if (lib2.type !== 'series' || vid === it.id) return;
+  pushEpisodeField(it.id, vid, true, s2.watched);
+}
+/* An episode's bit in state.watched, written by the local server (it has the episode
+   list), so other devices show the change too; cb runs once it is saved. */
+function pushEpisodeField(id, vid, watched, field, cb) {
   xhrJson(
     '/watchedset?id=' +
-      encodeURIComponent(it.id) +
+      encodeURIComponent(id) +
       '&vid=' +
       encodeURIComponent(vid) +
+      '&w=' +
+      (watched ? '1' : '0') +
       '&f=' +
-      encodeURIComponent(s2.watched || ''),
+      encodeURIComponent(field || ''),
     function (j) {
-      var cur = lsJson(PRE + it.id);
-      if (!j || !j.watched || !cur || !cur.state) return;
-      cur.state.watched = j.watched;
-      cur._mtime = new Date().toISOString();
-      lsSet(PRE + it.id, cur);
-      pushLib(cur);
+      var cur = lsJson(PRE + id);
+      if (j && j.watched && cur && cur.state) {
+        cur.state.watched = j.watched;
+        cur._mtime = new Date().toISOString();
+        lsSet(PRE + id, cur);
+        pushLib(cur);
+      }
+      if (cb) cb();
     }
   );
+}
+/* Mark as watched / unwatched from the title menu: a film (it.videoId empty or its own id)
+   or one episode of a series (it.videoId). A title not in the library gets an entry that
+   stays out of it (removed), as Stremio keeps watched state for titles never added. */
+function setItemWatched(it, watched, cb) {
+  var now = new Date().toISOString(),
+    lib = lsJson(PRE + it.id);
+  if (!lib) {
+    lib = newLibItem(it, now);
+    lib.removed = true;
+    lib.temp = true;
+    lib.name = it.name || '';
+    lib.type = it.type;
+    lib.poster = it.poster || '';
+    lib.posterShape = 'poster';
+    lib.background = it.background || '';
+  }
+  var s = lib.state || (lib.state = {}),
+    vid = it.videoId || it.id,
+    episode = it.type === 'series' && vid !== it.id;
+  if (!s.watchedEpisodes) s.watchedEpisodes = [];
+  var at = s.watchedEpisodes.indexOf(vid);
+  if (watched && at < 0) s.watchedEpisodes.push(vid);
+  if (!watched && at >= 0) s.watchedEpisodes.splice(at, 1);
+  if (!episode) {
+    if (watched && !s.flaggedWatched) s.timesWatched = (s.timesWatched || 0) + 1;
+    s.flaggedWatched = watched ? 1 : 0;
+    if (!watched) s.timesWatched = 0;
+  }
+  if (s.video_id === vid) s.timeOffset = 0;
+  lib._mtime = now;
+  lsSet(PRE + it.id, lib);
+  pushLib(lib);
+  invalidateBoards();
+  if (episode) pushEpisodeField(it.id, vid, watched, s.watched, cb);
+  else if (cb) cb();
+}
+/* A whole season at once: its episodes one after another, since each episode's bit is
+   written over the field the previous one left. */
+function setEpisodesWatched(it, vids, watched, cb) {
+  var i = 0;
+  (function next() {
+    if (i >= vids.length) {
+      if (cb) cb();
+      return;
+    }
+    setItemWatched(
+      {
+        type: 'series',
+        id: it.id,
+        name: it.name,
+        poster: it.poster,
+        background: it.background,
+        videoId: vids[i++]
+      },
+      watched,
+      next
+    );
+  })();
 }
